@@ -19,4 +19,10 @@
     <ProjectReference Include="..\HSP.Core\HSP.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Extensions\" />
+    <Folder Include="UnitOfWorks\" />
+    <Folder Include="Repositories\" />
+  </ItemGroup>
+
 </Project>
