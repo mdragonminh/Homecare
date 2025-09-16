@@ -23,4 +23,9 @@
     <Folder Include="Controllers\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\HSP.DAL\HSP.DAL.csproj" />
+    <ProjectReference Include="..\HSP.Service\HSP.Service.csproj" />
+  </ItemGroup>
+
 </Project>
