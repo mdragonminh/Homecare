@@ -14,6 +14,14 @@ namespace HSP.Service.Implementations
 			_userRepository = userRepository;
 		}
 
+		public async Task<bool> ConfirmEmail(Guid userId, string token)
+		{
+			var user = await _userRepository.FindByIdAsync(userId);
+			if (user == null) return false;
+			var result = await _userRepository.ConfirmEmailAsync(user, token);
+			return true;
+		}
+
 		public async Task<RegisterResponseDto> Register(RegisterRequestDto input)
 		{
 			var user = new AppUser
@@ -26,7 +34,8 @@ namespace HSP.Service.Implementations
 			var created = await _userRepository.CreateAsync(user, input.Password);
 			if (!created.Succeeded)
 			{
-				throw new Exception($"User creation failed: {created.Errors}");
+				var errorMessage = string.Join(", ", created.Errors.Select(e => e.Description));
+				throw new Exception($"User creation failed: {errorMessage}");
 			}
 			var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
 			return new RegisterResponseDto
