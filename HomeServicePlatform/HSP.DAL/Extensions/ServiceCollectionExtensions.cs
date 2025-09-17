@@ -1,5 +1,7 @@
 ﻿using HSP.Core.Entities;
+using HSP.Core.Interfaces;
 using HSP.DAL.Data;
+using HSP.DAL.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -23,6 +25,7 @@ namespace HSP.DAL.Extensions
 				o.Password.RequireDigit = true;
 			}).AddEntityFrameworkStores<ApplicationDbContext>()
 				.AddDefaultTokenProviders();
+			services.AddScoped<IUserRepository, UserRepository>();
 			return services;
 		}
 	}
