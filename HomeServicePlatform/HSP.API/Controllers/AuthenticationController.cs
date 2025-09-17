@@ -13,11 +13,13 @@ namespace HSP.API.Controllers
 	{
 		private readonly IAuthenticationService _authenticationService;
 		private readonly IEmailService _emailService;
-
-		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService)
+		private readonly IConfiguration _configuration;
+		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService,
+			IConfiguration configuration)
 		{
 			_authenticationService = authenticationService;
 			_emailService = emailService;
+			_configuration = configuration;
 		}
 
 		[HttpPost("register")]
@@ -27,7 +29,8 @@ namespace HSP.API.Controllers
 			var result = await _authenticationService.Register(input);
 			var tokenBytes = Encoding.UTF8.GetBytes(result.EmailConfirmToken);
 			var base64Token = Convert.ToBase64String(tokenBytes);
-			var confirmUrl = $"https://localhost:7190/api/Authentication/confirm-email?userId={result.UserId}&token={base64Token}";
+			var baseUrl = _configuration.GetValue<string>("BaseUrl");
+			var confirmUrl = $"{baseUrl}/api/Authentication/confirm-email?userId={result.UserId}&token={base64Token}";
 			var emailDto = new EmailDto
 			{
 				ToEmail = result.Email,
