@@ -26,6 +26,10 @@ namespace HSP.DAL.Extensions
 				o.SignIn.RequireConfirmedEmail = true;
 			}).AddEntityFrameworkStores<ApplicationDbContext>()
 				.AddDefaultTokenProviders();
+			services.Configure<DataProtectionTokenProviderOptions>(options =>
+			{
+				options.TokenLifespan = TimeSpan.FromHours(1); 
+			});
 			services.AddScoped<IUserRepository, UserRepository>();
 			return services;
 		}
