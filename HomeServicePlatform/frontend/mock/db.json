@@ -1,0 +1,29 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "test@example.com",
+      "password": "123456",
+      "name": "Người dùng test",
+      "token": "fake-jwt-token"
+    },
+    {
+      "id": "2",
+      "email": "duy@example.com",
+      "password": "abcdef",
+      "name": "Duy",
+      "token": "jwt-token-2"
+    },
+    {
+      "id": "61481765-b51e-4fc0-9551-058c84a1e4d9",
+      "fullName": "nguyen duy",
+      "email": "duynthe173205@fpt.edu.vn",
+      "phone": "0385079015",
+      "password": "06112003",
+      "confirmPassword": "06112003",
+      "userType": "",
+      "agreeToTerms": true,
+      "token": "jwt-token-4ed304c2-a969-4920-93f5-90ae79596ece"
+    }
+  ]
+}
