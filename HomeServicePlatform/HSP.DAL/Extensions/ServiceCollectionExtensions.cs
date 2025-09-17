@@ -23,6 +23,7 @@ namespace HSP.DAL.Extensions
 				o.Password.RequireUppercase = false;
 				o.Password.RequireLowercase = true;
 				o.Password.RequireDigit = true;
+				o.SignIn.RequireConfirmedEmail = true;
 			}).AddEntityFrameworkStores<ApplicationDbContext>()
 				.AddDefaultTokenProviders();
 			services.AddScoped<IUserRepository, UserRepository>();
