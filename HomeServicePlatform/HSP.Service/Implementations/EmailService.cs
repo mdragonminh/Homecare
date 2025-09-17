@@ -11,19 +11,29 @@ namespace HSP.Service.Implementations
 		private readonly SmtpClient _smtpClient;
 		public EmailService(IConfiguration config)
 		{
-			_smtpClient = new SmtpClient(config["Smtp:Host"])
+			_config = config;
+			_smtpClient = new SmtpClient(_config["Smtp:Host"])
 			{
-				Port = int.Parse(config["Smtp:Port"] ?? "587"),
-				Credentials = new System.Net.NetworkCredential(config["Smtp:UserName"], config["Smtp:Password"]),
-				EnableSsl = bool.Parse(config["Smtp:EnableSsl"] ?? "true"),
+				Port = int.Parse(_config["Smtp:Port"] ?? "587"),
+				Credentials = new System.Net.NetworkCredential(_config["Smtp:UserName"], _config["Smtp:Password"]),
+				EnableSsl = bool.Parse(_config["Smtp:EnableSsl"] ?? "true"),
 			};
 		}
 
 		public async Task SendEmailAsync(EmailDto input)
 		{
+			if (input == null)
+				throw new ArgumentNullException(nameof(input), "Email input cannot be null");
+
+			if (string.IsNullOrWhiteSpace(input.FromEmail))
+				input.FromEmail = _config["Smtp:FromEmail"];
+
+			if (string.IsNullOrWhiteSpace(input.FromName))
+				input.FromName = _config["Smtp:FromName"];
+
 			var mailMessage = new MailMessage
 			{
-				From = new MailAddress(input.FromEmail ?? _config["Smtp:FromEmail"], input.FromName ?? _config["Smtp:FromName"]),
+				From = new MailAddress(input.FromEmail,input.FromName),
 				Subject = input.Subject,
 				Body = input.HtmlBody,
 				IsBodyHtml = true
