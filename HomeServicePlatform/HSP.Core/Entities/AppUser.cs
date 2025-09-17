@@ -6,5 +6,6 @@ namespace HSP.Core.Entities
 	[Table("AppUsers")]
 	public class AppUser : IdentityUser<Guid>
 	{
+		public string FullName { get; set; } = string.Empty;
 	}
 }
