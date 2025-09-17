@@ -1,5 +1,6 @@
 
 using HSP.DAL.Extensions;
+using HSP.Service.Extensions;
 
 namespace HSP.API
 {
@@ -16,6 +17,7 @@ namespace HSP.API
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
 			builder.Services.AddDALServices(builder.Configuration);
+			builder.Services.AddServiceServices();
 			var app = builder.Build();
 
 			// Configure the HTTP request pipeline.
