@@ -2,6 +2,7 @@
 using HSP.Core.Interfaces;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Interfaces;
+using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Implementations
 {
@@ -24,6 +25,14 @@ namespace HSP.Service.Implementations
 
 		public async Task<RegisterResponseDto> Register(RegisterRequestDto input)
 		{
+			if(input == null)
+			{
+				throw new ArgumentException("Input cannot be null");
+			}
+			if(input.Password != input.ConfirmPassword)
+			{
+				throw new ValidationException("Password and Confirm Password do not match");
+			}
 			var user = new AppUser
 			{
 				Email = input.Email,
@@ -34,8 +43,7 @@ namespace HSP.Service.Implementations
 			var created = await _userRepository.CreateAsync(user, input.Password);
 			if (!created.Succeeded)
 			{
-				var errorMessage = string.Join(", ", created.Errors.Select(e => e.Description));
-				throw new Exception($"User creation failed: {errorMessage}");
+				throw new Exception($"User creation failed");
 			}
 			var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
 			return new RegisterResponseDto
