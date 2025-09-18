@@ -6,5 +6,6 @@ namespace HSP.Service.Interfaces
 	{
 		Task<RegisterResponseDto> Register(RegisterRequestDto input);
 		Task<bool> ConfirmEmail(Guid userId, string token);
+		Task<LoginResponseDto> Login(LoginRequestDto input);
 	}
 }
