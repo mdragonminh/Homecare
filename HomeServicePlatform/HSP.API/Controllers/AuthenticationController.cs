@@ -14,8 +14,8 @@ namespace HSP.API.Controllers
 		private readonly IAuthenticationService _authenticationService;
 		private readonly IEmailService _emailService;
 		private readonly IConfiguration _configuration;
-		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService,
-			IConfiguration configuration)
+
+		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IConfiguration configuration)
 		{
 			_authenticationService = authenticationService;
 			_emailService = emailService;
@@ -42,6 +42,15 @@ namespace HSP.API.Controllers
 
 			return Ok(new { message = "Please check your email to confirm your registration." });
 		}
+
+		[HttpPost("login")]
+		[AllowAnonymous]
+		public async Task<IActionResult> Login([FromBody] LoginRequestDto input)
+		{
+			var result = await _authenticationService.Login(input);
+			return Ok(result);
+		}
+
 		[HttpGet("confirm-email")]
 		[AllowAnonymous]
 		public async Task<IActionResult> ConfirmEmail(Guid userId, string token)
