@@ -14,6 +14,16 @@ namespace HSP.API
 			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
+			builder.Services.AddCors(options =>
+			{
+				options.AddPolicy("AllowFrontend",
+						policy =>
+						{
+							policy.WithOrigins("http://localhost:5173")  
+								.AllowAnyHeader()
+								.AllowAnyMethod();
+						});
+			});
 			builder.Services.AddDALServices(builder.Configuration);
 			builder.Services.AddServiceServices();
 			var app = builder.Build();
@@ -27,8 +37,9 @@ namespace HSP.API
 
 			app.UseHttpsRedirection();
 
-			app.UseAuthorization();
+			app.UseCors("AllowFrontend");
 
+			app.UseAuthorization();
 
 			app.MapControllers();
 
