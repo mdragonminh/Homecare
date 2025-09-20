@@ -82,7 +82,7 @@ namespace HSP.Service.Implementations
 		}
 		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
 		{
-			return await RegisterInternalAsync(input, input.PhoneNumber, RoleNames.Technician);
+			return await RegisterInternalAsync(input, phoneNumber: input.PhoneNumber, role: RoleNames.Technician);
 		}
 		private async Task<RegisterResponseDto> RegisterInternalAsync(RegisterRequestDto input, string? phoneNumber = null, string? role = null)
 		{

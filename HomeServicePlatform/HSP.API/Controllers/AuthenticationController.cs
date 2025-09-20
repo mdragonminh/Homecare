@@ -27,20 +27,37 @@ namespace HSP.API.Controllers
 		public async Task<IActionResult> Register([FromBody] RegisterRequestDto input)
 		{
 			var result = await _authenticationService.Register(input);
+			await SendConfirmationEmailAsync(result, input.FullName);
+			return Ok(new { message = "Please check your email to confirm your registration." });
+		}
+		[HttpPost("register-technician")]
+		[AllowAnonymous]
+		public async Task<IActionResult> RegisterTechnician([FromBody] RegisterTechnicianRequestDto input)
+		{
+			var result = await _authenticationService.RegisterTechnician(input);
+			await SendConfirmationEmailAsync(result, input.FullName);
+			return Ok(new { message = "Please check your email to confirm your registration." });
+		}
+		private async Task SendConfirmationEmailAsync(RegisterResponseDto result, string fullName)
+		{
 			var tokenBytes = Encoding.UTF8.GetBytes(result.EmailConfirmToken);
 			var base64Token = Convert.ToBase64String(tokenBytes);
 			var baseUrl = _configuration.GetValue<string>("BaseUrl");
 			var confirmUrl = $"{baseUrl}/api/Authentication/confirm-email?userId={result.UserId}&token={base64Token}";
+
 			var emailDto = new EmailDto
 			{
 				ToEmail = result.Email,
 				Subject = "Please confirm your email",
-				HtmlBody = $"<p>Hello {input.FullName},</p><p>Click the link to confirm your email: <a href=\"{confirmUrl}\">Confirm Email</a></p>",
-				TextBody = $"Hello {input.FullName},\nClick the link to confirm your email: {confirmUrl}"
+				HtmlBody = $"""
+			<p>Hello {fullName},</p>
+			<p>Click the link to confirm your email:</p>
+			<p><a href="{confirmUrl}">Confirm Email</a></p>
+		""",
+				TextBody = $"Hello {fullName},\nClick the link to confirm your email: {confirmUrl}"
 			};
-			Task.Run(() => _emailService.SendEmailAsync(emailDto));
 
-			return Ok(new { message = "Please check your email to confirm your registration." });
+			await _emailService.SendEmailAsync(emailDto);
 		}
 
 		[HttpPost("login")]
