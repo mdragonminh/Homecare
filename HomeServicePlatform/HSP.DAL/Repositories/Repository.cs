@@ -1,49 +1,73 @@
 ﻿using HSP.Core.Entities;
 using HSP.Core.Interfaces;
+using HSP.DAL.Data;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace HSP.DAL.Repositories
 {
 	public class Repository<T, K> : IRepository<T, K> where T : BaseEntity<K>
 	{
-		public Task<T> AddAsync(T entity)
+		private readonly ApplicationDbContext _context;
+
+		public Repository(ApplicationDbContext context)
 		{
-			throw new NotImplementedException();
+			_context = context;
 		}
 
-		public Task AddRangeAsync(IEnumerable<T> entities)
+		public async Task<T> AddAsync(T entity)
 		{
-			throw new NotImplementedException();
+			await _context.Set<T>().AddAsync(entity);
+			return entity;
 		}
 
-		public Task<bool> AnyAsync(Expression<Func<T, bool>> predicate)
+		public async Task AddRangeAsync(IEnumerable<T> entities)
 		{
-			throw new NotImplementedException();
+			await _context.Set<T>().AddRangeAsync(entities);
+		}
+
+		public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate)
+		{
+			return await _context.Set<T>().AnyAsync(predicate);
 		}
 
 		public void Delete(T entity)
 		{
-			throw new NotImplementedException();
+			_context.Set<T>().Remove(entity);
 		}
 
-		public Task DeleteAsync(K id)
+		public async Task DeleteAsync(K id)
 		{
-			throw new NotImplementedException();
+			var entity = await _context.Set<T>().FindAsync(id);
+			if (entity != null)
+			{
+				_context.Set<T>().Remove(entity);
+			}
 		}
 
 		public IQueryable<T> GetAll(params Expression<Func<T, object>>[] includes)
 		{
-			throw new NotImplementedException();
+			IQueryable<T> query = _context.Set<T>().AsQueryable();
+
+			if (includes != null && includes.Length > 0)
+			{
+				foreach (var include in includes)
+				{
+					query = query.Include(include);
+				}
+			}
+
+			return query;
 		}
 
-		public Task<T> GetByIdAsync(K id)
+		public async Task<T> GetByIdAsync(K id)
 		{
-			throw new NotImplementedException();
+			return await _context.Set<T>().FindAsync(id);
 		}
 
 		public void Update(T entity)
 		{
-			throw new NotImplementedException();
+			_context.Set<T>().Update(entity);
 		}
 	}
 }
