@@ -1,4 +1,5 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Constans;
+using HSP.Core.Entities;
 using HSP.Core.Interfaces;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Interfaces;
@@ -32,7 +33,7 @@ namespace HSP.Service.Implementations
 
 		public async Task<LoginResponseDto> Login(LoginRequestDto input)
 		{
-			if(input == null)
+			if (input == null)
 			{
 				throw new ArgumentException("Input cannot be null");
 			}
@@ -46,20 +47,19 @@ namespace HSP.Service.Implementations
 			{
 				throw new UnauthorizedAccessException("Invalid password.");
 			}
-			var token = GenerateJwtToken(user.Id.ToString(), input.Email);
+			var token = GenerateJwtToken(user.Id.ToString(), user.FullName,user.Email ?? "");
 			return new LoginResponseDto
 			{
 				JwtToken = token,
-				UserId = user.Id.ToString(),
-				Email = input.Email
 			};
 		}
-		private string GenerateJwtToken(string userId, string email)
+		private string GenerateJwtToken(string userId, string fullName, string email)
 		{
 			var claims = new[]
 			{
 						new Claim(ClaimTypes.NameIdentifier, userId),
 						new Claim(ClaimTypes.Email, email),
+						new Claim(ClaimTypes.Name, fullName),
 				};
 
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]));
@@ -69,7 +69,7 @@ namespace HSP.Service.Implementations
 					issuer: _configuration["JwtSettings:Issuer"],
 					audience: _configuration["JwtSettings:Audience"],
 					claims: claims,
-					expires: DateTime.Now.AddHours(1),
+					expires: DateTime.UtcNow.AddHours(1),
 					signingCredentials: creds
 			);
 
@@ -78,27 +78,42 @@ namespace HSP.Service.Implementations
 
 		public async Task<RegisterResponseDto> Register(RegisterRequestDto input)
 		{
-			if(input == null)
-			{
+			return await RegisterInternalAsync(input, role: RoleNames.Customer);
+		}
+		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
+		{
+			return await RegisterInternalAsync(input, phoneNumber: input.PhoneNumber, role: RoleNames.Technician);
+		}
+		private async Task<RegisterResponseDto> RegisterInternalAsync(RegisterRequestDto input, string? phoneNumber = null, string? role = null)
+		{
+			if (input == null)
 				throw new ArgumentException("Input cannot be null");
-			}
-			if(input.Password != input.ConfirmPassword)
-			{
+
+			if (input.Password != input.ConfirmPassword)
 				throw new ValidationException("Password and Confirm Password do not match");
-			}
+
 			var user = new AppUser
 			{
 				Email = input.Email,
 				UserName = input.Email,
 				FullName = input.FullName,
-				EmailConfirmed = false
+				EmailConfirmed = false,
+				PhoneNumber = phoneNumber
 			};
+
 			var created = await _userRepository.CreateAsync(user, input.Password);
 			if (!created.Succeeded)
 			{
-				throw new Exception($"User creation failed");
+				throw new Exception("User creation failed");
 			}
+
+			if (!string.IsNullOrEmpty(role))
+			{
+				await _userRepository.AddToRoleAsync(user, role);
+			}
+
 			var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
+
 			return new RegisterResponseDto
 			{
 				UserId = user.Id,
