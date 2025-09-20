@@ -1,5 +1,6 @@
 ﻿
 using HSP.DAL.Extensions;
+using HSP.DAL.Interfaces;
 using HSP.Service.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -9,7 +10,7 @@ namespace HSP.API
 {
 	public class Program
 	{
-		public static void Main(string[] args)
+		public static async Task Main(string[] args)
 		{
 			var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +59,11 @@ namespace HSP.API
 			{
 				app.UseSwagger();
 				app.UseSwaggerUI();
+			}
+			using (var scope = app.Services.CreateScope())
+			{
+				var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
+				await initializer.InitializeAsync(); 
 			}
 
 			app.UseHttpsRedirection();
