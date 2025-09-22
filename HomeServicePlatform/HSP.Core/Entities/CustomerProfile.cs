@@ -10,8 +10,6 @@ namespace HSP.Core.Entities
 		[ForeignKey("UserId")]
 		public AppUser User { get; set; } = null!;
 		
-		[StringLength(20)]
-		public string PhoneNumber { get; set; } = string.Empty;
 		public DateTime DateCreated { get; set; }
 		public DateTime DateModified { get; set; }
 		public bool IsDeleted { get ; set ; }

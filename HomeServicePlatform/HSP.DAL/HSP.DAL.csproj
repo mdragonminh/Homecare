@@ -24,8 +24,4 @@
     <ProjectReference Include="..\HSP.Core\HSP.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="UnitOfWorks\" />
-  </ItemGroup>
-
 </Project>
