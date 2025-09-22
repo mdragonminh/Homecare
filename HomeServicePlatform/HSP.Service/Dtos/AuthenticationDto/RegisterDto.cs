@@ -30,5 +30,11 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		[Required(ErrorMessage = "Phone number is required.")]
 		[StringLength(10, ErrorMessage = "Phone number must not exceed 10 characters.")]
 		public string PhoneNumber { get; set; }
+		[Required]
+		[StringLength(200)]
+		public string SkillSet { get; set; } = string.Empty;
+		[Required]
+		[Range(0, 50)]
+		public int ExperienceYears { get; set; }
 	}
 }

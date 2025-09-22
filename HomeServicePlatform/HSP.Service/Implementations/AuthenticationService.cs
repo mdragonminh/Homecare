@@ -15,12 +15,16 @@ namespace HSP.Service.Implementations
 	public class AuthenticationService : IAuthenticationService
 	{
 		private readonly IUserRepository _userRepository;
+		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
+		private readonly IUnitOfWork _unitOfWork;
 		private readonly IConfiguration _configuration;
 
-		public AuthenticationService(IUserRepository userRepository, IConfiguration configuration)
+		public AuthenticationService(IUserRepository userRepository, IConfiguration configuration, IRepository<TechnicianProfile, Guid> technicianRepository, IUnitOfWork unitOfWork)
 		{
 			_userRepository = userRepository;
 			_configuration = configuration;
+			_technicianRepository = technicianRepository;
+			_unitOfWork = unitOfWork;
 		}
 
 		public async Task<bool> ConfirmEmail(Guid userId, string token)
@@ -82,9 +86,11 @@ namespace HSP.Service.Implementations
 		}
 		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
 		{
-			return await RegisterInternalAsync(input, phoneNumber: input.PhoneNumber, role: RoleNames.Technician);
+			return await RegisterInternalAsync(input, input.SkillSet, input.ExperienceYears, phoneNumber: input.PhoneNumber, role: RoleNames.Technician);
 		}
-		private async Task<RegisterResponseDto> RegisterInternalAsync(RegisterRequestDto input, string? phoneNumber = null, string? role = null)
+		private async Task<RegisterResponseDto> RegisterInternalAsync(RegisterRequestDto input, 
+			string? skillSet = null, int? experienceYears = null,
+			string? phoneNumber = null, string? role = null)
 		{
 			if (input == null)
 				throw new ArgumentException("Input cannot be null");
@@ -110,6 +116,17 @@ namespace HSP.Service.Implementations
 			if (!string.IsNullOrEmpty(role))
 			{
 				await _userRepository.AddToRoleAsync(user, role);
+			}
+			if (role.Equals(RoleNames.Technician))
+			{
+				var profile = new TechnicianProfile
+				{
+					UserId = user.Id,
+					SkillSet = skillSet ?? string.Empty,
+					ExperienceYears = experienceYears ?? 0
+				};
+				await _technicianRepository.AddAsync(profile);
+				await _unitOfWork.SaveChangesAsync();
 			}
 
 			var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
