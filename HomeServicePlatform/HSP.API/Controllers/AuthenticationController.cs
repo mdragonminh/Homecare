@@ -30,6 +30,10 @@ namespace HSP.API.Controllers
 		[AllowAnonymous]
 		public async Task<IActionResult> Register([FromBody] RegisterRequestDto input)
 		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest();
+			}
 			var result = await _authenticationService.Register(input);
 			await SendConfirmationEmailAsync(result, input.FullName);
 			return Ok(new { message = "Please check your email to confirm your registration." });
@@ -38,6 +42,10 @@ namespace HSP.API.Controllers
 		[AllowAnonymous]
 		public async Task<IActionResult> RegisterTechnician([FromBody] RegisterTechnicianRequestDto input)
 		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest();
+			}
 			var result = await _authenticationService.RegisterTechnician(input);
 			await SendConfirmationEmailAsync(result, input.FullName);
 			return Ok(new { message = "Please check your email to confirm your registration." });
