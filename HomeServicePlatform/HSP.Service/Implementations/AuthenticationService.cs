@@ -3,6 +3,7 @@ using HSP.Core.Entities;
 using HSP.Core.Interfaces;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
@@ -18,14 +19,18 @@ namespace HSP.Service.Implementations
 		private readonly IUserRepository _userRepository;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		private readonly IUnitOfWork _unitOfWork;
+		private readonly SignInManager<AppUser> _signInManager;
 		private readonly IConfiguration _configuration;
 
-		public AuthenticationService(IUserRepository userRepository, IConfiguration configuration, IRepository<TechnicianProfile, Guid> technicianRepository, IUnitOfWork unitOfWork)
+		public AuthenticationService(IUserRepository userRepository, IConfiguration configuration,
+			IRepository<TechnicianProfile, Guid> technicianRepository, IUnitOfWork unitOfWork,
+			SignInManager<AppUser> signInManager)
 		{
 			_userRepository = userRepository;
 			_configuration = configuration;
 			_technicianRepository = technicianRepository;
 			_unitOfWork = unitOfWork;
+			_signInManager = signInManager;
 		}
 
 		public async Task<bool> ConfirmEmail(Guid userId, string token)
@@ -52,10 +57,57 @@ namespace HSP.Service.Implementations
 			{
 				throw new UnauthorizedAccessException("Invalid password.");
 			}
-			var token = GenerateJwtToken(user.Id.ToString(), user.FullName,user.Email ?? "");
+			var token = GenerateJwtToken(user.Id.ToString(), user.FullName, user.Email ?? "");
 			return new LoginResponseDto
 			{
 				JwtToken = token,
+			};
+		}
+		public async Task<LoginResponseDto> GoogleLogin()
+		{
+			var info = await _signInManager.GetExternalLoginInfoAsync();
+			if (info == null)
+			{
+				throw new Exception("Error loading external login information during Google authentication");
+			}
+			var user = await _userRepository.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+			if (user == null)
+			{
+				var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+				if (string.IsNullOrEmpty(email))
+				{
+					throw new Exception("Can not find user");
+				}
+
+				user = await _userRepository.FindByEmailAsync(email);
+
+				if (user == null)
+				{
+					user = new AppUser
+					{
+						UserName = email,
+						Email = email,
+						FullName = info.Principal.FindFirstValue(ClaimTypes.Name),
+						EmailConfirmed = true
+					};
+
+					var createResult = await _userRepository.CreateAsync(user);
+					if (!createResult.Succeeded)
+					{
+						throw new Exception("User creation failed");
+					}
+				}
+
+				var addLoginResult = await _userRepository.AddLoginAsync(user, info);
+				if (!addLoginResult.Succeeded)
+				{
+					throw new Exception("User login failed");
+				}
+			}
+			var token = GenerateJwtToken(user.Id.ToString(), user.FullName, user.Email);
+			return new LoginResponseDto
+			{
+				JwtToken = token
 			};
 		}
 		private string GenerateJwtToken(string userId, string fullName, string email)
@@ -89,7 +141,7 @@ namespace HSP.Service.Implementations
 		{
 			return await RegisterInternalAsync(input, input.SkillSet, input.ExperienceYears, phoneNumber: input.PhoneNumber, role: RoleNames.Technician);
 		}
-		private async Task<RegisterResponseDto> RegisterInternalAsync(RegisterRequestDto input, 
+		private async Task<RegisterResponseDto> RegisterInternalAsync(RegisterRequestDto input,
 			string? skillSet = null, int? experienceYears = null,
 			string? phoneNumber = null, string? role = null)
 		{

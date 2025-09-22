@@ -8,5 +8,6 @@ namespace HSP.Service.Interfaces
 		Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input);
 		Task<bool> ConfirmEmail(Guid userId, string token);
 		Task<LoginResponseDto> Login(LoginRequestDto input);
+		Task<LoginResponseDto> GoogleLogin();
 	}
 }
