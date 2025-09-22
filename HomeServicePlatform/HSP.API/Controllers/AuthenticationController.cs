@@ -1,7 +1,9 @@
-﻿using HSP.Service.Dtos.AuthenticationDto;
+﻿using HSP.Core.Entities;
+using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
@@ -14,12 +16,14 @@ namespace HSP.API.Controllers
 		private readonly IAuthenticationService _authenticationService;
 		private readonly IEmailService _emailService;
 		private readonly IConfiguration _configuration;
+		private readonly SignInManager<AppUser> _signInManager;
 
-		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IConfiguration configuration)
+		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IConfiguration configuration, SignInManager<AppUser> signInManager)
 		{
 			_authenticationService = authenticationService;
 			_emailService = emailService;
 			_configuration = configuration;
+			_signInManager = signInManager;
 		}
 
 		[HttpPost("register")]
@@ -64,9 +68,31 @@ namespace HSP.API.Controllers
 		[AllowAnonymous]
 		public async Task<IActionResult> Login([FromBody] LoginRequestDto input)
 		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest();
+			}
 			var result = await _authenticationService.Login(input);
 			return Ok(result);
 		}
+		[HttpGet("google-login")]
+		[AllowAnonymous]
+		public IActionResult GoogleLogin()
+		{
+			var redirectUrl = Url.Action(nameof(GoogleCallback), "Authentication");
+			var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
+			return new ChallengeResult("Google", properties);
+		}
+
+		[HttpGet("google-callback")]
+		[AllowAnonymous]
+		public async Task<IActionResult> GoogleCallback()
+		{
+			var loginResponse = await _authenticationService.GoogleLogin();
+			var frontendSuccessUrl = _configuration.GetValue<string>("FrontendUrl:LoginSuccess");
+			return Redirect($"{frontendSuccessUrl}?token={loginResponse.JwtToken}");
+		}
+
 
 		[HttpGet("confirm-email")]
 		[AllowAnonymous]
