@@ -5,6 +5,7 @@ using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace HSP.API.Controllers
@@ -30,17 +31,59 @@ namespace HSP.API.Controllers
 		[AllowAnonymous]
 		public async Task<IActionResult> Register([FromBody] RegisterRequestDto input)
 		{
+<<<<<<< Updated upstream
 			var result = await _authenticationService.Register(input);
 			await SendConfirmationEmailAsync(result, input.FullName);
 			return Ok(new { message = "Please check your email to confirm your registration." });
+=======
+			if (!ModelState.IsValid)
+			{
+				return BadRequest();
+			}
+			try
+			{
+				var result = await _authenticationService.Register(input);
+				await SendConfirmationEmailAsync(result, input.FullName);
+				return Ok(new { message = "Please check your email to confirm your registration." });
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+>>>>>>> Stashed changes
 		}
 		[HttpPost("register-technician")]
 		[AllowAnonymous]
 		public async Task<IActionResult> RegisterTechnician([FromBody] RegisterTechnicianRequestDto input)
 		{
+<<<<<<< Updated upstream
 			var result = await _authenticationService.RegisterTechnician(input);
 			await SendConfirmationEmailAsync(result, input.FullName);
 			return Ok(new { message = "Please check your email to confirm your registration." });
+=======
+			if (!ModelState.IsValid)
+			{
+				return BadRequest();
+			}
+			try
+			{
+				var result = await _authenticationService.RegisterTechnician(input);
+				await SendConfirmationEmailAsync(result, input.FullName);
+				return Ok(new { message = "Please check your email to confirm your registration." });
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+>>>>>>> Stashed changes
 		}
 		private async Task SendConfirmationEmailAsync(RegisterResponseDto result, string fullName)
 		{
@@ -72,8 +115,23 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest();
 			}
-			var result = await _authenticationService.Login(input);
-			return Ok(result);
+			try
+			{
+				var result = await _authenticationService.Login(input);
+				return Ok(result);
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message }); 
+			}
+			catch (UnauthorizedAccessException ex)
+			{
+				return Unauthorized(new { message = ex.Message }); 
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." }); 
+			}
 		}
 		[HttpGet("google-login")]
 		[AllowAnonymous]
