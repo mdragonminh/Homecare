@@ -1,6 +1,7 @@
 ﻿using HSP.Core.Entities;
 using HSP.Core.Interfaces;
 using HSP.DAL.Data;
+using HSP.DAL.Interfaces;
 using HSP.DAL.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,7 @@ namespace HSP.DAL.Extensions
 				options.TokenLifespan = TimeSpan.FromHours(1); 
 			});
 			services.AddScoped<IUserRepository, UserRepository>();
+			services.AddScoped<IDbInitializer, DbInitializer>();
 			return services;
 		}
 	}

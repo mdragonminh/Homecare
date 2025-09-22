@@ -4,18 +4,18 @@ namespace HSP.Service.Dtos.AuthenticationDto
 {
 	public class RegisterRequestDto
 	{
-		[Required(ErrorMessage = "Email là bắt buộc.")]
-		[EmailAddress(ErrorMessage = "Định dạng email không hợp lệ.")]
+		[Required(ErrorMessage = "Email is required.")]
+		[EmailAddress(ErrorMessage = "Invalid email format.")]
 		public string Email { get; set; } = string.Empty;
-		[Required(ErrorMessage = "Họ và tên là bắt buộc.")]
-		[StringLength(100, ErrorMessage = "Họ và tên không được dài hơn 100 ký tự.")]
+		[Required(ErrorMessage = "Full name is required.")]
+		[StringLength(100, ErrorMessage = "Full name must not exceed 100 characters.")]
 		public string FullName { get; set; } = string.Empty;
-		[Required(ErrorMessage = "Mật khẩu là bắt buộc.")]
-		[StringLength(100, MinimumLength = 8, ErrorMessage = "Mật khẩu phải có độ dài từ 8 đến 100 ký tự.")]
+		[Required(ErrorMessage = "Password is required.")]
+		[StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters.")]
 		public string Password { get; set; } = string.Empty;
-		[Required(ErrorMessage = "Xác nhận mật khẩu là bắt buộc.")]
-		[StringLength(100, MinimumLength = 8, ErrorMessage = "Xác nhận mật khẩu phải có độ dài từ 8 đến 100 ký tự.")]
-		[Compare("Password", ErrorMessage = "Mật khẩu và xác nhận mật khẩu không khớp.")]
+		[Required(ErrorMessage = "Confirm password is required.")]
+		[StringLength(100, MinimumLength = 8, ErrorMessage = "Confirm password must be between 8 and 100 characters.")]
+		[Compare("Password", ErrorMessage = "Password and confirm password do not match.")]
 		public string ConfirmPassword { get; set; } = string.Empty;
 	}
 
@@ -24,5 +24,11 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		public Guid UserId { get; set; }
 		public string Email { get; set; } = string.Empty;
 		public string EmailConfirmToken { get; set; } = string.Empty;
+	}
+	public class RegisterTechnicianRequestDto : RegisterRequestDto
+	{
+		[Required(ErrorMessage = "Phone number is required.")]
+		[StringLength(10, ErrorMessage = "Phone number must not exceed 10 characters.")]
+		public string PhoneNumber { get; set; }
 	}
 }
