@@ -18,5 +18,8 @@ namespace HSP.Core.Interfaces
 
 		Task<IList<UserLoginInfo>> GetLoginsAsync(AppUser user);
 		Task<IdentityResult> AddLoginAsync(AppUser user, UserLoginInfo login);
+
+		Task<AppUser?> FindByLoginAsync(string loginProvider, string providerKey);
+		Task<IdentityResult> CreateAsync(AppUser user);
 	}
 }
