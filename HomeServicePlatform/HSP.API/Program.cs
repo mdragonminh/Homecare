@@ -51,7 +51,12 @@ namespace HSP.API
 					ValidAudience = builder.Configuration["JwtSettings:Audience"],
 					IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"]))
 				};
-			});
+			}).AddGoogle(options =>
+			{
+				options.ClientId = builder.Configuration["Google:ClientId"];
+				options.ClientSecret = builder.Configuration["Google:ClientSecret"];
+			}); ;
+
 			var app = builder.Build();
 
 			// Configure the HTTP request pipeline.
