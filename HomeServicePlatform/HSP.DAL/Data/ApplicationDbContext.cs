@@ -18,6 +18,7 @@ namespace HSP.DAL.Data
 		public DbSet<CustomerProfile> CustomerProfiles { get; set; }
 		public DbSet<TechnicianProfile> TechnicianProfiles { get; set; }
 		public DbSet<Home> Homes { get; set; }
+		public DbSet<HomeItem> HomeItems { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -50,6 +51,11 @@ namespace HSP.DAL.Data
 			.WithMany(cp => cp.Homes)
 			.HasForeignKey(h => h.CustomerProfileId)
 			.OnDelete(DeleteBehavior.Cascade);
+			builder.Entity<Home>()
+				.HasMany(h => h.HomeItems)
+				.WithOne(hi => hi.Home)
+				.HasForeignKey(hi => hi.HomeId)
+				.OnDelete(DeleteBehavior.Cascade);
 		}
 	}
 }
