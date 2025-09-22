@@ -11,7 +11,7 @@ export function Footer() {
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
                 <Home className="w-5 h-5 text-gray-900" />
               </div>
-              <span className="font-semibold text-lg">HomeCare Manager</span>
+              <span className="font-semibold text-lg">HomeServicePlatform</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
               Nền tảng quản lý dịch vụ nhà thông minh, kết nối mọi người trong cộng đồng

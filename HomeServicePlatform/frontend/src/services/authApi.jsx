@@ -1,71 +1,74 @@
-// src/services/authApi.jsx
 import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
 
-const API_URL = "http://localhost:9999"; // json-server
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const authApi = {
-  // Đăng nhập
+  // --- Đăng ký ---
+  register: async ({ email, fullName, password }) => {
+    try {
+      const res = await axios.post(`${API_URL}/Authentication/register`, {
+        email,
+        fullName,
+        password,
+        confirmPassword: password,
+      });
+      return { success: true, data: res.data };
+    } catch (error) {
+      console.error("Register error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || error.response?.data || "Đăng ký thất bại",
+      };
+    }
+  },
+
+  // --- Đăng nhập ---
   login: async ({ email, password }) => {
     try {
-      const res = await axios.get(`${API_URL}/users`, {
-        params: { email, password },
+      console.log("🔍 API URL:", `${API_URL}/Authentication/login`);
+      console.log("📤 Request payload:", { email, password });
+      
+      const res = await axios.post(`${API_URL}/Authentication/login`, {
+        email,
+        password,
       });
 
-      if (res.data.length > 0) {
-        const user = res.data[0];
+      console.log("📥 Full response:", res);
+      console.log("📥 Response data:", res.data);
+      console.log("📥 Response status:", res.status);
 
-        // Tạo token mới mỗi lần login
-        const newToken = `jwt-token-${uuidv4()}`;
-        await axios.patch(`${API_URL}/users/${user.id}`, { token: newToken });
-
-        return { success: true, user: { ...user, token: newToken }, token: newToken };
+      // Check if response is successful
+      if (res.status === 200 && res.data) {
+        return { success: true, data: res.data };
       } else {
-        return { success: false, message: "Sai email hoặc mật khẩu" };
+        return { success: false, message: "Unexpected response format" };
       }
+      
     } catch (error) {
-      console.error("Lỗi khi đăng nhập:", error);
-      return { success: false, message: "Có lỗi xảy ra khi đăng nhập" };
-    }
-  },
-
-  // Đăng ký
-  register: async (userData) => {
-    try {
-      // Check email đã tồn tại chưa
-      const existingUsers = await axios.get(`${API_URL}/users`, {
-        params: { email: userData.email },
-      });
-
-      if (existingUsers.data.length > 0) {
-        return { success: false, message: "Email đã tồn tại" };
-      }
-
-      const newUser = {
-        ...userData,
-        id: uuidv4(),
-        token: `jwt-token-${uuidv4()}`,
+      console.error("🔥 Login error:", error);
+      console.error("🔥 Error response:", error.response);
+      console.error("🔥 Error response data:", error.response?.data);
+      
+      return {
+        success: false,
+        message: error.response?.data?.message || error.response?.data || error.message || "Đăng nhập thất bại",
       };
-
-      const res = await axios.post(`${API_URL}/users`, newUser);
-
-      return { success: true, user: res.data, token: res.data.token };
-    } catch (error) {
-      console.error("Lỗi khi đăng ký:", error);
-      return { success: false, message: "Có lỗi xảy ra khi đăng ký" };
     }
   },
 
-  // Lấy user từ token
-  getUserByToken: async (token) => {
+  // --- Xác thực email ---
+  confirmEmail: async (token) => {
     try {
-      const res = await axios.get(`${API_URL}/users`, {
-        params: { token },
+      const res = await axios.post(`${API_URL}/Authentication/confirm-email`, {
+        token,
       });
-      return res.data.length > 0 ? res.data[0] : null;
+      return { success: true, data: res.data };
     } catch (error) {
-      console.error("Lỗi khi lấy user bằng token:", error);
-      return null;
+      console.error("Confirm email error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || error.response?.data || "Xác thực email thất bại",
+      };
     }
   },
 };
