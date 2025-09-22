@@ -9,6 +9,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading;
 
 namespace HSP.Service.Implementations
 {
@@ -97,46 +98,54 @@ namespace HSP.Service.Implementations
 
 			if (input.Password != input.ConfirmPassword)
 				throw new ValidationException("Password and Confirm Password do not match");
+			await _unitOfWork.BeginTransactionAsync();
+			try
+			{
+				var user = new AppUser
+				{
+					Email = input.Email,
+					UserName = input.Email,
+					FullName = input.FullName,
+					EmailConfirmed = false,
+					PhoneNumber = phoneNumber
+				};
 
-			var user = new AppUser
-			{
-				Email = input.Email,
-				UserName = input.Email,
-				FullName = input.FullName,
-				EmailConfirmed = false,
-				PhoneNumber = phoneNumber
-			};
+				var created = await _userRepository.CreateAsync(user, input.Password);
+				if (!created.Succeeded)
+					throw new Exception("User creation failed");
 
-			var created = await _userRepository.CreateAsync(user, input.Password);
-			if (!created.Succeeded)
-			{
-				throw new Exception("User creation failed");
-			}
+				if (!string.IsNullOrEmpty(role))
+					await _userRepository.AddToRoleAsync(user, role);
 
-			if (!string.IsNullOrEmpty(role))
-			{
-				await _userRepository.AddToRoleAsync(user, role);
-			}
-			if (role.Equals(RoleNames.Technician))
-			{
-				var profile = new TechnicianProfile
+				if (role == RoleNames.Technician)
+				{
+					var profile = new TechnicianProfile
+					{
+						UserId = user.Id,
+						SkillSet = skillSet ?? string.Empty,
+						ExperienceYears = experienceYears ?? 0
+					};
+					await _technicianRepository.AddAsync(profile);
+				}
+
+				await _unitOfWork.SaveChangesAsync();
+
+				var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
+
+				await _unitOfWork.CommitTransactionAsync();
+
+				return new RegisterResponseDto
 				{
 					UserId = user.Id,
-					SkillSet = skillSet ?? string.Empty,
-					ExperienceYears = experienceYears ?? 0
+					Email = user.Email,
+					EmailConfirmToken = token
 				};
-				await _technicianRepository.AddAsync(profile);
-				await _unitOfWork.SaveChangesAsync();
 			}
-
-			var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
-
-			return new RegisterResponseDto
+			catch
 			{
-				UserId = user.Id,
-				Email = user.Email,
-				EmailConfirmToken = token
-			};
+				await _unitOfWork.RollbackTransactionAsync();
+				throw;
+			}
 		}
 	}
 }
