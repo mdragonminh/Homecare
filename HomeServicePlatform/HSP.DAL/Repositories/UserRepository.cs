@@ -38,6 +38,11 @@ namespace HSP.DAL.Repositories
 			return _userManager.CreateAsync(user, password);
 		}
 
+		public Task<IdentityResult> CreateAsync(AppUser user)
+		{
+			return _userManager.CreateAsync(user);
+		}
+
 		public Task<AppUser?> FindByEmailAsync(string email)
 		{
 			return _userManager.FindByEmailAsync(email);
@@ -46,6 +51,11 @@ namespace HSP.DAL.Repositories
 		public Task<AppUser?> FindByIdAsync(Guid id)
 		{
 			return _userManager.FindByIdAsync(id.ToString());
+		}
+
+		public Task<AppUser?> FindByLoginAsync(string loginProvider, string providerKey)
+		{
+			return _userManager.FindByLoginAsync(loginProvider, providerKey);
 		}
 
 		public Task<string> GenerateEmailConfirmationTokenAsync(AppUser user)
