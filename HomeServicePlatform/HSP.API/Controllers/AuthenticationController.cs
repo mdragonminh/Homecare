@@ -31,11 +31,6 @@ namespace HSP.API.Controllers
 		[AllowAnonymous]
 		public async Task<IActionResult> Register([FromBody] RegisterRequestDto input)
 		{
-<<<<<<< Updated upstream
-			var result = await _authenticationService.Register(input);
-			await SendConfirmationEmailAsync(result, input.FullName);
-			return Ok(new { message = "Please check your email to confirm your registration." });
-=======
 			if (!ModelState.IsValid)
 			{
 				return BadRequest();
@@ -54,17 +49,11 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = ex.Message });
 			}
->>>>>>> Stashed changes
 		}
 		[HttpPost("register-technician")]
 		[AllowAnonymous]
 		public async Task<IActionResult> RegisterTechnician([FromBody] RegisterTechnicianRequestDto input)
 		{
-<<<<<<< Updated upstream
-			var result = await _authenticationService.RegisterTechnician(input);
-			await SendConfirmationEmailAsync(result, input.FullName);
-			return Ok(new { message = "Please check your email to confirm your registration." });
-=======
 			if (!ModelState.IsValid)
 			{
 				return BadRequest();
@@ -83,7 +72,6 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = ex.Message });
 			}
->>>>>>> Stashed changes
 		}
 		private async Task SendConfirmationEmailAsync(RegisterResponseDto result, string fullName)
 		{
