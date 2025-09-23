@@ -14,22 +14,20 @@ using System.Threading;
 
 namespace HSP.Service.Implementations
 {
-	public class AuthenticationService : IAuthenticationService
+	public class AuthenticationService : BaseService, IAuthenticationService
 	{
 		private readonly IUserRepository _userRepository;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
-		private readonly IUnitOfWork _unitOfWork;
 		private readonly SignInManager<AppUser> _signInManager;
 		private readonly IConfiguration _configuration;
 
 		public AuthenticationService(IUserRepository userRepository, IConfiguration configuration,
 			IRepository<TechnicianProfile, Guid> technicianRepository, IUnitOfWork unitOfWork,
-			SignInManager<AppUser> signInManager)
+			SignInManager<AppUser> signInManager) : base(unitOfWork)
 		{
 			_userRepository = userRepository;
 			_configuration = configuration;
 			_technicianRepository = technicianRepository;
-			_unitOfWork = unitOfWork;
 			_signInManager = signInManager;
 		}
 
@@ -57,7 +55,7 @@ namespace HSP.Service.Implementations
 			{
 				throw new UnauthorizedAccessException("Invalid password.");
 			}
-			var token = GenerateJwtToken(user.Id.ToString(), user.FullName, user.Email ?? "");
+			var token = await GenerateJwtToken(user);
 			return new LoginResponseDto
 			{
 				JwtToken = token,
@@ -104,21 +102,25 @@ namespace HSP.Service.Implementations
 					throw new Exception("User login failed");
 				}
 			}
-			var token = GenerateJwtToken(user.Id.ToString(), user.FullName, user.Email);
+			var token = await GenerateJwtToken(user);
 			return new LoginResponseDto
 			{
 				JwtToken = token
 			};
 		}
-		private string GenerateJwtToken(string userId, string fullName, string email)
+		private async Task<string> GenerateJwtToken(AppUser user)
 		{
-			var claims = new[]
+			var roles = await _userRepository.GetRolesAsync(user);
+			var claims = new List<Claim>
 			{
-						new Claim(ClaimTypes.NameIdentifier, userId),
-						new Claim(ClaimTypes.Email, email),
-						new Claim(ClaimTypes.Name, fullName),
+						new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+						new Claim(ClaimTypes.Email, user.Email),
+						new Claim(ClaimTypes.Name, user.FullName),
 				};
-
+			foreach (var role in roles)
+			{
+				claims.Add(new Claim(ClaimTypes.Role, role));
+			}
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]));
 			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
