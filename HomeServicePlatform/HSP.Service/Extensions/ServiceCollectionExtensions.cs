@@ -1,4 +1,5 @@
-﻿using HSP.Service.Implementations;
+﻿using HSP.Core.Interfaces;
+using HSP.Service.Implementations;
 using HSP.Service.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +11,12 @@ namespace HSP.Service.Extensions
 		{
 			services.AddScoped<IAuthenticationService, AuthenticationService>();
 			services.AddScoped<IEmailService, EmailService>();
+			services.AddScoped<IHomeService, HomeService>();
+			services.AddScoped<IGeocodingService, GoogleMapsGeocodingService>();
+			services.AddHttpClient("GoogleMaps", client =>
+			{
+				client.BaseAddress = new Uri("https://maps.googleapis.com/maps/api/");
+			});
 			return services;
 		}
 	}
