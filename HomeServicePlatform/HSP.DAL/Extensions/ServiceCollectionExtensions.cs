@@ -34,6 +34,7 @@ namespace HSP.DAL.Extensions
 			});
 			services.AddScoped<IUserRepository, UserRepository>();
 			services.AddScoped<IRepository<TechnicianProfile, Guid>, Repository<TechnicianProfile,Guid>>();
+			services.AddScoped<IRepository<Home, Guid>, Repository<Home, Guid>>();
 			services.AddScoped<IUnitOfWork, UnitOfWork>();
 			services.AddScoped<IDbInitializer, DbInitializer>();
 			return services;
