@@ -1,12 +1,15 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Dtos.HomeDto;
+using HSP.Core.Dtos.Shared;
+using HSP.Core.Entities;
 using HSP.Core.Interfaces;
+using HSP.DAL.Extensions;
 using HSP.Service.Dtos.HomeDto;
 using HSP.Service.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Implementations
 {
-	public class HomeService : BaseService,IHomeService
+	public class HomeService : BaseService, IHomeService
 	{
 		private readonly IRepository<Home, Guid> _homeRepository;
 		private readonly IGeocodingService _geocodingService;
@@ -38,6 +41,23 @@ namespace HSP.Service.Implementations
 			await _homeRepository.AddAsync(newHome);
 			await _unitOfWork.SaveChangesAsync();
 			return newHome.Id;
+		}
+
+		public async Task<PagedList<HomeDto>> GetAllHomesAsync(HomeInput input)
+		{
+			var query = _homeRepository.GetAll()
+				.WhereIf(!string.IsNullOrEmpty(input.Search), x=>x.Name.ToLower().Contains(input.Search.ToLower()));
+			var homeDtos = query.Select(x => new HomeDto
+			{
+				Id = x.Id,
+				Name = x.Name,
+				Address = x.Address,
+				Latitude = x.Latitude,
+				Longitude = x.Longitude,
+				CustomerProfileId = x.CustomerProfileId,
+			});
+			var pagedHomes = await homeDtos.ToPagedListAsync(input);
+			return pagedHomes;
 		}
 	}
 }
