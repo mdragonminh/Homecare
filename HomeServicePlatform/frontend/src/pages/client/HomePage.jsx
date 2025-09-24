@@ -94,7 +94,7 @@ const testimonials = [
 // --- Main HomePage --- //
 export function HomePage({ onShowLogin, onShowRegister,loggedInUser, onLogout }) {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header onShowLogin={onShowLogin} onShowRegister={onShowRegister}  loggedInUser={loggedInUser}

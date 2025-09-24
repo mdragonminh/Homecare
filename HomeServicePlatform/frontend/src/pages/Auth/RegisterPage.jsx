@@ -171,10 +171,6 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
     }));
   };
 
-  const handleGoogleRegister = () => {
-    alert("👉 Chức năng Đăng ký bằng Google sẽ được tích hợp sau.");
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 relative">
       {/* Background Pattern */}
@@ -408,23 +404,6 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                     )}
                   </button>
                 </form>
-
-                {/* Divider */}
-                <div className="my-6 flex items-center">
-                  <hr className="flex-1 border-gray-200" />
-                  <span className="px-4 text-sm font-medium text-gray-500 bg-white">Hoặc</span>
-                  <hr className="flex-1 border-gray-200" />
-                </div>
-
-                {/* Google Register */}
-                <button
-                  type="button"
-                  onClick={handleGoogleRegister}
-                  className="w-full py-3 border-2 border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-3 focus:ring-gray-500/20 transition-all flex items-center justify-center space-x-3"
-                >
-                  <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" className="w-5 h-5" />
-                  <span>Đăng ký với Google</span>
-                </button>
 
                 {/* Login Link */}
                 <div className="mt-6 text-center">

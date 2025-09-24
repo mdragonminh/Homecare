@@ -1,19 +1,16 @@
 // src/routes/AppRoutes.jsx
 import { Routes, Route, useNavigate } from "react-router-dom";
-import { useEffect } from "react"; 
 import { LoginPage } from "../pages/Auth/LoginPage";
 import RegisterPage from "../pages/Auth/RegisterPage";
 import ClientRoutes from "./ClientRoutes";
 import TechnicianRegister from "../pages/Auth/TechnicianRegister";
+import { GoogleCallbackPage } from "../pages/Auth/GoogleCallbackPage";
 
 export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (loggedInUser) {
-      navigate("/");
-    }
-  }, [loggedInUser, navigate]); 
+  // Xóa bỏ useEffect để tránh vòng lặp vô hạn
+  // Việc chuyển hướng sẽ được xử lý tại GoogleCallbackPage
 
   const handleShowLogin = () => {
     navigate("/login");
@@ -59,6 +56,12 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
             onBackToHome={() => navigate("/")}
           />
         }
+      />
+      
+      {/* Google Callback */}
+      <Route
+        path="/google-callback"
+        element={<GoogleCallbackPage onLoginSuccess={onLoginSuccess} />}
       />
 
       {/* Technician Register */}

@@ -1,9 +1,11 @@
 import { Home, LogIn, UserPlus, LogOut, User, Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { AuthButtons } from "./AuthButtons";
 
 export function Header({ onShowLogin, onShowRegister, loggedInUser, onLogout }) {
   const navigate = useNavigate();
-
+  console.log("Header loggedInUser:", loggedInUser);
+  
   return (
     <header className="bg-white shadow border-b sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -34,50 +36,15 @@ export function Header({ onShowLogin, onShowRegister, loggedInUser, onLogout }) 
             </a>
           </nav>
 
-          {/* Auth Buttons */}
+          {/* Auth Buttons Component */}
           <div className="flex items-center space-x-3">
-            {loggedInUser ? (
-              // Nếu người dùng đã đăng nhập
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-700 flex items-center">
-                  <User className="w-4 h-4 mr-2" />
-                  Xin chào, <span className="font-semibold ml-1">{loggedInUser.name || loggedInUser.fullName || loggedInUser.email}</span>
-                </span>
-                <button
-                  onClick={onLogout}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Đăng xuất
-                </button>
-              </div>
-            ) : (
-              // Nếu chưa đăng nhập
-              <>
-                <button
-                  onClick={onShowLogin}
-                  className="hidden sm:flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600"
-                >
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Đăng nhập
-                </button>
-                <button
-                  onClick={onShowRegister}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Đăng ký
-                </button>
-                {/* Nút Tham gia kỹ thuật viên */}
-                <button
-                  onClick={() => navigate("/technician-register")}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
-                >
-                  <Wrench className="w-4 h-4 mr-2" />
-                  Tham gia kỹ thuật viên
-                </button>
-              </>
-            )}
+            <AuthButtons
+              loggedInUser={loggedInUser}
+              onShowLogin={onShowLogin}
+              onShowRegister={onShowRegister}
+              onLogout={onLogout}
+              navigate={navigate}
+            />
           </div>
         </div>
       </div>
