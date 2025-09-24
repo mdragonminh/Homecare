@@ -1,71 +1,119 @@
-// src/services/authApi.jsx
 import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
 
-const API_URL = "http://localhost:9999"; // json-server
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const authApi = {
-  // Đăng nhập
-  login: async ({ email, password }) => {
+  // --- Đăng ký ---
+  register: async ({ email, fullName, password }) => {
     try {
-      const res = await axios.get(`${API_URL}/users`, {
-        params: { email, password },
+      const res = await axios.post(`${API_URL}/Authentication/register`, {
+        email,
+        fullName,
+        password,
+        confirmPassword: password,
       });
-
-      if (res.data.length > 0) {
-        const user = res.data[0];
-
-        // Tạo token mới mỗi lần login
-        const newToken = `jwt-token-${uuidv4()}`;
-        await axios.patch(`${API_URL}/users/${user.id}`, { token: newToken });
-
-        return { success: true, user: { ...user, token: newToken }, token: newToken };
-      } else {
-        return { success: false, message: "Sai email hoặc mật khẩu" };
-      }
+      return { success: true, data: res.data };
     } catch (error) {
-      console.error("Lỗi khi đăng nhập:", error);
-      return { success: false, message: "Có lỗi xảy ra khi đăng nhập" };
-    }
-  },
-
-  // Đăng ký
-  register: async (userData) => {
-    try {
-      // Check email đã tồn tại chưa
-      const existingUsers = await axios.get(`${API_URL}/users`, {
-        params: { email: userData.email },
-      });
-
-      if (existingUsers.data.length > 0) {
-        return { success: false, message: "Email đã tồn tại" };
-      }
-
-      const newUser = {
-        ...userData,
-        id: uuidv4(),
-        token: `jwt-token-${uuidv4()}`,
+      console.error("Register error:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          "Đăng ký thất bại",
       };
-
-      const res = await axios.post(`${API_URL}/users`, newUser);
-
-      return { success: true, user: res.data, token: res.data.token };
-    } catch (error) {
-      console.error("Lỗi khi đăng ký:", error);
-      return { success: false, message: "Có lỗi xảy ra khi đăng ký" };
     }
   },
 
-  // Lấy user từ token
-  getUserByToken: async (token) => {
+  // --- Đăng nhập ---
+  // --- Đăng nhập ---
+login: async ({ email, password }) => {
+  try {
+    const res = await axios.post(`${API_URL}/Authentication/login`, {
+      email,
+      password,
+    });
+
+    if (res.status === 200 && res.data?.jwtToken) {
+      const mappedData = {
+        userId: res.data.userId,
+        email: res.data.email,
+        jwtToken: res.data.jwtToken,
+      };
+      return { success: true, data: mappedData };
+    } else {
+      return { success: false, message: "Đăng nhập thất bại. Sai định dạng phản hồi từ server." };
+    }
+  } catch (error) {
+    console.error("🔥 Login error:", error);
+
+    // Lấy thông báo lỗi từ backend
+    const backendMessage = error.response?.data?.message;
+
+    return {
+      success: false,
+      message:
+        backendMessage ||
+        (error.response?.status === 401
+          ? "Email hoặc mật khẩu không đúng."
+          : "Đăng nhập thất bại. Vui lòng thử lại."),
+    };
+  }
+},
+
+  // --- Xác thực email ---
+  confirmEmail: async (token) => {
     try {
-      const res = await axios.get(`${API_URL}/users`, {
-        params: { token },
+      const res = await axios.post(`${API_URL}/Authentication/confirm-email`, {
+        token,
       });
-      return res.data.length > 0 ? res.data[0] : null;
+      return { success: true, data: res.data };
     } catch (error) {
-      console.error("Lỗi khi lấy user bằng token:", error);
-      return null;
+      console.error("Confirm email error:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          "Xác thực email thất bại",
+      };
     }
   },
+
+  // --- Google Login: chuyển hướng người dùng đến Google ---
+  googleLogin: () => {
+    window.location.href = `${API_URL}/Authentication/google-login`;
+  },
+
+  // --- Parse Google token từ URL (optional helper function) ---
+  parseGoogleTokenFromUrl: (searchParams) => {
+    try {
+      const token = new URLSearchParams(searchParams).get('token');
+      if (!token) {
+        return { success: false, message: "No token found in URL" };
+      }
+      
+      return { 
+        success: true, 
+        data: { 
+          jwtToken: token 
+        } 
+      };
+    } catch (error) {
+      console.error("Parse token error:", error);
+      return {
+        success: false,
+        message: "Failed to parse token from URL"
+      };
+    }
+  },
+
+  // --- Logout ---
+  logout: () => {
+    localStorage.removeItem("jwtToken");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("email");
+    localStorage.removeItem("name");
+    localStorage.removeItem("role");
+  }
 };

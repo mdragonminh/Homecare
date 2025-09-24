@@ -107,7 +107,7 @@ export function HomePage({ onShowLogin, onShowRegister,loggedInUser, onLogout })
             {/* Text */}
             <div className="space-y-6">
               <h1 className="text-4xl lg:text-5xl font-bold">
-                Quản lý dịch vụ <span className="text-blue-600">HomeCare</span> dễ dàng hơn
+                Quản lý dịch vụ <span className="text-blue-600">HomeServicePlatform</span> dễ dàng hơn
               </h1>
               <p className="text-lg text-gray-600">
                 Kết nối chủ nhà và thợ sửa chữa chỉ trong một nền tảng. Đặt lịch, thanh toán, quản lý dễ dàng.

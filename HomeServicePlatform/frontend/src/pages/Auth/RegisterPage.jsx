@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, User, Phone, Home, ArrowLeft, Wrench, Shield, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Home, ArrowLeft, Wrench, Shield, CheckCircle } from "lucide-react";
 import { authApi } from "../../services/authApi.jsx";
 
 export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
@@ -8,43 +8,156 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    phone: "",
     password: "",
     confirmPassword: "",
     userType: "",
     agreeToTerms: false,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState(""); // success | warning | error
+
+  // Password validation function
+  const validatePassword = (password) => {
+    const minLength = 8;
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+
+    if (password.length < minLength) {
+      return "Mật khẩu phải có ít nhất 8 ký tự!";
+    }
+    if (!hasSpecialChar) {
+      return "Mật khẩu phải chứa ít nhất một ký tự đặc biệt!";
+    }
+    if (!hasUpperCase) {
+      return "Mật khẩu phải chứa ít nhất một chữ cái in hoa!";
+    }
+    if (!hasLowerCase) {
+      return "Mật khẩu phải chứa ít nhất một chữ cái thường!";
+    }
+    if (!hasNumber) {
+      return "Mật khẩu phải chứa ít nhất một số!";
+    }
+    return null;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setMessage("");
+
+    // Kiểm tra các trường bắt buộc
+    if (!formData.fullName) {
+      setMessage("❌ Vui lòng nhập họ và tên!");
+      setMessageType("error");
+      return;
+    }
+    if (!formData.email) {
+      setMessage("❌ Vui lòng nhập email!");
+      setMessageType("error");
+      return;
+    }
+    if (!formData.password) {
+      setMessage("❌ Vui lòng nhập mật khẩu!");
+      setMessageType("error");
+      return;
+    }
+    if (!formData.confirmPassword) {
+      setMessage("❌ Vui lòng nhập xác nhận mật khẩu!");
+      setMessageType("error");
+      return;
+    }
+
+    // Validate password requirements
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      setMessage(`❌ ${passwordError}`);
+      setMessageType("error");
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp!");
+      setMessage("❌ Mật khẩu xác nhận không khớp!");
+      setMessageType("error");
       return;
     }
 
     if (!formData.agreeToTerms) {
-      setError("Vui lòng đồng ý với điều khoản sử dụng!");
+      setMessage("❌ Vui lòng đồng ý với điều khoản sử dụng!");
+      setMessageType("error");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Logic call API đăng ký sẽ được tích hợp ở đây
       const res = await authApi.register(formData);
+
       if (res.success) {
-        console.log("✅ Đăng ký thành công:", res);
-        onSwitchToLogin(); // Chuyển về trang đăng nhập sau khi đăng ký thành công
+        setMessage("✅ Bạn đã đăng ký thành công, mời bạn vào xác nhận email.");
+        setMessageType("success");
+
+        setFormData({
+          fullName: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          userType: "",
+          agreeToTerms: false,
+        });
+
+        // ⏳ Tự động chuyển sang Login sau 2.5 giây
+        setTimeout(() => {
+          onSwitchToLogin();
+        }, 2500);
       } else {
-        setError(res.message);
+        // Xử lý các loại lỗi khác nhau
+        const errorMessage = res.message?.toLowerCase() || '';
+        
+        if (errorMessage.includes('email') && (errorMessage.includes('tồn tại') || errorMessage.includes('exist'))) {
+          setMessage("❌ Email đã được sử dụng, vui lòng sử dụng email khác.");
+          setMessageType("error");
+        } else if (errorMessage.includes('username') && (errorMessage.includes('tồn tại') || errorMessage.includes('exist'))) {
+          setMessage("❌ Tên người dùng đã được sử dụng, vui lòng thử tên khác.");
+          setMessageType("error");
+        } else if (errorMessage.includes('user creation failed')) {
+          setMessage("❌ Không thể tạo tài khoản. Email hoặc thông tin đã được sử dụng.");
+          setMessageType("error");
+        } else if (res.message) {
+          // Hiển thị message từ server
+          setMessage(`❌ ${res.message}`);
+          setMessageType("error");
+        } else {
+          setMessage("❌ Có lỗi xảy ra, vui lòng thử lại.");
+          setMessageType("error");
+        }
       }
     } catch (err) {
-      console.error(err);
-      setError("Có lỗi xảy ra khi đăng ký");
+      console.error('Register error:', err);
+      
+      // Xử lý lỗi từ response
+      if (err.response?.data?.message) {
+        const serverMessage = err.response.data.message.toLowerCase();
+        
+        if (serverMessage.includes('email') && serverMessage.includes('exist')) {
+          setMessage("❌ Email đã được sử dụng, vui lòng sử dụng email khác.");
+        } else if (serverMessage.includes('username') && serverMessage.includes('exist')) {
+          setMessage("❌ Tên người dùng đã được sử dụng, vui lòng thử tên khác.");
+        } else if (serverMessage.includes('user creation failed')) {
+          setMessage("❌ Không thể tạo tài khoản. Email hoặc thông tin đã được sử dụng.");
+        } else {
+          setMessage(`❌ ${err.response.data.message}`);
+        }
+      } else if (err.response?.status === 400) {
+        setMessage("❌ Thông tin đăng ký không hợp lệ, vui lòng kiểm tra lại.");
+      } else if (err.response?.status === 500) {
+        setMessage("❌ Lỗi server, vui lòng thử lại sau.");
+      } else {
+        setMessage("❌ Lỗi kết nối đến server, vui lòng kiểm tra mạng và thử lại.");
+      }
+      
+      setMessageType("error");
     } finally {
       setLoading(false);
     }
@@ -72,7 +185,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
       </div>
 
       <div className="relative z-10 min-h-screen flex">
-        {/* Left Panel - Brand & Features */}
+        {/* Left Panel - Brand */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative z-10 flex flex-col justify-center px-12 py-16">
@@ -124,15 +237,11 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                 </div>
               </div>
             </div>
-
-            {/* Decorative elements */}
-            <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-white/5 rounded-full"></div>
-            <div className="absolute top-20 -left-10 w-40 h-40 bg-white/5 rounded-full"></div>
           </div>
         </div>
 
         {/* Right Panel - Register Form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
           <div className="w-full max-w-md">
             {/* Back to Home Button */}
             <button
@@ -151,22 +260,25 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                   <Home className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">Đăng ký tài khoản</h2>
-                <p className="text-gray-500">
-                  Tạo tài khoản mới để bắt đầu sử dụng HomeServicePlatform
-                </p>
+                <p className="text-gray-500">Tạo tài khoản mới để bắt đầu sử dụng HomeServicePlatform</p>
               </div>
 
-              {/* Form */}
-              <div className="px-8 pb-8">
-                {error && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                    <p className="text-red-600 text-sm font-medium">{error}</p>
+              {/* Scrollable Form Container */}
+              <div className="px-8 pb-6 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100">
+                {message && (
+                  <div
+                    className={`mb-6 p-4 rounded-xl text-sm font-medium sticky top-0 z-10
+                      ${messageType === "success" ? "bg-green-50 text-green-700 border border-green-200" : ""}
+                      ${messageType === "warning" ? "bg-yellow-50 text-yellow-700 border border-yellow-200" : ""}
+                      ${messageType === "error" ? "bg-red-50 text-red-700 border border-red-200" : ""}`}
+                  >
+                    {message}
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Full Name */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700">
                       Họ và tên
                     </label>
@@ -179,14 +291,13 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                         placeholder="Nhập họ và tên"
                         value={formData.fullName}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                        required
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       />
                     </div>
                   </div>
 
                   {/* Email */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
                       Email
                     </label>
@@ -199,34 +310,13 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                         placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Phone */}
-                  <div className="space-y-2">
-                    <label htmlFor="phone" className="block text-sm font-semibold text-gray-700">
-                      Số điện thoại
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        placeholder="0123 456 789"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                        required
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       />
                     </div>
                   </div>
 
                   {/* Password */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
                       Mật khẩu
                     </label>
@@ -239,8 +329,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                         placeholder="Nhập mật khẩu"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                        required
+                        className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       />
                       <button
                         type="button"
@@ -250,10 +339,13 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
+                    <p className="text-xs text-gray-500">
+                      Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt
+                    </p>
                   </div>
 
                   {/* Confirm Password */}
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700">
                       Xác nhận mật khẩu
                     </label>
@@ -266,8 +358,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                         placeholder="Nhập lại mật khẩu"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                        required
+                        className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       />
                       <button
                         type="button"
@@ -288,7 +379,6 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                       checked={formData.agreeToTerms}
                       onChange={handleInputChange}
                       className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                      required
                     />
                     <label htmlFor="agreeToTerms" className="text-sm font-medium text-gray-600 cursor-pointer">
                       Tôi đồng ý với{" "}
@@ -320,7 +410,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                 </form>
 
                 {/* Divider */}
-                <div className="my-8 flex items-center">
+                <div className="my-6 flex items-center">
                   <hr className="flex-1 border-gray-200" />
                   <span className="px-4 text-sm font-medium text-gray-500 bg-white">Hoặc</span>
                   <hr className="flex-1 border-gray-200" />
@@ -330,14 +420,14 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                 <button
                   type="button"
                   onClick={handleGoogleRegister}
-                  className="w-full py-4 border-2 border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-3 focus:ring-gray-500/20 transition-all flex items-center justify-center space-x-3"
+                  className="w-full py-3 border-2 border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-3 focus:ring-gray-500/20 transition-all flex items-center justify-center space-x-3"
                 >
                   <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" className="w-5 h-5" />
                   <span>Đăng ký với Google</span>
                 </button>
 
                 {/* Login Link */}
-                <div className="mt-8 text-center">
+                <div className="mt-6 text-center">
                   <span className="text-gray-600">Đã có tài khoản? </span>
                   <button
                     className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"

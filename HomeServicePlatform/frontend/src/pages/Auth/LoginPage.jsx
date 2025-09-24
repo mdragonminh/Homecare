@@ -1,7 +1,8 @@
-// src/pages/Auth/LoginPage.jsx
 import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, Home, ArrowLeft, Wrench, Shield, CheckCircle } from "lucide-react";
 import { authApi } from "../../services/authApi.jsx";
+import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 
 export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,6 +13,7 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -24,27 +26,76 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!formData.email) {
+    setError("Vui lòng nhập email.");
+    return;
+  }
+  if (!formData.password) {
+    setError("Vui lòng nhập mật khẩu.");
+    return;
+  }
     setLoading(true);
 
     try {
       const res = await authApi.login(formData);
+
       if (res.success) {
-        console.log("✅ Login thành công:", res);
-        localStorage.setItem("token", res.token);
-        onLoginSuccess(res.user);
+        const { jwtToken } = res.data;
+        const decoded = jwtDecode(jwtToken);
+        const userId = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+        const email = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
+        const name = decoded["name"] || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
+        const role = decoded["role"] || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+
+        localStorage.setItem("jwtToken", jwtToken);
+        if (userId) localStorage.setItem("userId", userId);
+        if (email) localStorage.setItem("email", email);
+        if (name) localStorage.setItem("name", name);
+        if (role) localStorage.setItem("role", role);
+
+        onLoginSuccess({ userId, email, jwtToken, name, role });
+        navigate('/');
+      
       } else {
-        setError(res.message);
+        // Đây là trường hợp API trả về success: false
+        setError(res.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
       }
     } catch (err) {
-      console.error(err);
-      setError("Có lỗi xảy ra khi đăng nhập");
+      console.error("Lỗi đăng nhập:", err);
+
+      if (err.response) {
+        const status = err.response.status;
+        const backendMessage = err.response.data?.message;
+
+        if (status === 400) {
+          setError(backendMessage || "Yêu cầu không hợp lệ. Vui lòng kiểm tra thông tin đã nhập.");
+        } else if (status === 401) {
+          // Kiểm tra thông báo lỗi cụ thể từ backend và việt hóa
+          if (backendMessage && backendMessage.includes("Invalid credentials")) {
+            setError("Email hoặc mật khẩu bạn nhập không đúng. Vui lòng thử lại.");
+          } else if (backendMessage && backendMessage.includes("Invalid password")) {
+            // Thêm trường hợp này để đảm bảo xử lý cả "Invalid password"
+            setError("Mật khẩu bạn nhập không đúng. Vui lòng thử lại.");
+          } else {
+            setError("Tài khoản của bạn chưa được kích hoạt. Vui lòng kiểm tra email để xác thực.");
+          }
+        } else if (status === 500) {
+          setError("Hệ thống đang gặp sự cố. Vui lòng thử lại sau ít phút.");
+        } else {
+          setError(`Lỗi ${status}: Đã xảy ra lỗi không xác định.`);
+        }
+      } else if (err.request) {
+        setError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet của bạn.");
+      } else {
+        setError("Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = () => {
-    alert("👉 Chức năng Đăng nhập bằng Google sẽ được tích hợp sau.");
+    authApi.googleLogin();  
   };
 
   const handleForgotPassword = () => {
@@ -61,14 +112,13 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
       </div>
 
       <div className="relative z-10 min-h-screen flex">
-        {/* Left Panel - Brand & Features */}
+        {/* Left Panel */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative z-10 flex flex-col justify-center px-12 py-16">
-            {/* Logo & Brand */}
             <div className="mb-12">
               <div className="flex items-center mb-6">
-                <div className="w-14 h-14 bg-white/20 backdrop-blur-lg rounded-2xl flex items-center justify-center mr-4">
+                <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mr-4">
                   <Wrench className="w-8 h-8 text-white" />
                 </div>
                 <div>
@@ -81,10 +131,9 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
               </p>
             </div>
 
-            {/* Features */}
             <div className="space-y-6">
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                   <CheckCircle className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -94,7 +143,7 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
               </div>
 
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -104,7 +153,7 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
               </div>
 
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                   <Home className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -113,39 +162,29 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
                 </div>
               </div>
             </div>
-
-            {/* Decorative elements */}
-            <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-white/5 rounded-full"></div>
-            <div className="absolute top-20 -left-10 w-40 h-40 bg-white/5 rounded-full"></div>
           </div>
         </div>
 
         {/* Right Panel - Login Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
           <div className="w-full max-w-md">
-            {/* Back to Home Button */}
             <button
-              className="mb-8 flex items-center text-gray-600 hover:text-blue-600 transition-colors group"
+              className="mb-8 flex items-center text-gray-600 hover:text-blue-600"
               onClick={onBackToHome}
             >
-              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Về trang chủ
             </button>
 
-            {/* Login Card */}
             <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
-              {/* Header */}
               <div className="px-8 pt-8 pb-6 text-center">
                 <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg mb-6">
                   <Home className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">Chào mừng trở lại!</h2>
-                <p className="text-gray-500">
-                  Đăng nhập để tiếp tục sử dụng dịch vụ HomeServicePlatform
-                </p>
+                <p className="text-gray-500">Đăng nhập để tiếp tục sử dụng dịch vụ</p>
               </div>
 
-              {/* Form */}
               <div className="px-8 pb-8">
                 {error && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -154,46 +193,40 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Email Input */}
+                  {/* Email */}
                   <div className="space-y-2">
-                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
-                      Email
-                    </label>
+                    <label className="block text-sm font-semibold text-gray-700">Email</label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
-                        id="email"
                         name="email"
                         type="email"
-                        placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                        required
+                        placeholder="name@example.com"
+                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-xl focus:ring focus:ring-blue-200"
+                        
                       />
                     </div>
                   </div>
 
-                  {/* Password Input */}
+                  {/* Password */}
                   <div className="space-y-2">
-                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
-                      Mật khẩu
-                    </label>
+                    <label className="block text-sm font-semibold text-gray-700">Mật khẩu</label>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
-                        id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Nhập mật khẩu"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                        required
+                        placeholder="Nhập mật khẩu"
+                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border rounded-xl focus:ring focus:ring-blue-200"
+                        
                       />
                       <button
                         type="button"
-                        className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -203,87 +236,60 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
 
                   {/* Remember & Forgot */}
                   <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-2">
                       <input
-                        id="rememberMe"
-                        name="rememberMe"
                         type="checkbox"
+                        name="rememberMe"
                         checked={formData.rememberMe}
                         onChange={handleInputChange}
-                        className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                        className="w-4 h-4"
                       />
-                      <label htmlFor="rememberMe" className="text-sm font-medium text-gray-600">
-                        Ghi nhớ đăng nhập
-                      </label>
-                    </div>
-
+                      <span className="text-sm text-gray-600">Ghi nhớ đăng nhập</span>
+                    </label>
                     <button
                       type="button"
-                      className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
                       onClick={handleForgotPassword}
+                      className="text-sm text-blue-600 hover:underline"
                     >
                       Quên mật khẩu?
                     </button>
                   </div>
 
-                  {/* Login Button */}
+                  {/* Login button */}
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-3 focus:ring-blue-500/20 transform hover:scale-[1.02] transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                   >
-                    {loading ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        <span>Đang đăng nhập...</span>
-                      </div>
-                    ) : (
-                      "Đăng nhập"
-                    )}
+                    {loading ? "Đang đăng nhập..." : "Đăng nhập"}
                   </button>
                 </form>
 
-                {/* Divider */}
-                <div className="my-8 flex items-center">
+                <div className="my-6 flex items-center">
                   <hr className="flex-1 border-gray-200" />
-                  <span className="px-4 text-sm font-medium text-gray-500 bg-white">Hoặc</span>
+                  <span className="px-4 text-sm text-gray-500">Hoặc</span>
                   <hr className="flex-1 border-gray-200" />
                 </div>
 
-                {/* Google Login */}
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
-                  className="w-full py-4 border-2 border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-3 focus:ring-gray-500/20 transition-all flex items-center justify-center space-x-3"
+                  className="w-full py-3 border rounded-lg flex items-center justify-center space-x-2 hover:bg-gray-50"
                 >
-                  <img
-                    src="https://www.svgrepo.com/show/355037/google.svg"
-                    alt="Google"
-                    className="w-5 h-5"
-                  />
+                  <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" className="w-5 h-5" />
                   <span>Đăng nhập với Google</span>
                 </button>
 
-                {/* Register Link */}
-                <div className="mt-8 text-center">
+                <div className="mt-6 text-center">
                   <span className="text-gray-600">Chưa có tài khoản? </span>
                   <button
-                    className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
                     onClick={onSwitchToRegister}
+                    className="text-blue-600 font-semibold hover:underline"
                   >
                     Đăng ký ngay
                   </button>
                 </div>
               </div>
-            </div>
-
-            {/* Mobile Brand */}
-            <div className="lg:hidden mt-8 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Wrench className="w-6 h-6 text-blue-600 mr-2" />
-                <span className="text-xl font-bold text-gray-900">HomeCare</span>
-              </div>
-              <p className="text-sm text-gray-500">Dịch vụ sửa chữa nhà chuyên nghiệp</p>
             </div>
           </div>
         </div>
