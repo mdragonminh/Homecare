@@ -5,6 +5,7 @@ using HSP.Core.Interfaces;
 using HSP.DAL.Extensions;
 using HSP.Service.Dtos.HomeDto;
 using HSP.Service.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Implementations
@@ -12,18 +13,25 @@ namespace HSP.Service.Implementations
 	public class HomeService : BaseService, IHomeService
 	{
 		private readonly IRepository<Home, Guid> _homeRepository;
+		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly IGeocodingService _geocodingService;
-		public HomeService(IGeocodingService geocodingService,IRepository<Home, Guid> homeRepository, IUnitOfWork unitOfWork) : base(unitOfWork)
+		public HomeService(IRepository<CustomerProfile, Guid> customerProfileRepository, IGeocodingService geocodingService,IRepository<Home, Guid> homeRepository, IUnitOfWork unitOfWork) : base(unitOfWork)
 		{
+			_customerProfileRepository = customerProfileRepository;
 			_geocodingService = geocodingService;
 			_homeRepository = homeRepository;
 		}
 
-		public async Task<Guid> CreateHomeAsync(CreateHomeDto input)
+		public async Task<Guid> CreateHomeAsync(CreateHomeDto input, string userId)
 		{
 			if(input == null)
 			{
 				throw new ArgumentException("input parameter can not be null");
+			}
+			var customerProfile = await _customerProfileRepository.GetAll().FirstOrDefaultAsync(x => x.UserId.ToString().Equals(userId));
+			if (customerProfile == null)
+			{
+				throw new Exception($"Không tìm thấy CustomerProfile cho UserId");
 			}
 			var coordinates = await _geocodingService.GetCoordinatesForAddressAsync(input.Address);
 			if (coordinates == null)
@@ -36,7 +44,8 @@ namespace HSP.Service.Implementations
 				Name = input.Name,
 				Latitude = coordinates.Latitude,
 				Longitude = coordinates.Longitude,
-				CustomerProfileId = input.CustomerProfileId,
+				CustomerProfileId = customerProfile.Id,
+				DateCreated = DateTime.UtcNow
 			};
 			await _homeRepository.AddAsync(newHome);
 			await _unitOfWork.SaveChangesAsync();

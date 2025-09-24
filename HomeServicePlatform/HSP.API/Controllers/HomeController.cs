@@ -3,6 +3,7 @@ using HSP.Service.Dtos.HomeDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HSP.API.Controllers
 {
@@ -16,15 +17,21 @@ namespace HSP.API.Controllers
 			_homeService = homeService;
 		}
 		[HttpPost("create-home")]
+		[Authorize]
 		public async Task<IActionResult> CreateHome([FromBody] CreateHomeDto input)
 		{
-			if (!ModelState.IsValid)
-			{
-				return BadRequest();
-			}
 			try
 			{
-				var homeId = await _homeService.CreateHomeAsync(input);
+				if (!ModelState.IsValid)
+				{
+					return BadRequest(ModelState);
+				}
+				var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+				if (string.IsNullOrEmpty(userIdString))
+				{
+					return Unauthorized(); 
+				}
+				var homeId = await _homeService.CreateHomeAsync(input, userIdString);
 				return Ok(new { HomeId = homeId });
 			}
 			catch (ArgumentException ex)
