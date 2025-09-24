@@ -1,35 +1,69 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
+import { authApi }  from "./services/authApi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
 
-  useEffect(() => {
-    // Khi reload trang -> lấy user từ localStorage
-    const token = localStorage.getItem("token");
+  const updateLoggedInUserFromStorage = () => {
+    const jwtToken = localStorage.getItem("jwtToken");
     const userId = localStorage.getItem("userId");
     const email = localStorage.getItem("email");
+    const name = localStorage.getItem("name");
+    const role = localStorage.getItem("role");
 
-    if (token && userId && email) {
-      setLoggedInUser({ userId, email, token });
+    if (jwtToken && userId && email) {
+      setLoggedInUser({ 
+        userId, 
+        email, 
+        jwtToken,
+        name: name || "",
+        role: role || ""
+      });
+    } else {
+      setLoggedInUser(null);
     }
+  };
+
+  useEffect(() => {
+    updateLoggedInUserFromStorage();
+    const handleStorageChange = () => updateLoggedInUserFromStorage();
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const handleLoginSuccess = (data) => {
-    // data sẽ là { userId, jwtToken, email } từ authApi
-    setLoggedInUser({
-      userId: data.userId,
-      email: data.email,
-      token: data.jwtToken,
-    });
+    const token = data.jwtToken || data.token;
+    if (token) {
+      localStorage.setItem("jwtToken", token);
+      localStorage.setItem("userId", data.userId);
+      localStorage.setItem("email", data.email);
+      localStorage.setItem("name", data.name || "");
+      localStorage.setItem("role", data.role || "");
+
+      setLoggedInUser({
+        userId: data.userId,
+        email: data.email,
+        jwtToken: token,
+        name: data.name || "",
+        role: data.role || ""
+      });
+
+      
+      toast.success("Đăng nhập thành công!");
+    }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("email");
+    authApi.logout();
     setLoggedInUser(null);
+
+    
+    toast.success("Đăng xuất thành công!");
   };
 
   return (
@@ -40,7 +74,8 @@ export default function App() {
           onLoginSuccess={handleLoginSuccess}
           onLogout={handleLogout}
         />
-        
+        {/* Container để hiển thị toast */}
+        <ToastContainer position="top-right" autoClose={500} />
       </div>
     </BrowserRouter>
   );
