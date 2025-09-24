@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HSP.Core\HSP.Core.csproj" />
+    <ProjectReference Include="..\HSP.DAL\HSP.DAL.csproj" />
   </ItemGroup>
 
 </Project>
