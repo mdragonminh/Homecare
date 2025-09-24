@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, Home, ArrowLeft, Wrench, Shield, CheckCircle } from "lucide-react";
 import { authApi } from "../../services/authApi.jsx";
 import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 
 export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,6 +13,7 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -22,73 +24,78 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError(""); // Đặt lại lỗi trước khi gửi yêu cầu mới
-  setLoading(true);
+    e.preventDefault();
+    setError("");
+    if (!formData.email) {
+    setError("Vui lòng nhập email.");
+    return;
+  }
+  if (!formData.password) {
+    setError("Vui lòng nhập mật khẩu.");
+    return;
+  }
+    setLoading(true);
 
-  try {
-    const res = await authApi.login(formData);
+    try {
+      const res = await authApi.login(formData);
 
-    if (res.success) {
-  const { jwtToken } = res.data;
+      if (res.success) {
+        const { jwtToken } = res.data;
+        const decoded = jwtDecode(jwtToken);
+        const userId = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+        const email = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
+        const name = decoded["name"] || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
+        const role = decoded["role"] || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 
-  // ✅ Decode token
-  const decoded = jwtDecode(jwtToken);
+        localStorage.setItem("jwtToken", jwtToken);
+        if (userId) localStorage.setItem("userId", userId);
+        if (email) localStorage.setItem("email", email);
+        if (name) localStorage.setItem("name", name);
+        if (role) localStorage.setItem("role", role);
 
-  // Lấy thông tin từ claims
-  const userId = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
-  const email = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
-  const name = decoded["name"] || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
-  const role = decoded["role"] || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
-
-  // Lưu vào localStorage
-  localStorage.setItem("token", jwtToken);
-  if (userId) localStorage.setItem("userId", userId);
-  if (email) localStorage.setItem("email", email);
-  if (name) localStorage.setItem("name", name);
-  if (role) localStorage.setItem("role", role);
-
-  // Gửi dữ liệu về App
-  onLoginSuccess({ userId, email, token: jwtToken, name, role });
-} else {
-      // Đăng nhập thất bại, hiển thị thông báo lỗi từ API
-      if (res.message && res.message.includes("Invalid credentials")) {
-        setError("Email hoặc mật khẩu bạn nhập không đúng. Vui lòng thử lại.");
+        onLoginSuccess({ userId, email, jwtToken, name, role });
+        navigate('/');
+      
       } else {
+        // Đây là trường hợp API trả về success: false
         setError(res.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
       }
-    }
-  } catch (err) {
-    console.error("Lỗi đăng nhập:", err);
+    } catch (err) {
+      console.error("Lỗi đăng nhập:", err);
 
-    if (err.response) {
-      const status = err.response.status;
-
-      if (status === 400) {
+      if (err.response) {
+        const status = err.response.status;
         const backendMessage = err.response.data?.message;
-        if (backendMessage && backendMessage.includes("Invalid credentials")) {
-          setError("Email hoặc mật khẩu bạn nhập không đúng. Vui lòng thử lại.");
+
+        if (status === 400) {
+          setError(backendMessage || "Yêu cầu không hợp lệ. Vui lòng kiểm tra thông tin đã nhập.");
+        } else if (status === 401) {
+          // Kiểm tra thông báo lỗi cụ thể từ backend và việt hóa
+          if (backendMessage && backendMessage.includes("Invalid credentials")) {
+            setError("Email hoặc mật khẩu bạn nhập không đúng. Vui lòng thử lại.");
+          } else if (backendMessage && backendMessage.includes("Invalid password")) {
+            // Thêm trường hợp này để đảm bảo xử lý cả "Invalid password"
+            setError("Mật khẩu bạn nhập không đúng. Vui lòng thử lại.");
+          } else {
+            setError("Tài khoản của bạn chưa được kích hoạt. Vui lòng kiểm tra email để xác thực.");
+          }
+        } else if (status === 500) {
+          setError("Hệ thống đang gặp sự cố. Vui lòng thử lại sau ít phút.");
         } else {
-          setError("Yêu cầu không hợp lệ. Vui lòng kiểm tra thông tin đã nhập.");
+          setError(`Lỗi ${status}: Đã xảy ra lỗi không xác định.`);
         }
-      } else if (status === 401) {
-        setError("Tài khoản của bạn chưa được kích hoạt. Vui lòng kiểm tra email để xác thực.");
-      } else if (status === 500) {
-        setError("Hệ thống đang gặp sự cố. Vui lòng thử lại sau ít phút.");
+      } else if (err.request) {
+        setError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet của bạn.");
       } else {
-        setError(err.response.data?.message || `Lỗi ${status}: Đã xảy ra lỗi không xác định.`);
+        setError("Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.");
       }
-    } else if (err.request) {
-      setError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet của bạn.");
-    } else {
-      setError("Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false); // Luôn tắt trạng thái loading
-  }
-};
+  };
+
   const handleGoogleLogin = () => {
-    alert("👉 Chức năng Đăng nhập bằng Google sẽ được tích hợp sau.");
+    authApi.googleLogin();  
   };
 
   const handleForgotPassword = () => {
@@ -198,7 +205,7 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
                         onChange={handleInputChange}
                         placeholder="name@example.com"
                         className="w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-xl focus:ring focus:ring-blue-200"
-                        required
+                        
                       />
                     </div>
                   </div>
@@ -215,7 +222,7 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess }) 
                         onChange={handleInputChange}
                         placeholder="Nhập mật khẩu"
                         className="w-full pl-12 pr-12 py-4 bg-gray-50 border rounded-xl focus:ring focus:ring-blue-200"
-                        required
+                        
                       />
                       <button
                         type="button"
