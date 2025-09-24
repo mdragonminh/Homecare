@@ -1,4 +1,5 @@
-﻿using HSP.Service.Dtos.HomeDto;
+﻿using HSP.Core.Dtos.HomeDto;
+using HSP.Service.Dtos.HomeDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +35,12 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = ex.Message });
 			}
+		}
+		[HttpGet("list-home")]
+		public async Task<IActionResult> GetAllHomes([FromQuery] HomeInput input)
+		{
+			var homes = await _homeService.GetAllHomesAsync(input);
+			return Ok(homes);
 		}
 	}
 }
