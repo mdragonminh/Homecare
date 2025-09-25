@@ -2,6 +2,7 @@
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces;
+using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 
 namespace HSP.Service.Implementations
@@ -36,9 +37,24 @@ namespace HSP.Service.Implementations
 			return newHomeItem.Id;
 		}
 
-		public Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input)
+		public async Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input, Guid homeId)
 		{
-			throw new NotImplementedException();
+			var query = _homeItemRepository.GetAll()
+				.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
+				.Where(x => x.HomeId == homeId);
+			var homeItemDto = query.Select(x=>new HomeItemDto
+			{
+				Id = x.Id,
+				Name = x.Name,
+				Brand = x.Brand,
+				Notes = x.Notes,
+				ModelNumber = x.ModelNumber,
+				SerialNumber = x.SerialNumber,
+				Type = x.Type,
+				HomeId = x.HomeId
+			});
+			var pageHomeItems = await homeItemDto.ToPagedListAsync(input);
+			return pageHomeItems;
 		}
 	}
 }
