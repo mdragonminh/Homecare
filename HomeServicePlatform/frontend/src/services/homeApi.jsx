@@ -39,7 +39,6 @@ export const homeApi = {
     customerProfileId,
   }) => {
     try {
-      // Nếu latitude hoặc longitude chưa có, gọi Geocoding API
       let lat = latitude;
       let lng = longitude;
       if (!lat || !lng) {
@@ -47,6 +46,12 @@ export const homeApi = {
         if (!geocodeResult.success) throw new Error(geocodeResult.message);
         lat = geocodeResult.latitude;
         lng = geocodeResult.longitude;
+      }
+      
+      // Lấy token ngay trước khi gọi API
+      const jwtToken = localStorage.getItem("jwtToken"); // Đã sửa tên key
+      if (!jwtToken) {
+          throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
       }
 
       const res = await axios.post(
@@ -59,7 +64,10 @@ export const homeApi = {
           customerProfileId,
         },
         {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${jwtToken}`, // Đã sửa tên biến
+          },
         }
       );
       if (ENABLE_DEBUG) console.log("Create home success:", res.data);
@@ -73,6 +81,42 @@ export const homeApi = {
           error.response?.data?.error ||
           error.message ||
           "Tạo home thất bại",
+      };
+    }
+  },
+  
+getHomesOfCurrentUser: async (page = 1, pageSize = 10, searchTerm = "", type = "all") => {
+    try {
+      const jwtToken = localStorage.getItem("jwtToken");
+      if (!jwtToken) {
+        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
+      }
+      
+      const queryParams = new URLSearchParams({
+        pageNumber: page,
+        pageSize: pageSize,
+        ...(searchTerm && { searchTerm }),
+        ...(type !== "all" && { type }),
+      }).toString();
+      
+      const url = `${API_URL}/Home/list-home?${queryParams}`;
+
+      const res = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
+
+      if (ENABLE_DEBUG) console.log("Get homes success:", res.data);
+
+      // Trả về toàn bộ đối tượng data, không chỉ items
+      return { success: true, data: res.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error("Get homes error:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Lỗi khi lấy danh sách địa chỉ",
       };
     }
   },

@@ -105,14 +105,14 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
                   </button>
 
                   <button
-                    onClick={() => handleNavigate('/add-address')}
+                    onClick={() => handleNavigate('/list-home')}
                     className="flex items-center w-full px-3 py-2.5 text-sm text-gray-700 rounded-xl hover:bg-gray-50 hover:text-blue-600 transition-all duration-200 group"
                   >
                     <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-blue-100 transition-colors">
                       <MapPin className="w-4 h-4 group-hover:text-blue-600" />
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="font-medium">Thêm địa chỉ</div>
+                      <div className="font-medium">Quản lý nhà</div>
                       <div className="text-xs text-gray-500">Thêm địa chỉ giao hàng mới</div>
                     </div>
                   </button>

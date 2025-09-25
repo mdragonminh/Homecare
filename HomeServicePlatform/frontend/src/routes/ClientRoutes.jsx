@@ -1,8 +1,8 @@
 // src/routes/ClientRoutes.jsx
 import { Routes, Route } from "react-router-dom";
 import { HomePage } from "../pages/client/HomePage";
+import HomeManagementPage from "../pages/client/address/HomeManagementPage";
 import AddAddressPage from "../pages/client/address/AddAddressPage";
-
 
 export default function ClientRoutes({ loggedInUser, onLogout, onShowLogin, onShowRegister }) {
   return (
@@ -17,6 +17,10 @@ export default function ClientRoutes({ loggedInUser, onLogout, onShowLogin, onSh
             onShowRegister={onShowRegister}
           />
         }
+      />
+      <Route
+        path="/list-home"
+        element={<HomeManagementPage loggedInUser={loggedInUser} />}
       />
       <Route
         path="/add-address"
