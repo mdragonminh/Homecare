@@ -37,6 +37,7 @@ namespace HSP.Service.Implementations
 				Latitude = coordinates.Latitude,
 				Longitude = coordinates.Longitude,
 				CustomerProfileId = input.CustomerProfileId,
+				DateCreated = DateTime.UtcNow
 			};
 			await _homeRepository.AddAsync(newHome);
 			await _unitOfWork.SaveChangesAsync();

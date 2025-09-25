@@ -13,6 +13,7 @@ namespace HSP.Service.Extensions
 			services.AddScoped<IEmailService, EmailService>();
 			services.AddScoped<IHomeService, HomeService>();
 			services.AddScoped<IGeocodingService, GoogleMapsGeocodingService>();
+			services.AddScoped<IHomeItemService, HomeItemService>();
 			services.AddHttpClient("GoogleMaps", client =>
 			{
 				client.BaseAddress = new Uri("https://maps.googleapis.com/maps/api/");
