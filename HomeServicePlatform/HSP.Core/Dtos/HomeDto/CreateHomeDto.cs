@@ -1,5 +1,4 @@
-﻿using HSP.Core.Entities;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Dtos.HomeDto
 {

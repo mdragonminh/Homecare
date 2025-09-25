@@ -23,7 +23,7 @@ namespace HSP.Core.Entities
 		public CustomerProfile CustomerProfile { get; set; } = null!;
 		public ICollection<HomeItem> HomeItems { get; set; } = new List<HomeItem>();
 		public bool IsDeleted { get ; set; }
-		DateTime IDateTracking.DateCreated { get; set; }
-		DateTime IDateTracking.DateModified { get; set; }
+		public DateTime DateCreated { get; set; }
+		public DateTime DateModified { get; set; }
 	}
 }
