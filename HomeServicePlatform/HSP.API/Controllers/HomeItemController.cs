@@ -36,5 +36,11 @@ namespace HSP.API.Controllers
 				return BadRequest(new { message = ex.Message });
 			}
 		}
+		[HttpGet("list-home-item")]
+		public async Task<IActionResult> ListHomeItem([FromQuery] HomeItemInput input, [FromQuery] Guid homeId)
+		{
+			var result = await _homeItemService.GetAllHomeItemsAsync(input, homeId);
+			return Ok(result);
+		}
 	}
 }
