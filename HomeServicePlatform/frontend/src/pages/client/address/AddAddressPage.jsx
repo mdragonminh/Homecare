@@ -1,12 +1,22 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, ArrowLeft, Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { MapPin, ArrowLeft, Check, Compass, Map } from "lucide-react";
 import { toast } from "react-toastify";
 import { homeApi } from "../../../services/homeApi";
-import L from "leaflet"; // Import Leaflet
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-export default function AddAddressPage() {
-  const navigate = useNavigate();
+const customMarkerIcon = new L.Icon({
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+L.Marker.prototype.options.icon = customMarkerIcon;
+
+export default function AddAddressPage({ onClose }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markerInstance = useRef(null);
@@ -15,31 +25,50 @@ export default function AddAddressPage() {
   const [formData, setFormData] = useState({
     name: "",
     address: "",
-    latitude: 21.0285, // Tọa độ mặc định cho Hà Nội
+    latitude: 21.0285,
     longitude: 105.8542,
     customerProfileId: localStorage.getItem("userId") || "",
   });
 
-  // Debug: Kiểm tra userId
+  const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false); // ✅ Thêm state để kiểm soát trạng thái lưu
+
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    console.log("Current userId from localStorage:", userId);
-    if (!userId) {
-      toast.error("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", 
-        { position: "top-right" });
+    if (!localStorage.getItem("userId")) {
+      toast.error("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", {
+        position: "top-right",
+      });
     }
   }, []);
 
-  // Cập nhật state khi input thay đổi
   const updateForm = (field, value) => {
-    setFormData((prev) => {
-      const newData = { ...prev, [field]: value };
-      console.log("Form data updated:", newData); // Debug
-      return newData;
-    });
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  // Khởi tạo bản đồ Leaflet
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Tên địa chỉ không được để trống";
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = "Tên địa chỉ phải có ít nhất 3 ký tự";
+    }
+
+    if (!formData.address.trim()) {
+      newErrors.address = "Địa chỉ không được để trống";
+    } else if (formData.address.trim().length < 10) {
+      newErrors.address = "Địa chỉ quá ngắn, vui lòng nhập chi tiết hơn";
+    }
+
+    if (!formData.latitude || !formData.longitude) {
+      newErrors.map = "Bạn chưa chọn vị trí trên bản đồ";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -49,32 +78,36 @@ export default function AddAddressPage() {
     );
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap",
+      attribution: "© OpenStreetMap contributors",
     }).addTo(mapInstance.current);
 
     markerInstance.current = L.marker([formData.latitude, formData.longitude], {
       draggable: true,
+      icon: customMarkerIcon,
     }).addTo(mapInstance.current);
 
-    markerInstance.current.on("dragend", (e) => {
+    markerInstance.current.on("dragend", async (e) => {
       const pos = e.target.getLatLng();
-      console.log("Marker moved to:", pos.lat, pos.lng); // Debug
-      setFormData((prev) => ({ 
-        ...prev, 
-        latitude: pos.lat, 
-        longitude: pos.lng 
-      }));
+      setFormData((prev) => ({ ...prev, latitude: pos.lat, longitude: pos.lng }));
+
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}`
+        );
+        const data = await res.json();
+        if (data?.display_name) {
+          setFormData((prev) => ({ ...prev, address: data.display_name }));
+        }
+      } catch (error) {
+        console.error("Reverse geocoding error:", error);
+      }
     });
 
     return () => {
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
-      }
+      mapInstance.current?.remove();
     };
   }, []);
 
-  // Khởi tạo Google Maps Autocomplete
   useEffect(() => {
     if (!addressInputRef.current || !window.google?.maps) return;
 
@@ -97,8 +130,6 @@ export default function AddAddressPage() {
       const newLng = place.geometry.location.lng();
       const newAddress = place.formatted_address;
 
-      console.log("Place selected:", { newAddress, newLat, newLng }); // Debug
-
       setFormData((prev) => ({
         ...prev,
         address: newAddress,
@@ -106,166 +137,139 @@ export default function AddAddressPage() {
         longitude: newLng,
       }));
 
-      if (markerInstance.current && mapInstance.current) {
-        markerInstance.current.setLatLng([newLat, newLng]);
-        mapInstance.current.setView([newLat, newLng], 16);
-      }
+      markerInstance.current.setLatLng([newLat, newLng]);
+      mapInstance.current.setView([newLat, newLng], 16);
     });
   }, []);
 
-  // Cập nhật vị trí marker khi formData thay đổi
-  useEffect(() => {
-    if (markerInstance.current) {
-      markerInstance.current.setLatLng([formData.latitude, formData.longitude]);
-      mapInstance.current?.setView([formData.latitude, formData.longitude], 13);
-    }
-  }, [formData.latitude, formData.longitude]);
-
   const handleSave = async () => {
-    // Validation chi tiết
-    if (!formData.name || formData.name.trim() === '') {
-      toast.error("Vui lòng nhập tên home!", { position: "top-right", autoClose: 3000 });
-      return;
-    }
-    
-    if (!formData.address || formData.address.trim() === '') {
-      toast.error("Vui lòng nhập địa chỉ!", { position: "top-right", autoClose: 3000 });
-      return;
-    }
-    
-    if (!formData.customerProfileId || formData.customerProfileId.trim() === '') {
-      toast.error("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!", 
-        { position: "top-right", autoClose: 3000 });
+    if (!validateForm()) {
+      toast.error("Vui lòng kiểm tra lại thông tin nhập!", { position: "top-right" });
       return;
     }
 
-    if (!formData.latitude || !formData.longitude || 
-        isNaN(formData.latitude) || isNaN(formData.longitude)) {
-      toast.error("Tọa độ không hợp lệ. Vui lòng chọn vị trí trên bản đồ!", 
-        { position: "top-right", autoClose: 3000 });
-      return;
-    }
-
-    console.log("Submitting form data:", formData); // Debug
+    // ✅ Ngăn chặn việc bấm nút nhiều lần
+    if (isSaving) return;
+    setIsSaving(true);
 
     try {
       const res = await homeApi.createHome(formData);
-
       if (res.success) {
         toast.success("Đã lưu địa chỉ thành công!", { position: "top-right", autoClose: 2000 });
-        setTimeout(() => navigate("/"), 2000); // Delay để người dùng thấy toast
+        onClose();
       } else {
-        console.error("API Error:", res.message); // Debug
-        toast.error(res.message || "Có lỗi xảy ra khi lưu địa chỉ", 
-          { position: "top-right", autoClose: 3000 });
+        toast.error(res.message || "Có lỗi xảy ra khi lưu địa chỉ", { position: "top-right" });
       }
     } catch (error) {
-      console.error("Unexpected error:", error); // Debug
-      toast.error("Có lỗi không mong muốn xảy ra", 
-        { position: "top-right", autoClose: 3000 });
+      console.error("Error creating home:", error);
+      toast.error("Có lỗi không mong muốn xảy ra", { position: "top-right" });
+    } finally {
+      // ✅ Đảm bảo luôn tắt trạng thái đang lưu
+      setIsSaving(false);
     }
   };
 
-  const handleCancel = () => navigate("/");
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-teal-700 to-emerald-500">
-      <div className="bg-white shadow-lg px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
-        <button onClick={handleCancel} className="flex items-center gap-2 text-blue-600">
+    <div className="min-h-screen bg-gradient-to-b from-blue-100 via-white to-blue-50 p-4 md:p-8 lg:p-12">
+      {/* Header */}
+      <header className="bg-white rounded-2xl shadow-lg px-6 py-4 mb-8 flex items-center justify-between sticky top-0 z-50">
+        <button
+          onClick={onClose}
+          className="flex items-center gap-2 text-gray-600 hover:text-blue-700 transition-colors duration-300"
+          disabled={isSaving}
+        >
           <ArrowLeft className="w-5 h-5" />
-          Quay lại
+          <span className="font-semibold text-sm md:text-base">Quay lại</span>
         </button>
-        <h1 className="text-2xl font-bold text-blue-900">Thêm home mới</h1>
-      </div>
+        <h1 className="flex-1 text-center text-xl md:text-2xl font-bold text-blue-800">Thêm địa chỉ mới</h1>
+        <div className="w-5 h-5" />
+      </header>
 
-      <div className="max-w-7xl mx-auto p-6 lg:grid lg:grid-cols-2 lg:gap-8">
-        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              Tên home <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => updateForm("name", e.target.value)}
-              className="w-full border rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500"
-              placeholder="Ví dụ: Nhà riêng, Văn phòng..."
-            />
+      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+        {/* Form */}
+        <section className="bg-white rounded-3xl shadow-xl p-6 md:p-8 space-y-6">
+          <div className="flex items-center gap-3">
+            <Compass className="w-6 h-6 text-blue-600" />
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-800">Thông tin địa chỉ</h2>
           </div>
 
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              Địa chỉ <span className="text-red-500">*</span>
-            </label>
-            <input
-              ref={addressInputRef}
-              type="text"
-              value={formData.address}
-              onChange={(e) => updateForm("address", e.target.value)}
-              className="w-full border rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500"
-              placeholder="Nhập địa chỉ hoặc tìm kiếm..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-600">Latitude</label>
-              <input
-                type="number"
-                step="any"
-                placeholder="21.0285"
-                value={formData.latitude}
-                onChange={(e) => updateForm("latitude", parseFloat(e.target.value) || 0)}
-                className="border rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500"
-              />
+          <div className="space-y-5">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Tên địa chỉ <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => updateForm("name", e.target.value)}
+                  placeholder="Ví dụ: Nhà riêng, Văn phòng..."
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg text-sm focus:ring-2 transition-colors ${
+                    errors.name ? "border-red-500 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500"
+                  }`}
+                />
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              </div>
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-600">Longitude</label>
-              <input
-                type="number"
-                step="any"
-                placeholder="105.8542"
-                value={formData.longitude}
-                onChange={(e) => updateForm("longitude", parseFloat(e.target.value) || 0)}
-                className="border rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500"
-              />
+
+            {/* Address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Địa chỉ chi tiết <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  ref={addressInputRef}
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => updateForm("address", e.target.value)}
+                  placeholder="Nhập địa chỉ hoặc tìm kiếm trên bản đồ..."
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg text-sm focus:ring-2 transition-colors ${
+                    errors.address ? "border-red-500 focus:ring-red-500" : "border-gray-200 focus:ring-blue-500"
+                  }`}
+                />
+                <Map className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              </div>
+              {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
             </div>
           </div>
 
-          {/* Debug info - có thể xóa sau khi fix */}
-          <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-            Debug: UserID = {formData.customerProfileId || "Chưa có"}
-          </div>
-
-          <div className="flex gap-4 pt-6">
+          <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
-              onClick={handleCancel}
-              className="flex-1 border rounded-lg py-3 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              onClick={onClose}
+              className="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+              disabled={isSaving}
             >
-              Hủy
+              Hủy bỏ
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 bg-blue-600 text-white rounded-lg py-3 text-sm font-medium hover:bg-blue-700"
+              className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+              disabled={isSaving}
             >
-              <Check className="inline w-4 h-4 mr-2" />
-              Lưu home
+              {isSaving ? (
+                <div className="w-5 h-5 border-2 border-white border-t-2 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Check className="w-5 h-5" />
+              )}
+              {isSaving ? "Đang lưu..." : "Lưu địa chỉ"}
             </button>
           </div>
-        </div>
+        </section>
 
-        <div className="bg-white rounded-2xl shadow-xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <MapPin className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-medium text-gray-700">
-              Kéo pin trên bản đồ hoặc nhập địa chỉ để chọn vị trí chính xác
+        {/* Map */}
+        <section className="bg-white rounded-3xl shadow-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Map className="w-6 h-6 text-blue-600" />
+            <span className="text-sm md:text-base font-semibold text-gray-800">
+              Kéo pin để chọn vị trí chính xác
             </span>
           </div>
-          <div
-            ref={mapRef}
-            className="w-full h-[500px] rounded-lg border border-gray-200 shadow-inner"
-          />
-        </div>
+          <div ref={mapRef} className="w-full h-[400px] md:h-[600px] rounded-xl border border-gray-100 shadow-inner" />
+          {errors.map && <p className="text-red-500 text-xs mt-2 text-center">{errors.map}</p>}
+        </section>
       </div>
     </div>
   );
