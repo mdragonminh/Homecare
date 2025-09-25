@@ -18,17 +18,21 @@ namespace HSP.Service.Implementations
 	{
 		private readonly IUserRepository _userRepository;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
+		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly SignInManager<AppUser> _signInManager;
 		private readonly IConfiguration _configuration;
 
 		public AuthenticationService(IUserRepository userRepository, IConfiguration configuration,
-			IRepository<TechnicianProfile, Guid> technicianRepository, IUnitOfWork unitOfWork,
+			IRepository<TechnicianProfile, Guid> technicianRepository,
+			IRepository<CustomerProfile, Guid> customerProfileRepository,
+			IUnitOfWork unitOfWork,
 			SignInManager<AppUser> signInManager) : base(unitOfWork)
 		{
 			_userRepository = userRepository;
 			_configuration = configuration;
 			_technicianRepository = technicianRepository;
 			_signInManager = signInManager;
+			_customerProfileRepository = customerProfileRepository;
 		}
 
 		public async Task<bool> ConfirmEmail(Guid userId, string token)
@@ -66,47 +70,90 @@ namespace HSP.Service.Implementations
 			var info = await _signInManager.GetExternalLoginInfoAsync();
 			if (info == null)
 			{
-				throw new Exception("Error loading external login information during Google authentication");
+				throw new Exception("Lỗi tải thông tin đăng nhập từ Google.");
 			}
-			var user = await _userRepository.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+
+			var user = await FindOrCreateUserAsync(info);
 			if (user == null)
 			{
-				var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-				if (string.IsNullOrEmpty(email))
-				{
-					throw new Exception("Can not find user");
-				}
-
-				user = await _userRepository.FindByEmailAsync(email);
-
-				if (user == null)
-				{
-					user = new AppUser
-					{
-						UserName = email,
-						Email = email,
-						FullName = info.Principal.FindFirstValue(ClaimTypes.Name),
-						EmailConfirmed = true
-					};
-
-					var createResult = await _userRepository.CreateAsync(user);
-					if (!createResult.Succeeded)
-					{
-						throw new Exception("User creation failed");
-					}
-				}
-
-				var addLoginResult = await _userRepository.AddLoginAsync(user, info);
-				if (!addLoginResult.Succeeded)
-				{
-					throw new Exception("User login failed");
-				}
+				throw new Exception("Không thể tìm hoặc tạo người dùng.");
 			}
+
 			var token = await GenerateJwtToken(user);
 			return new LoginResponseDto
 			{
 				JwtToken = token
 			};
+		}
+		private async Task<AppUser> FindOrCreateUserAsync(ExternalLoginInfo info)
+		{
+			var user = await _userRepository.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+			if (user != null)
+			{
+				return user; 
+			}
+
+			var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+			if (string.IsNullOrEmpty(email))
+			{
+				throw new Exception("Không tìm thấy email từ nhà cung cấp dịch vụ.");
+			}
+
+			user = await _userRepository.FindByEmailAsync(email);
+
+			if (user == null)
+			{
+				user = await CreateNewUserAsync(info, email);
+			}
+
+			var addLoginResult = await _userRepository.AddLoginAsync(user, info);
+			if (!addLoginResult.Succeeded)
+			{
+				throw new Exception("Liên kết tài khoản Google thất bại.");
+			}
+			return user;
+		}
+		private async Task<AppUser> CreateNewUserAsync(ExternalLoginInfo info, string email)
+		{
+			var user = new AppUser
+			{
+				UserName = email,
+				Email = email,
+				FullName = info.Principal.FindFirstValue(ClaimTypes.Name),
+				EmailConfirmed = true
+			};
+
+			using var transaction = await _unitOfWork.BeginTransactionAsync();
+			try
+			{
+				var createResult = await _userRepository.CreateAsync(user);
+				if (!createResult.Succeeded)
+				{
+					throw new Exception("Tạo người dùng thất bại.");
+				}
+
+				var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
+				if (!roleResult.Succeeded)
+				{
+					throw new Exception("Gán vai trò cho người dùng thất bại.");
+				}
+
+				var customerProfile = new CustomerProfile
+				{
+					UserId = user.Id,
+					DateCreated = DateTime.UtcNow
+				};
+				await _customerProfileRepository.AddAsync(customerProfile);
+				await _unitOfWork.SaveChangesAsync();
+
+				await transaction.CommitAsync();
+				return user;
+			}
+			catch (Exception)
+			{
+				await transaction.RollbackAsync();
+				throw;
+			}
 		}
 		private async Task<string> GenerateJwtToken(AppUser user)
 		{
