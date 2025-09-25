@@ -17,13 +17,17 @@ namespace HSP.API.Controllers
 		private readonly IAuthenticationService _authenticationService;
 		private readonly IEmailService _emailService;
 		private readonly IConfiguration _configuration;
+		private readonly ICustomerProfileService _customerProfileService;
 		private readonly SignInManager<AppUser> _signInManager;
 
-		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IConfiguration configuration, SignInManager<AppUser> signInManager)
+		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, 
+			IConfiguration configuration, ICustomerProfileService customerProfileService,
+			SignInManager<AppUser> signInManager)
 		{
 			_authenticationService = authenticationService;
 			_emailService = emailService;
 			_configuration = configuration;
+			_customerProfileService = customerProfileService;
 			_signInManager = signInManager;
 		}
 
@@ -147,6 +151,10 @@ namespace HSP.API.Controllers
 			var decodedTokenBytes = Convert.FromBase64String(token);
 			var decodedToken = Encoding.UTF8.GetString(decodedTokenBytes);
 			var success = await _authenticationService.ConfirmEmail(userId, decodedToken);
+			if (success)
+			{
+				await _customerProfileService.CreateCustomerProfileAsync(userId);
+			}
 			return success ? Ok("Email confirmed successfully") : BadRequest("Email confirmation failed");
 		}
 	}
