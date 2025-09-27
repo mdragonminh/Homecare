@@ -65,6 +65,46 @@ namespace HSP.API.Controllers
 				return StatusCode(500, ex.Message);
 			}
 		}
+		[HttpGet("{homeItemId}")]
+		public async Task<IActionResult> GetHomeItemById(Guid homeItemId)
+		{
+			var userId = GetUserId();
+			try
+			{
+				var result = await _homeItemService.GetHomeItemByIdAsync(homeItemId, userId);
+				return Ok(result);
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+		}
+		[HttpPut("{homeItemId}")]
+		public async Task<IActionResult> UpdateHomeItem(Guid homeItemId, [FromBody] UpdateHomeItemDto input)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+			var userId = GetUserId();
+			try
+			{
+				var result = await _homeItemService.UpdateHomeItemAsync(homeItemId, input, userId);
+				return NoContent();
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+		}
 		private string GetUserId()
 		{
 			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);

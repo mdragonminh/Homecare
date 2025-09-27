@@ -74,5 +74,53 @@ namespace HSP.Service.Implementations
 			var pageHomeItems = await homeItemDto.ToPagedListAsync(input);
 			return pageHomeItems;
 		}
+
+		public async Task<HomeItemDto> GetHomeItemByIdAsync(Guid homeItemId, string userId)
+		{
+			var homeItem = await _homeItemRepository.GetAll()
+				.Include(x => x.Home)
+				.ThenInclude(h => h.CustomerProfile)
+				.ThenInclude(cp => cp.User)
+				.FirstOrDefaultAsync(x => x.Id.Equals(homeItemId) && x.Home.CustomerProfile.UserId.ToString().Equals(userId));
+			if (homeItem == null)
+			{
+				throw new ValidationException("Home item not found or you do not have permission to delete this home item.");
+			}
+			var homeItemDto = new HomeItemDto
+			{
+				Id = homeItem.Id,
+				Name = homeItem.Name,
+				Brand = homeItem.Brand,
+				Notes = homeItem.Notes,
+				ModelNumber = homeItem.ModelNumber,
+				SerialNumber = homeItem.SerialNumber,
+				Type = homeItem.Type,
+				HomeId = homeItem.HomeId
+			};
+			return homeItemDto;
+		}
+
+		public async Task<bool> UpdateHomeItemAsync(Guid homeItemId, UpdateHomeItemDto input, string userId)
+		{
+			var homeItem = await _homeItemRepository.GetAll()
+				.Include(x => x.Home)
+				.ThenInclude(h => h.CustomerProfile)
+				.ThenInclude(cp => cp.User)
+				.FirstOrDefaultAsync(x => x.Id.Equals(homeItemId) && x.Home.CustomerProfile.UserId.ToString().Equals(userId));
+			if (homeItem == null)
+			{
+				throw new ValidationException("Home item not found or you do not have permission to delete this home item.");
+			}
+			homeItem.Name = input.Name;
+			homeItem.Brand = input.Brand;
+			homeItem.ModelNumber = input.ModelNumber;
+			homeItem.Notes = input.Notes;
+			homeItem.SerialNumber = input.SerialNumber;
+			homeItem.Type = input.Type;
+			homeItem.HomeId = input.HomeId;
+			homeItem.DateModified = DateTime.UtcNow;
+			await _unitOfWork.SaveChangesAsync();
+			return true;
+		}
 	}
 }
