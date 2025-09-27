@@ -13,15 +13,12 @@ namespace HSP.Service.Implementations
 	public class HomeService : BaseService, IHomeService
 	{
 		private readonly IRepository<Home, Guid> _homeRepository;
-		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly IGeocodingService _geocodingService;
 		public HomeService(IGeocodingService geocodingService, IRepository<Home, Guid> homeRepository,
-			IRepository<CustomerProfile, Guid> customerProfileRepository,
 			IUnitOfWork unitOfWork) : base(unitOfWork)
 		{
 			_geocodingService = geocodingService;
 			_homeRepository = homeRepository;
-			_customerProfileRepository = customerProfileRepository;
 		}
 
 		public async Task<Guid> CreateHomeAsync(CreateHomeDto input, Guid customerProfileId)
