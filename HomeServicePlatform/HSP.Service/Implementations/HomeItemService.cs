@@ -5,6 +5,7 @@ using HSP.Core.Interfaces;
 using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Implementations
 {
@@ -20,7 +21,7 @@ namespace HSP.Service.Implementations
 			_homeRepository = homeRepository;
 		}
 
-		public async Task<Guid> CreateHomeItemAsync(CreateHomeItemDto input)
+		public async Task<Guid> CreateHomeItemAsync(CreateHomeItemDto input, string userId)
 		{
 			if (input == null)
 			{
