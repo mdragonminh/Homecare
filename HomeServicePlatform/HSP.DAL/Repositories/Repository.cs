@@ -31,9 +31,20 @@ namespace HSP.DAL.Repositories
 			return await _context.Set<T>().AnyAsync(predicate);
 		}
 
-		public void Delete(T entity)
+		public void HardDelete(T entity)
 		{
 			_context.Set<T>().Remove(entity);
+		}
+
+		public void SoftDelete(T entity)
+		{
+			if (entity is not IHasSoftedDelete softDeletableEntity)
+			{
+				throw new InvalidOperationException("Entity type does not support soft delete.");
+			}
+
+			softDeletableEntity.IsDeleted = true;
+			_context.Entry(entity).State = EntityState.Modified;
 		}
 
 		public async Task DeleteAsync(K id)
@@ -41,7 +52,7 @@ namespace HSP.DAL.Repositories
 			var entity = await _context.Set<T>().FindAsync(id);
 			if (entity != null)
 			{
-				_context.Set<T>().Remove(entity);
+				SoftDelete(entity);
 			}
 		}
 
