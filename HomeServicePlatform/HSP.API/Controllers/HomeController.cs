@@ -57,7 +57,7 @@ namespace HSP.API.Controllers
 			return Ok(homes);
 		}
 		[HttpDelete("{homeId}")]
-		public async Task<IActionResult> DeleteHome([FromRoute] Guid homeId)
+		public async Task<IActionResult> DeleteHome(Guid homeId)
 		{
 			try
 			{
