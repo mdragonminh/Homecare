@@ -1,14 +1,17 @@
-﻿using HSP.Core.Dtos.HomeDto;
+﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.HomeDto;
 using HSP.Service.Dtos.HomeDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace HSP.API.Controllers
 {
 	[Route("api/[controller]")]
 	[ApiController]
+	[Authorize(Roles = RoleNames.Customer)]
 	public class HomeController : ControllerBase
 	{
 		private readonly IHomeService _homeService;
@@ -17,7 +20,6 @@ namespace HSP.API.Controllers
 			_homeService = homeService;
 		}
 		[HttpPost("create-home")]
-		[Authorize]
 		public async Task<IActionResult> CreateHome([FromBody] CreateHomeDto input)
 		{
 			try
@@ -53,6 +55,28 @@ namespace HSP.API.Controllers
 			}
 			var homes = await _homeService.GetAllHomesAsync(input, userIdString);
 			return Ok(homes);
+		}
+		[HttpDelete("{homeId}")]
+		public async Task<IActionResult> DeleteHome([FromRoute] Guid homeId)
+		{
+			try
+			{
+				var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+				if (string.IsNullOrEmpty(userIdString))
+				{
+					return Unauthorized();
+				}
+				await _homeService.DeleteHomeAsynce(homeId, userIdString);
+				return NoContent();
+			}
+			catch (ValidationException ex)
+			{
+				return NotFound(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500);
+			}
 		}
 	}
 }
