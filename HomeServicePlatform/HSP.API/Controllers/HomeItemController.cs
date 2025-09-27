@@ -4,7 +4,6 @@ using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace HSP.API.Controllers
@@ -44,7 +43,8 @@ namespace HSP.API.Controllers
 		[HttpGet("list-home-item")]
 		public async Task<IActionResult> ListHomeItem([FromQuery] HomeItemInput input, [FromQuery] Guid homeId)
 		{
-			var result = await _homeItemService.GetAllHomeItemsAsync(input, homeId);
+			var userId = GetUserId();
+			var result = await _homeItemService.GetAllHomeItemsAsync(input, homeId, userId);
 			return Ok(result);
 		}
 		[HttpDelete("{homeItemId}")]

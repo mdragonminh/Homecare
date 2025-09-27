@@ -5,16 +5,19 @@ using HSP.Core.Interfaces;
 using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Implementations
 {
 	public class HomeItemService : BaseService, IHomeItemService
 	{
 		private readonly IRepository<HomeItem, Guid> _homeItemRepository;
-		public HomeItemService(IRepository<HomeItem, Guid> homeItemRepository, IUnitOfWork unitOfWork) : base(unitOfWork)
+		private readonly IRepository<Home, Guid> _homeRepository;
+		public HomeItemService(IRepository<HomeItem, Guid> homeItemRepository,
+			IRepository<Home, Guid> homeRepository,
+		IUnitOfWork unitOfWork) : base(unitOfWork)
 		{
 			_homeItemRepository = homeItemRepository;
+			_homeRepository = homeRepository;
 		}
 
 		public async Task<Guid> CreateHomeItemAsync(CreateHomeItemDto input)
@@ -56,10 +59,20 @@ namespace HSP.Service.Implementations
 		}
 
 		public async Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input, Guid homeId)
+		public async Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input, Guid homeId, string userId)
 		{
+			var isOwner = await _homeRepository.GetAll()
+				.Include(h => h.CustomerProfile)
+				.AnyAsync(h => h.Id == homeId && h.CustomerProfile.UserId.ToString() == userId);
+			if (!isOwner)
+			{
+				throw new UnauthorizedAccessException("User does not have access to these home items.");
+			}
 			var query = _homeItemRepository.GetAll()
 				.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
 				.Where(x => x.HomeId == homeId);
+			.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
+			.Where(x => x.HomeId == homeId);
 			var homeItemDto = query.Select(x => new HomeItemDto
 			{
 				Id = x.Id,
