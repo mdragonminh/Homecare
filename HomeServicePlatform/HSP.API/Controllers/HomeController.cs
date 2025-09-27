@@ -22,9 +22,10 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest();
 			}
+			var userId = GetUserById();
 			try
 			{
-				var homeId = await _homeService.CreateHomeAsync(input);
+				var homeId = await _homeService.CreateHomeAsync(input, userId);
 				return Ok(new { HomeId = homeId });
 			}
 			catch (ArgumentException ex)

@@ -2,6 +2,8 @@
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
 namespace HSP.API.Controllers
 {
@@ -22,9 +24,10 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest();
 			}
+			var userId = GetUserId();
 			try
 			{
-				var homeItemId = await _homeItemService.CreateHomeItemAsync(input);
+				var homeItemId = await _homeItemService.CreateHomeItemAsync(input, userId);
 				return Ok(new { HomeItemId = homeItemId });
 			}
 			catch (ArgumentException ex)
