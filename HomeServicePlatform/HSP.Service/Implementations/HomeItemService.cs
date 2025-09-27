@@ -45,8 +45,8 @@ namespace HSP.Service.Implementations
 				.Include(x => x.Home)
 				.ThenInclude(h => h.CustomerProfile)
 				.ThenInclude(cp=>cp.User)
-				.FirstOrDefaultAsync(x=>x.Id.Equals(homeItemId));
-			if (itemToDelete == null || !itemToDelete.Home.CustomerProfile.UserId.ToString().Equals(userId))
+				.FirstOrDefaultAsync(x=>x.Id.Equals(homeItemId) && x.Home.CustomerProfile.UserId.ToString().Equals(userId));
+			if (itemToDelete == null)
 			{
 				throw new ValidationException("Home item not found or you do not have permission to delete this home item.");
 			}
