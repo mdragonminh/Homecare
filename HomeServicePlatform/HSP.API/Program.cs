@@ -55,7 +55,7 @@ namespace HSP.API
 			{
 				options.ClientId = builder.Configuration["Google:ClientId"];
 				options.ClientSecret = builder.Configuration["Google:ClientSecret"];
-			}); ;
+			}); 
 
 			var app = builder.Build();
 
