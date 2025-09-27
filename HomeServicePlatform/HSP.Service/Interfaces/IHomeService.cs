@@ -8,6 +8,8 @@ namespace HSP.Service.Interfaces
 	{
 		public Task<Guid> CreateHomeAsync(CreateHomeDto input, string userId);
 		public Task<PagedList<HomeDto>> GetAllHomesAsync(HomeInput input, string userId);
+		public Task<HomeDto> GetHomeByIdAsync(Guid homeId, string userId);
 		public Task<bool> DeleteHomeAsynce(Guid homeId, string userId);
+		public Task<bool> UpdateHomeAsync(Guid homeId, UpdateHomeDto input, string userId);
 	}
 }

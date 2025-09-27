@@ -81,6 +81,55 @@ namespace HSP.Service.Implementations
 			var pagedHomes = await homeDtos.ToPagedListAsync(input);
 			return pagedHomes;
 		}
+
+		public async Task<HomeDto> GetHomeByIdAsync(Guid homeId, string userId)
+		{
+			var customerProfileId = GetCustomerProfileIdByUserId(userId);
+			var query = await _homeRepository.GetByIdAsync(homeId);
+			if (query == null || !query.CustomerProfileId.Equals(customerProfileId))
+			{
+				throw new ValidationException("Home not found or you do not have permission to view this home.");
+			}
+			var homeDto = new HomeDto
+			{
+				Id = query.Id,
+				Name = query.Name,
+				Address = query.Address,
+				Latitude = query.Latitude,
+				Longitude = query.Longitude,
+				CustomerProfileId = query.CustomerProfileId,
+			};
+			return homeDto;
+		}
+
+		public async Task<bool> UpdateHomeAsync(Guid homeId, UpdateHomeDto input, string userId)
+		{
+			if (input == null)
+			{
+				throw new ArgumentException("input parameter can not be null");
+			}
+			var homeToUpdate = await _homeRepository.GetByIdAsync(homeId);
+			if (homeToUpdate == null)
+			{
+				throw new ValidationException("Home not found.");
+			}
+			homeToUpdate.Name = input.Name;
+			if(homeToUpdate.Address != input.Address)
+			{
+				var coordinates = await _geocodingService.GetCoordinatesForAddressAsync(input.Address);
+				if (coordinates == null)
+				{
+					throw new ValidationException("Could not find coordinates for the provided address.");
+				}
+				homeToUpdate.Address = input.Address;
+				homeToUpdate.Latitude = coordinates.Latitude;
+				homeToUpdate.Longitude = coordinates.Longitude;
+			}
+			homeToUpdate.DateModified = DateTime.UtcNow;
+			await _unitOfWork.SaveChangesAsync();
+			return true;
+		}
+
 		private async Task<Guid> GetCustomerProfileIdByUserId(string userId)
 		{
 			var customerProfile = await _customerProfileRepository.GetAll()
