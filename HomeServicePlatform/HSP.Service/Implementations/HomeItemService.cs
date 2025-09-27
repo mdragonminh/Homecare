@@ -4,6 +4,8 @@ using HSP.Core.Entities;
 using HSP.Core.Interfaces;
 using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Implementations
 {
@@ -17,7 +19,7 @@ namespace HSP.Service.Implementations
 
 		public async Task<Guid> CreateHomeItemAsync(CreateHomeItemDto input)
 		{
-			if(input == null)
+			if (input == null)
 			{
 				throw new ArgumentException("input parameter can not be null");
 			}
@@ -37,12 +39,28 @@ namespace HSP.Service.Implementations
 			return newHomeItem.Id;
 		}
 
+		public async Task<bool> DeleteHomeItemAsync(Guid homeItemId, string userId)
+		{
+			var itemToDelete = await _homeItemRepository.GetAll()
+				.Include(x => x.Home)
+				.ThenInclude(h => h.CustomerProfile)
+				.ThenInclude(cp=>cp.User)
+				.FirstOrDefaultAsync(x=>x.Id.Equals(homeItemId));
+			if (itemToDelete == null || !itemToDelete.Home.CustomerProfile.UserId.ToString().Equals(userId))
+			{
+				throw new ValidationException("Home item not found or you do not have permission to delete this home item.");
+			}
+			await _homeItemRepository.DeleteAsync(homeItemId);
+			await _unitOfWork.SaveChangesAsync();
+			return true;
+		}
+
 		public async Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input, Guid homeId)
 		{
 			var query = _homeItemRepository.GetAll()
 				.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
 				.Where(x => x.HomeId == homeId);
-			var homeItemDto = query.Select(x=>new HomeItemDto
+			var homeItemDto = query.Select(x => new HomeItemDto
 			{
 				Id = x.Id,
 				Name = x.Name,
