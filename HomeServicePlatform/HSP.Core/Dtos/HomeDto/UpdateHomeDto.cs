@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HSP.Core.Entities;
+using System.ComponentModel.DataAnnotations;
 
-namespace HSP.Service.Dtos.HomeDto
+namespace HSP.Core.Dtos.HomeDto
 {
-	public class CreateHomeDto
+	public class UpdateHomeDto 
 	{
 		[Required]
 		[StringLength(100)]
