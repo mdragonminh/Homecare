@@ -1,12 +1,17 @@
-﻿using HSP.Core.Dtos.HomeItemDto;
+﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.HomeItemDto;
 using HSP.Service.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
 namespace HSP.API.Controllers
 {
 	[Route("api/[controller]")]
 	[ApiController]
+	[Authorize(Roles = RoleNames.Customer)]
 	public class HomeItemController : ControllerBase
 	{
 		private readonly IHomeItemService _homeItemService;
@@ -41,6 +46,33 @@ namespace HSP.API.Controllers
 		{
 			var result = await _homeItemService.GetAllHomeItemsAsync(input, homeId);
 			return Ok(result);
+		}
+		[HttpDelete("{homeItemId}")]
+		public async Task<IActionResult> DeleteHomeItem(Guid homeItemId)
+		{
+			var userId = GetUserId();
+			try
+			{
+				var result = await _homeItemService.DeleteHomeItemAsync(homeItemId, userId);
+				return NoContent();
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+		}
+		private string GetUserId()
+		{
+			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (string.IsNullOrEmpty(userIdString))
+			{
+				throw new UnauthorizedAccessException("User is not authenticated.");
+			}
+			return userIdString;
 		}
 	}
 }
