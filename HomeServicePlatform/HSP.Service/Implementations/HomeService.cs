@@ -24,13 +24,12 @@ namespace HSP.Service.Implementations
 			_customerProfileRepository = customerProfileRepository;
 		}
 
-		public async Task<Guid> CreateHomeAsync(CreateHomeDto input, string userId)
+		public async Task<Guid> CreateHomeAsync(CreateHomeDto input, Guid customerProfileId)
 		{
 			if (input == null)
 			{
 				throw new ArgumentException("input parameter can not be null");
 			}
-			var customerProfileId = await GetCustomerProfileIdByUserId(userId);
 			var coordinates = await _geocodingService.GetCoordinatesForAddressAsync(input.Address);
 			if (coordinates == null)
 			{
@@ -52,9 +51,10 @@ namespace HSP.Service.Implementations
 
 		public async Task<bool> DeleteHomeAsynce(Guid homeId, string userId)
 		{
-			var customerProfile = await GetCustomerProfileIdByUserId(userId);
-			var home = await _homeRepository.GetByIdAsync(homeId);
-			if (home == null || !home.CustomerProfileId.Equals(customerProfile))
+			var home = await _homeRepository.GetAll()
+				.Include(x => x.CustomerProfile)
+				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.UserId.ToString().Equals(userId));
+			if (home == null)
 			{
 				throw new ValidationException("Home not found or you do not have permission to delete this home.");
 			}
@@ -65,10 +65,10 @@ namespace HSP.Service.Implementations
 
 		public async Task<PagedList<HomeDto>> GetAllHomesAsync(HomeInput input, string userId)
 		{
-			var customerProfileId = await GetCustomerProfileIdByUserId(userId);
 			var query = _homeRepository.GetAll()
+				.Include(x => x.CustomerProfile)
 			.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
-			.Where(x=>x.CustomerProfileId.Equals(customerProfileId));
+			.Where(x=>x.CustomerProfile.UserId.ToString().Equals(userId));
 			var homeDtos = query.Select(x => new HomeDto
 			{
 				Id = x.Id,
@@ -84,9 +84,10 @@ namespace HSP.Service.Implementations
 
 		public async Task<HomeDto> GetHomeByIdAsync(Guid homeId, string userId)
 		{
-			var customerProfileId = await GetCustomerProfileIdByUserId(userId);
-			var query = await _homeRepository.GetByIdAsync(homeId);
-			if (query == null || !query.CustomerProfileId.Equals(customerProfileId))
+			var query = await _homeRepository.GetAll()
+				.Include(x => x.CustomerProfile)
+				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.UserId.ToString().Equals(userId));
+			if (query == null)
 			{
 				throw new ValidationException("Home not found or you do not have permission to view this home.");
 			}
@@ -108,10 +109,12 @@ namespace HSP.Service.Implementations
 			{
 				throw new ArgumentException("input parameter can not be null");
 			}
-			var homeToUpdate = await _homeRepository.GetByIdAsync(homeId);
+			var homeToUpdate = await _homeRepository.GetAll()
+				.Include(x=>x.CustomerProfile)
+				.FirstOrDefaultAsync(x=> x.Id.Equals(homeId) && x.CustomerProfile.UserId.ToString().Equals(userId));
 			if (homeToUpdate == null)
 			{
-				throw new ValidationException("Home not found.");
+				throw new ValidationException("Home not found or you do not have permission to delete this home.");
 			}
 			homeToUpdate.Name = input.Name;
 			if(homeToUpdate.Address != input.Address)
@@ -128,17 +131,6 @@ namespace HSP.Service.Implementations
 			homeToUpdate.DateModified = DateTime.UtcNow;
 			await _unitOfWork.SaveChangesAsync();
 			return true;
-		}
-
-		private async Task<Guid> GetCustomerProfileIdByUserId(string userId)
-		{
-			var customerProfile = await _customerProfileRepository.GetAll()
-				.FirstOrDefaultAsync(x => x.UserId.ToString().Equals(userId));
-			if (customerProfile == null)
-			{
-				throw new ValidationException("Customer profile not found for the user.");
-			}
-			return customerProfile.Id;
 		}
 	}
 }
