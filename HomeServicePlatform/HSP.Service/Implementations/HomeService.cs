@@ -84,7 +84,7 @@ namespace HSP.Service.Implementations
 
 		public async Task<HomeDto> GetHomeByIdAsync(Guid homeId, string userId)
 		{
-			var customerProfileId = GetCustomerProfileIdByUserId(userId);
+			var customerProfileId = await GetCustomerProfileIdByUserId(userId);
 			var query = await _homeRepository.GetByIdAsync(homeId);
 			if (query == null || !query.CustomerProfileId.Equals(customerProfileId))
 			{
