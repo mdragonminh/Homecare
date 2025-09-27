@@ -2,6 +2,7 @@
 using HSP.Core.Entities;
 using HSP.Core.Interfaces;
 using HSP.Service.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace HSP.Service.Implementations
 {
@@ -27,6 +28,22 @@ namespace HSP.Service.Implementations
 			await _customerProfileRepository.AddAsync(customerProfile);
 			await _unitOfWork.SaveChangesAsync();
 			return customerProfile.Id;
+		}
+
+		public async Task<CustomerProfileDto> GetCustomerProfileByUserIdAsync(string userId)
+		{
+			var customerProfile = await _customerProfileRepository.GetAll()
+				.Where(x => x.UserId.ToString().Equals(userId))
+				.Select(x => new CustomerProfileDto
+				{
+					Id = x.Id,
+					UserId = x.UserId,
+				}).FirstOrDefaultAsync();
+			if (customerProfile == null)
+			{
+				throw new KeyNotFoundException("Customer profile not found for the user.");
+			}
+			return customerProfile;
 		}
 	}
 }

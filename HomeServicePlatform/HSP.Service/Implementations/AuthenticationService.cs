@@ -90,7 +90,7 @@ namespace HSP.Service.Implementations
 			var user = await _userRepository.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
 			if (user != null)
 			{
-				return user; 
+				return user;
 			}
 
 			var email = info.Principal.FindFirstValue(ClaimTypes.Email);
@@ -123,36 +123,38 @@ namespace HSP.Service.Implementations
 				EmailConfirmed = true
 			};
 
-			using var transaction = await _unitOfWork.BeginTransactionAsync();
-			try
+			using (var transaction = await _unitOfWork.BeginTransactionAsync())
 			{
-				var createResult = await _userRepository.CreateAsync(user);
-				if (!createResult.Succeeded)
+				try
 				{
-					throw new Exception("Tạo người dùng thất bại.");
+					var createResult = await _userRepository.CreateAsync(user);
+					if (!createResult.Succeeded)
+					{
+						throw new Exception("Tạo người dùng thất bại.");
+					}
+
+					var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
+					if (!roleResult.Succeeded)
+					{
+						throw new Exception("Gán vai trò cho người dùng thất bại.");
+					}
+
+					var customerProfile = new CustomerProfile
+					{
+						UserId = user.Id,
+						DateCreated = DateTime.UtcNow
+					};
+					await _customerProfileRepository.AddAsync(customerProfile);
+					await _unitOfWork.SaveChangesAsync();
+
+					await transaction.CommitAsync();
+					return user;
 				}
-
-				var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
-				if (!roleResult.Succeeded)
+				catch (Exception)
 				{
-					throw new Exception("Gán vai trò cho người dùng thất bại.");
+					await transaction.RollbackAsync();
+					throw;
 				}
-
-				var customerProfile = new CustomerProfile
-				{
-					UserId = user.Id,
-					DateCreated = DateTime.UtcNow
-				};
-				await _customerProfileRepository.AddAsync(customerProfile);
-				await _unitOfWork.SaveChangesAsync();
-
-				await transaction.CommitAsync();
-				return user;
-			}
-			catch (Exception)
-			{
-				await transaction.RollbackAsync();
-				throw;
 			}
 		}
 		private async Task<string> GenerateJwtToken(AppUser user)
@@ -199,53 +201,55 @@ namespace HSP.Service.Implementations
 
 			if (input.Password != input.ConfirmPassword)
 				throw new ValidationException("Password and Confirm Password do not match");
-			await _unitOfWork.BeginTransactionAsync();
-			try
+			using (var transaction = await _unitOfWork.BeginTransactionAsync())
 			{
-				var user = new AppUser
+				try
 				{
-					Email = input.Email,
-					UserName = input.Email,
-					FullName = input.FullName,
-					EmailConfirmed = false,
-					PhoneNumber = phoneNumber
-				};
+					var user = new AppUser
+					{
+						Email = input.Email,
+						UserName = input.Email,
+						FullName = input.FullName,
+						EmailConfirmed = false,
+						PhoneNumber = phoneNumber
+					};
 
-				var created = await _userRepository.CreateAsync(user, input.Password);
-				if (!created.Succeeded)
-					throw new Exception("User creation failed");
+					var created = await _userRepository.CreateAsync(user, input.Password);
+					if (!created.Succeeded)
+						throw new Exception("User creation failed");
 
-				if (!string.IsNullOrEmpty(role))
-					await _userRepository.AddToRoleAsync(user, role);
+					if (!string.IsNullOrEmpty(role))
+						await _userRepository.AddToRoleAsync(user, role);
 
-				if (role == RoleNames.Technician)
-				{
-					var profile = new TechnicianProfile
+					if (role == RoleNames.Technician)
+					{
+						var profile = new TechnicianProfile
+						{
+							UserId = user.Id,
+							SkillSet = skillSet ?? string.Empty,
+							ExperienceYears = experienceYears ?? 0
+						};
+						await _technicianRepository.AddAsync(profile);
+					}
+
+					await _unitOfWork.SaveChangesAsync();
+
+					var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
+
+					await _unitOfWork.CommitTransactionAsync();
+
+					return new RegisterResponseDto
 					{
 						UserId = user.Id,
-						SkillSet = skillSet ?? string.Empty,
-						ExperienceYears = experienceYears ?? 0
+						Email = user.Email,
+						EmailConfirmToken = token
 					};
-					await _technicianRepository.AddAsync(profile);
 				}
-
-				await _unitOfWork.SaveChangesAsync();
-
-				var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
-
-				await _unitOfWork.CommitTransactionAsync();
-
-				return new RegisterResponseDto
+				catch
 				{
-					UserId = user.Id,
-					Email = user.Email,
-					EmailConfirmToken = token
-				};
-			}
-			catch
-			{
-				await _unitOfWork.RollbackTransactionAsync();
-				throw;
+					await transaction.RollbackAsync();
+					throw;
+				}
 			}
 		}
 	}

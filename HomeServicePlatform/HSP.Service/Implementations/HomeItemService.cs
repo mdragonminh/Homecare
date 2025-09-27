@@ -4,23 +4,30 @@ using HSP.Core.Entities;
 using HSP.Core.Interfaces;
 using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Implementations
 {
 	public class HomeItemService : BaseService, IHomeItemService
 	{
 		private readonly IRepository<HomeItem, Guid> _homeItemRepository;
-		public HomeItemService(IRepository<HomeItem, Guid> homeItemRepository, IUnitOfWork unitOfWork) : base(unitOfWork)
+		private readonly IRepository<Home, Guid> _homeRepository;
+		public HomeItemService(IRepository<HomeItem, Guid> homeItemRepository,
+			IRepository<Home, Guid> homeRepository,
+		IUnitOfWork unitOfWork) : base(unitOfWork)
 		{
 			_homeItemRepository = homeItemRepository;
+			_homeRepository = homeRepository;
 		}
 
-		public async Task<Guid> CreateHomeItemAsync(CreateHomeItemDto input)
+		public async Task<Guid> CreateHomeItemAsync(CreateHomeItemDto input, string userId)
 		{
-			if(input == null)
+			if (input == null)
 			{
 				throw new ArgumentException("input parameter can not be null");
 			}
+			await VerifyHomeOwnershipAsync(input.HomeId, userId);
 			var newHomeItem = new HomeItem
 			{
 				Name = input.Name,
@@ -36,13 +43,20 @@ namespace HSP.Service.Implementations
 			await _unitOfWork.SaveChangesAsync();
 			return newHomeItem.Id;
 		}
-
-		public async Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input, Guid homeId)
+		public async Task<bool> DeleteHomeItemAsync(Guid homeItemId, string userId)
+		{
+			var itemToDelete = await GetOwnedHomeItemAsync(homeItemId, userId);
+			await _homeItemRepository.DeleteAsync(homeItemId);
+			await _unitOfWork.SaveChangesAsync();
+			return true;
+		}
+		public async Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input, Guid homeId, string userId)
 		{
 			var query = _homeItemRepository.GetAll()
 				.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
-				.Where(x => x.HomeId == homeId);
-			var homeItemDto = query.Select(x=>new HomeItemDto
+				.Where(x => x.HomeId == homeId && x.Home.CustomerProfile.UserId.ToString().Equals(userId));
+
+			var homeItemDto = query.Select(x => new HomeItemDto
 			{
 				Id = x.Id,
 				Name = x.Name,
@@ -55,6 +69,60 @@ namespace HSP.Service.Implementations
 			});
 			var pageHomeItems = await homeItemDto.ToPagedListAsync(input);
 			return pageHomeItems;
+		}
+		public async Task<HomeItemDto> GetHomeItemByIdAsync(Guid homeItemId, string userId)
+		{
+			var homeItem = await GetOwnedHomeItemAsync(homeItemId, userId);
+			var homeItemDto = new HomeItemDto
+			{
+				Id = homeItem.Id,
+				Name = homeItem.Name,
+				Brand = homeItem.Brand,
+				Notes = homeItem.Notes,
+				ModelNumber = homeItem.ModelNumber,
+				SerialNumber = homeItem.SerialNumber,
+				Type = homeItem.Type,
+				HomeId = homeItem.HomeId
+			};
+			return homeItemDto;
+		}
+		public async Task<bool> UpdateHomeItemAsync(Guid homeItemId, UpdateHomeItemDto input, string userId)
+		{
+			var homeItem = await GetOwnedHomeItemAsync(homeItemId, userId);
+			homeItem.Name = input.Name;
+			homeItem.Brand = input.Brand;
+			homeItem.ModelNumber = input.ModelNumber;
+			homeItem.Notes = input.Notes;
+			homeItem.SerialNumber = input.SerialNumber;
+			homeItem.Type = input.Type;
+			homeItem.DateModified = DateTime.UtcNow;
+			await _unitOfWork.SaveChangesAsync();
+			return true;
+		}
+		private async Task VerifyHomeOwnershipAsync(Guid homeId, string userId)
+		{
+			var isOwner = await _homeRepository.GetAll()
+					.Include(h => h.CustomerProfile)
+					.AnyAsync(h => h.Id == homeId && h.CustomerProfile.UserId.ToString() == userId);
+			if (!isOwner)
+			{
+				throw new UnauthorizedAccessException("User does not have access to these home items.");
+			}
+		}
+		private async Task<HomeItem> GetOwnedHomeItemAsync(Guid itemId, string userId)
+		{
+			var homeItem = await _homeItemRepository.GetAll()
+					.Include(x => x.Home)
+					.ThenInclude(h => h.CustomerProfile)
+					.ThenInclude(cp => cp.User)
+					.FirstOrDefaultAsync(i => i.Id == itemId && i.Home.CustomerProfile.UserId.ToString() == userId);
+
+			if (homeItem == null)
+			{
+				throw new ValidationException("Home item not found or you do not have permission to delete this home item.");
+			}
+
+			return homeItem;
 		}
 	}
 }
