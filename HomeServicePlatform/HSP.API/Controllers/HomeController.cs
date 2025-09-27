@@ -46,7 +46,12 @@ namespace HSP.API.Controllers
 		[HttpGet("list-home")]
 		public async Task<IActionResult> GetAllHomes([FromQuery] HomeInput input)
 		{
-			var homes = await _homeService.GetAllHomesAsync(input);
+			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (string.IsNullOrEmpty(userIdString))
+			{
+				return Unauthorized();
+			}
+			var homes = await _homeService.GetAllHomesAsync(input, userIdString);
 			return Ok(homes);
 		}
 	}
