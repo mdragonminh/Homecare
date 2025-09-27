@@ -6,6 +6,6 @@ namespace HSP.Service.Interfaces
 	public interface IHomeItemService
 	{
 		public Task<Guid> CreateHomeItemAsync(CreateHomeItemDto input);
-		public Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input, Guid homeId);
+		public Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input, Guid homeId, string userId);
 	}
 }

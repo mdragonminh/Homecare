@@ -2,6 +2,7 @@
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HSP.API.Controllers
 {
@@ -39,8 +40,18 @@ namespace HSP.API.Controllers
 		[HttpGet("list-home-item")]
 		public async Task<IActionResult> ListHomeItem([FromQuery] HomeItemInput input, [FromQuery] Guid homeId)
 		{
-			var result = await _homeItemService.GetAllHomeItemsAsync(input, homeId);
+			var userId = GetUserId();
+			var result = await _homeItemService.GetAllHomeItemsAsync(input, homeId, userId);
 			return Ok(result);
+		}
+		private string GetUserId()
+		{
+			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (string.IsNullOrEmpty(userIdString))
+			{
+				throw new UnauthorizedAccessException("User is not authenticated.");
+			}
+			return userIdString;
 		}
 	}
 }
