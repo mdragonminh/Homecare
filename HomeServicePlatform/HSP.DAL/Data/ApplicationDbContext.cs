@@ -56,6 +56,11 @@ namespace HSP.DAL.Data
 				.WithOne(hi => hi.Home)
 				.HasForeignKey(hi => hi.HomeId)
 				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
+			builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
+			builder.Entity<CustomerProfile>().HasQueryFilter(cp => !cp.IsDeleted);
+			builder.Entity<TechnicianProfile>().HasQueryFilter(tp => !tp.IsDeleted);
 		}
 	}
 }
