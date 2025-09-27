@@ -19,7 +19,6 @@ namespace HSP.Service.Implementations
 			IRepository<CustomerProfile, Guid> customerProfileRepository,
 			IUnitOfWork unitOfWork) : base(unitOfWork)
 		{
-			_customerProfileRepository = customerProfileRepository;
 			_geocodingService = geocodingService;
 			_homeRepository = homeRepository;
 			_customerProfileRepository = customerProfileRepository;
@@ -31,11 +30,7 @@ namespace HSP.Service.Implementations
 			{
 				throw new ArgumentException("input parameter can not be null");
 			}
-			var customerProfile = await _customerProfileRepository.GetAll().FirstOrDefaultAsync(x => x.UserId.ToString().Equals(userId));
-			if (customerProfile == null)
-			{
-				throw new Exception($"Không tìm thấy CustomerProfile cho UserId");
-			}
+			var customerProfileId = await GetCustomerProfileByUserId(userId);
 			var coordinates = await _geocodingService.GetCoordinatesForAddressAsync(input.Address);
 			if (coordinates == null)
 			{
@@ -47,7 +42,7 @@ namespace HSP.Service.Implementations
 				Name = input.Name,
 				Latitude = coordinates.Latitude,
 				Longitude = coordinates.Longitude,
-				CustomerProfileId = customerProfile.Id,
+				CustomerProfileId = customerProfileId,
 				DateCreated = DateTime.UtcNow
 			};
 			await _homeRepository.AddAsync(newHome);
@@ -57,15 +52,10 @@ namespace HSP.Service.Implementations
 
 		public async Task<PagedList<HomeDto>> GetAllHomesAsync(HomeInput input, string userId)
 		{
-			var customerProfileId = await _customerProfileRepository.GetAll()
-				.FirstOrDefaultAsync(x => x.UserId.ToString().Equals(userId));
-			if (customerProfileId == null)
-			{
-				throw new ValidationException("Customer profile not found for the user.");
-			}
+			var customerProfileId = await GetCustomerProfileByUserId(userId);
 			var query = _homeRepository.GetAll()
 			.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
-			.Where(x=>x.CustomerProfileId.Equals(customerProfileId.Id));
+			.Where(x=>x.CustomerProfileId.Equals(customerProfileId));
 			var homeDtos = query.Select(x => new HomeDto
 			{
 				Id = x.Id,
@@ -77,6 +67,16 @@ namespace HSP.Service.Implementations
 			});
 			var pagedHomes = await homeDtos.ToPagedListAsync(input);
 			return pagedHomes;
+		}
+		private async Task<Guid> GetCustomerProfileByUserId(string userId)
+		{
+			var customerProfile = await _customerProfileRepository.GetAll()
+				.FirstOrDefaultAsync(x => x.UserId.ToString().Equals(userId));
+			if (customerProfile == null)
+			{
+				throw new ValidationException("Customer profile not found for the user.");
+			}
+			return customerProfile.Id;
 		}
 	}
 }
