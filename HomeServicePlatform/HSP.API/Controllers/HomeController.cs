@@ -28,11 +28,7 @@ namespace HSP.API.Controllers
 				{
 					return BadRequest(ModelState);
 				}
-				var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-				if (string.IsNullOrEmpty(userIdString))
-				{
-					return Unauthorized(); 
-				}
+				var userIdString = GetUserId();
 				var homeId = await _homeService.CreateHomeAsync(input, userIdString);
 				return Ok(new { HomeId = homeId });
 			}
@@ -48,11 +44,7 @@ namespace HSP.API.Controllers
 		[HttpGet("list-home")]
 		public async Task<IActionResult> GetAllHomes([FromQuery] HomeInput input)
 		{
-			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-			if (string.IsNullOrEmpty(userIdString))
-			{
-				return Unauthorized();
-			}
+			var userIdString = GetUserId();
 			var homes = await _homeService.GetAllHomesAsync(input, userIdString);
 			return Ok(homes);
 		}
@@ -61,11 +53,7 @@ namespace HSP.API.Controllers
 		{
 			try
 			{
-				var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-				if (string.IsNullOrEmpty(userIdString))
-				{
-					return Unauthorized();
-				}
+				var userIdString = GetUserId();
 				await _homeService.DeleteHomeAsynce(homeId, userIdString);
 				return NoContent();
 			}
@@ -78,5 +66,14 @@ namespace HSP.API.Controllers
 				return StatusCode(500);
 			}
 		}
+		private string GetUserId()
+		{
+			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (string.IsNullOrEmpty(userIdString))
+			{
+				throw new UnauthorizedAccessException("User is not authenticated.");
+			}
+			return userIdString;
+		} 
 	}
 }
