@@ -2,8 +2,7 @@
 import { Routes, Route } from "react-router-dom";
 import { HomePage } from "../pages/client/HomePage";
 import HomeManagementPage from "../pages/client/address/HomeManagementPage";
-import AddAddressPage from "../pages/client/address/AddAddressPage";
-
+import HomeItemsPage from "../pages/client/address/HomeItemsPage";
 export default function ClientRoutes({ loggedInUser, onLogout, onShowLogin, onShowRegister }) {
   return (
     <Routes>
@@ -23,8 +22,8 @@ export default function ClientRoutes({ loggedInUser, onLogout, onShowLogin, onSh
         element={<HomeManagementPage loggedInUser={loggedInUser} />}
       />
       <Route
-        path="/add-address"
-        element={<AddAddressPage loggedInUser={loggedInUser} />}
+        path="/home-items/:homeId"
+        element={<HomeItemsPage loggedInUser={loggedInUser} />}
       />
     </Routes>
   );

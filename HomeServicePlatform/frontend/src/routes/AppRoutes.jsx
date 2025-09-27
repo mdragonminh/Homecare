@@ -9,8 +9,6 @@ import { GoogleCallbackPage } from "../pages/Auth/GoogleCallbackPage";
 export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
   const navigate = useNavigate();
 
-  // Xóa bỏ useEffect để tránh vòng lặp vô hạn
-  // Việc chuyển hướng sẽ được xử lý tại GoogleCallbackPage
 
   const handleShowLogin = () => {
     navigate("/login");
