@@ -18,7 +18,5 @@ namespace HSP.Core.Dtos.HomeItemDto
 		public string? SerialNumber { get; set; }
 		[StringLength(1000, ErrorMessage = "Ghi chú không được vượt quá 1000 ký tự.")]
 		public string? Notes { get; set; }
-		[Required(ErrorMessage = "Vui lòng chọn nhà cho vật dụng.")]
-		public Guid HomeId { get; set; }
 	}
 }

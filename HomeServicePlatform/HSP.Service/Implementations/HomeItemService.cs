@@ -95,7 +95,6 @@ namespace HSP.Service.Implementations
 			homeItem.Notes = input.Notes;
 			homeItem.SerialNumber = input.SerialNumber;
 			homeItem.Type = input.Type;
-			homeItem.HomeId = input.HomeId;
 			homeItem.DateModified = DateTime.UtcNow;
 			await _unitOfWork.SaveChangesAsync();
 			return true;
