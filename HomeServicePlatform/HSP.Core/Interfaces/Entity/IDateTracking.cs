@@ -1,4 +1,4 @@
-﻿namespace HSP.Core.Interfaces
+﻿namespace HSP.Core.Interfaces.Entity
 {
 	public interface IDateTracking
 	{

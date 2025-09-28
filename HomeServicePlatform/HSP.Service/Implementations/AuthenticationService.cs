@@ -1,6 +1,6 @@
 ﻿using HSP.Core.Constans;
 using HSP.Core.Entities;
-using HSP.Core.Interfaces;
+using HSP.Core.Interfaces.DataAccess;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;

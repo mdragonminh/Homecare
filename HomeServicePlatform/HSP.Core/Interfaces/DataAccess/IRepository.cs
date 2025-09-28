@@ -1,7 +1,7 @@
 ﻿using HSP.Core.Entities;
 using System.Linq.Expressions;
 
-namespace HSP.Core.Interfaces
+namespace HSP.Core.Interfaces.DataAccess
 {
 	public interface IRepository<T,K> where T : BaseEntity<K>
 	{

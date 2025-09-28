@@ -1,6 +1,6 @@
 ﻿using HSP.Service.Dtos.EmailDto;
 
-namespace HSP.Service.Interfaces
+namespace HSP.Core.Interfaces.External
 {
 	public interface IEmailService
 	{

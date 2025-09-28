@@ -1,5 +1,5 @@
 ﻿using HSP.Core.Dtos.MapDto;
-using HSP.Core.Interfaces;
+using HSP.Core.Interfaces.External;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 

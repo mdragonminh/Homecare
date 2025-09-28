@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 
-namespace HSP.Core.Interfaces
+namespace HSP.Core.Interfaces.DataAccess
 {
 	public interface IUnitOfWork : IAsyncDisposable
 	{

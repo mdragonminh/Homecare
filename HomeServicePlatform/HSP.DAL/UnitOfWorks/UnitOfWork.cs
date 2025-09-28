@@ -1,4 +1,4 @@
-﻿using HSP.Core.Interfaces;
+﻿using HSP.Core.Interfaces.DataAccess;
 using HSP.DAL.Data;
 using Microsoft.EntityFrameworkCore.Storage;
 

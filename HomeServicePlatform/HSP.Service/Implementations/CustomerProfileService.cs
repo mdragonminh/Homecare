@@ -1,6 +1,6 @@
 ﻿using HSP.Core.Dtos.CustomerProfileDto;
 using HSP.Core.Entities;
-using HSP.Core.Interfaces;
+using HSP.Core.Interfaces.DataAccess;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 

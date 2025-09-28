@@ -1,5 +1,5 @@
 ﻿using HSP.Core.Entities;
-using HSP.Core.Interfaces;
+using HSP.Core.Interfaces.DataAccess;
 using Microsoft.AspNetCore.Identity;
 
 namespace HSP.DAL.Repositories

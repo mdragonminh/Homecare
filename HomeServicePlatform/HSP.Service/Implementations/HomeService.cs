@@ -2,6 +2,7 @@
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces;
+using HSP.Core.Interfaces.External;
 using HSP.DAL.Extensions;
 using HSP.Service.Dtos.HomeDto;
 using HSP.Service.Interfaces;

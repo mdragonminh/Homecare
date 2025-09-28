@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Entities;
+using HSP.Core.Interfaces.External;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;

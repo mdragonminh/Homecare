@@ -1,4 +1,4 @@
-﻿using HSP.Core.Interfaces;
+﻿using HSP.Core.Interfaces.Entity;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HSP.Core.Entities

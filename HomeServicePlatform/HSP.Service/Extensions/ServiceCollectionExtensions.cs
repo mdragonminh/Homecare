@@ -1,4 +1,4 @@
-﻿using HSP.Core.Interfaces;
+﻿using HSP.Core.Interfaces.External;
 using HSP.Service.Implementations;
 using HSP.Service.Interfaces;
 using Microsoft.Extensions.DependencyInjection;

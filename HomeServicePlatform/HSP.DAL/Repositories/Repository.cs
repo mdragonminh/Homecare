@@ -1,5 +1,6 @@
 ﻿using HSP.Core.Entities;
-using HSP.Core.Interfaces;
+using HSP.Core.Interfaces.DataAccess;
+using HSP.Core.Interfaces.Entity;
 using HSP.DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;

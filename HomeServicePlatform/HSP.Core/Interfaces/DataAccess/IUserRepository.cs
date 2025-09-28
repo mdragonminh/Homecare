@@ -1,7 +1,7 @@
 ﻿using HSP.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 
-namespace HSP.Core.Interfaces
+namespace HSP.Core.Interfaces.DataAccess
 {
 	public interface IUserRepository
 	{
