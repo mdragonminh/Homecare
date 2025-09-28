@@ -4,6 +4,7 @@ using HSP.DAL.Interfaces;
 using HSP.Service.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using HSP.Core.Constans;
 using System.Text;
 
 namespace HSP.API
@@ -12,14 +13,15 @@ namespace HSP.API
 	{
 		public static async Task Main(string[] args)
 		{
-			var supportedCultures = new[] { "vi-VN", "en-US" };
-			var localizationOptions = new RequestLocalizationOptions()
-					.SetDefaultCulture(supportedCultures[0])
-					.AddSupportedCultures(supportedCultures)
-					.AddSupportedUICultures(supportedCultures);
-			var policyName = "AllowFrontend";
-
 			var builder = WebApplication.CreateBuilder(args);
+			var localizationSettings = builder.Configuration.GetSection("LocalizationSettings");
+			var supportedCultures = localizationSettings.GetSection("SupportedCultures").Get<string[]>();
+			var defaultCulture = localizationSettings["DefaultCulture"];
+
+			var localizationOptions = new RequestLocalizationOptions()
+				.SetDefaultCulture(defaultCulture)
+				.AddSupportedCultures(supportedCultures)
+				.AddSupportedUICultures(supportedCultures);
 
 			builder.Services.AddLocalization();
 			// Add services to the container.
@@ -35,7 +37,7 @@ namespace HSP.API
 
 			builder.Services.AddCors(options =>
 			{
-				options.AddPolicy(policyName,
+				options.AddPolicy(CorsConstants.AllowFrontendPolicy,
 						policy =>
 						{
 							policy.WithOrigins("http://localhost:5173")
@@ -85,7 +87,7 @@ namespace HSP.API
 
 			app.UseHttpsRedirection();
 
-			app.UseCors(policyName);
+			app.UseCors(CorsConstants.AllowFrontendPolicy);
 
 			app.UseRequestLocalization(localizationOptions);
 
