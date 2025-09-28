@@ -1,21 +1,21 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HSP.Core.Resources;
+using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Dtos.AuthenticationDto
 {
 	public class RegisterRequestDto
 	{
-		[Required(ErrorMessage = "Email is required.")]
-		[EmailAddress(ErrorMessage = "Invalid email format.")]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "EmailIsRequired")]
+		[EmailAddress(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "InvalidEmailFormat")]
 		public string Email { get; set; } = string.Empty;
-		[Required(ErrorMessage = "Full name is required.")]
-		[StringLength(100, ErrorMessage = "Full name must not exceed 100 characters.")]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "FullNameIsRequired")]
+		[StringLength(100, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "FullNameMaxLength")]
 		public string FullName { get; set; } = string.Empty;
-		[Required(ErrorMessage = "Password is required.")]
-		[StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters.")]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordIsRequired")]
+		[StringLength(100, MinimumLength = 8, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordLengthError")]
 		public string Password { get; set; } = string.Empty;
-		[Required(ErrorMessage = "Confirm password is required.")]
-		[StringLength(100, MinimumLength = 8, ErrorMessage = "Confirm password must be between 8 and 100 characters.")]
-		[Compare("Password", ErrorMessage = "Password and confirm password do not match.")]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ConfirmPasswordIsRequired")]
+		[Compare("Password", ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordsDoNotMatch")]
 		public string ConfirmPassword { get; set; } = string.Empty;
 	}
 
@@ -27,14 +27,14 @@ namespace HSP.Service.Dtos.AuthenticationDto
 	}
 	public class RegisterTechnicianRequestDto : RegisterRequestDto
 	{
-		[Required(ErrorMessage = "Phone number is required.")]
-		[StringLength(10, ErrorMessage = "Phone number must not exceed 10 characters.")]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberIsRequired")]
+		[StringLength(10, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberMaxLength")]
 		public string PhoneNumber { get; set; }
-		[Required]
-		[StringLength(200)]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberIsRequired")]
+		[StringLength(10, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberMaxLength")]
 		public string SkillSet { get; set; } = string.Empty;
-		[Required]
-		[Range(0, 50)]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsIsRequired")]
+		[Range(0, 50, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsRange")]
 		public int ExperienceYears { get; set; }
 	}
 }

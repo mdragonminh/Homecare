@@ -143,7 +143,7 @@
     <value>Tạo người dùng thất bại</value>
   </data>
   <data name="AddToRoleFailed" xml:space="preserve">
-    <value>Không thêm được quyền vào cho người dùng</value>
+    <value>Không thêm được quyền cho người dùng</value>
   </data>
   <data name="PasswordsDoNotMatch" xml:space="preserve">
     <value>Mật khẩu và mật khẩu xác nhận không trùng khớp</value>
@@ -159,5 +159,23 @@
   </data>
   <data name="PasswordLengthError" xml:space="preserve">
     <value>Mật khẩu phải có độ dài từ 8 đến 100 ký tự</value>
+  </data>
+  <data name="FullNameIsRequired" xml:space="preserve">
+    <value>Họ và tên là bắt buộc</value>
+  </data>
+  <data name="FullNameMaxLength" xml:space="preserve">
+    <value>Họ và tên không được vượt quá 100 ký tự</value>
+  </data>
+  <data name="ConfirmPasswordIsRequired" xml:space="preserve">
+    <value>Xác nhận mật khẩu là bắt buộc</value>
+  </data>
+  <data name="SkillSetIsRequired" xml:space="preserve">
+    <value>Bộ kỹ năng là bắt buộc</value>
+  </data>
+  <data name="ExperienceYearsIsRequired" xml:space="preserve">
+    <value>Số năm kinh nghiệm là bắt buộc</value>
+  </data>
+  <data name="ExperienceYearsRange" xml:space="preserve">
+    <value>Số năm kinh nghiệm phải từ 0 đến 50</value>
   </data>
 </root>

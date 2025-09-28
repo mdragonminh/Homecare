@@ -160,4 +160,22 @@
   <data name="PasswordLengthError" xml:space="preserve">
     <value>The password must be at least 8 and at max 100 characters long</value>
   </data>
+  <data name="FullNameIsRequired" xml:space="preserve">
+    <value>The Full name field is required</value>
+  </data>
+  <data name="FullNameMaxLength" xml:space="preserve">
+    <value>Họ và tên không được vượt quá 100 ký tự</value>
+  </data>
+  <data name="ConfirmPasswordIsRequired" xml:space="preserve">
+    <value>The Confirm password field is required</value>
+  </data>
+  <data name="SkillSetIsRequired" xml:space="preserve">
+    <value>The SkillSet field is required</value>
+  </data>
+  <data name="ExperienceYearsIsRequired" xml:space="preserve">
+    <value>The ExperienceYears field is required</value>
+  </data>
+  <data name="ExperienceYearsRange" xml:space="preserve">
+    <value>Experience years must be between 0 and 50</value>
+  </data>
 </root>
