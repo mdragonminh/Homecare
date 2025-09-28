@@ -13,63 +13,63 @@
 		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</resheader>
 	<data name="AddToRoleFailed" xml:space="preserve">
-    <value>Không thêm được quyền cho người dùng</value>
+    <value>Add to role failed</value>
   </data>
 	<data name="CannotFindOrCreateUser" xml:space="preserve">
-    <value>Không thể tìm hoặc tạo người dùng</value>
+    <value>Cannot find or create user</value>
   </data>
 	<data name="ConfirmPasswordIsRequired" xml:space="preserve">
-    <value>Xác nhận mật khẩu là bắt buộc</value>
+    <value>The Confirm password field is required</value>
   </data>
 	<data name="EmailIsRequired" xml:space="preserve">
-    <value>Email là bắt buộc</value>
+    <value>The Email field is required</value>
   </data>
 	<data name="EmailNotFoundFromProvider" xml:space="preserve">
-    <value>Không tìm thấy email từ nhà cung cấp dịch vụ</value>
+    <value>Email not found from provider</value>
   </data>
 	<data name="ErrorLoadingGoogleLogin" xml:space="preserve">
-    <value>Lỗi tải thông tin đăng nhập từ Google</value>
+    <value>Error loading google login</value>
   </data>
 	<data name="ExperienceYearsIsRequired" xml:space="preserve">
-    <value>Số năm kinh nghiệm là bắt buộc</value>
+    <value>The ExperienceYears field is required</value>
   </data>
 	<data name="ExperienceYearsRange" xml:space="preserve">
-    <value>Số năm kinh nghiệm phải từ 0 đến 50</value>
+    <value>Experience years must be between 0 and 50</value>
   </data>
 	<data name="FullNameIsRequired" xml:space="preserve">
-    <value>Họ và tên là bắt buộc</value>
+    <value>The Full name field is required</value>
   </data>
 	<data name="FullNameMaxLength" xml:space="preserve">
-    <value>Họ và tên không được vượt quá 100 ký tự</value>
+    <value>Full name must not exceed 100 characters</value>
   </data>
 	<data name="GoogleLinkFailed" xml:space="preserve">
-    <value>Liên kết tài khoản Google thất bại</value>
+    <value>Google link failed</value>
   </data>
 	<data name="InputCannotBeNull" xml:space="preserve">
-    <value>Dữ liệu đầu vào không được rỗng.</value>
+    <value>Input cannot be null</value>
   </data>
 	<data name="InvalidEmailFormat" xml:space="preserve">
-    <value>Định dạng email không hợp lệ</value>
+    <value>The Email field is not a valid email address</value>
   </data>
 	<data name="InvalidEmailOrPassword" xml:space="preserve">
-    <value>Email hoặc mật khẩu bị sai</value>
+    <value>Invalid email or password</value>
   </data>
 	<data name="InvalidPassword" xml:space="preserve">
-    <value>Mật khẩu không hợp lệ</value>
+    <value>Invalid password</value>
   </data>
 	<data name="PasswordIsRequired" xml:space="preserve">
-    <value>Mật khẩu là bắt buộc</value>
+    <value>The Password field is required</value>
   </data>
 	<data name="PasswordLengthError" xml:space="preserve">
-    <value>Mật khẩu phải có độ dài từ 8 đến 100 ký tự</value>
+    <value>The password must be at least 8 and at max 100 characters long</value>
   </data>
 	<data name="PasswordsDoNotMatch" xml:space="preserve">
-    <value>Mật khẩu và mật khẩu xác nhận không trùng khớp</value>
+    <value>Password and Confirm Password do not match</value>
   </data>
 	<data name="SkillSetIsRequired" xml:space="preserve">
-    <value>Bộ kỹ năng là bắt buộc</value>
+    <value>The SkillSet field is required</value>
   </data>
 	<data name="UserCreationFailed" xml:space="preserve">
-    <value>Tạo người dùng thất bại</value>
+    <value>User creation failed</value>
   </data>
 </root>

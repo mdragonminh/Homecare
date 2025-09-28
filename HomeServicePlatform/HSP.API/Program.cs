@@ -1,4 +1,4 @@
-﻿
+﻿using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.DAL.Interfaces;
 using HSP.Service.Extensions;
@@ -16,7 +16,11 @@ namespace HSP.API
 
 			builder.Services.AddLocalization();
 			// Add services to the container.
-			builder.Services.AddControllers();
+			builder.Services.AddControllers().AddDataAnnotationsLocalization(options =>
+			{
+				options.DataAnnotationLocalizerProvider = (type, factory) =>
+						factory.Create(typeof(SharedResource));
+			}); ;
 			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
@@ -75,6 +79,14 @@ namespace HSP.API
 			app.UseHttpsRedirection();
 
 			app.UseCors("AllowFrontend");
+
+			var supportedCultures = new[] { "vi-VN", "en-US" };
+			var localizationOptions = new RequestLocalizationOptions()
+					.SetDefaultCulture(supportedCultures[0]) 
+					.AddSupportedCultures(supportedCultures)
+					.AddSupportedUICultures(supportedCultures);
+
+			app.UseRequestLocalization(localizationOptions);
 
 			app.UseAuthentication();
 			app.UseAuthorization();
