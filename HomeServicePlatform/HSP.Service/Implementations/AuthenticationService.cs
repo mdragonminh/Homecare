@@ -1,16 +1,17 @@
 ﻿using HSP.Core.Constans;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.Core.Resources;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Localization;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Threading;
 
 namespace HSP.Service.Implementations
 {
@@ -25,8 +26,8 @@ namespace HSP.Service.Implementations
 		public AuthenticationService(IUserRepository userRepository, IConfiguration configuration,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			IRepository<CustomerProfile, Guid> customerProfileRepository,
-			IUnitOfWork unitOfWork,
-			SignInManager<AppUser> signInManager) : base(unitOfWork)
+			SignInManager<AppUser> signInManager,
+			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_userRepository = userRepository;
 			_configuration = configuration;
@@ -47,17 +48,17 @@ namespace HSP.Service.Implementations
 		{
 			if (input == null)
 			{
-				throw new ArgumentException("Input cannot be null");
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
 			}
 			var user = await _userRepository.FindByEmailAsync(input.Email);
 			if (user == null)
 			{
-				throw new ValidationException("Invalid email or password");
+				throw new ValidationException(_localizer["InvalidEmailOrPassword"]);
 			}
 			bool passwordValid = await _userRepository.CheckPasswordAsync(user, input.Password);
 			if (!passwordValid)
 			{
-				throw new UnauthorizedAccessException("Invalid password.");
+				throw new UnauthorizedAccessException(_localizer["InvalidPassword"]);
 			}
 			var token = await GenerateJwtToken(user);
 			return new LoginResponseDto
@@ -70,13 +71,13 @@ namespace HSP.Service.Implementations
 			var info = await _signInManager.GetExternalLoginInfoAsync();
 			if (info == null)
 			{
-				throw new Exception("Lỗi tải thông tin đăng nhập từ Google.");
+				throw new Exception(_localizer["ErrorLoadingGoogleLogin"]);
 			}
 
 			var user = await FindOrCreateUserAsync(info);
 			if (user == null)
 			{
-				throw new Exception("Không thể tìm hoặc tạo người dùng.");
+				throw new Exception(_localizer["CannotFindOrCreateUser"]);
 			}
 
 			var token = await GenerateJwtToken(user);
@@ -96,7 +97,7 @@ namespace HSP.Service.Implementations
 			var email = info.Principal.FindFirstValue(ClaimTypes.Email);
 			if (string.IsNullOrEmpty(email))
 			{
-				throw new Exception("Không tìm thấy email từ nhà cung cấp dịch vụ.");
+				throw new Exception(_localizer["EmailNotFoundFromProvider"]);
 			}
 
 			user = await _userRepository.FindByEmailAsync(email);
@@ -109,7 +110,7 @@ namespace HSP.Service.Implementations
 			var addLoginResult = await _userRepository.AddLoginAsync(user, info);
 			if (!addLoginResult.Succeeded)
 			{
-				throw new Exception("Liên kết tài khoản Google thất bại.");
+				throw new Exception(_localizer["GoogleLinkFailed"]);
 			}
 			return user;
 		}
@@ -130,13 +131,13 @@ namespace HSP.Service.Implementations
 					var createResult = await _userRepository.CreateAsync(user);
 					if (!createResult.Succeeded)
 					{
-						throw new Exception("Tạo người dùng thất bại.");
+						throw new Exception(_localizer["UserCreationFailed"]);
 					}
 
 					var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
 					if (!roleResult.Succeeded)
 					{
-						throw new Exception("Gán vai trò cho người dùng thất bại.");
+						throw new Exception(_localizer["AddToRoleFailed"]);
 					}
 
 					var customerProfile = new CustomerProfile
@@ -197,10 +198,10 @@ namespace HSP.Service.Implementations
 			string? phoneNumber = null, string? role = null)
 		{
 			if (input == null)
-				throw new ArgumentException("Input cannot be null");
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
 
 			if (input.Password != input.ConfirmPassword)
-				throw new ValidationException("Password and Confirm Password do not match");
+				throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
 			using (var transaction = await _unitOfWork.BeginTransactionAsync())
 			{
 				try
@@ -216,7 +217,7 @@ namespace HSP.Service.Implementations
 
 					var created = await _userRepository.CreateAsync(user, input.Password);
 					if (!created.Succeeded)
-						throw new Exception("User creation failed");
+						throw new Exception(_localizer["UserCreationFailed"]);
 
 					if (!string.IsNullOrEmpty(role))
 						await _userRepository.AddToRoleAsync(user, role);
