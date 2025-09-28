@@ -14,6 +14,7 @@ namespace HSP.API
 		{
 			var builder = WebApplication.CreateBuilder(args);
 
+			builder.Services.AddLocalization();
 			// Add services to the container.
 			builder.Services.AddControllers();
 			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
