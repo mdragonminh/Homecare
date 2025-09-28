@@ -2,9 +2,11 @@
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Implementations
@@ -15,7 +17,7 @@ namespace HSP.Service.Implementations
 		private readonly IRepository<Home, Guid> _homeRepository;
 		public HomeItemService(IRepository<HomeItem, Guid> homeItemRepository,
 			IRepository<Home, Guid> homeRepository,
-		IUnitOfWork unitOfWork) : base(unitOfWork)
+		IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_homeItemRepository = homeItemRepository;
 			_homeRepository = homeRepository;

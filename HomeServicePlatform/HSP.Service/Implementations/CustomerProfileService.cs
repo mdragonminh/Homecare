@@ -1,15 +1,18 @@
 ﻿using HSP.Core.Dtos.CustomerProfileDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.Core.Resources;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 
 namespace HSP.Service.Implementations
 {
 	public class CustomerProfileService : BaseService, ICustomerProfileService
 	{
 		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
-		public CustomerProfileService(IRepository<CustomerProfile, Guid> customerProfileRepository, IUnitOfWork unitOfWork) : base(unitOfWork)
+		public CustomerProfileService(IRepository<CustomerProfile, Guid> customerProfileRepository,
+			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_customerProfileRepository = customerProfileRepository;
 		}

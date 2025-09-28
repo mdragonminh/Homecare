@@ -1,5 +1,5 @@
-﻿using HSP.Service.Dtos.EmailDto;
-using HSP.Service.Interfaces;
+﻿using HSP.Core.Interfaces.External;
+using HSP.Service.Dtos.EmailDto;
 using Microsoft.Extensions.Configuration;
 using System.Net.Mail;
 
