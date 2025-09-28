@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HSP.Core.Resources;
+using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Dtos.AuthenticationDto
 {
@@ -8,12 +9,12 @@ namespace HSP.Service.Dtos.AuthenticationDto
 	}
 	public class LoginRequestDto
 	{
-		[Required(ErrorMessage = "Email là bắt buộc.")]
-		[EmailAddress(ErrorMessage = "Định dạng email không hợp lệ.")]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "EmailIsRequired")]
+		[EmailAddress(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "InvalidEmailFormat")]
 		public string Email { get; set; } = string.Empty;
 
-		[Required(ErrorMessage = "Mật khẩu là bắt buộc.")]
-		[StringLength(100, MinimumLength = 8, ErrorMessage = "Mật khẩu phải có độ dài từ 8 đến 100 ký tự.")]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordIsRequired")]
+		[StringLength(100, MinimumLength = 8, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordLengthError")]
 		public string Password { get; set; } = string.Empty;
 	}
 }
