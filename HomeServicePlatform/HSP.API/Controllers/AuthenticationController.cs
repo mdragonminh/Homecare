@@ -185,6 +185,16 @@ namespace HSP.API.Controllers
 
 				var result = await _authenticationService.ChangePassword(userId, input);
 				return Ok(result);
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." });
+			}
+		}
 		[HttpPost("add-password")]
 		[Authorize(Roles = RoleNames.Customer)]
 		public async Task<IActionResult> AddPassword([FromBody] AddPasswordDto input)
