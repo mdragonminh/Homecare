@@ -185,6 +185,34 @@ namespace HSP.Service.Implementations
 			return new JwtSecurityTokenHandler().WriteToken(token);
 		}
 
+		public async Task<ChangePasswordResponseDto> ChangePassword(Guid userId, ChangePasswordRequestDto input)
+		{
+			if (input == null)
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
+
+			var user = await _userRepository.FindByIdAsync(userId);
+			if (user == null)
+				throw new ValidationException(_localizer["UserNotFound"]);
+
+			// Kiểm tra mật khẩu hiện tại
+			var checkPassword = await _userRepository.CheckPasswordAsync(user, input.CurrentPassword);
+			if (!checkPassword)
+				throw new ValidationException(_localizer["CurrentPasswordIncorrect"]);
+
+			// Đổi mật khẩu
+			var result = await _userRepository.ChangePasswordAsync(user, input.CurrentPassword, input.NewPassword);
+			if (!result.Succeeded)
+			{
+				var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+				throw new ValidationException($"{_localizer["PasswordChangeFailed"]}: {errors}");
+			}
+
+			return new ChangePasswordResponseDto
+			{
+				Message = _localizer["PasswordChangeSuccess"]
+			};
+		}
+
 		public async Task<RegisterResponseDto> Register(RegisterRequestDto input)
 		{
 			return await RegisterInternalAsync(input, role: RoleNames.Customer);

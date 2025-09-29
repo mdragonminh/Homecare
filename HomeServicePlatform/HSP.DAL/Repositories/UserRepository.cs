@@ -82,5 +82,10 @@ namespace HSP.DAL.Repositories
 		{
 			return _userManager.ResetPasswordAsync(user, token, newPassword);
 		}
+
+		public Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword)
+		{
+			return _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+		}
 	}
 }

@@ -158,5 +158,36 @@ namespace HSP.API.Controllers
 			}
 			return success ? Ok("Email confirmed successfully") : BadRequest("Email confirmation failed");
 		}
+
+		[HttpPost("change-password")]
+		[Authorize]
+		public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto input)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			try
+			{
+				// Lấy user ID từ JWT token
+				var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+				if (!Guid.TryParse(userIdClaim, out var userId))
+				{
+					return Unauthorized(new { message = "Invalid user token" });
+				}
+
+				var result = await _authenticationService.ChangePassword(userId, input);
+				return Ok(result);
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." });
+			}
+		}
 	}
 }
