@@ -283,5 +283,22 @@ namespace HSP.Service.Implementations
 				}
 			}
 		}
+
+		public async Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input)
+		{
+			var user = _userRepository.FindByIdAsync(userId).Result;
+			if (user == null) throw new ValidationException("User not found");
+			if (!string.IsNullOrEmpty(user.PasswordHash))
+			{
+				throw new ValidationException("User already has a password");
+			}
+			if (input.NewPassword != input.ConfirmPassword)
+			{
+				throw new ValidationException("Password and Confirm Password do not match");
+			}
+			var result = await _userRepository.AddPasswordAsync(user, input.NewPassword);
+			if (!result.Succeeded) throw new Exception("Add password failed");
+			return result.Succeeded;
+		}
 	}
 }

@@ -10,5 +10,6 @@ namespace HSP.Service.Interfaces
 		Task<LoginResponseDto> Login(LoginRequestDto input);
 		Task<LoginResponseDto> GoogleLogin();
 		Task<ChangePasswordResponseDto> ChangePassword(Guid userId, ChangePasswordRequestDto input);
+		Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input);
 	}
 }

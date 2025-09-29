@@ -1,6 +1,8 @@
 ﻿using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.External;
+﻿using HSP.Core.Constans;
+using HSP.Core.Entities;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
@@ -9,6 +11,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Text;
 
 namespace HSP.API.Controllers
@@ -181,6 +185,27 @@ namespace HSP.API.Controllers
 
 				var result = await _authenticationService.ChangePassword(userId, input);
 				return Ok(result);
+		[HttpPost("add-password")]
+		[Authorize(Roles = RoleNames.Customer)]
+		public async Task<IActionResult> AddPassword([FromBody] AddPasswordDto input)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest();
+			}
+			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (userIdString == null || !Guid.TryParse(userIdString, out var userId))
+			{
+				return Unauthorized();
+			}
+			try
+			{
+				var result = await _authenticationService.AddPasswordAsync(userId, input);
+				if (!result)
+				{
+					BadRequest();
+				}
+				return Ok(new {message = "PasswordAddSuccess"});
 			}
 			catch (ValidationException ex)
 			{

@@ -22,5 +22,6 @@ namespace HSP.Core.Interfaces.DataAccess
 
 		Task<AppUser?> FindByLoginAsync(string loginProvider, string providerKey);
 		Task<IdentityResult> CreateAsync(AppUser user);
+		Task<IdentityResult> AddPasswordAsync(AppUser user, string password);
 	}
 }
