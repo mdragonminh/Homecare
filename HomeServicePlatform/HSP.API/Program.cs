@@ -13,14 +13,19 @@ namespace HSP.API
 		public static async Task Main(string[] args)
 		{
 			var builder = WebApplication.CreateBuilder(args);
-			var localizationSettings = builder.Configuration.GetSection("LocalizationSettings");
-			var supportedCultures = localizationSettings.GetSection("SupportedCultures").Get<string[]>();
-			var defaultCulture = localizationSettings["DefaultCulture"];
+			builder.Services.Configure<RequestLocalizationOptions>(options =>
+			{
+				var localizationSettings = builder.Configuration
+																					.GetSection("LocalizationSettings")
+																					.Get<LocalizationSettingsDto>();
 
-			var localizationOptions = new RequestLocalizationOptions()
-				.SetDefaultCulture(defaultCulture)
-				.AddSupportedCultures(supportedCultures)
-				.AddSupportedUICultures(supportedCultures);
+				if (localizationSettings != null && localizationSettings.SupportedCultures?.Length > 0)
+				{
+					options.SetDefaultCulture(localizationSettings.DefaultCulture);
+					options.AddSupportedCultures(localizationSettings.SupportedCultures);
+					options.AddSupportedUICultures(localizationSettings.SupportedCultures);
+				}
+			});
 
 			builder.Services.AddLocalization();
 			// Add services to the container.
@@ -75,7 +80,7 @@ namespace HSP.API
 
 			app.UseCors(CorsConstants.AllowFrontendPolicy);
 
-			app.UseRequestLocalization(localizationOptions);
+			app.UseRequestLocalization();
 
 			app.UseAuthentication();
 			app.UseAuthorization();
