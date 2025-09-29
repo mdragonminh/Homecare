@@ -1,10 +1,13 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Constans;
+using HSP.Core.Entities;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Text;
 
 namespace HSP.API.Controllers
@@ -110,6 +113,34 @@ namespace HSP.API.Controllers
 			var decodedToken = Encoding.UTF8.GetString(decodedTokenBytes);
 			var success = await _authenticationService.ConfirmEmail(userId, decodedToken);
 			return success ? Ok("Email confirmed successfully") : BadRequest("Email confirmation failed");
+		}
+
+		[HttpPost("add-password")]
+		[Authorize(Roles = RoleNames.Customer)]
+		public async Task<IActionResult> AddPassword([FromBody] AddPasswordDto input)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest();
+			}
+			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (userIdString == null || !Guid.TryParse(userIdString, out var userId))
+			{
+				return Unauthorized();
+			}
+			try
+			{
+				var result = await _authenticationService.AddPasswordAsync(userId, input);
+				if (!result)
+				{
+					BadRequest();
+				}
+				return Ok(new {message = "PasswordAddSuccess"});
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
 		}
 	}
 }
