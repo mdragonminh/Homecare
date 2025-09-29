@@ -9,5 +9,6 @@ namespace HSP.Service.Interfaces
 		Task<bool> ConfirmEmail(Guid userId, string token);
 		Task<LoginResponseDto> Login(LoginRequestDto input);
 		Task<LoginResponseDto> GoogleLogin();
+		Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input);
 	}
 }
