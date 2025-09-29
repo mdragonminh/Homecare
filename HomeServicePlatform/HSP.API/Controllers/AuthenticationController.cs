@@ -1,4 +1,5 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Entities;
 using HSP.Core.Interfaces.External;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Dtos.EmailDto;
@@ -6,6 +7,7 @@ using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
@@ -17,17 +19,17 @@ namespace HSP.API.Controllers
 	{
 		private readonly IAuthenticationService _authenticationService;
 		private readonly IEmailService _emailService;
-		private readonly IConfiguration _configuration;
+		private readonly UrlSettingsDto _urlSettings;
 		private readonly ICustomerProfileService _customerProfileService;
 		private readonly SignInManager<AppUser> _signInManager;
 
-		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, 
-			IConfiguration configuration, ICustomerProfileService customerProfileService,
+		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService,
+			IOptions<UrlSettingsDto> urlOptions, ICustomerProfileService customerProfileService,
 			SignInManager<AppUser> signInManager)
 		{
 			_authenticationService = authenticationService;
 			_emailService = emailService;
-			_configuration = configuration;
+			_urlSettings = urlOptions.Value;
 			_customerProfileService = customerProfileService;
 			_signInManager = signInManager;
 		}
@@ -82,7 +84,7 @@ namespace HSP.API.Controllers
 		{
 			var tokenBytes = Encoding.UTF8.GetBytes(result.EmailConfirmToken);
 			var base64Token = Convert.ToBase64String(tokenBytes);
-			var baseUrl = _configuration.GetValue<string>("BaseUrl");
+			var baseUrl = _urlSettings.BaseUrl;
 			var confirmUrl = $"{baseUrl}/api/Authentication/confirm-email?userId={result.UserId}&token={base64Token}";
 
 			var emailDto = new EmailDto
@@ -140,7 +142,7 @@ namespace HSP.API.Controllers
 		public async Task<IActionResult> GoogleCallback()
 		{
 			var loginResponse = await _authenticationService.GoogleLogin();
-			var frontendSuccessUrl = _configuration.GetValue<string>("FrontendUrl:LoginSuccess");
+			var frontendSuccessUrl = _urlSettings.FrontendLoginSuccess;
 			return Redirect($"{frontendSuccessUrl}?token={loginResponse.JwtToken}");
 		}
 

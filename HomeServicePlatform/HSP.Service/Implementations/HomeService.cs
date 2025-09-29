@@ -59,7 +59,7 @@ namespace HSP.Service.Implementations
 			{
 				throw new ValidationException("Home not found or you do not have permission to delete this home.");
 			}
-			await _homeRepository.DeleteAsync(homeId);
+			await _homeRepository.DeleteAsync(home.Id);
 			await _unitOfWork.SaveChangesAsync();
 			return true;
 		}

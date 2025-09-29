@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
@@ -7,6 +8,7 @@ using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
@@ -21,16 +23,16 @@ namespace HSP.Service.Implementations
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly SignInManager<AppUser> _signInManager;
-		private readonly IConfiguration _configuration;
+		private readonly JwtSettingsDto _jwtSettings;
 
-		public AuthenticationService(IUserRepository userRepository, IConfiguration configuration,
+		public AuthenticationService(IUserRepository userRepository, IOptions<JwtSettingsDto> jwtOptions,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			IRepository<CustomerProfile, Guid> customerProfileRepository,
 			SignInManager<AppUser> signInManager,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_userRepository = userRepository;
-			_configuration = configuration;
+			_jwtSettings = jwtOptions.Value;
 			_technicianRepository = technicianRepository;
 			_signInManager = signInManager;
 			_customerProfileRepository = customerProfileRepository;
@@ -171,14 +173,14 @@ namespace HSP.Service.Implementations
 			{
 				claims.Add(new Claim(ClaimTypes.Role, role));
 			}
-			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]));
+			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
 			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
 			var token = new JwtSecurityToken(
-					issuer: _configuration["JwtSettings:Issuer"],
-					audience: _configuration["JwtSettings:Audience"],
+					issuer: _jwtSettings.Issuer,
+					audience: _jwtSettings.Audience,
 					claims: claims,
-					expires: DateTime.UtcNow.AddHours(1),
+					expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
 					signingCredentials: creds
 			);
 

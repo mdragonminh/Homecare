@@ -1,11 +1,10 @@
-﻿using HSP.Core.Resources;
+﻿using HSP.API.Extensions;
+using HSP.Core.Constans;
+using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.DAL.Interfaces;
 using HSP.Service.Extensions;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using HSP.Core.Constans;
-using System.Text;
 
 namespace HSP.API
 {
@@ -46,30 +45,17 @@ namespace HSP.API
 								.AllowCredentials();
 						});
 			});
+
+			builder.Services.Configure<SmtpConfigurationDto>(builder.Configuration.GetSection("Smtp"));
+			builder.Services.Configure<JwtSettingsDto>(builder.Configuration.GetSection("JwtSettings"));
+			builder.Services.Configure<GoogleAuthConfigurationDto>(builder.Configuration.GetSection("Google"));
+			builder.Services.Configure<GoogleMapConfigurationDto>(builder.Configuration.GetSection("GoogleMaps"));
+			builder.Services.Configure<LocalizationSettingsDto>(builder.Configuration.GetSection("LocalizationSettings"));
+			builder.Services.Configure<UrlSettingsDto>(builder.Configuration.GetSection("UrlSettings"));
+
 			builder.Services.AddDALServices(builder.Configuration);
 			builder.Services.AddServiceServices();
-			builder.Services.AddAuthentication(options =>
-			{
-				options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-				options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-			})
-			.AddJwtBearer(options =>
-			{
-				options.TokenValidationParameters = new TokenValidationParameters
-				{
-					ValidateIssuer = true,
-					ValidateAudience = true,
-					ValidateLifetime = true,
-					ValidateIssuerSigningKey = true,
-					ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-					ValidAudience = builder.Configuration["JwtSettings:Audience"],
-					IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"]))
-				};
-			}).AddGoogle(options =>
-			{
-				options.ClientId = builder.Configuration["Google:ClientId"];
-				options.ClientSecret = builder.Configuration["Google:ClientSecret"];
-			}); 
+			builder.Services.AddUserAuthentication(builder.Configuration);
 
 			var app = builder.Build();
 
@@ -82,7 +68,7 @@ namespace HSP.API
 			using (var scope = app.Services.CreateScope())
 			{
 				var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-				await initializer.InitializeAsync(); 
+				await initializer.InitializeAsync();
 			}
 
 			app.UseHttpsRedirection();
