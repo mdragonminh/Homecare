@@ -48,11 +48,11 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     setShowChangePasswordModal(true);
   };
 
-  const handleChangePasswordSubmit = async (currentPassword, newPassword) => {
-    const result = await profileApi.changePassword(currentPassword, newPassword);
+  const handleChangePasswordSubmit = async (currentPassword, newPassword, confirmNewPassword) => {
+    const result = await profileApi.changePassword(currentPassword, newPassword, confirmNewPassword);
     if (result.success) {
       alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
-      onLogout(); // Log user out after password change
+      window.location.href = "/login";
     } else {
       throw new Error(result.message);
     }

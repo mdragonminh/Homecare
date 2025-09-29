@@ -99,7 +99,7 @@ export const profileApi = {
   },
 
   // Đổi mật khẩu
-  changePassword: async (currentPassword, newPassword) => {
+  changePassword: async (currentPassword, newPassword, confirmNewPassword) => {
     try {
       const jwtToken = localStorage.getItem("jwtToken");
       if (!jwtToken) {
@@ -111,6 +111,7 @@ export const profileApi = {
         {
           currentPassword,
           newPassword,
+          confirmNewPassword
         },
         {
           headers: {
