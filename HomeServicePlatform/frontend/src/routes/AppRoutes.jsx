@@ -20,8 +20,9 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
     navigate("/register");
   };
 
-  return (
+   return (
     <Routes>
+      {/* ClientRoutes */}
       {/* Client routes */}
       <Route
         path="/*"
@@ -35,6 +36,7 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
         }
       />
 
+      {/* Login - THAY ĐỔI Ở ĐÂY */}
       {/* Auth */}
       <Route
         path="/login"
@@ -43,16 +45,19 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
             onSwitchToRegister={() => navigate("/register")}
             onBackToHome={() => navigate("/")}
             onLoginSuccess={onLoginSuccess}
+            loggedInUser={loggedInUser} // <-- THÊM PROP NÀY
           />
         }
       />
 
+      {/* Register - Có thể thêm cho RegisterPage nếu cần */}
       <Route
         path="/register"
         element={
           <RegisterPage
             onSwitchToLogin={() => navigate("/login")}
             onBackToHome={() => navigate("/")}
+            loggedInUser={loggedInUser} // <-- THÊM PROP NÀY
           />
         }
       />
