@@ -298,6 +298,7 @@ export default function TechniciansPage() {
       title: "Hành động",
       key: "action",
       width: 200,
+      align: "center",
       render: (_, record) => (
         <Space>
           <Tooltip title="Xem chi tiết">
@@ -307,7 +308,7 @@ export default function TechniciansPage() {
               onClick={() => handleViewDetails(record.id)}
             />
           </Tooltip>
-          {record.approvalStatus === TechnicianApprovalStatus.Pending && (
+          {/* {record.approvalStatus === TechnicianApprovalStatus.Pending && (
             <>
               <Tooltip title="Duyệt">
                 <Button
@@ -342,7 +343,7 @@ export default function TechniciansPage() {
                 />
               </Tooltip>
             </>
-          )}
+          )} */}
         </Space>
       ),
     },
@@ -360,27 +361,24 @@ export default function TechniciansPage() {
   };
 
   // Batch actions menu
-  const batchActionsMenu = {
-    items: [
-      {
-        key: "approve",
-        label: "Duyệt đã chọn",
-        icon: <CheckOutlined />,
-        onClick: handleBatchApprove,
-      },
-      {
-        key: "reject",
-        label: "Từ chối đã chọn",
-        icon: <CloseOutlined />,
-        onClick: handleBatchReject,
-      },
-    ],
-  };
+  const batchActionsMenu = [
+    {
+      key: "approve",
+      label: "Duyệt đã chọn",
+      icon: <CheckOutlined />,
+      onClick: handleBatchApprove,
+    },
+    {
+      key: "reject", 
+      label: "Từ chối đã chọn",
+      icon: <CloseOutlined />,
+      onClick: handleBatchReject,
+    },
+  ];
 
   useEffect(() => {
-    console.log("Filters changed:", filters);
     fetchTechnicians();
-  }, [pagination.current, pagination.pageSize, filters]);
+  }, [filters.searchTerm, filters.approvalStatus]);
 
   return (
     <div>
@@ -421,7 +419,7 @@ export default function TechniciansPage() {
           </Select>
 
           {selectedRowKeys.length > 0 && (
-            <Dropdown menu={batchActionsMenu} placement="bottomLeft">
+            <Dropdown menu={{ items: batchActionsMenu }} placement="bottomLeft">
               <Button>
                 Thao tác hàng loạt ({selectedRowKeys.length}) <DownOutlined />
               </Button>
