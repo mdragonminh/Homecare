@@ -58,14 +58,14 @@ namespace HSP.API.Controllers
             try
             {
                 var approvedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
-                var result = await _technicianProfileService.ApproveTechnicianAsync(id, approvedBy);
+                var result = await _technicianProfileService.ApproveTechnicianWithNotificationAsync(id, approvedBy);
                 
                 if (!result)
                 {
                     return NotFound(new { message = "Không tìm thấy technician hoặc không thể duyệt" });
                 }
 
-                return Ok(new { message = "Đã duyệt thành công technician" });
+                return Ok(new { message = "Đã duyệt thành công technician và gửi email thông báo" });
             }
             catch (Exception ex)
             {
@@ -79,14 +79,14 @@ namespace HSP.API.Controllers
             try
             {
                 var rejectedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
-                var result = await _technicianProfileService.RejectTechnicianAsync(id, rejectedBy);
+                var result = await _technicianProfileService.RejectTechnicianWithNotificationAsync(id, rejectedBy);
                 
                 if (!result)
                 {
                     return NotFound(new { message = "Không tìm thấy technician hoặc không thể từ chối" });
                 }
 
-                return Ok(new { message = "Đã từ chối thành công technician" });
+                return Ok(new { message = "Đã từ chối thành công technician và gửi email thông báo" });
             }
             catch (Exception ex)
             {
@@ -104,12 +104,12 @@ namespace HSP.API.Controllers
                 
                 foreach (var id in technicianIds)
                 {
-                    var result = await _technicianProfileService.ApproveTechnicianAsync(id, approvedBy);
+                    var result = await _technicianProfileService.ApproveTechnicianWithNotificationAsync(id, approvedBy);
                     if (result) successCount++;
                 }
 
                 return Ok(new { 
-                    message = $"Đã duyệt thành công {successCount}/{technicianIds.Count} technician", 
+                    message = $"Đã duyệt thành công {successCount}/{technicianIds.Count} technician và gửi email thông báo", 
                     successCount = successCount,
                     totalCount = technicianIds.Count
                 });
@@ -130,12 +130,12 @@ namespace HSP.API.Controllers
                 
                 foreach (var id in technicianIds)
                 {
-                    var result = await _technicianProfileService.RejectTechnicianAsync(id, rejectedBy);
+                    var result = await _technicianProfileService.RejectTechnicianWithNotificationAsync(id, rejectedBy);
                     if (result) successCount++;
                 }
 
                 return Ok(new { 
-                    message = $"Đã từ chối thành công {successCount}/{technicianIds.Count} technician", 
+                    message = $"Đã từ chối thành công {successCount}/{technicianIds.Count} technician và gửi email thông báo", 
                     successCount = successCount,
                     totalCount = technicianIds.Count
                 });

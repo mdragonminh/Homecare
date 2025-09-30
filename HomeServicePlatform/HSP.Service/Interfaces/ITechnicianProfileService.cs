@@ -9,5 +9,7 @@ namespace HSP.Service.Interfaces
         Task<TechnicianProfileResponseDto?> GetTechnicianByIdAsync(Guid id);
         Task<bool> ApproveTechnicianAsync(Guid technicianProfileId, string approvedBy);
         Task<bool> RejectTechnicianAsync(Guid technicianProfileId, string rejectedBy);
+        Task<bool> ApproveTechnicianWithNotificationAsync(Guid technicianProfileId, string approvedBy);
+        Task<bool> RejectTechnicianWithNotificationAsync(Guid technicianProfileId, string rejectedBy);
     }
 }
