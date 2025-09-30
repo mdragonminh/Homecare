@@ -6,6 +6,7 @@ namespace HSP.Service.Dtos.AuthenticationDto
 	public class LoginResponseDto
 	{
 		public string JwtToken { get; set; } = string.Empty;
+		public bool RequirePasswordSetup { get; set; }
 	}
 	public class LoginRequestDto
 	{

@@ -147,7 +147,8 @@ namespace HSP.API.Controllers
 		{
 			var loginResponse = await _authenticationService.GoogleLogin();
 			var frontendSuccessUrl = _urlSettings.FrontendLoginSuccess;
-			return Redirect($"{frontendSuccessUrl}?token={loginResponse.JwtToken}");
+			var redirectUrl = $"{frontendSuccessUrl}?token={loginResponse.JwtToken}&requirePasswordSetup={loginResponse.RequirePasswordSetup}";
+			return Redirect(redirectUrl);
 		}
 
 

@@ -66,6 +66,7 @@ namespace HSP.Service.Implementations
 			return new LoginResponseDto
 			{
 				JwtToken = token,
+				RequirePasswordSetup = string.IsNullOrEmpty(user.PasswordHash)
 			};
 		}
 		public async Task<LoginResponseDto> GoogleLogin()
@@ -85,7 +86,8 @@ namespace HSP.Service.Implementations
 			var token = await GenerateJwtToken(user);
 			return new LoginResponseDto
 			{
-				JwtToken = token
+				JwtToken = token,
+				RequirePasswordSetup = string.IsNullOrEmpty(user.PasswordHash)
 			};
 		}
 		private async Task<AppUser> FindOrCreateUserAsync(ExternalLoginInfo info)
