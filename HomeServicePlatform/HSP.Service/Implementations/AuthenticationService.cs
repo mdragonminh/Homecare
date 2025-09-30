@@ -371,5 +371,51 @@ namespace HSP.Service.Implementations
 			if (!result.Succeeded) throw new Exception("Add password failed");
 			return result.Succeeded;
 		}
+		public async Task<Guid> CreateOperatorAsync(CreateOperatorRequestDto input)
+		{
+			if (input == null)
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
+
+			// Kiểm tra email tồn tại
+			var existingByEmail = await _userRepository.FindByEmailAsync(input.Email);
+			if (existingByEmail != null)
+				throw new ValidationException(_localizer["EmailAlreadyExists"]);
+
+			await _unitOfWork.BeginTransactionAsync();
+			try
+			{
+				var user = new AppUser
+				{
+					Email = input.Email,
+					UserName = input.Username,
+					FullName = input.Username,
+					EmailConfirmed = true
+				};
+
+				var createResult = await _userRepository.CreateAsync(user, input.Password);
+				if (!createResult.Succeeded)
+				{
+					var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+					throw new ValidationException($"{_localizer["UserCreationFailed"]}: {errors}");
+				}
+				await _unitOfWork.SaveChangesAsync();
+
+				var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Operator);
+				if (!roleResult.Succeeded)
+				{
+					var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+					throw new ValidationException($"{_localizer["AddToRoleFailed"]}: {errors}");
+				}
+				await _unitOfWork.SaveChangesAsync();
+
+				await _unitOfWork.CommitTransactionAsync();
+				return user.Id;
+			}
+			catch
+			{
+				await _unitOfWork.RollbackTransactionAsync();
+				throw;
+			}
+		}
 	}
 }

@@ -1,8 +1,7 @@
 ﻿using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.External;
-﻿using HSP.Core.Constans;
-using HSP.Core.Entities;
+using HSP.Core.Constans;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
@@ -10,7 +9,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
@@ -58,9 +56,9 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = ex.Message });
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
-				return BadRequest(new { message = ex.Message });
+				return BadRequest(new { message = "An error occurred" });
 			}
 		}
 		[HttpPost("register-technician")]
@@ -81,9 +79,9 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = ex.Message });
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
-				return BadRequest(new { message = ex.Message });
+				return BadRequest(new { message = "An error occurred" });
 			}
 		}
 		private async Task SendConfirmationEmailAsync(RegisterResponseDto result, string fullName)
@@ -129,7 +127,7 @@ namespace HSP.API.Controllers
 			{
 				return Unauthorized(new { message = ex.Message }); 
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new { message = "An internal server error occurred." }); 
 			}
@@ -203,7 +201,7 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = ex.Message });
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new { message = "An internal server error occurred." });
 			}
@@ -234,7 +232,26 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = ex.Message });
 			}
-			catch (Exception ex)
+			catch (Exception)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." });
+			}
+		}
+		[HttpPost("create-operator")]
+		[Authorize(Roles = RoleNames.Admin)]
+		public async Task<IActionResult> CreateOperator([FromBody] CreateOperatorRequestDto input)
+		{
+			if (!ModelState.IsValid) return BadRequest(ModelState);
+			try
+			{
+				var userId = await _authenticationService.CreateOperatorAsync(input);
+				return Ok(new { id = userId, message = "OperatorCreated" });
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception)
 			{
 				return StatusCode(500, new { message = "An internal server error occurred." });
 			}
