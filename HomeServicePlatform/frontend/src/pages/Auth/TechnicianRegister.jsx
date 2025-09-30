@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, } from "react";
 import {
   Upload,
   User,
@@ -19,7 +19,7 @@ import {
 import { authApi } from "../../services/authApi";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
-
+ import { useNavigate } from "react-router-dom";
 const SPECIALIZATIONS = [
   "Điện",
   "Nước",
@@ -67,7 +67,6 @@ export default function TechnicianRegister({
     agreeToTerms: false,
     agreeToBackgroundCheck: false,
   });
-
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState(""); // success | error
@@ -163,6 +162,7 @@ export default function TechnicianRegister({
   };
 
   return (
+    <div >
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header với background màu xanh nhạt */}
 
@@ -350,7 +350,7 @@ export default function TechnicianRegister({
                     <option value="haiphong">Hải Phòng</option>
                     <option value="cantho">Cần Thơ</option>
                   </select>
-                </div> */}
+                </div> 
               </div>
             </div>
 
@@ -556,7 +556,7 @@ export default function TechnicianRegister({
                   </div>
                 </div>
               </div>
-            </div> */}
+            </div> 
 
             {/* Điều khoản */}
             <div className="p-8">
@@ -624,7 +624,7 @@ export default function TechnicianRegister({
                 </button>
               </div>
             </div>
-          </form>
+          
 
           {/* Footer */}
           <div className="text-center mt-8 text-gray-600 pb-12">
@@ -648,7 +648,7 @@ export default function TechnicianRegister({
           </div>
         </div>
       </div>
-
+      
       {/* Footer */}
       <Footer />
     </div>
