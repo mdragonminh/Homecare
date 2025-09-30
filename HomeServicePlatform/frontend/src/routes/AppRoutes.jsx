@@ -5,6 +5,9 @@ import RegisterPage from "../pages/Auth/RegisterPage";
 import ClientRoutes from "./ClientRoutes";
 import TechnicianRegister from "../pages/Auth/TechnicianRegister";
 import { GoogleCallbackPage } from "../pages/Auth/GoogleCallbackPage";
+import AdminLayout from "../pages/admin/AdminLayout";
+import AccountsPage from "../pages/admin/AccountsPage";
+import TechniciansPage from "../pages/admin/TechniciansPage";
 
 export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
   const navigate = useNavigate();
@@ -19,7 +22,7 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
 
   return (
     <Routes>
-      {/* Sử dụng ClientRoutes để quản lý các routes client */}
+      {/* Client routes */}
       <Route
         path="/*"
         element={
@@ -32,7 +35,7 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
         }
       />
 
-      {/* Login */}
+      {/* Auth */}
       <Route
         path="/login"
         element={
@@ -44,7 +47,6 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
         }
       />
 
-      {/* Register */}
       <Route
         path="/register"
         element={
@@ -55,13 +57,11 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
         }
       />
 
-      {/* Google Callback */}
       <Route
         path="/google-callback"
         element={<GoogleCallbackPage onLoginSuccess={onLoginSuccess} />}
       />
 
-      {/* Technician Register */}
       <Route
         path="/technician-register"
         element={
@@ -73,6 +73,12 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
           />
         }
       />
+
+      {/* Admin Routes */}
+      <Route path="/admin" element={<AdminLayout loggedInUser={loggedInUser} />}>
+        <Route path="accounts" element={<AccountsPage />} />
+        <Route path="technicians" element={<TechniciansPage />} />
+      </Route>
     </Routes>
   );
 }
