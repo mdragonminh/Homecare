@@ -8,7 +8,8 @@ import {
   PlusOutlined,
   MailOutlined,
   LockOutlined,
-  UserAddOutlined
+  UserAddOutlined,
+  HomeOutlined
 } from "@ant-design/icons";
 import { adminApi } from "../../services/adminApi";
 
@@ -77,7 +78,7 @@ export default function AdminLayout({ loggedInUser }) {
         <div style={{ 
           padding: "24px 20px", 
           borderBottom: "1px solid #f0f0f0",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          background: "linear-gradient(135deg, #103af3ff 0%, #1140a7ff 100%)"
         }}>
           <Space align="center">
             <div style={{
@@ -133,7 +134,7 @@ export default function AdminLayout({ loggedInUser }) {
             icon={<PlusOutlined />} 
             onClick={() => setOpenCreate(true)}
             style={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              background: "linear-gradient(135deg, #103af3ff 0%, #1140a7ff 100%)",
               border: "none",
               borderRadius: 8,
               height: 44,
@@ -152,11 +153,24 @@ export default function AdminLayout({ loggedInUser }) {
           boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
           padding: "0 24px",
           display: "flex",
-          alignItems: "center"
+          alignItems: "center",
+          justifyContent: "space-between"
         }}>
           <Title level={3} style={{ margin: 0, color: "#262626" }}>
             🏠 Home Service Platform - Admin
           </Title>
+          <Button 
+            type="default"
+            icon={<HomeOutlined />}
+            onClick={() => navigate("/")}
+            style={{
+              borderRadius: 8,
+              height: 36,
+              fontWeight: 500
+            }}
+          >
+            Về trang chủ
+          </Button>
         </Header>
         
         <Content style={{ 
