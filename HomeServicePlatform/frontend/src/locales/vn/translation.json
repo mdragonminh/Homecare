@@ -86,6 +86,7 @@
     "confirm_delete": "Xác nhận xóa",
     "confirm_delete_message": "Bạn có chắc chắn muốn xóa bất động sản này? Hành động này không thể hoàn tác.",
     "cancel": "Hủy bỏ",
+    "close": "Đóng",
     "delete": "Xóa",
     "deleting": "Đang xóa...",
     "edit": "Sửa",
@@ -138,7 +139,8 @@
       "brand": "Thương hiệu",
       "model_number": "Model",
       "serial_number": "Serial Number",
-      "notes": "Ghi chú"
+      "notes": "Ghi chú",
+      "username": "Tên đăng nhập"
     },
     "placeholder": {
       "fullname": "Nhập họ tên đầy đủ của bạn",
@@ -148,6 +150,8 @@
       "item_name": "Ví dụ: Máy lạnh Daikin",
       "brand": "Ví dụ: Daikin, Samsung",
       "model_number": "Ví dụ: FTKQ25SVMV",
+      "operator_email": "operator@example.com",
+      "operator_username": "operator001",
       "serial_number": "Mã số duy nhất của thiết bị",
       "notes": "Thông tin thêm về thiết bị (ví dụ: vị trí, ngày mua...)"
     },
@@ -173,7 +177,11 @@
     "item_name_required": "Tên vật phẩm là bắt buộc.",
     "brand_required": "Thương hiệu là bắt buộc.",
     "type_required": "Loại vật phẩm là bắt buộc.",
-    "model_number_required": "Mã Model là bắt buộc."
+    "model_number_required": "Mã Model là bắt buộc.",
+    "email_invalid": "Email không hợp lệ",
+    "username_required": "Vui lòng nhập tên đăng nhập",
+    "username_min": "Tối thiểu 3 ký tự",
+    "password_min": "Tối thiểu 8 ký tự"
   },
   "success": {
     "registration": "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để xác minh và đăng nhập.",
@@ -280,6 +288,90 @@
       "tip1": "Kéo thả marker để chọn vị trí chính xác",
       "tip2": "Sử dụng ô \"Địa chỉ chi tiết\" để tìm kiếm nhanh (Google Autocomplete)",
       "tip3": "Tọa độ và địa chỉ sẽ được cập nhật tự động"
+    }
+  },
+  "admin": {
+    "panel_title": "Bảng điều khiển Admin",
+    "platform_title": "Home Service Platform - Admin",
+    "create_operator": "Tạo Operator",
+    "create_operator_success": "Tạo operator thành công!",
+    "create_operator_failed": "Tạo operator thất bại",
+    "create_operator_account": "Tạo tài khoản Operator",
+    "create_account": "Tạo tài khoản",
+    "menu": {
+      "account_management": "Quản lý tài khoản",
+      "technicians": "Kỹ thuật viên"
+    }
+  },
+  "technicians": {
+    "page_title": "Quản lý Kỹ thuật viên",
+    "page_description": "Quản lý và duyệt hồ sơ kỹ thuật viên",
+    "all_statuses": "Tất cả trạng thái",
+    "unknown_status": "Không xác định",
+    "error_loading_list": "Có lỗi xảy ra khi tải danh sách kỹ thuật viên",
+    "approve_success": "Duyệt kỹ thuật viên thành công!",
+    "error_approving": "Có lỗi xảy ra khi duyệt kỹ thuật viên",
+    "reject_success": "Từ chối kỹ thuật viên thành công!",
+    "error_rejecting": "Có lỗi xảy ra khi từ chối kỹ thuật viên",
+    "select_at_least_one": "Vui lòng chọn ít nhất một kỹ thuật viên",
+    "confirm_batch_approve": "Xác nhận duyệt hàng loạt",
+    "confirm_batch_approve_message": "Bạn có chắc chắn muốn duyệt {{count}} kỹ thuật viên được chọn?",
+    "batch_approve_success": "Duyệt thành công {{successCount}}/{{totalCount}} kỹ thuật viên",
+    "error_batch_approve": "Có lỗi xảy ra khi duyệt hàng loạt",
+    "confirm_batch_reject": "Xác nhận từ chối hàng loạt",
+    "confirm_batch_reject_message": "Bạn có chắc chắn muốn từ chối {{count}} kỹ thuật viên được chọn?",
+    "batch_reject_success": "Từ chối thành công {{successCount}}/{{totalCount}} kỹ thuật viên",
+    "error_batch_reject": "Có lỗi xảy ra khi từ chối hàng loạt",
+    "error_loading_detail": "Có lỗi xảy ra khi tải thông tin kỹ thuật viên",
+    "specialization": "Chuyên môn",
+    "description": "Mô tả",
+    "years_experience": "{{years}} năm",
+    "view_details": "Xem chi tiết",
+    "approve_selected": "Duyệt đã chọn",
+    "reject_selected": "Từ chối đã chọn",
+    "search_placeholder": "Tìm kiếm theo tên, email, kỹ năng...",
+    "approval_status_placeholder": "Trạng thái duyệt",
+    "batch_actions": "Thao tác hàng loạt",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "pagination_total": "{{start}}-{{end}} của {{total}} kỹ thuật viên",
+    "no_technicians": "Chưa có kỹ thuật viên nào",
+    "no_results_with_filters": "Không tìm thấy kết quả phù hợp với bộ lọc",
+    "no_registrations": "Chưa có kỹ thuật viên nào đăng ký",
+    "table": {
+      "full_name": "Họ tên",
+      "email": "Email",
+      "phone_number": "Số điện thoại",
+      "skills": "Kỹ năng",
+      "experience": "Kinh nghiệm",
+      "status": "Trạng thái",
+      "created_date": "Ngày tạo",
+      "actions": "Hành động"
+    },
+    "stats": {
+      "pending": "Chờ duyệt",
+      "approved": "Đã duyệt",
+      "rejected": "Bị từ chối",
+      "total": "Tổng cộng"
+    },
+    "modal": {
+      "basic_info": "Thông tin cơ bản",
+      "username": "Username",
+      "email": "Email",
+      "phone": "SĐT",
+      "experience": "Kinh nghiệm",
+      "not_updated": "Chưa cập nhật",
+      "skills_specialization": "Kỹ năng & Chuyên môn",
+      "specialization": "Chuyên môn",
+      "certifications": "Chứng chỉ",
+      "introduction": "Giới thiệu",
+      "work_schedule": "Thời gian làm việc",
+      "skill_description": "Mô tả kỹ năng",
+      "timeline": "Thời gian",
+      "registration_date": "Ngày đăng ký",
+      "approval_date": "Ngày duyệt",
+      "rejection_date": "Ngày từ chối",
+      "by": "Bởi"
     }
   }
 }
