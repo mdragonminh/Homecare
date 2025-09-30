@@ -22,6 +22,11 @@ import {
   ExclamationCircleOutlined
 } from "@ant-design/icons";
 import { adminApi } from "../../services/adminApi";
+import { 
+  TechnicianApprovalStatus, 
+  TechnicianApprovalStatusLabels, 
+  TechnicianApprovalStatusColors 
+} from "../../constants/enums";
 
 const { Option } = Select;
 const { confirm } = Modal;
@@ -45,23 +50,21 @@ export default function TechniciansPage() {
   // Approval status options
   const approvalStatusOptions = [
     { value: undefined, label: "Tất cả trạng thái" },
-    { value: 0, label: "Chờ duyệt" },
-    { value: 1, label: "Đã duyệt" },
-    { value: 2, label: "Bị từ chối" },
+    { value: TechnicianApprovalStatus.Pending, label: TechnicianApprovalStatusLabels[TechnicianApprovalStatus.Pending] },
+    { value: TechnicianApprovalStatus.Approved, label: TechnicianApprovalStatusLabels[TechnicianApprovalStatus.Approved] },
+    { value: TechnicianApprovalStatus.Rejected, label: TechnicianApprovalStatusLabels[TechnicianApprovalStatus.Rejected] },
   ];
 
   // Get approval status tag
   const getApprovalStatusTag = (status) => {
-    switch (status) {
-      case 0:
-        return <Tag color="orange">Chờ duyệt</Tag>;
-      case 1:
-        return <Tag color="green">Đã duyệt</Tag>;
-      case 2:
-        return <Tag color="red">Bị từ chối</Tag>;
-      default:
-        return <Tag>Không xác định</Tag>;
+    const label = TechnicianApprovalStatusLabels[status];
+    const color = TechnicianApprovalStatusColors[status];
+    
+    if (label && color) {
+      return <Tag color={color}>{label}</Tag>;
     }
+    
+    return <Tag>Không xác định</Tag>;
   };
 
   // Fetch technicians
@@ -72,7 +75,7 @@ export default function TechniciansPage() {
         pageNumber: params.current || pagination.current,
         pageSize: params.pageSize || pagination.pageSize,
         searchTerm: filters.searchTerm,
-        approvalStatus: filters.approvalStatus,
+        ...(filters.approvalStatus && { approvalStatus: filters.approvalStatus }),
       });
 
       if (response.success) {
@@ -91,18 +94,10 @@ export default function TechniciansPage() {
     setLoading(false);
   };
 
-  // Handle table change
-  const handleTableChange = (pagination, filters, sorter) => {
-    fetchTechnicians({
-      current: pagination.current,
-      pageSize: pagination.pageSize,
-    });
-  };
 
   // Handle search
   const handleSearch = () => {
     setPagination(prev => ({ ...prev, current: 1 }));
-    fetchTechnicians({ current: 1 });
   };
 
   // Handle filter change
@@ -312,7 +307,7 @@ export default function TechniciansPage() {
               onClick={() => handleViewDetails(record.id)}
             />
           </Tooltip>
-          {record.approvalStatus === 0 && (
+          {record.approvalStatus === TechnicianApprovalStatus.Pending && (
             <>
               <Tooltip title="Duyệt">
                 <Button
@@ -360,7 +355,7 @@ export default function TechniciansPage() {
       setSelectedRowKeys(selectedKeys);
     },
     getCheckboxProps: (record) => ({
-      disabled: record.approvalStatus !== 0, // Only pending technicians can be selected
+      disabled: record.approvalStatus !== TechnicianApprovalStatus.Pending, // Only pending technicians can be selected
     }),
   };
 
@@ -383,8 +378,9 @@ export default function TechniciansPage() {
   };
 
   useEffect(() => {
+    console.log("Filters changed:", filters);
     fetchTechnicians();
-  }, []);
+  }, [pagination.current, pagination.pageSize, filters]);
 
   return (
     <div>
@@ -415,7 +411,6 @@ export default function TechniciansPage() {
             value={filters.approvalStatus}
             onChange={(value) => {
               handleFilterChange("approvalStatus", value);
-              setTimeout(handleSearch, 0);
             }}
           >
             {approvalStatusOptions.map((option) => (
@@ -458,7 +453,7 @@ export default function TechniciansPage() {
               fontSize: 12,
               fontWeight: "bold"
             }}>
-              {technicians.filter(t => t.approvalStatus === 0).length}
+              {technicians.filter(t => t.approvalStatus === TechnicianApprovalStatus.Pending).length}
             </div>
             <span style={{ fontSize: 14, fontWeight: 500, color: "#d4680a" }}>Chờ duyệt</span>
           </div>
@@ -485,7 +480,7 @@ export default function TechniciansPage() {
               fontSize: 12,
               fontWeight: "bold"
             }}>
-              {technicians.filter(t => t.approvalStatus === 1).length}
+              {technicians.filter(t => t.approvalStatus === TechnicianApprovalStatus.Approved).length}
             </div>
             <span style={{ fontSize: 14, fontWeight: 500, color: "#389e0d" }}>Đã duyệt</span>
           </div>
@@ -512,7 +507,7 @@ export default function TechniciansPage() {
               fontSize: 12,
               fontWeight: "bold"
             }}>
-              {technicians.filter(t => t.approvalStatus === 2).length}
+              {technicians.filter(t => t.approvalStatus === TechnicianApprovalStatus.Rejected).length}
             </div>
             <span style={{ fontSize: 14, fontWeight: 500, color: "#cf1322" }}>Bị từ chối</span>
           </div>
@@ -562,7 +557,6 @@ export default function TechniciansPage() {
               `${range[0]}-${range[1]} của ${total} kỹ thuật viên`,
             pageSizeOptions: ['5', '10', '20', '50'],
           }}
-          onChange={handleTableChange}
           scroll={{ x: 1000 }}
           locale={{
             emptyText: (
@@ -594,7 +588,7 @@ export default function TechniciansPage() {
           <Button key="close" onClick={() => setDetailModalVisible(false)}>
             Đóng
           </Button>,
-          ...(technicianDetail?.approvalStatus === 0 ? [
+          ...(technicianDetail?.approvalStatus === TechnicianApprovalStatus.Pending ? [
             <Button 
               key="reject" 
               danger 
@@ -778,12 +772,12 @@ export default function TechniciansPage() {
                     <div style={{ 
                       width: 60, 
                       height: 2, 
-                      backgroundColor: technicianDetail.approvalStatus === 1 ? "#52c41a" : "#ff4d4f",
+                      backgroundColor: technicianDetail.approvalStatus === TechnicianApprovalStatus.Approved ? "#52c41a" : "#ff4d4f",
                       margin: "0 16px"
                     }} />
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 13, color: "#666" }}>
-                        {technicianDetail.approvalStatus === 1 ? "Ngày duyệt" : "Ngày từ chối"}
+                        {technicianDetail.approvalStatus === TechnicianApprovalStatus.Approved ? "Ngày duyệt" : "Ngày từ chối"}
                       </div>
                       <div style={{ fontWeight: 500, marginTop: 4 }}>
                         {new Date(technicianDetail.approvedAt).toLocaleDateString("vi-VN")}
