@@ -122,7 +122,7 @@ namespace HSP.Service.Implementations
 			{
 				UserName = email,
 				Email = email,
-				FullName = info.Principal.FindFirstValue(ClaimTypes.Name),
+				FullName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? email,
 				EmailConfirmed = true
 			};
 
@@ -166,8 +166,8 @@ namespace HSP.Service.Implementations
 			var claims = new List<Claim>
 			{
 						new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-						new Claim(ClaimTypes.Email, user.Email),
-						new Claim(ClaimTypes.Name, user.FullName),
+						new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+						new Claim(ClaimTypes.Name, user.FullName ?? string.Empty),
 				};
 			foreach (var role in roles)
 			{
@@ -221,7 +221,74 @@ namespace HSP.Service.Implementations
 		}
 		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
 		{
-			return await RegisterInternalAsync(input, input.SkillSet, input.ExperienceYears, phoneNumber: input.PhoneNumber, role: RoleNames.Technician);
+			if (input == null)
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
+
+			// Kiểm tra email đã tồn tại chưa
+			var existingUser = await _userRepository.FindByEmailAsync(input.Email);
+			if (existingUser != null)
+				throw new ValidationException(_localizer["EmailAlreadyExists"]);
+
+			using (var transaction = await _unitOfWork.BeginTransactionAsync())
+			{
+				try
+				{
+					// Tạo user với password mặc định "123Qwe@@"
+					var user = new AppUser
+					{
+						Email = input.Email,
+						UserName = input.Email,
+						FullName = input.FullName,
+						EmailConfirmed = false
+					};
+
+					var created = await _userRepository.CreateAsync(user, "123Qwe@@");
+					if (!created.Succeeded)
+					{
+						var errors = string.Join(", ", created.Errors.Select(e => e.Description));
+						throw new ValidationException($"{_localizer["UserCreationFailed"]}: {errors}");
+					}
+
+					// Thêm role Technician
+					var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Technician);
+					if (!roleResult.Succeeded)
+					{
+						var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+						throw new ValidationException($"{_localizer["AddToRoleFailed"]}: {errors}");
+					}
+
+					// Tạo TechnicianProfile
+					var technicianProfile = new TechnicianProfile
+					{
+						UserId = user.Id,
+						SkillSet = input.SkillSet,
+						ExperienceYears = input.ExperienceYears,
+						DateCreated = DateTime.UtcNow,
+						DateModified = DateTime.UtcNow,
+						IsDeleted = false
+					};
+					
+					await _technicianRepository.AddAsync(technicianProfile);
+					await _unitOfWork.SaveChangesAsync();
+
+					// Tạo email confirmation token
+					var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
+
+					await transaction.CommitAsync();
+
+					return new RegisterResponseDto
+					{
+						UserId = user.Id,
+						Email = user.Email,
+						EmailConfirmToken = token
+					};
+				}
+				catch
+				{
+					await transaction.RollbackAsync();
+					throw;
+				}
+			}
 		}
 		private async Task<RegisterResponseDto> RegisterInternalAsync(RegisterRequestDto input,
 			string? skillSet = null, int? experienceYears = null,
