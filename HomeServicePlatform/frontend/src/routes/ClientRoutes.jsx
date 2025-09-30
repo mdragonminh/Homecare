@@ -1,8 +1,8 @@
 // src/routes/ClientRoutes.jsx
 import { Routes, Route } from "react-router-dom";
 import { HomePage } from "../pages/client/HomePage";
-import HomeManagementPage from "../pages/client/address/HomeManagementPage";
-import HomeItemsPage from "../pages/client/address/HomeItemsPage";
+import HomeManagementPage from "../pages/client/home/HomeManagementPage";
+import HomeItemsPage from "../pages/client/home/HomeItemsPage";
 export default function ClientRoutes({ loggedInUser, onLogout, onShowLogin, onShowRegister }) {
   return (
     <Routes>

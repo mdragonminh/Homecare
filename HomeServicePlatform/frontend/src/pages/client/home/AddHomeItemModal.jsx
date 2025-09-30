@@ -1,17 +1,11 @@
 import { useState } from "react";
-import { X, Wrench, Package, Tag, Hash, FileText } from "lucide-react";
-import { homeApi } from "../../../services/homeApi"; // Đảm bảo đúng đường dẫn
+import { X, Wrench, Package, Tag, Hash, FileText, Loader2 } from "lucide-react"; // Thêm Loader2
+import { homeApi } from "../../../services/homeApi";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner"; // ✅ Import toast từ sonner
 
-// Danh sách các loại vật phẩm ví dụ (Bạn có thể mở rộng)
+// Danh sách các loại vật phẩm (keys)
 const itemTypes = ["appliance", "furniture", "electronics", "tool", "other"];
-
-const itemTypeLabels = {
-    appliance: "Thiết bị Gia dụng",
-    furniture: "Nội thất",
-    electronics: "Thiết bị Điện tử",
-    tool: "Dụng cụ",
-    other: "Khác",
-};
 
 /**
  * Modal thêm vật phẩm/thiết bị vào một Home cụ thể.
@@ -21,97 +15,71 @@ const itemTypeLabels = {
  * @param {function} props.onSuccess - Hàm gọi khi thêm thành công (để refresh data).
  */
 export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
+    const { t } = useTranslation();
+
     const [formData, setFormData] = useState({
         name: "",
         brand: "",
         type: "appliance", // Thiết lập mặc định
         modelNumber: "",
         serialNumber: "",
-        notes: "", // Thêm trường notes vào state
+        notes: "",
     });
+    // ✅ Bỏ state loading/error/successMessage nội bộ, dùng toast.promise
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState(null);
+    const [error, setError] = useState(null); // Giữ lại error chỉ để hiển thị validation lỗi
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        // Xóa thông báo lỗi/thành công khi người dùng bắt đầu chỉnh sửa
         setError(null);
-        setSuccessMessage(null);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
         setError(null);
-        setSuccessMessage(null);
 
-        // Kiểm tra validation cụ thể từng trường
-        if (!formData.name) {
-            setError("Vui lòng nhập tên vật phẩm.");
-            setLoading(false);
-            return;
-        }
-        if (!formData.brand) {
-            setError("Vui lòng nhập thương hiệu.");
-            setLoading(false);
-            return;
-        }
-        if (!formData.type) {
-            setError("Vui lòng chọn loại vật phẩm.");
-            setLoading(false);
-            return;
-        }
-        if (!formData.modelNumber) {
-            setError("Vui lòng nhập mã model.");
-            setLoading(false);
-            return;
-        }
-        if (!formData.serialNumber) {
-            setError("Vui lòng nhập số serial.");
-            setLoading(false);
-            return;
-        }
-        if (!formData.notes) {
-            setError("Vui lòng nhập ghi chú.");
-            setLoading(false);
+        // Validation: Kiểm tra trường bắt buộc
+        if (!formData.name || !formData.type) {
+            setError(t("validation.item_name_type_required") || "Tên và loại vật phẩm là bắt buộc.");
             return;
         }
 
-        try {
-            // Gọi API đã có trong homeApi.jsx
-            const result = await homeApi.addHomeItem({
-                ...formData,
-                homeId: homeId, // Truyền homeId vào payload
-            });
+        setLoading(true);
 
-            if (result.success) {
-                setSuccessMessage("Thêm vật phẩm thành công!");
-                setFormData({
-                    name: "",
-                    brand: "",
-                    type: "appliance",
-                    modelNumber: "",
-                    serialNumber: "",
-                    notes: "", // Reset form
-                }); 
-                
-                // Chờ một chút rồi đóng modal và refresh data
-                setTimeout(() => {
-                    onSuccess && onSuccess();
-                }, 1000);
+        const payload = {
+            ...formData,
+            homeId: homeId, // Truyền homeId vào payload
+        };
+        
+        // Khởi tạo promise cho API call
+        const addPromise = homeApi.addHomeItem(payload);
 
-            } else {
-                // Xử lý lỗi từ API
-                setError(result.message || "Lỗi không xác định khi thêm vật phẩm.");
-            }
-        } catch (err) {
-            console.error("Submission error:", err);
-            setError("Lỗi kết nối. Vui lòng thử lại sau.");
-        } finally {
-            setLoading(false);
-        }
+        toast.promise(addPromise, {
+            loading: t("ui.adding_item_loading") || "Đang thêm vật phẩm mới...",
+            success: (result) => {
+                setLoading(false);
+                if (result.success) {
+                    onSuccess && onSuccess(); // Cập nhật danh sách
+                    onClose(); // Đóng modal ngay lập tức
+                    return t("success.item_added", { item_name: formData.name }) || `Đã thêm "${formData.name}" thành công!`;
+                } else {
+                    // Nếu API trả về lỗi logic
+                    return result.message || t("error.add_item_unknown") || "Thêm vật phẩm thất bại.";
+                }
+            },
+            error: (err) => {
+                setLoading(false);
+                console.error("Submission error:", err);
+                // Lỗi mạng hoặc lỗi server không mong muốn
+                return t("error.network_connect_failed") || "Lỗi kết nối mạng, vui lòng thử lại.";
+            },
+        });
+    };
+
+    // Hàm hỗ trợ lấy label cho option
+    const getItemTypeLabel = (typeKey) => {
+        return t(`item.type.${typeKey}`);
     };
 
     return (
@@ -125,11 +93,12 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                         <div className="p-2 bg-blue-100 rounded-xl">
                             <Wrench className="text-blue-600" size={24} />
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900">Thêm Vật Phẩm Mới</h2>
+                        <h2 className="text-xl font-bold text-gray-900">{t("ui.add_item_modal_title")}</h2>
                     </div>
                     <button
                         onClick={onClose}
                         className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                        disabled={loading} // Không cho đóng khi đang tải
                     >
                         <X size={20} />
                     </button>
@@ -140,7 +109,7 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                     
                     {/* Tên Vật Phẩm */}
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Tên Vật Phẩm *</label>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">{t("form.label.item_name")}</label>
                         <div className="relative">
                             <Package size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                             <input
@@ -149,9 +118,10 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                                 value={formData.name}
                                 onChange={handleChange}
                                 type="text"
-                                placeholder="Ví dụ: Máy lạnh Inverter"
+                                placeholder={t("form.placeholder.item_name")}
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                                 required
+                                disabled={loading}
                             />
                         </div>
                     </div>
@@ -159,7 +129,7 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                     <div className="grid grid-cols-2 gap-4">
                         {/* Thương hiệu */}
                         <div>
-                            <label htmlFor="brand" className="block text-sm font-medium text-gray-700 mb-1">Thương hiệu *</label>
+                            <label htmlFor="brand" className="block text-sm font-medium text-gray-700 mb-1">{t("form.label.brand")}</label>
                             <div className="relative">
                                 <Tag size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -168,16 +138,16 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                                     value={formData.brand}
                                     onChange={handleChange}
                                     type="text"
-                                    placeholder="Ví dụ: Samsung, Sony"
+                                    placeholder={t("form.placeholder.brand")}
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    required
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
                         
                         {/* Loại */}
                         <div>
-                            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">Loại Vật Phẩm *</label>
+                            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">{t("form.label.item_type")}</label>
                             <div className="relative">
                                 <Wrench size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <select
@@ -187,10 +157,11 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                                     onChange={handleChange}
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none bg-white appearance-none transition-all cursor-pointer"
                                     required
+                                    disabled={loading}
                                 >
                                     {itemTypes.map((type) => (
                                         <option key={type} value={type}>
-                                            {itemTypeLabels[type]}
+                                            {getItemTypeLabel(type)}
                                         </option>
                                     ))}
                                 </select>
@@ -201,7 +172,7 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                     <div className="grid grid-cols-2 gap-4">
                         {/* Mã Model */}
                         <div>
-                            <label htmlFor="modelNumber" className="block text-sm font-medium text-gray-700 mb-1">Mã Model *</label>
+                            <label htmlFor="modelNumber" className="block text-sm font-medium text-gray-700 mb-1">{t("form.label.model_number")}</label>
                             <div className="relative">
                                 <Hash size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -210,16 +181,16 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                                     value={formData.modelNumber}
                                     onChange={handleChange}
                                     type="text"
-                                    placeholder="Ví dụ: AS12ESQA"
+                                    placeholder={t("form.placeholder.model_number")}
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    required
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
 
                         {/* Số Serial */}
                         <div>
-                            <label htmlFor="serialNumber" className="block text-sm font-medium text-gray-700 mb-1">Số Serial *</label>
+                            <label htmlFor="serialNumber" className="block text-sm font-medium text-gray-700 mb-1">{t("form.label.serial_number")}</label>
                             <div className="relative">
                                 <Hash size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
@@ -228,9 +199,9 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                                     value={formData.serialNumber}
                                     onChange={handleChange}
                                     type="text"
-                                    placeholder="Ví dụ: W34B5C6D"
+                                    placeholder={t("form.placeholder.serial_number")}
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    required
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
@@ -238,7 +209,7 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                     
                     {/* Ghi chú */}
                     <div>
-                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">Ghi chú *</label>
+                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">{t("form.label.notes")}</label>
                         <div className="relative">
                             <FileText size={18} className="absolute left-3 top-4 text-gray-400" />
                             <textarea
@@ -247,17 +218,17 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                                 value={formData.notes}
                                 onChange={handleChange}
                                 rows="3"
-                                placeholder="Thêm ghi chú về vật phẩm, ví dụ: tình trạng bảo hành, ngày mua..."
+                                placeholder={t("form.placeholder.notes")}
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                required
+                                disabled={loading}
                             />
                         </div>
                     </div>
 
-                    {/* Error & Success Messages */}
-                    {(error || successMessage) && (
-                        <div className={`p-3 rounded-lg text-sm font-medium ${error ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                            {error || successMessage}
+                    {/* Error Messages (Chỉ hiển thị lỗi validation cục bộ) */}
+                    {error && (
+                        <div className="p-3 rounded-lg text-sm font-medium bg-red-100 text-red-700">
+                            {error}
                         </div>
                     )}
                     
@@ -269,14 +240,21 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                             className="flex-1 py-3 px-4 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
                             disabled={loading}
                         >
-                            Hủy
+                            {t("ui.cancel")}
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 py-3 px-4 text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 px-4 text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
                             disabled={loading}
                         >
-                            {loading ? 'Đang thêm...' : 'Thêm Vật Phẩm'}
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    {t("ui.adding") || "Đang thêm..."}
+                                </>
+                            ) : (
+                                t("ui.add_item")
+                            )}
                         </button>
                     </div>
                 </form>

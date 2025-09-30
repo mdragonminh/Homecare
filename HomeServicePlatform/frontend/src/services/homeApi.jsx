@@ -1,12 +1,9 @@
 import axios from "axios";
-
-// Lấy biến môi trường từ .env
-const API_URL = import.meta.env.VITE_API_URL;
+import axiosClient from "../utils/axiosClient"; 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
 
 export const homeApi = {
-  // Hàm lấy tọa độ từ địa chỉ bằng Geocoding API
   geocodeAddress: async (address) => {
     try {
       const response = await axios.get(
@@ -36,6 +33,7 @@ export const homeApi = {
       let lat = latitude;
       let lng = longitude;
 
+      // Xử lý Geocoding nếu thiếu lat/lng
       if (!lat || !lng) {
         const geocodeResult = await homeApi.geocodeAddress(address);
         if (!geocodeResult.success) throw new Error(geocodeResult.message);
@@ -43,26 +41,16 @@ export const homeApi = {
         lng = geocodeResult.longitude;
       }
 
-      // Lấy token ngay trước khi gọi API
-      const jwtToken = localStorage.getItem("jwtToken");
-      if (!jwtToken) {
-        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
-      }
-
-      const res = await axios.post(
-        `${API_URL}/Home/create-home`,
+      // ⭐️ Sử dụng axiosClient.post.
+      // ⭐️ axiosClient đã tự động thêm Bearer Token và Content-Type: application/json
+      const res = await axiosClient.post(
+        "/Home/create-home", // Dùng relative path
         {
           name,
           address,
           latitude: lat,
           longitude: lng,
           customerProfileId,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${jwtToken}`,
-          },
         }
       );
 
@@ -70,6 +58,7 @@ export const homeApi = {
       return { success: true, data: res.data };
     } catch (error) {
       if (ENABLE_DEBUG) console.error("Create home error:", error);
+      // Xử lý lỗi theo định dạng đã dùng trong authApi, nhưng giữ lại cú pháp cũ nếu cần
       return {
         success: false,
         message:
@@ -89,25 +78,20 @@ export const homeApi = {
     type = "all"
   ) => {
     try {
-      const jwtToken = localStorage.getItem("jwtToken");
-      if (!jwtToken) {
-        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
-      }
+      // ⭐️ Không cần kiểm tra token thủ công nữa, Interceptor sẽ lo
+      // if (!jwtToken) { throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại."); }
 
       const queryParams = new URLSearchParams({
         pageNumber: page,
         pageSize: pageSize,
-        ...(searchTerm && { searchTerm }),
+        ...(searchTerm && { Search: searchTerm }),
         ...(type !== "all" && { type }),
       }).toString();
 
-      const url = `${API_URL}/Home/list-home?${queryParams}`;
+      const url = `/Home/list-home?${queryParams}`; // Dùng relative path
 
-      const res = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${jwtToken}`,
-        },
-      });
+      // ⭐️ Sử dụng axiosClient.get. Bearer Token tự động được thêm
+      const res = await axiosClient.get(url);
 
       if (ENABLE_DEBUG) console.log("Get homes success:", res.data);
 
@@ -121,6 +105,85 @@ export const homeApi = {
     }
   },
 
+  // =================================================================================
+  // CÁC API HOME BỔ SUNG (DELETE, PUT, GET BY ID)
+  // =================================================================================
+
+  // Hàm lấy chi tiết Home bằng ID (GET /api/Home/{homeId})
+  getHomeById: async (homeId) => {
+    try {
+      // ⭐️ Không cần kiểm tra token thủ công
+      const url = `/Home/${homeId}`; // Dùng relative path
+
+      // ⭐️ Sử dụng axiosClient.get
+      const res = await axiosClient.get(url);
+
+      if (ENABLE_DEBUG) console.log(`Get home ${homeId} success:`, res.data);
+      return { success: true, data: res.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error(`Get home ${homeId} error:`, error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Lỗi khi lấy chi tiết địa chỉ",
+      };
+    }
+  },
+
+  // Hàm cập nhật Home (PUT /api/Home/{homeId})
+  updateHome: async (homeId, { name, address, latitude, longitude }) => {
+    try {
+      // ⭐️ Không cần kiểm tra token thủ công
+      // ⭐️ Sử dụng axiosClient.put
+      const res = await axiosClient.put(
+        `/Home/${homeId}`, // Dùng relative path
+        {
+          name,
+          address,
+          latitude,
+          longitude,
+          // Có thể cần thêm các trường khác nếu API yêu cầu
+        }
+        // ⭐️ Không cần truyền headers nữa
+      );
+
+      if (ENABLE_DEBUG) console.log(`Update home ${homeId} success:`, res.data);
+      return { success: true, data: res.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error(`Update home ${homeId} error:`, error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          "Cập nhật home thất bại",
+      };
+    }
+  },
+
+  // Hàm xóa Home (DELETE /api/Home/{homeId})
+  deleteHome: async (homeId) => {
+    try {
+      // ⭐️ Không cần kiểm tra token thủ công
+      // ⭐️ Sử dụng axiosClient.delete
+      const res = await axiosClient.delete(`/Home/${homeId}`); // Dùng relative path
+
+      if (ENABLE_DEBUG) console.log(`Delete home ${homeId} success:`, res.data);
+      return { success: true, data: res.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error(`Delete home ${homeId} error:`, error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Xóa home thất bại",
+      };
+    }
+  },
+
+  // =================================================================================
+  // CÁC API HOME ITEM ĐÃ CÓ
+  // =================================================================================
+
   // Hàm thêm vật phẩm vào Home
   addHomeItem: async ({
     name,
@@ -132,13 +195,10 @@ export const homeApi = {
     homeId,
   }) => {
     try {
-      const jwtToken = localStorage.getItem("jwtToken");
-      if (!jwtToken) {
-        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
-      }
-
-      const res = await axios.post(
-        `${API_URL}/HomeItem/add-home-item`,
+      // ⭐️ Không cần kiểm tra token thủ công
+      // ⭐️ Sử dụng axiosClient.post
+      const res = await axiosClient.post(
+        "/HomeItem/add-home-item", // Dùng relative path
         {
           name,
           brand,
@@ -147,13 +207,8 @@ export const homeApi = {
           serialNumber,
           notes,
           homeId,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${jwtToken}`,
-          },
         }
+        // ⭐️ Không cần truyền headers nữa
       );
 
       if (ENABLE_DEBUG) console.log("Add home item success:", res.data);
@@ -171,25 +226,19 @@ export const homeApi = {
   // Hàm lấy danh sách vật phẩm của Home
   listHomeItems: async (homeId, page = 1, pageSize = 10, searchTerm = "") => {
     try {
-      const jwtToken = localStorage.getItem("jwtToken");
-      if (!jwtToken) {
-        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
-      }
+      // ⭐️ Không cần kiểm tra token thủ công
 
       const queryParams = new URLSearchParams({
         homeId: homeId,
         pageNumber: page,
         pageSize: pageSize,
-        ...(searchTerm && { searchTerm }),
+        ...(searchTerm && { Search: searchTerm }),
       }).toString();
 
-      const url = `${API_URL}/HomeItem/list-home-item?${queryParams}`;
+      const url = `/HomeItem/list-home-item?${queryParams}`; // Dùng relative path
 
-      const res = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${jwtToken}`,
-        },
-      });
+      // ⭐️ Sử dụng axiosClient.get
+      const res = await axiosClient.get(url);
 
       if (ENABLE_DEBUG) console.log("List home items success:", res.data);
 
@@ -199,6 +248,61 @@ export const homeApi = {
       return {
         success: false,
         message: error.response?.data?.message || "Lỗi khi lấy danh sách vật phẩm",
+      };
+    }
+  },
+   getHomeItemById: async (homeItemId) => {
+    try {
+      const url = `/HomeItem/${homeItemId}`;
+      const res = await axiosClient.get(url);
+
+      if (ENABLE_DEBUG) console.log(`Get home item ${homeItemId} success:`, res.data);
+      return { success: true, data: res.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error(`Get home item ${homeItemId} error:`, error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Lỗi khi lấy chi tiết vật phẩm",
+      };
+    }
+  },
+
+  // Hàm cập nhật HomeItem (PUT /api/HomeItem/{homeItemId})
+  updateHomeItem: async (homeItemId, data) => { // 'data' chứa các trường cần cập nhật
+    try {
+      const res = await axiosClient.put(
+        `/HomeItem/${homeItemId}`,
+        data // Ví dụ: { name, brand, type, modelNumber, serialNumber, notes, homeId }
+      );
+
+      if (ENABLE_DEBUG) console.log(`Update home item ${homeItemId} success:`, res.data);
+      return { success: true, data: res.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error(`Update home item ${homeItemId} error:`, error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          "Cập nhật vật phẩm thất bại",
+      };
+    }
+  },
+
+  // Hàm xóa HomeItem (DELETE /api/HomeItem/{homeItemId})
+  deleteHomeItem: async (homeItemId) => {
+    try {
+      const res = await axiosClient.delete(`/HomeItem/${homeItemId}`);
+
+      if (ENABLE_DEBUG) console.log(`Delete home item ${homeItemId} success:`, res.data);
+      return { success: true, data: res.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error(`Delete home item ${homeItemId} error:`, error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Xóa vật phẩm thất bại",
       };
     }
   },

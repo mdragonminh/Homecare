@@ -1,8 +1,13 @@
-import { useState } from "react";
+// RegisterPage.jsx - ĐÃ ĐIỀU CHỈNH: THÊM LANGUAGE SWITCHER
+import { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock, User, Home, ArrowLeft, Wrench, Shield, CheckCircle } from "lucide-react";
 import { authApi } from "../../services/authApi.jsx";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next"; // ✅ Thêm useTranslation
+import LanguageSwitcher from '../../components/LanguageSwitcher.jsx'; // ✅ THÊM
 
-export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
+export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUser }) {
+  const { t } = useTranslation(); // ✅ Khởi tạo useTranslation
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -16,8 +21,14 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState(""); // success | warning | error
+  const navigate = useNavigate();
 
-  // Password validation function
+  useEffect(() => {
+    if (loggedInUser) {
+      navigate("/");
+    }
+  }, [loggedInUser, navigate]);
+
   const validatePassword = (password) => {
     const minLength = 8;
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
@@ -26,65 +37,71 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
     const hasNumber = /[0-9]/.test(password);
 
     if (password.length < minLength) {
-      return "Mật khẩu phải có ít nhất 8 ký tự!";
+      return t("validation.password_min_length");
     }
     if (!hasSpecialChar) {
-      return "Mật khẩu phải chứa ít nhất một ký tự đặc biệt!";
+      return t("validation.password_special_char");
     }
     if (!hasUpperCase) {
-      return "Mật khẩu phải chứa ít nhất một chữ cái in hoa!";
+      return t("validation.password_uppercase");
     }
     if (!hasLowerCase) {
-      return "Mật khẩu phải chứa ít nhất một chữ cái thường!";
+      return t("validation.password_lowercase");
     }
     if (!hasNumber) {
-      return "Mật khẩu phải chứa ít nhất một số!";
+      return t("validation.password_number");
     }
     return null;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
 
-    // Kiểm tra các trường bắt buộc
     if (!formData.fullName) {
-      setMessage("❌ Vui lòng nhập họ và tên!");
+      setMessage(t("validation.full_name_required"));
       setMessageType("error");
       return;
     }
     if (!formData.email) {
-      setMessage("❌ Vui lòng nhập email!");
+      setMessage(t("validation.email_required"));
       setMessageType("error");
       return;
     }
     if (!formData.password) {
-      setMessage("❌ Vui lòng nhập mật khẩu!");
+      setMessage(t("validation.password_required"));
       setMessageType("error");
       return;
     }
     if (!formData.confirmPassword) {
-      setMessage("❌ Vui lòng nhập xác nhận mật khẩu!");
+      setMessage(t("validation.confirm_password_required"));
       setMessageType("error");
       return;
     }
 
-    // Validate password requirements
     const passwordError = validatePassword(formData.password);
     if (passwordError) {
-      setMessage(`❌ ${passwordError}`);
+      setMessage(passwordError);
       setMessageType("error");
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setMessage("❌ Mật khẩu xác nhận không khớp!");
+      setMessage(t("validation.password_mismatch"));
       setMessageType("error");
       return;
     }
 
     if (!formData.agreeToTerms) {
-      setMessage("❌ Vui lòng đồng ý với điều khoản sử dụng!");
+      setMessage(t("validation.terms_required"));
       setMessageType("error");
       return;
     }
@@ -95,7 +112,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
       const res = await authApi.register(formData);
 
       if (res.success) {
-        setMessage("✅ Bạn đã đăng ký thành công, mời bạn vào xác nhận email.");
+        setMessage(t("success.registration"));
         setMessageType("success");
 
         setFormData({
@@ -107,54 +124,50 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
           agreeToTerms: false,
         });
 
-        // ⏳ Tự động chuyển sang Login sau 2.5 giây
         setTimeout(() => {
           onSwitchToLogin();
         }, 2500);
       } else {
-        // Xử lý các loại lỗi khác nhau
         const errorMessage = res.message?.toLowerCase() || '';
         
         if (errorMessage.includes('email') && (errorMessage.includes('tồn tại') || errorMessage.includes('exist'))) {
-          setMessage("❌ Email đã được sử dụng, vui lòng sử dụng email khác.");
+          setMessage(t("error.email_in_use"));
           setMessageType("error");
         } else if (errorMessage.includes('username') && (errorMessage.includes('tồn tại') || errorMessage.includes('exist'))) {
-          setMessage("❌ Tên người dùng đã được sử dụng, vui lòng thử tên khác.");
+          setMessage(t("error.username_in_use"));
           setMessageType("error");
         } else if (errorMessage.includes('user creation failed')) {
-          setMessage("❌ Không thể tạo tài khoản. Email hoặc thông tin đã được sử dụng.");
+          setMessage(t("error.user_creation_failed"));
           setMessageType("error");
         } else if (res.message) {
-          // Hiển thị message từ server
-          setMessage(`❌ ${res.message}`);
+          setMessage(res.message);
           setMessageType("error");
         } else {
-          setMessage("❌ Có lỗi xảy ra, vui lòng thử lại.");
+          setMessage(t("error.try_again"));
           setMessageType("error");
         }
       }
     } catch (err) {
       console.error('Register error:', err);
       
-      // Xử lý lỗi từ response
       if (err.response?.data?.message) {
         const serverMessage = err.response.data.message.toLowerCase();
         
         if (serverMessage.includes('email') && serverMessage.includes('exist')) {
-          setMessage("❌ Email đã được sử dụng, vui lòng sử dụng email khác.");
+          setMessage(t("error.email_in_use"));
         } else if (serverMessage.includes('username') && serverMessage.includes('exist')) {
-          setMessage("❌ Tên người dùng đã được sử dụng, vui lòng thử tên khác.");
+          setMessage(t("error.username_in_use"));
         } else if (serverMessage.includes('user creation failed')) {
-          setMessage("❌ Không thể tạo tài khoản. Email hoặc thông tin đã được sử dụng.");
+          setMessage(t("error.user_creation_failed"));
         } else {
-          setMessage(`❌ ${err.response.data.message}`);
+          setMessage(err.response.data.message);
         }
       } else if (err.response?.status === 400) {
-        setMessage("❌ Thông tin đăng ký không hợp lệ, vui lòng kiểm tra lại.");
+        setMessage(t("error.invalid_registration_info"));
       } else if (err.response?.status === 500) {
-        setMessage("❌ Lỗi server, vui lòng thử lại sau.");
+        setMessage(t("error.server_internal"));
       } else {
-        setMessage("❌ Lỗi kết nối đến server, vui lòng kiểm tra mạng và thử lại.");
+        setMessage(t("error.network_connect_failed"));
       }
       
       setMessageType("error");
@@ -163,17 +176,19 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+  if (loggedInUser) {
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <p className="text-xl text-blue-600 font-semibold">{t("ui.redirecting_home")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 relative">
-      {/* Background Pattern */}
+      <div className="absolute top-4 right-4 z-20"> 
+        <LanguageSwitcher /> {/* ✅ THÊM LanguageSwitcher để nhất quán */}
+      </div>
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-20 left-20 w-32 h-32 bg-blue-600 rounded-full blur-3xl"></div>
         <div className="absolute top-40 right-32 w-24 h-24 bg-orange-500 rounded-full blur-2xl"></div>
@@ -181,35 +196,30 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
       </div>
 
       <div className="relative z-10 min-h-screen flex">
-        {/* Left Panel - Brand */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative z-10 flex flex-col justify-center px-12 py-16">
-            {/* Logo & Brand */}
             <div className="mb-12">
               <div className="flex items-center mb-6">
                 <div className="w-14 h-14 bg-white/20 backdrop-blur-lg rounded-2xl flex items-center justify-center mr-4">
                   <Wrench className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold">HomeServicePlatform</h1>
-                  <p className="text-blue-100 text-sm">Dịch vụ sửa chữa nhà chuyên nghiệp</p>
+                  <h1 className="text-3xl font-bold">{t("app.name")}</h1>
+                  <p className="text-blue-100 text-sm">{t("ui.service_tagline")}</p>
                 </div>
               </div>
-              <p className="text-blue-100 text-lg leading-relaxed">
-                Giải pháp toàn diện cho mọi nhu cầu sửa chữa, bảo trì và cải tạo ngôi nhà của bạn.
-              </p>
+              <p className="text-blue-100 text-lg leading-relaxed">{t("ui.service_description_long")}</p>
             </div>
 
-            {/* Features */}
             <div className="space-y-6">
               <div className="flex items-start space-x-4">
                 <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <CheckCircle className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">Thợ chuyên nghiệp</h3>
-                  <p className="text-blue-100 text-sm">Đội ngũ thợ có kinh nghiệm, được đào tạo bài bản</p>
+                  <h3 className="font-semibold text-lg">{t("feature.professional_worker.title")}</h3>
+                  <p className="text-blue-100 text-sm">{t("feature.professional_worker.subtitle")}</p>
                 </div>
               </div>
 
@@ -218,8 +228,8 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">Bảo hành chất lượng</h3>
-                  <p className="text-blue-100 text-sm">Cam kết bảo hành dài hạn cho mọi dịch vụ</p>
+                  <h3 className="font-semibold text-lg">{t("feature.quality_warranty.title")}</h3>
+                  <p className="text-blue-100 text-sm">{t("feature.quality_warranty.subtitle")}</p>
                 </div>
               </div>
 
@@ -228,38 +238,33 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                   <Home className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">Dịch vụ tại nhà</h3>
-                  <p className="text-blue-100 text-sm">Tiện lợi, nhanh chóng, phục vụ 24/7</p>
+                  <h3 className="font-semibold text-lg">{t("feature.home_service.title")}</h3>
+                  <p className="text-blue-100 text-sm">{t("feature.home_service.subtitle")}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Panel - Register Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
           <div className="w-full max-w-md">
-            {/* Back to Home Button */}
             <button
               className="mb-8 flex items-center text-gray-600 hover:text-blue-600 transition-colors group"
               onClick={onBackToHome}
             >
               <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              Về trang chủ
+              {t("ui.back_to_home")}
             </button>
 
-            {/* Register Card */}
             <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
-              {/* Header */}
               <div className="px-8 pt-8 pb-6 text-center">
                 <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg mb-6">
                   <Home className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Đăng ký tài khoản</h2>
-                <p className="text-gray-500">Tạo tài khoản mới để bắt đầu sử dụng HomeServicePlatform</p>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">{t("ui.register_account")}</h2>
+                <p className="text-gray-500">{t("ui.register_tagline")}</p>
               </div>
 
-              {/* Scrollable Form Container */}
               <div className="px-8 pb-6 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100">
                 {message && (
                   <div
@@ -273,10 +278,9 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Full Name */}
                   <div className="space-y-1">
                     <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700">
-                      Họ và tên
+                      {t("form.label.fullname")}
                     </label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -284,7 +288,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                         id="fullName"
                         name="fullName"
                         type="text"
-                        placeholder="Nhập họ và tên"
+                        placeholder={t("form.placeholder.fullname")}
                         value={formData.fullName}
                         onChange={handleInputChange}
                         className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
@@ -292,10 +296,9 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                     </div>
                   </div>
 
-                  {/* Email */}
                   <div className="space-y-1">
                     <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
-                      Email
+                      {t("form.label.email")}
                     </label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -303,7 +306,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                         id="email"
                         name="email"
                         type="email"
-                        placeholder="name@example.com"
+                        placeholder={t("form.placeholder.email")}
                         value={formData.email}
                         onChange={handleInputChange}
                         className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
@@ -311,10 +314,9 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                     </div>
                   </div>
 
-                  {/* Password */}
                   <div className="space-y-1">
                     <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
-                      Mật khẩu
+                      {t("form.label.password")}
                     </label>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -322,7 +324,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Nhập mật khẩu"
+                        placeholder={t("form.placeholder.password")}
                         value={formData.password}
                         onChange={handleInputChange}
                         className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
@@ -335,15 +337,12 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
-                    <p className="text-xs text-gray-500">
-                      Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt
-                    </p>
+                    <p className="text-xs text-gray-500">{t("error.password_strength_hint")}</p>
                   </div>
 
-                  {/* Confirm Password */}
                   <div className="space-y-1">
                     <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700">
-                      Xác nhận mật khẩu
+                      {t("form.label.confirm_password")}
                     </label>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -351,7 +350,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                         id="confirmPassword"
                         name="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Nhập lại mật khẩu"
+                        placeholder={t("form.placeholder.confirm_password")}
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
                         className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
@@ -366,7 +365,6 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                     </div>
                   </div>
 
-                  {/* Terms */}
                   <div className="flex items-start space-x-3">
                     <input
                       id="agreeToTerms"
@@ -377,18 +375,17 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                       className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                     />
                     <label htmlFor="agreeToTerms" className="text-sm font-medium text-gray-600 cursor-pointer">
-                      Tôi đồng ý với{" "}
+                      {t("ui.i_agree_to")}{" "}
                       <a href="#" className="text-blue-600 hover:underline">
-                        Điều khoản sử dụng
+                        {t("ui.terms_of_service")}
                       </a>{" "}
-                      và{" "}
+                      {t("ui.and")}{" "}
                       <a href="#" className="text-blue-600 hover:underline">
-                        Chính sách bảo mật
+                        {t("ui.privacy_policy")}
                       </a>
                     </label>
                   </div>
 
-                  {/* Register Button */}
                   <button
                     type="submit"
                     disabled={loading}
@@ -397,34 +394,32 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome }) {
                     {loading ? (
                       <div className="flex items-center justify-center space-x-2">
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        <span>Đang đăng ký...</span>
+                        <span>{t("ui.registering")}</span>
                       </div>
                     ) : (
-                      "Đăng ký tài khoản"
+                      t("ui.register_button")
                     )}
                   </button>
                 </form>
 
-                {/* Login Link */}
                 <div className="mt-6 text-center">
-                  <span className="text-gray-600">Đã có tài khoản? </span>
+                  <span className="text-gray-600">{t("ui.already_have_account")}</span>{" "}
                   <button
                     className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
                     onClick={onSwitchToLogin}
                   >
-                    Đăng nhập ngay
+                    {t("ui.login_now")}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Mobile Brand */}
             <div className="lg:hidden mt-8 text-center">
               <div className="flex items-center justify-center mb-2">
                 <Wrench className="w-6 h-6 text-blue-600 mr-2" />
-                <span className="text-xl font-bold text-gray-900">HomeCare</span>
+                <span className="text-xl font-bold text-gray-900">{t("app.name")}</span>
               </div>
-              <p className="text-sm text-gray-500">Dịch vụ sửa chữa nhà chuyên nghiệp</p>
+              <p className="text-sm text-gray-500">{t("ui.service_tagline")}</p>
             </div>
           </div>
         </div>

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
-import { authApi }  from "./services/authApi";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { authApi } from "./services/authApi";
+import { Toaster, toast } from "sonner"; 
 
 export default function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
-
+  // THÊM: State mới để kiểm soát việc hiển thị toast
+  const [showLoginToast, setShowLoginToast] = useState(false); 
+  
   const updateLoggedInUserFromStorage = () => {
     const jwtToken = localStorage.getItem("jwtToken");
     const userId = localStorage.getItem("userId");
@@ -16,9 +17,9 @@ export default function App() {
     const role = localStorage.getItem("role");
 
     if (jwtToken && userId && email) {
-      setLoggedInUser({ 
-        userId, 
-        email, 
+      setLoggedInUser({
+        userId,
+        email,
         jwtToken,
         name: name || "",
         role: role || ""
@@ -53,8 +54,10 @@ export default function App() {
         role: data.role || ""
       });
 
+      // THAY THẾ setTimeout: Chỉ set cờ hiển thị toast
+      setShowLoginToast(true); 
       
-      toast.success("Đăng nhập thành công!");
+      // Đã loại bỏ logic setTimeout gây ra lỗi double-toast
     }
   };
 
@@ -62,20 +65,29 @@ export default function App() {
     authApi.logout();
     setLoggedInUser(null);
 
-    
-    toast.success("Đăng xuất thành công!");
+    toast.info("Đăng xuất thành công 👋", { duration: 500 }); 
   };
+  
+  
+  useEffect(() => {
+    if (showLoginToast) {
+      toast.dismiss(); 
+      toast.success("Đăng nhập thành công! 🎉", { duration: 500 });
+      setShowLoginToast(false); 
+    }
+  }, [showLoginToast]); 
 
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col">
+        {/* Component Header và Footer (nếu có) thường nằm ở đây */}
+        
         <AppRoutes
           loggedInUser={loggedInUser}
           onLoginSuccess={handleLoginSuccess}
           onLogout={handleLogout}
         />
-        {/* Container để hiển thị toast */}
-        <ToastContainer position="top-right" autoClose={500} />
+        <Toaster position="top-right" richColors  duration={500}/>
       </div>
     </BrowserRouter>
   );

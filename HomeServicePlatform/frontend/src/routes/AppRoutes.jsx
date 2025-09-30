@@ -18,9 +18,9 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
     navigate("/register");
   };
 
-  return (
+   return (
     <Routes>
-      {/* Sử dụng ClientRoutes để quản lý các routes client */}
+      {/* ClientRoutes */}
       <Route
         path="/*"
         element={
@@ -33,7 +33,7 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
         }
       />
 
-      {/* Login */}
+      {/* Login - THAY ĐỔI Ở ĐÂY */}
       <Route
         path="/login"
         element={
@@ -41,17 +41,19 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
             onSwitchToRegister={() => navigate("/register")}
             onBackToHome={() => navigate("/")}
             onLoginSuccess={onLoginSuccess}
+            loggedInUser={loggedInUser} // <-- THÊM PROP NÀY
           />
         }
       />
 
-      {/* Register */}
+      {/* Register - Có thể thêm cho RegisterPage nếu cần */}
       <Route
         path="/register"
         element={
           <RegisterPage
             onSwitchToLogin={() => navigate("/login")}
             onBackToHome={() => navigate("/")}
+            loggedInUser={loggedInUser} // <-- THÊM PROP NÀY
           />
         }
       />
@@ -63,7 +65,7 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
       />
 
       {/* Technician Register */}
-      <Route path="/technician-register" element={<TechnicianRegister />} />
+      <Route path="/technician-register" element={<TechnicianRegister loggedInUser={loggedInUser}/>} />
     </Routes>
   );
 }

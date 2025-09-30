@@ -24,16 +24,16 @@ useEffect(() => {
       const name = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] || "";
       const role = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || "";
 
-      // Lưu vào localStorage
-      localStorage.setItem("jwtToken", jwtToken);
-      localStorage.setItem("userId", userId || "");
-      localStorage.setItem("email", email || "");
-      localStorage.setItem("name", name);
-      localStorage.setItem("role", role);
+      // // Lưu vào localStorage
+      // localStorage.setItem("jwtToken", jwtToken);
+      // localStorage.setItem("userId", userId || "");
+      // localStorage.setItem("email", email || "");
+      // localStorage.setItem("name", name);
+      // localStorage.setItem("role", role);
 
       // Cập nhật state
       onLoginSuccess({ userId, email, jwtToken, name, role });
-
+      
       // Chuyển hướng
       navigate("/", { replace: true });
 

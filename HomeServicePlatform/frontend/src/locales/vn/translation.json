@@ -1,0 +1,279 @@
+{
+  "app": {
+    "name": "HomeServicePlatform"
+  },
+  "ui": {
+    "welcome_back": "Chào mừng trở lại!",
+    "login_button": "Đăng nhập",
+    "logging_in": "Đang đăng nhập...",
+    "forgot_password": "Quên mật khẩu?",
+    "remember_me": "Ghi nhớ đăng nhập",
+    "back_to_home": "Về trang chủ",
+    "service_tagline": "Dịch vụ sửa chữa nhà chuyên nghiệp",
+    "register_account": "Tạo tài khoản mới",
+    "register_button": "Đăng ký tài khoản",
+    "registering": "Đang đăng ký...",
+    "already_have_account": "Đã có tài khoản?",
+    "login_now": "Đăng nhập ngay",
+    "service_description": "Giải pháp toàn diện cho mọi nhu cầu sửa chữa, bảo trì và cải tạo ngôi nhà của bạn.",
+    "service_description_long": "Giải pháp toàn diện cho mọi nhu cầu sửa chữa, bảo trì và cải tạo ngôi nhà của bạn.",
+    "trusted_partner": "Đối tác tin cậy cho mọi ngôi nhà.",
+    "login_to_continue": "Đăng nhập để tiếp tục",
+    "enter_password": "Nhập mật khẩu của bạn",
+    "or": "Hoặc",
+    "login_with_google": "Đăng nhập bằng Google",
+    "no_account": "Chưa có tài khoản?",
+    "register_now": "Đăng ký ngay",
+    "forgot_password_alert": "Vui lòng liên hệ bộ phận hỗ trợ để lấy lại mật khẩu.",
+    "redirecting_home": "Đang chuyển hướng về trang chủ...",
+    "register_tagline": "Đăng ký để sử dụng dịch vụ",
+    "full_name": "Họ và tên",
+    "enter_full_name": "Nhập họ tên đầy đủ của bạn",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "confirm_password": "Xác nhận mật khẩu",
+    "re_enter_password": "Nhập lại mật khẩu",
+    "i_agree_to": "Tôi đồng ý với",
+    "terms_of_service": "Điều khoản dịch vụ",
+    "and": "và",
+    "privacy_policy": "Chính sách bảo mật",
+    "select_language": "Chọn ngôn ngữ",
+    "language_auto_save": "Ngôn ngữ được lưu tự động",
+    "profile": "Hồ sơ",
+    "logout": "Đăng xuất",
+    "account": "Tài khoản",
+    "user": "Người dùng",
+    "customer": "Khách hàng",
+    "technician": "Thợ kỹ thuật",
+    "manage_account": "Quản lý tài khoản",
+    "personal_info_settings": "Cài đặt thông tin cá nhân",
+    "manage_homes": "Quản lý Địa chỉ",
+    "add_new_delivery_address": "Thêm địa chỉ giao hàng mới",
+    "exit_account": "Thoát khỏi tài khoản",
+    "welcome": "Chào mừng bạn",
+    "login_to_experience": "Đăng nhập để trải nghiệm dịch vụ",
+    "access_account": "Truy cập tài khoản của bạn",
+    "create_free_account": "Tạo tài khoản miễn phí",
+    "become_technician": "Trở thành thợ kỹ thuật",
+    "earn_with_skills": "Kiếm tiền với kỹ năng của bạn",
+    "by_registering": "Bằng cách đăng ký, bạn đồng ý với",
+    "of_our_service": "của dịch vụ chúng tôi",
+    "home_management": "Quản lý Nhà & Địa chỉ",
+    "home_management_description": "Quản lý và theo dõi tất cả nhà của bạn",
+    "search_by_name_or_address": "Tìm kiếm theo tên hoặc địa chỉ...",
+    "advanced_filter": "Lọc nâng cao",
+    "all": "Tất cả",
+    "apartment": "Căn hộ",
+    "house": "Nhà riêng",
+    "villa": "Biệt thự",
+    "condo": "Chung cư",
+    "showing": "Hiển thị",
+    "properties": "nhà ở",
+    "total_in_system": "Tổng cộng trên hệ thống",
+    "add_new": "Thêm mới",
+    "no_properties_found": "Không tìm thấy nhà ở nào",
+    "try_change_search_or_filter": "Hãy thử thay đổi từ khóa tìm kiếm hoặc bộ lọc",
+    "clear_filter": "Xóa bộ lọc",
+    "error_occurred": "Có lỗi xảy ra",
+    "try_again": "Thử lại",
+    "no_name": "Chưa có tên",
+    "property_title": "Tiêu đề bất động sản",
+    "short_description": "Mô tả ngắn gọn về sản phẩm, biệt thự đơn lập với sân vườn và hiện đại, nhà phố tá mạc và hết sức diệp gần đại.",
+    "rooms": "{{count}} phòng",
+    "area": "{{size}} m²",
+    "edit_address": "Chỉnh sửa địa chỉ",
+    "manage_rooms_devices": "Quản lý Phòng & Thiết bị",
+    "confirm_delete": "Xác nhận xóa",
+    "confirm_delete_message": "Bạn có chắc chắn muốn xóa bất động sản này? Hành động này không thể hoàn tác.",
+    "cancel": "Hủy bỏ",
+    "delete": "Xóa",
+    "deleting": "Đang xóa...",
+    "edit": "Sửa",
+    "view": "Xem",            
+    "details": "Chi tiết",     
+    
+    "manage_items": "Vật phẩm trong nhà",
+    "members": "thành viên",
+    "loading_data": "Đang tải dữ liệu...",
+    "no_properties_match": "Không tìm thấy bất động sản nào phù hợp.",
+    "manage_items_title": "Quản lý Thiết Bị/Vật Phẩm (Nhà ID: {{homeId}})",
+    "add_item": "Thêm Vật Phẩm",
+    "search_item_placeholder": "Tìm kiếm vật phẩm theo tên, model...",
+    "loading_items": "Đang tải danh sách vật phẩm...",
+    "no_items_found": "Không tìm thấy vật phẩm nào",
+    "pagination_summary": "Hiển thị {{min}} đến {{max}} trong {{total}} kết quả",
+    "add_item_modal_title": "Thêm Vật Phẩm/Thiết Bị",
+    "condo_mini": "Chung cư mini",
+    "adding": "Đang thêm...",
+    "export_excel": "Xuất Excel",
+    "items_management_description": "Quản lý thiết bị và vật dụng trong ngôi nhà của bạn",
+    "all_types": "Tất cả loại",
+    "all_brands": "Tất cả thương hiệu",
+    "total_items": "Tổng vật phẩm",
+    "needs_maintenance": "Cần bảo trì",
+    "add_first_item_hint": "Hãy thêm vật phẩm/thiết bị đầu tiên vào nhà này.",
+    "uncategorized": "Chưa phân loại",
+    "model_label": "Model",
+    "serial_label": "Serial",
+    "working_well": "Hoạt động tốt",
+    "purchase_info": "Mua ngày: {{date}}",
+    
+    "delete_confirm_message": "Bạn có chắc chắn muốn xóa vật phẩm \"{{item_name}}\"? Thao tác này không thể hoàn tác.", 
+    
+    "saving": "Đang lưu...",
+    "save_address": "Lưu địa chỉ"
+  },
+  "form": {
+    "label": {
+      "fullname": "Họ và tên",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "confirm_password": "Xác nhận mật khẩu",
+      "agree_to_terms": "Tôi đồng ý với",
+      "terms_link": "Điều khoản dịch vụ",
+      "register_as": "Đăng ký với vai trò",
+      "item_name": "Tên Vật Phẩm *",
+      "item_type": "Loại Vật Phẩm *",
+      "brand": "Thương hiệu",
+      "model_number": "Model",
+      "serial_number": "Serial Number",
+      "notes": "Ghi chú"
+    },
+    "placeholder": {
+      "fullname": "Nhập họ tên đầy đủ của bạn",
+      "email": "ví dụ: tenban@example.com",
+      "password": "Tối thiểu 8 ký tự, có chữ hoa, chữ số",
+      "confirm_password": "Nhập lại mật khẩu",
+      "item_name": "Ví dụ: Máy lạnh Daikin",
+      "brand": "Ví dụ: Daikin, Samsung",
+      "model_number": "Ví dụ: FTKQ25SVMV",
+      "serial_number": "Mã số duy nhất của thiết bị",
+      "notes": "Thông tin thêm về thiết bị (ví dụ: vị trí, ngày mua...)"
+    },
+    "usertype": {
+      "customer": "Khách hàng",
+      "provider": "Nhà cung cấp dịch vụ"
+    }
+  },
+  "validation": {
+    "email_required": "Vui lòng nhập email.",
+    "password_required": "Vui lòng nhập mật khẩu.",
+    "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự!",
+    "password_uppercase": "Mật khẩu phải chứa ít nhất một chữ hoa!",
+    "password_lowercase": "Mật khẩu phải chứa ít nhất một chữ cái thường!",
+    "password_number": "Mật khẩu phải chứa ít nhất một số!",
+    "password_special_char": "Mật khẩu phải chứa ít nhất một ký tự đặc biệt!",
+    "password_mismatch": "Xác nhận mật khẩu không khớp!",
+    "terms_required": "Vui lòng đồng ý với điều khoản dịch vụ!",
+    "full_name_required": "Vui lòng nhập họ và tên.",
+    "confirm_password_required": "Vui lòng xác nhận mật khẩu.",
+    "item_name_type_required": "Vui lòng nhập tên và chọn loại vật phẩm."
+  },
+  "success": {
+    "registration": "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để xác minh và đăng nhập.",
+    "home_added": "Địa chỉ mới đã được thêm thành công.",
+    "home_edited": "Địa chỉ đã được cập nhật thành công.",
+    "home_deleted": "Địa chỉ đã được xóa thành công.",
+    "item_added": "Thêm vật phẩm thành công!",
+    "item_edited": "Cập nhật vật phẩm thành công!",
+    "item_deleted": "Xóa vật phẩm thành công!"
+    
+  },
+  "error": {
+    "email_in_use": "Email đã được sử dụng, vui lòng dùng email khác.",
+    "username_in_use": "Tên người dùng đã được sử dụng, vui lòng thử tên khác.",
+    "user_creation_failed": "Không thể tạo tài khoản. Email hoặc thông tin đã được sử dụng.",
+    "try_again": "Đã xảy ra lỗi, vui lòng thử lại.",
+    "invalid_registration_info": "Thông tin đăng ký không hợp lệ, vui lòng kiểm tra lại.",
+    "network_connect_failed": "Lỗi kết nối đến máy chủ, vui lòng kiểm tra mạng và thử lại.",
+    "api_fallback": "Đã xảy ra lỗi từ API, vui lòng thử lại sau.",
+    "invalid_request": "Yêu cầu không hợp lệ, vui lòng kiểm tra thông tin.",
+    "invalid_email_or_password": "Email hoặc mật khẩu không đúng.",
+    "account_not_activated": "Tài khoản của bạn chưa được kích hoạt.",
+    "server_internal": "Lỗi máy chủ nội bộ (500), vui lòng thử lại sau.",
+    "unknown": "Lỗi không xác định: {{status}}",
+    "network": "Không thể kết nối với máy chủ, vui lòng kiểm tra mạng.",
+    "unexpected": "Đã xảy ra lỗi không mong muốn.",
+    "password_strength_hint": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
+    "fetch_failed": "Không thể tải dữ liệu. Vui lòng thử lại.",
+    "delete_failed": "Xóa địa chỉ thất bại.",
+    "item_delete_failed": "Xóa vật phẩm thất bại. Vui lòng thử lại.",
+    "delete_unknown": "Lỗi không xác định khi xóa địa chỉ.",
+    "fetch_home_failed": "Không thể tải danh sách bất động sản.",
+    "fetch_home_failed_toast": "Lỗi tải danh sách nhà.",
+    "fetch_items_failed": "Không thể tải danh sách vật phẩm.",
+    "missing_home_id": "Thiếu ID nhà để xem vật phẩm.",
+    "add_item_unknown": "Lỗi không xác định khi thêm vật phẩm."
+  },
+  "feature": {
+    "professional_worker": {
+      "title": "Thợ chuyên nghiệp",
+      "subtitle": "Đội ngũ thợ có kinh nghiệm, được đào tạo bài bản"
+    },
+    "quality_warranty": {
+      "title": "Bảo hành chất lượng",
+      "subtitle": "Cam kết bảo hành dài hạn cho mọi dịch vụ"
+    },
+    "home_service": {
+      "title": "Dịch vụ tại nhà",
+      "subtitle": "Tiện lợi, nhanh chóng, phục vụ 24/7"
+    }
+  },
+  "nav": {
+    "home": "Trang chủ",
+    "services": "Dịch vụ",
+    "about_us": "Về chúng tôi",
+    "contact": "Liên hệ"
+  },
+  "language": {
+    "vietnamese": "Tiếng Việt",
+    "vietnam": "Việt Nam",
+    "english": "English",
+    "united_states": "United States"
+  },
+  "item": {
+    "type": {
+      "appliance": "Thiết bị Gia dụng",
+      "furniture": "Nội thất",
+      "electronics": "Thiết bị Điện tử",
+      "tool": "Dụng cụ",
+      "other": "Khác"
+    }
+  },
+  "address": {
+    "title": {
+      "add_new": "Thêm địa chỉ mới"
+    },
+    "subtitle": {
+      "fill_map": "Điền thông tin và chọn vị trí trên bản đồ"
+    },
+    "error": {
+      "user_not_found": "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.",
+      "name_required": "Tên địa chỉ không được để trống",
+      "name_min_length": "Tên địa chỉ phải có ít nhất 3 ký tự",
+      "name_max_length": "Tên địa chỉ quá dài (tối đa 100 ký tự)",
+      "address_required": "Vui lòng nhập địa chỉ chi tiết",
+      "address_invalid": "Địa chỉ có vẻ không hợp lệ",
+      "map_required": "Bạn chưa chọn vị trí trên bản đồ",
+      "place_not_found": "Không tìm thấy địa chỉ hợp lệ.",
+      "validation_failed": "Vui lòng kiểm tra lại thông tin nhập!",
+      "save_failed": "Có lỗi xảy ra khi lưu địa chỉ"
+    },
+    "field": {
+      "name_label": "Tên địa chỉ",
+      "name_placeholder": "Ví dụ: Nhà riêng, Văn phòng...",
+      "address_label": "Địa chỉ chi tiết",
+      "address_placeholder": "Nhập địa chỉ chi tiết..."
+    },
+    "map": {
+      "location_label": "Vị trí trên bản đồ",
+      "drag_tip": "Kéo thả để xác định vị trí"
+    },
+    "map_guide": {
+      "title": "Hướng dẫn sử dụng bản đồ",
+      "tip1": "Kéo thả marker để chọn vị trí chính xác",
+      "tip2": "Sử dụng ô \"Địa chỉ chi tiết\" để tìm kiếm nhanh (Google Autocomplete)",
+      "tip3": "Tọa độ và địa chỉ sẽ được cập nhật tự động"
+    }
+  }
+}
