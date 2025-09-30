@@ -1,89 +1,129 @@
 import { useState } from "react";
-import { Mail, Lock, AtSign } from "lucide-react";
+import { Card, Form, Input, Button, Typography, Space, message } from "antd";
+import { MailOutlined, LockOutlined, UserOutlined, UserAddOutlined } from "@ant-design/icons";
 import { adminApi } from "../../services/adminApi";
 import { toast } from "react-toastify";
 
+const { Title, Text } = Typography;
+
 export default function OperatorCreatePage() {
-  const [formData, setFormData] = useState({ email: "", username: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [form] = Form.useForm();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.email || !formData.username || !formData.password) {
-      toast.error("Vui lòng nhập đủ thông tin");
-      return;
-    }
-    setLoading(true);
-    const res = await adminApi.createOperator(formData);
-    setLoading(false);
-    if (res.success) {
-      toast.success("Tạo operator thành công");
-      setFormData({ email: "", username: "", password: "" });
-    } else {
-      toast.error(res.message || "Tạo operator thất bại");
+  const onFinish = async (values) => {
+    try {
+      setLoading(true);
+      const res = await adminApi.createOperator(values);
+      if (res.success) {
+        message.success("Tạo operator thành công! 🎉");
+        form.resetFields();
+      } else {
+        message.error(res.message || "Tạo operator thất bại");
+      }
+    } catch (error) {
+      console.error("Create operator error:", error);
+      message.error("Có lỗi xảy ra, vui lòng thử lại");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-xl">
-      <h1 className="text-2xl font-bold mb-6">Tạo tài khoản Operator</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full pl-10 pr-3 py-2 border rounded-lg"
-              placeholder="operator@example.com"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Username</label>
-          <div className="relative">
-            <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className="w-full pl-10 pr-3 py-2 border rounded-lg"
-              placeholder="operator001"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Mật khẩu</label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full pl-10 pr-3 py-2 border rounded-lg"
-              placeholder="••••••••"
-            />
-          </div>
-        </div>
+    <div style={{ maxWidth: 600 }}>
+      <div style={{ marginBottom: 24 }}>
+        <Title level={2} style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+          <UserAddOutlined style={{ color: "#1890ff" }} />
+          Tạo tài khoản Operator
+        </Title>
+        <Text type="secondary">
+          Tạo tài khoản mới cho nhân viên vận hành hệ thống
+        </Text>
+      </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+      <Card 
+        style={{ borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+        bodyStyle={{ padding: 32 }}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          size="large"
+          initialValues={{ email: "", username: "", password: "" }}
         >
-          {loading ? "Đang tạo..." : "Tạo tài khoản"}
-        </button>
-      </form>
+          <Form.Item
+            label="📧 Email Address"
+            name="email"
+            rules={[
+              { required: true, message: "Vui lòng nhập email" },
+              { type: "email", message: "Email không hợp lệ" }
+            ]}
+          >
+            <Input
+              prefix={<MailOutlined />}
+              placeholder="operator@example.com"
+              style={{ borderRadius: 8 }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="👤 Username" 
+            name="username"
+            rules={[
+              { required: true, message: "Vui lòng nhập username" },
+              { min: 3, message: "Username phải có ít nhất 3 ký tự" },
+              { max: 50, message: "Username không được quá 50 ký tự" }
+            ]}
+          >
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="operator001"
+              style={{ borderRadius: 8 }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="🔒 Password"
+            name="password"
+            rules={[
+              { required: true, message: "Vui lòng nhập mật khẩu" },
+              { min: 8, message: "Mật khẩu phải có ít nhất 8 ký tự" }
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="••••••••••••"
+              style={{ borderRadius: 8 }}
+            />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, marginTop: 32 }}>
+            <Space>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                loading={loading}
+                size="large"
+                style={{ 
+                  borderRadius: 8,
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  border: "none",
+                  minWidth: 140
+                }}
+              >
+                {loading ? "Đang tạo..." : "Tạo tài khoản"}
+              </Button>
+              <Button 
+                size="large" 
+                onClick={() => form.resetFields()}
+                style={{ borderRadius: 8 }}
+              >
+                Làm mới
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import TechnicianRegister from "../pages/Auth/TechnicianRegister";
 import { GoogleCallbackPage } from "../pages/Auth/GoogleCallbackPage";
 import AdminLayout from "../pages/admin/AdminLayout";
 import AccountsPage from "../pages/admin/AccountsPage";
-import OperatorCreatePage from "../pages/admin/OperatorCreatePage";
+import TechniciansPage from "../pages/admin/TechniciansPage";
 
 export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
   const navigate = useNavigate();
@@ -77,7 +77,7 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminLayout loggedInUser={loggedInUser} />}>
         <Route path="accounts" element={<AccountsPage />} />
-        <Route path="accounts/operator/create" element={<OperatorCreatePage />} />
+        <Route path="technicians" element={<TechniciansPage />} />
       </Route>
     </Routes>
   );
