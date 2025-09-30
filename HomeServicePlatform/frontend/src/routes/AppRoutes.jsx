@@ -9,7 +9,6 @@ import { GoogleCallbackPage } from "../pages/Auth/GoogleCallbackPage";
 export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
   const navigate = useNavigate();
 
-
   const handleShowLogin = () => {
     navigate("/login");
   };
@@ -24,7 +23,7 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
       <Route
         path="/*"
         element={
-          <ClientRoutes 
+          <ClientRoutes
             loggedInUser={loggedInUser}
             onLogout={onLogout}
             onShowLogin={handleShowLogin}
@@ -55,7 +54,7 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
           />
         }
       />
-      
+
       {/* Google Callback */}
       <Route
         path="/google-callback"
@@ -63,7 +62,17 @@ export default function AppRoutes({ loggedInUser, onLoginSuccess, onLogout }) {
       />
 
       {/* Technician Register */}
-      <Route path="/technician-register" element={<TechnicianRegister />} />
+      <Route
+        path="/technician-register"
+        element={
+          <TechnicianRegister
+            loggedInUser={loggedInUser}
+            onLogout={onLogout}
+            onShowLogin={handleShowLogin}
+            onShowRegister={handleShowRegister}
+          />
+        }
+      />
     </Routes>
   );
 }
