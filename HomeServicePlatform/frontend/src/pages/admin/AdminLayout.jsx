@@ -23,22 +23,23 @@ export default function AdminLayout({ loggedInUser }) {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
-  // Kiểm tra auth trong useEffect để tránh lỗi hook order
-  useEffect(() => {
-    if (!loggedInUser || loggedInUser.role !== "admin") {
-      navigate("/login");
-    }
-  }, [loggedInUser, navigate]);
+  // Gọi tất cả hooks trước khi có bất kỳ conditional return nào
+  const selectedKeys = useMemo(() => {
+    if (location.pathname.startsWith("/admin/accounts")) return ["accounts"];
+    if (location.pathname.startsWith("/admin/technicians")) return ["technicians"];
+    return ["accounts"];
+  }, [location.pathname]);
+
+//   // Kiểm tra auth trong useEffect để tránh lỗi hook order
+//   useEffect(() => {
+//     if (!loggedInUser || loggedInUser.role !== "admin") {
+//       navigate("/login");
+//     }
+//   }, [loggedInUser, navigate]);
 
   if (!loggedInUser || loggedInUser.role !== "admin") {
     return null;
   }
-
-  const selectedKeys = useMemo(() => {
-    if (location.pathname.startsWith("/admin/accounts")) return ["accounts"];
-    if (location.pathname.startsWith("/admin/technicians")) return ["technicians"];
-    return [];
-  }, [location.pathname]);
 
   const onCreateOperator = async () => {
     try {
