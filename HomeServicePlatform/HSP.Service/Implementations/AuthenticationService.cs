@@ -229,65 +229,69 @@ namespace HSP.Service.Implementations
 			if (existingUser != null)
 				throw new ValidationException(_localizer["EmailAlreadyExists"]);
 
-			using (var transaction = await _unitOfWork.BeginTransactionAsync())
+			// Bắt đầu transaction trên DbContext dùng chung giữa Identity và Repository
+			await _unitOfWork.BeginTransactionAsync();
+			try
 			{
-				try
+				// Tạo user với password mặc định "123Qwe@@"
+				var user = new AppUser
 				{
-					// Tạo user với password mặc định "123Qwe@@"
-					var user = new AppUser
-					{
-						Email = input.Email,
-						UserName = input.Email,
-						FullName = input.FullName,
-						EmailConfirmed = false
-					};
+					Email = input.Email,
+					UserName = input.Email,
+					FullName = input.FullName,
+					EmailConfirmed = false
+				};
 
-					var created = await _userRepository.CreateAsync(user, "123Qwe@@");
-					if (!created.Succeeded)
-					{
-						var errors = string.Join(", ", created.Errors.Select(e => e.Description));
-						throw new ValidationException($"{_localizer["UserCreationFailed"]}: {errors}");
-					}
-
-					// Thêm role Technician
-					var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Technician);
-					if (!roleResult.Succeeded)
-					{
-						var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-						throw new ValidationException($"{_localizer["AddToRoleFailed"]}: {errors}");
-					}
-
-					// Tạo TechnicianProfile
-					var technicianProfile = new TechnicianProfile
-					{
-						UserId = user.Id,
-						SkillSet = input.SkillSet,
-						ExperienceYears = input.ExperienceYears,
-						DateCreated = DateTime.UtcNow,
-						DateModified = DateTime.UtcNow,
-						IsDeleted = false
-					};
-					
-					await _technicianRepository.AddAsync(technicianProfile);
-					await _unitOfWork.SaveChangesAsync();
-
-					// Tạo email confirmation token
-					var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
-
-					await transaction.CommitAsync();
-
-					return new RegisterResponseDto
-					{
-						UserId = user.Id,
-						Email = user.Email,
-						EmailConfirmToken = token
-					};
-				}
-				catch
+				var created = await _userRepository.CreateAsync(user, "123Qwe@@");
+				if (!created.Succeeded)
 				{
-					await transaction.RollbackAsync();
-					throw;
+					var errors = string.Join(", ", created.Errors.Select(e => e.Description));
+					throw new ValidationException($"{_localizer["UserCreationFailed"]}: {errors}");
 				}
+				// Đảm bảo lưu user vào AppUsers
+				await _unitOfWork.SaveChangesAsync();
+
+				// Thêm role Technician
+				var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Technician);
+				if (!roleResult.Succeeded)
+				{
+					var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+					throw new ValidationException($"{_localizer["AddToRoleFailed"]}: {errors}");
+				}
+				// Lưu quan hệ role
+				await _unitOfWork.SaveChangesAsync();
+
+				// Tạo TechnicianProfile
+				var technicianProfile = new TechnicianProfile
+				{
+					UserId = user.Id,
+					SkillSet = input.SkillSet,
+					ExperienceYears = input.ExperienceYears,
+					DateCreated = DateTime.UtcNow,
+					DateModified = DateTime.UtcNow,
+					IsDeleted = false
+				};
+				
+				await _technicianRepository.AddAsync(technicianProfile);
+				await _unitOfWork.SaveChangesAsync();
+
+				// Tạo email confirmation token
+				var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
+
+				// Commit transaction (bao gồm tất cả thay đổi)
+				await _unitOfWork.CommitTransactionAsync();
+
+				return new RegisterResponseDto
+				{
+					UserId = user.Id,
+					Email = user.Email,
+					EmailConfirmToken = token
+				};
+			}
+			catch
+			{
+				await _unitOfWork.RollbackTransactionAsync();
+				throw;
 			}
 		}
 		private async Task<RegisterResponseDto> RegisterInternalAsync(RegisterRequestDto input,

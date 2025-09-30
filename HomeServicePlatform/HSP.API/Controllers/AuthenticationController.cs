@@ -26,16 +26,18 @@ namespace HSP.API.Controllers
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly ICustomerProfileService _customerProfileService;
 		private readonly SignInManager<AppUser> _signInManager;
+		private readonly UserManager<AppUser> _userManager;
 
 		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService,
 			IOptions<UrlSettingsDto> urlOptions, ICustomerProfileService customerProfileService,
-			SignInManager<AppUser> signInManager)
+			SignInManager<AppUser> signInManager, UserManager<AppUser> userManager)
 		{
 			_authenticationService = authenticationService;
 			_emailService = emailService;
 			_urlSettings = urlOptions.Value;
 			_customerProfileService = customerProfileService;
 			_signInManager = signInManager;
+			_userManager = userManager;
 		}
 
 		[HttpPost("register")]
@@ -160,7 +162,18 @@ namespace HSP.API.Controllers
 			var success = await _authenticationService.ConfirmEmail(userId, decodedToken);
 			if (success)
 			{
-				await _customerProfileService.CreateCustomerProfileAsync(userId);
+				// Lấy user và kiểm tra role
+				var user = await _userManager.FindByIdAsync(userId.ToString());
+				if (user != null)
+				{
+					var roles = await _userManager.GetRolesAsync(user);
+					// Chỉ tạo CustomerProfile cho Customer role
+					// TechnicianProfile đã được tạo trong quá trình register
+					if (roles.Contains(RoleNames.Customer))
+					{
+						await _customerProfileService.CreateCustomerProfileAsync(userId);
+					}
+				}
 			}
 			return success ? Ok("Email confirmed successfully") : BadRequest("Email confirmation failed");
 		}
