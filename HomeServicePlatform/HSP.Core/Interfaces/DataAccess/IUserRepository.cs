@@ -13,6 +13,7 @@ namespace HSP.Core.Interfaces.DataAccess
 		Task<IdentityResult> ConfirmEmailAsync(AppUser user, string token);
 		Task<string> GeneratePasswordResetTokenAsync(AppUser user);
 		Task<IdentityResult> ResetPasswordAsync(AppUser user, string token, string newPassword);
+		Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword);
 		Task<IList<string>> GetRolesAsync(AppUser user);
 		Task<IdentityResult> AddToRoleAsync(AppUser user, string role);
 
@@ -21,5 +22,6 @@ namespace HSP.Core.Interfaces.DataAccess
 
 		Task<AppUser?> FindByLoginAsync(string loginProvider, string providerKey);
 		Task<IdentityResult> CreateAsync(AppUser user);
+		Task<IdentityResult> AddPasswordAsync(AppUser user, string password);
 	}
 }

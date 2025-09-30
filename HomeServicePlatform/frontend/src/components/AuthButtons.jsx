@@ -102,6 +102,23 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
 
                 {/* Menu Items */}
                 <div className="space-y-1">
+                  {loggedInUser.role === 'admin' && (
+                    <button
+                      onClick={() => handleNavigate('/admin/accounts')}
+                      className="flex items-center w-full px-3 py-2.5 text-sm text-gray-700 rounded-xl hover:bg-gray-50 hover:text-blue-600 transition-all duration-200 group"
+                    >
+                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-blue-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                          <path d="M3 6a3 3 0 013-3h3a3 3 0 013 3v3a3 3 0 01-3 3H6a3 3 0 01-3-3V6zM12 6a3 3 0 013-3h3a3 3 0 013 3v3a3 3 0 01-3 3h-3a3 3 0 01-3-3V6zM3 15a3 3 0 013-3h3a3 3 0 013 3v3a3 3 0 01-3 3H6a3 3 0 01-3-3v-3zM12 15a3 3 0 013-3h3a3 3 0 013 3v3a3 3 0 01-3 3h-3a3 3 0 01-3-3v-3z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium">Admin Panel</div>
+                        <div className="text-xs text-gray-500">Quản trị hệ thống</div>
+                      </div>
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleNavigate('/profile')}
                     className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-all duration-200 group"

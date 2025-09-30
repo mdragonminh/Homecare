@@ -72,4 +72,16 @@
 	<data name="UserCreationFailed" xml:space="preserve">
     <value>User creation failed</value>
   </data>
+	<data name="UserNotFound" xml:space="preserve">
+    <value>User not found</value>
+  </data>
+	<data name="CurrentPasswordIncorrect" xml:space="preserve">
+    <value>Current password is incorrect</value>
+  </data>
+	<data name="PasswordChangeFailed" xml:space="preserve">
+    <value>Password change failed</value>
+  </data>
+	<data name="PasswordChangeSuccess" xml:space="preserve">
+    <value>Password changed successfully</value>
+  </data>
 </root>
