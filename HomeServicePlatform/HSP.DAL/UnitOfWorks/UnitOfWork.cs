@@ -9,15 +9,11 @@ namespace HSP.DAL.UnitOfWorks
 	{
 		private readonly ApplicationDbContext _context;
 		private IDbContextTransaction? _currentTransaction;
-		private ITechnicianProfileRepository? _technicianProfiles;
 
 		public UnitOfWork(ApplicationDbContext context)
 		{
 			_context = context;
 		}
-
-		public ITechnicianProfileRepository TechnicianProfiles => 
-			_technicianProfiles ??= new TechnicianProfileRepository(_context);
 
 		public async Task<IDbContextTransaction> BeginTransactionAsync()
 		{

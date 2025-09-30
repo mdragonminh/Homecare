@@ -33,7 +33,6 @@ namespace HSP.DAL.Extensions
 				options.TokenLifespan = TimeSpan.FromHours(1); 
 			});
 			services.AddScoped<IUserRepository, UserRepository>();
-			services.AddScoped<ITechnicianProfileRepository, TechnicianProfileRepository>();
 			services.AddScoped<IRepository<TechnicianProfile, Guid>, Repository<TechnicianProfile,Guid>>();
 			services.AddScoped<IRepository<CustomerProfile, Guid>, Repository<CustomerProfile, Guid>>();
 			services.AddScoped<IRepository<Home, Guid>, Repository<Home, Guid>>();
