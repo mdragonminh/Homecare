@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
@@ -7,6 +8,7 @@ using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
@@ -21,16 +23,16 @@ namespace HSP.Service.Implementations
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly SignInManager<AppUser> _signInManager;
-		private readonly IConfiguration _configuration;
+		private readonly JwtSettingsDto _jwtSettings;
 
-		public AuthenticationService(IUserRepository userRepository, IConfiguration configuration,
+		public AuthenticationService(IUserRepository userRepository, IOptions<JwtSettingsDto> jwtOptions,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			IRepository<CustomerProfile, Guid> customerProfileRepository,
 			SignInManager<AppUser> signInManager,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_userRepository = userRepository;
-			_configuration = configuration;
+			_jwtSettings = jwtOptions.Value;
 			_technicianRepository = technicianRepository;
 			_signInManager = signInManager;
 			_customerProfileRepository = customerProfileRepository;
@@ -120,7 +122,7 @@ namespace HSP.Service.Implementations
 			{
 				UserName = email,
 				Email = email,
-				FullName = info.Principal.FindFirstValue(ClaimTypes.Name),
+				FullName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? email,
 				EmailConfirmed = true
 			};
 
@@ -164,25 +166,53 @@ namespace HSP.Service.Implementations
 			var claims = new List<Claim>
 			{
 						new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-						new Claim(ClaimTypes.Email, user.Email),
-						new Claim(ClaimTypes.Name, user.FullName),
+						new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+						new Claim(ClaimTypes.Name, user.FullName ?? string.Empty),
 				};
 			foreach (var role in roles)
 			{
 				claims.Add(new Claim(ClaimTypes.Role, role));
 			}
-			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]));
+			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
 			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
 			var token = new JwtSecurityToken(
-					issuer: _configuration["JwtSettings:Issuer"],
-					audience: _configuration["JwtSettings:Audience"],
+					issuer: _jwtSettings.Issuer,
+					audience: _jwtSettings.Audience,
 					claims: claims,
-					expires: DateTime.UtcNow.AddHours(1),
+					expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
 					signingCredentials: creds
 			);
 
 			return new JwtSecurityTokenHandler().WriteToken(token);
+		}
+
+		public async Task<ChangePasswordResponseDto> ChangePassword(Guid userId, ChangePasswordRequestDto input)
+		{
+			if (input == null)
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
+
+			var user = await _userRepository.FindByIdAsync(userId);
+			if (user == null)
+				throw new ValidationException(_localizer["UserNotFound"]);
+
+			// Kiểm tra mật khẩu hiện tại
+			var checkPassword = await _userRepository.CheckPasswordAsync(user, input.CurrentPassword);
+			if (!checkPassword)
+				throw new ValidationException(_localizer["CurrentPasswordIncorrect"]);
+
+			// Đổi mật khẩu
+			var result = await _userRepository.ChangePasswordAsync(user, input.CurrentPassword, input.NewPassword);
+			if (!result.Succeeded)
+			{
+				var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+				throw new ValidationException($"{_localizer["PasswordChangeFailed"]}: {errors}");
+			}
+
+			return new ChangePasswordResponseDto
+			{
+				Message = _localizer["PasswordChangeSuccess"]
+			};
 		}
 
 		public async Task<RegisterResponseDto> Register(RegisterRequestDto input)
@@ -191,7 +221,78 @@ namespace HSP.Service.Implementations
 		}
 		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
 		{
-			return await RegisterInternalAsync(input, input.SkillSet, input.ExperienceYears, phoneNumber: input.PhoneNumber, role: RoleNames.Technician);
+			if (input == null)
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
+
+			// Kiểm tra email đã tồn tại chưa
+			var existingUser = await _userRepository.FindByEmailAsync(input.Email);
+			if (existingUser != null)
+				throw new ValidationException(_localizer["EmailAlreadyExists"]);
+
+			// Bắt đầu transaction trên DbContext dùng chung giữa Identity và Repository
+			await _unitOfWork.BeginTransactionAsync();
+			try
+			{
+				// Tạo user với password mặc định "123Qwe@@"
+				var user = new AppUser
+				{
+					Email = input.Email,
+					UserName = input.Email,
+					FullName = input.FullName,
+					EmailConfirmed = false
+				};
+
+				var created = await _userRepository.CreateAsync(user, "123Qwe@@");
+				if (!created.Succeeded)
+				{
+					var errors = string.Join(", ", created.Errors.Select(e => e.Description));
+					throw new ValidationException($"{_localizer["UserCreationFailed"]}: {errors}");
+				}
+				// Đảm bảo lưu user vào AppUsers
+				await _unitOfWork.SaveChangesAsync();
+
+				// Thêm role Technician
+				var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Technician);
+				if (!roleResult.Succeeded)
+				{
+					var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+					throw new ValidationException($"{_localizer["AddToRoleFailed"]}: {errors}");
+				}
+				// Lưu quan hệ role
+				await _unitOfWork.SaveChangesAsync();
+
+				// Tạo TechnicianProfile
+				var technicianProfile = new TechnicianProfile
+				{
+					UserId = user.Id,
+					SkillSet = input.SkillSet,
+					ExperienceYears = input.ExperienceYears,
+					DateCreated = DateTime.UtcNow,
+					DateModified = DateTime.UtcNow,
+					IsDeleted = false
+				};
+				
+				await _technicianRepository.AddAsync(technicianProfile);
+				await _unitOfWork.SaveChangesAsync();
+
+				// Tạo email confirmation token
+				var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
+
+				// Commit transaction (bao gồm tất cả thay đổi)
+				await _unitOfWork.CommitTransactionAsync();
+
+				return new RegisterResponseDto
+				{
+					UserId = user.Id,
+					Email = user.Email,
+					EmailConfirmToken = token
+				};
+			}
+			catch
+			{
+				await _unitOfWork.RollbackTransactionAsync();
+				throw;
+			}
 		}
 		private async Task<RegisterResponseDto> RegisterInternalAsync(RegisterRequestDto input,
 			string? skillSet = null, int? experienceYears = null,
@@ -251,6 +352,69 @@ namespace HSP.Service.Implementations
 					await transaction.RollbackAsync();
 					throw;
 				}
+			}
+		}
+
+		public async Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input)
+		{
+			var user = _userRepository.FindByIdAsync(userId).Result;
+			if (user == null) throw new ValidationException("User not found");
+			if (!string.IsNullOrEmpty(user.PasswordHash))
+			{
+				throw new ValidationException("User already has a password");
+			}
+			if (input.NewPassword != input.ConfirmPassword)
+			{
+				throw new ValidationException("Password and Confirm Password do not match");
+			}
+			var result = await _userRepository.AddPasswordAsync(user, input.NewPassword);
+			if (!result.Succeeded) throw new Exception("Add password failed");
+			return result.Succeeded;
+		}
+		public async Task<Guid> CreateOperatorAsync(CreateOperatorRequestDto input)
+		{
+			if (input == null)
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
+
+			// Kiểm tra email tồn tại
+			var existingByEmail = await _userRepository.FindByEmailAsync(input.Email);
+			if (existingByEmail != null)
+				throw new ValidationException(_localizer["EmailAlreadyExists"]);
+
+			await _unitOfWork.BeginTransactionAsync();
+			try
+			{
+				var user = new AppUser
+				{
+					Email = input.Email,
+					UserName = input.Username,
+					FullName = input.Username,
+					EmailConfirmed = true
+				};
+
+				var createResult = await _userRepository.CreateAsync(user, input.Password);
+				if (!createResult.Succeeded)
+				{
+					var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+					throw new ValidationException($"{_localizer["UserCreationFailed"]}: {errors}");
+				}
+				await _unitOfWork.SaveChangesAsync();
+
+				var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Operator);
+				if (!roleResult.Succeeded)
+				{
+					var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+					throw new ValidationException($"{_localizer["AddToRoleFailed"]}: {errors}");
+				}
+				await _unitOfWork.SaveChangesAsync();
+
+				await _unitOfWork.CommitTransactionAsync();
+				return user.Id;
+			}
+			catch
+			{
+				await _unitOfWork.RollbackTransactionAsync();
+				throw;
 			}
 		}
 	}

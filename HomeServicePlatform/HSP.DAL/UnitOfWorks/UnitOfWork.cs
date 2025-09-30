@@ -1,5 +1,6 @@
 ﻿using HSP.Core.Interfaces.DataAccess;
 using HSP.DAL.Data;
+using HSP.DAL.Repositories;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace HSP.DAL.UnitOfWorks
@@ -8,10 +9,15 @@ namespace HSP.DAL.UnitOfWorks
 	{
 		private readonly ApplicationDbContext _context;
 		private IDbContextTransaction? _currentTransaction;
+		private ITechnicianProfileRepository? _technicianProfiles;
+
 		public UnitOfWork(ApplicationDbContext context)
 		{
 			_context = context;
 		}
+
+		public ITechnicianProfileRepository TechnicianProfiles => 
+			_technicianProfiles ??= new TechnicianProfileRepository(_context);
 
 		public async Task<IDbContextTransaction> BeginTransactionAsync()
 		{

@@ -1,19 +1,54 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Upload, User, Briefcase, FileText, Award, Phone, Mail, MapPin, Calendar, Star, Clock, DollarSign, CheckCircle, Shield, Zap, ArrowLeft, Home } from "lucide-react";
+import { useState } from "react";
+import {
+  Upload,
+  User,
+  Briefcase,
+  FileText,
+  Award,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  Star,
+  Clock,
+  DollarSign,
+  CheckCircle,
+  Shield,
+  Zap,
+} from "lucide-react";
+import { authApi } from "../../services/authApi";
+import { Header } from "../../components/Header";
+import { Footer } from "../../components/Footer";
 
 const SPECIALIZATIONS = [
-  "Điện", "Nước", "Điều hòa", "Sửa chữa đồ điện tử", 
-  "Sơn nhà", "Dọn dẹp", "Làm vườn", "Sửa chữa nội thất",
-  "Lắp đặt thiết bị", "Bảo trì máy móc"
+  "Điện",
+  "Nước",
+  "Điều hòa",
+  "Sửa chữa đồ điện tử",
+  "Sơn nhà",
+  "Dọn dẹp",
+  "Làm vườn",
+  "Sửa chữa nội thất",
+  "Lắp đặt thiết bị",
+  "Bảo trì máy móc",
 ];
 
 const AVAILABILITY_OPTIONS = [
-  "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"
+  "Thứ 2",
+  "Thứ 3",
+  "Thứ 4",
+  "Thứ 5",
+  "Thứ 6",
+  "Thứ 7",
+  "Chủ nhật",
 ];
 
-// ✅ Thêm loggedInUser vào props
-export default function TechnicianRegister({ loggedInUser }) {
+export default function TechnicianRegister({
+  loggedInUser,
+  onLogout,
+  onShowLogin,
+  onShowRegister,
+}) {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -50,8 +85,10 @@ export default function TechnicianRegister({ loggedInUser }) {
     navigate("/");
   };
 
+  const [submitting, setSubmitting] = useState(false);
+
   const updateFormData = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
   
   const handleFileChange = (field, file) => {
@@ -64,140 +101,154 @@ export default function TechnicianRegister({ loggedInUser }) {
   };
 
   const toggleSpecialization = (spec) => {
-    updateFormData("specializations", 
+    updateFormData(
+      "specializations",
       formData.specializations.includes(spec)
-        ? formData.specializations.filter(s => s !== spec)
+        ? formData.specializations.filter((s) => s !== spec)
         : [...formData.specializations, spec]
     );
   };
 
   const toggleAvailability = (day) => {
-    updateFormData("availability", 
+    updateFormData(
+      "availability",
       formData.availability.includes(day)
-        ? formData.availability.filter(d => d !== day)
+        ? formData.availability.filter((d) => d !== day)
         : [...formData.availability, day]
     );
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setMessage("");
-
-    // Validation checks
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.address || 
-        !formData.experience || formData.specializations.length === 0 || 
-        !formData.bio || !formData.hourlyRate || !formData.agreeToTerms || !formData.agreeToBackgroundCheck) {
-      setMessage("❌ Vui lòng điền đầy đủ thông tin bắt buộc và đồng ý các điều khoản.");
-      setMessageType("error");
+  const handleSubmit = async () => {
+    if (
+      !formData.fullName ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.experience ||
+      formData.specializations.length === 0 ||
+      !formData.agreeToTerms ||
+      !formData.agreeToBackgroundCheck
+    ) {
+      alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
       return;
     }
 
-    setLoading(true);
+    try {
+      setSubmitting(true);
+      const res = await authApi.registerTechnician({
+        email: formData.email,
+        fullName: formData.fullName,
+        specializations: formData.specializations,
+        experience: formData.experience,
+        bio: formData.bio,
+        certifications: formData.certifications,
+        availability: formData.availability,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        hourlyRate: formData.hourlyRate,
+      });
 
-    // Simulate API call for 2 seconds
-    setTimeout(() => {
-        setLoading(false);
-        // Simulate successful registration
-        setMessage("✅ Đăng ký thành công! Chúng tôi sẽ liên hệ với bạn trong vòng 24 giờ để xác minh hồ sơ.");
-        setMessageType("success");
-        // Optionally reset form data
-        // setFormData({
-        //     // ... reset form state to initial values
-        // });
-    }, 2000);
+      if (res.success) {
+        alert("Đăng ký thành công! Vui lòng chờ quản trị viên duyệt.");
+        // TODO: điều hướng về trang đăng nhập hoặc dashboard nếu cần
+      } else {
+        alert(res.message || "Đăng ký kỹ thuật viên thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Có lỗi xảy ra. Vui lòng thử lại sau.");
+    } finally {
+      setSubmitting(false);
+    }
   };
-  
-  // 💡 Early return nếu đã đăng nhập
-  if (loggedInUser) {
-    return (
-      <div className="min-h-screen flex justify-center items-center bg-gray-50">
-        <p className="text-xl text-blue-600 font-semibold p-8 bg-white rounded-xl shadow-lg">Đang chuyển hướng về trang chủ...</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header với background màu xanh nhạt */}
-      <div 
-        className="relative py-16"
-        style={{
-          backgroundImage: "url('https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcTUvYMVwAgyyFHCZJc0lf74j85foiW-5tcp_0-Utq6btFnaDOiTCegimm48frzL8bcctQjWbSro5jXndDUSN-FIUaQnODNtA3KkalUdQGxF5-I4MnA')",
-          backgroundSize: "cover",
-          backgroundPosition: "center"
-        }}
-      >
-        {/* Overlay để chữ dễ đọc */}
-        <div className="absolute inset-0 bg-black/50"></div>
 
-        <div className="relative max-w-6xl mx-auto px-4 text-center text-white">
-            <button
-                className="absolute top-0 left-0 lg:-left-20 flex items-center text-white/90 hover:text-white transition-colors group p-2 rounded-lg bg-black/20 hover:bg-black/30 backdrop-blur-sm"
-                onClick={handleBackToHome}
-            >
-                <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-                Về trang chủ
-            </button>
-            
-          {/* Logo */}
-          <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg shadow-blue-800/50">
-            <User className="w-10 h-10 text-white" />
+      {/* Header */}
+      <Header
+        loggedInUser={loggedInUser}
+        onLogout={onLogout}
+        onShowLogin={onShowLogin}
+        onShowRegister={onShowRegister}
+      />
+
+      {/* Main Content */}
+      <main className="flex-1 py-8">
+          <div
+            className="relative py-16"
+            style={{
+              backgroundImage:
+                "url('https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcTUvYMVwAgyyFHCZJc0lf74j85foiW-5tcp_0-Utq6btFnaDOiTCegimm48frzL8bcctQjWbSro5jXndDUSN-FIUaQnODNtA3KkalUdQGxF5-I4MnA')", // 👉 đổi ảnh
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
+            {/* Overlay để chữ dễ đọc */}
+            <div className="absolute inset-0 bg-black/30"></div>
+
+            <div className="relative max-w-6xl mx-auto px-4 text-center text-white">
+              {/* Logo */}
+              <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+                <User className="w-10 h-10 text-white" />
+              </div>
+
+              {/* Tiêu đề chính */}
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                Trở Thành Kỹ Thuật Viên Chuyên Nghiệp
+              </h1>
+              <p className="text-xl mb-12">
+                Tham gia nền tảng dịch vụ gia đình hàng đầu Việt Nam và bắt đầu
+                kiếm tiền ngay hôm nay
+              </p>
+
+              {/* 3 cards benefit */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div className="bg-white rounded-xl p-6 shadow-md">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <Star className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-lg text-gray-800 mb-2">
+                    Thu nhập cao
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    Lên đến 15 triệu/tháng
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl p-6 shadow-md">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <Shield className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-lg text-gray-800 mb-2">
+                    Bảo hiểm đầy đủ
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    An toàn trong công việc
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl p-6 shadow-md">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <Zap className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-lg text-gray-800 mb-2">
+                    Linh hoạt thời gian
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    Tự do sắp xếp lịch làm việc
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-
-          {/* Tiêu đề chính */}
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Trở Thành Kỹ Thuật Viên Chuyên Nghiệp
-          </h1>
-          <p className="text-xl mb-12">
-            Tham gia nền tảng dịch vụ gia đình hàng đầu Việt Nam và bắt đầu kiếm tiền ngay hôm nay
-          </p>
-
-          {/* 3 cards benefit */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="bg-white rounded-xl p-6 shadow-xl transform transition hover:scale-[1.03] duration-300 ease-in-out">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Star className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="font-semibold text-lg text-gray-800 mb-2">Thu nhập cao</h3>
-              <p className="text-gray-600 text-sm">Lên đến 15 triệu/tháng</p>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-xl transform transition hover:scale-[1.03] duration-300 ease-in-out">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="font-semibold text-lg text-gray-800 mb-2">Bảo hiểm đầy đủ</h3>
-              <p className="text-gray-600 text-sm">An toàn trong công việc</p>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-xl transform transition hover:scale-[1.03] duration-300 ease-in-out">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="font-semibold text-lg text-gray-800 mb-2">Linh hoạt thời gian</h3>
-              <p className="text-gray-600 text-sm">Tự do sắp xếp lịch làm việc</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      </main>
 
       {/* Form Section */}
       <div className="py-12 px-4">
         <div className="max-w-4xl mx-auto">
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            
-            {/* Message Box */}
-            {message && (
-              <div
-                className={`p-4 mx-8 mt-8 rounded-xl text-sm font-medium 
-                  ${messageType === "success" ? "bg-green-100 text-green-800 border border-green-300" : ""}
-                  ${messageType === "error" ? "bg-red-100 text-red-800 border border-red-300" : ""}`}
-              >
-                {message}
-              </div>
-            )}
-
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
             {/* Thông Tin Cá Nhân */}
             <div className="p-8 border-b border-gray-100">
               <div className="flex items-center gap-3 mb-6">
@@ -205,15 +256,21 @@ export default function TechnicianRegister({ loggedInUser }) {
                   <User className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-800">1. Thông Tin Cá Nhân</h2>
-                  <p className="text-sm text-gray-600">Cung cấp thông tin cơ bản về bản thân</p>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Thông Tin Cá Nhân
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Cung cấp thông tin cơ bản về bản thân
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Full Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Họ và tên *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Họ và tên *
+                  </label>
                   <input
                     type="text"
                     value={formData.fullName}
@@ -225,7 +282,9 @@ export default function TechnicianRegister({ loggedInUser }) {
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email *
+                  </label>
                   <input
                     type="email"
                     value={formData.email}
@@ -237,7 +296,9 @@ export default function TechnicianRegister({ loggedInUser }) {
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Số điện thoại *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Số điện thoại *
+                  </label>
                   <input
                     type="text"
                     value={formData.phone}
@@ -249,17 +310,21 @@ export default function TechnicianRegister({ loggedInUser }) {
 
                 {/* Date of Birth */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ngày sinh</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ngày sinh
+                  </label>
                   <input
                     type="date"
                     value={formData.dateOfBirth}
-                    onChange={(e) => updateFormData("dateOfBirth", e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
+                    onChange={(e) =>
+                      updateFormData("dateOfBirth", e.target.value)
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                    placeholder="dd/mm/yyyy"
                   />
                 </div>
 
-                {/* Address */}
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Địa chỉ *</label>
                   <input
                     type="text"
@@ -285,7 +350,7 @@ export default function TechnicianRegister({ loggedInUser }) {
                     <option value="haiphong">Hải Phòng</option>
                     <option value="cantho">Cần Thơ</option>
                   </select>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -296,19 +361,27 @@ export default function TechnicianRegister({ loggedInUser }) {
                   <Briefcase className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-800">2. Kinh Nghiệm & Kỹ Năng</h2>
-                  <p className="text-sm text-gray-600">Chia sẻ về chuyên môn và kinh nghiệm làm việc</p>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Kinh Nghiệm & Kỹ Năng
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Chia sẻ về chuyên môn và kinh nghiệm làm việc
+                  </p>
                 </div>
               </div>
 
               <div className="space-y-6">
                 {/* Experience */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Số năm kinh nghiệm *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Số năm kinh nghiệm *
+                  </label>
                   <select
                     value={formData.experience}
-                    onChange={(e) => updateFormData("experience", e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
+                    onChange={(e) =>
+                      updateFormData("experience", e.target.value)
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                   >
                     <option value="">Chọn số năm kinh nghiệm</option>
                     <option value="0-1">Dưới 1 năm</option>
@@ -321,18 +394,15 @@ export default function TechnicianRegister({ loggedInUser }) {
 
                 {/* Specializations */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">Lĩnh vực chuyên môn *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Lĩnh vực chuyên môn *
+                  </label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {SPECIALIZATIONS.map((spec) => (
-                      <label 
-                        key={spec} 
-                        className={`flex items-center justify-between gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                          formData.specializations.includes(spec) 
-                            ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' 
-                            : 'bg-white border-gray-300 hover:bg-gray-50'
-                        }`}
+                      <label
+                        key={spec}
+                        className="flex items-center gap-3 cursor-pointer"
                       >
-                        <span className="text-sm text-gray-700 font-medium">{spec}</span>
                         <input
                           type="checkbox"
                           checked={formData.specializations.includes(spec)}
@@ -347,20 +417,46 @@ export default function TechnicianRegister({ loggedInUser }) {
 
                 {/* Certifications */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Chứng chỉ & Bằng cấp</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Chứng chỉ & Bằng cấp
+                  </label>
                   <textarea
                     rows={4}
                     value={formData.certifications}
-                    onChange={(e) => updateFormData("certifications", e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors resize-none"
+                    onChange={(e) =>
+                      updateFormData("certifications", e.target.value)
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none"
                     placeholder="Liệt kê các chứng chỉ chuyên môn, bằng cấp có liên quan..."
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Thời gian có thể làm việc
+                  </label>
+                  <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+                    {AVAILABILITY_OPTIONS.map((day) => (
+                      <label
+                        key={day}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.availability.includes(day)}
+                          onChange={() => toggleAvailability(day)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">{day}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Thông Tin Bổ Sung */}
-            <div className="p-8 border-b border-gray-100">
+            {/* <div className="p-8 border-b border-gray-100">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Award className="w-5 h-5 text-green-600" />
@@ -460,17 +556,21 @@ export default function TechnicianRegister({ loggedInUser }) {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Điều khoản */}
             <div className="p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex.items-center justify-center">
                   <FileText className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-800">4. Điều khoản & Xác nhận</h2>
-                  <p className="text-sm text-gray-600">Vui lòng đọc và đồng ý với các điều khoản</p>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    Điều khoản & Xác nhận
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Vui lòng đọc và đồng ý với các điều khoản
+                  </p>
                 </div>
               </div>
 
@@ -479,12 +579,21 @@ export default function TechnicianRegister({ loggedInUser }) {
                   <input
                     type="checkbox"
                     checked={formData.agreeToTerms}
-                    onChange={(e) => updateFormData("agreeToTerms", e.target.checked)}
+                    onChange={(e) =>
+                      updateFormData("agreeToTerms", e.target.checked)
+                    }
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
                   />
                   <span className="text-sm text-gray-700">
-                    Tôi đồng ý với <a href="#" className="text-blue-600 hover:underline">Điều khoản sử dụng</a> và{" "}
-                    <a href="#" className="text-blue-600 hover:underline">Chính sách bảo mật</a> của nền tảng *
+                    Tôi đồng ý với{" "}
+                    <span className="text-blue-600 underline">
+                      Điều khoản sử dụng
+                    </span>{" "}
+                    và{" "}
+                    <span className="text-blue-600 underline">
+                      Chính sách bảo mật
+                    </span>{" "}
+                    của nền tảng
                   </span>
                 </label>
 
@@ -492,11 +601,14 @@ export default function TechnicianRegister({ loggedInUser }) {
                   <input
                     type="checkbox"
                     checked={formData.agreeToBackgroundCheck}
-                    onChange={(e) => updateFormData("agreeToBackgroundCheck", e.target.checked)}
+                    onChange={(e) =>
+                      updateFormData("agreeToBackgroundCheck", e.target.checked)
+                    }
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
                   />
                   <span className="text-sm text-gray-700">
-                    Tôi đồng ý cho phép nền tảng kiểm tra lý lịch và xác thực thông tin cá nhân để đảm bảo chất lượng dịch vụ *
+                    Tôi đồng ý cho phép nền tảng kiểm tra lý lịch và xác thực
+                    thông tin cá nhân để đảm bảo chất lượng dịch vụ
                   </span>
                 </label>
               </div>
@@ -504,18 +616,11 @@ export default function TechnicianRegister({ loggedInUser }) {
               {/* Submit Button */}
               <div className="text-center">
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-blue-600 text-white px-12 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="bg-blue-600 text-white px-12 py-4 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-60"
                 >
-                  {loading ? (
-                    <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        <span>Đang gửi hồ sơ...</span>
-                    </div>
-                  ) : (
-                    "Đăng Ký Ngay"
-                  )}
+                  {submitting ? "Đang gửi..." : "Đăng Ký Ngay"}
                 </button>
               </div>
             </div>
@@ -525,11 +630,17 @@ export default function TechnicianRegister({ loggedInUser }) {
           <div className="text-center mt-8 text-gray-600 pb-12">
             <p className="mb-2">Cần hỗ trợ? Liên hệ ngay với chúng tôi</p>
             <div className="flex items-center justify-center gap-6">
-              <a href="mailto:support@homeservice.com" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
+              <a
+                href="mailto:support@homeservice.com"
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+              >
                 <Mail className="w-4 h-4" />
                 support@homeservice.com
               </a>
-              <a href="tel:1900-1234" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
+              <a
+                href="tel:1900-1234"
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+              >
                 <Phone className="w-4 h-4" />
                 1900-1234
               </a>
@@ -537,6 +648,9 @@ export default function TechnicianRegister({ loggedInUser }) {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

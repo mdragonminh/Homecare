@@ -1,6 +1,8 @@
-﻿using HSP.Core.Dtos.MapDto;
+﻿using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Dtos.MapDto;
 using HSP.Core.Interfaces.External;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace HSP.Service.Implementations
@@ -8,17 +10,17 @@ namespace HSP.Service.Implementations
 	public class GoogleMapsGeocodingService : IGeocodingService
 	{
 		private readonly IHttpClientFactory _httpClientFactory;
-		private readonly IConfiguration _configuration;
+		private readonly GoogleMapConfigurationDto _googleMapConfig;
 
-		public GoogleMapsGeocodingService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+		public GoogleMapsGeocodingService(IHttpClientFactory httpClientFactory, IOptions<GoogleMapConfigurationDto> options)
 		{
 			_httpClientFactory = httpClientFactory;
-			_configuration = configuration;
+			_googleMapConfig = options.Value;
 		}
 
 		public async Task<CoordinatesDto?> GetCoordinatesForAddressAsync(string address)
 		{
-			var apiKey = _configuration["GoogleMaps:ApiKey"];
+			var apiKey = _googleMapConfig.ApiKey;
 			if (string.IsNullOrEmpty(apiKey))
 			{
 				throw new InvalidOperationException("Google Maps API Key is not configured.");

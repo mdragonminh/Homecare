@@ -18,6 +18,11 @@ namespace HSP.DAL.Repositories
 			return _userManager.AddLoginAsync(user, login);
 		}
 
+		public Task<IdentityResult> AddPasswordAsync(AppUser user, string password)
+		{
+			return _userManager.AddPasswordAsync(user, password);
+		}
+
 		public Task<IdentityResult> AddToRoleAsync(AppUser user, string role)
 		{
 			return _userManager.AddToRoleAsync(user, role);
@@ -81,6 +86,11 @@ namespace HSP.DAL.Repositories
 		public Task<IdentityResult> ResetPasswordAsync(AppUser user, string token, string newPassword)
 		{
 			return _userManager.ResetPasswordAsync(user, token, newPassword);
+		}
+
+		public Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword)
+		{
+			return _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
 		}
 	}
 }

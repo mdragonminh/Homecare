@@ -17,4 +17,14 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		[StringLength(100, MinimumLength = 8, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordLengthError")]
 		public string Password { get; set; } = string.Empty;
 	}
+	public class AddPasswordDto
+	{
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordIsRequired")]
+		[StringLength(100, MinimumLength = 8, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordLengthError")]
+		public string NewPassword { get; set; }
+
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ConfirmPasswordIsRequired")]
+		[Compare("NewPassword", ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordsDoNotMatch")]
+		public string ConfirmPassword { get; set; }
+	}
 }

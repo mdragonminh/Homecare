@@ -72,4 +72,16 @@
 	<data name="UserCreationFailed" xml:space="preserve">
     <value>Tạo người dùng thất bại</value>
   </data>
+	<data name="UserNotFound" xml:space="preserve">
+    <value>Không tìm thấy người dùng</value>
+  </data>
+	<data name="CurrentPasswordIncorrect" xml:space="preserve">
+    <value>Mật khẩu hiện tại không đúng</value>
+  </data>
+	<data name="PasswordChangeFailed" xml:space="preserve">
+    <value>Đổi mật khẩu thất bại</value>
+  </data>
+	<data name="PasswordChangeSuccess" xml:space="preserve">
+    <value>Đổi mật khẩu thành công</value>
+  </data>
 </root>

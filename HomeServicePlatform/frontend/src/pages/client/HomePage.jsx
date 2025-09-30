@@ -92,7 +92,7 @@ const testimonials = [
 ];
 
 // --- Main HomePage --- //
-export function HomePage({ onShowLogin, onShowRegister,loggedInUser, onLogout }) {
+export function HomePage({ onShowLogin, onShowRegister, loggedInUser, onLogout }) {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   
   return (
@@ -218,6 +218,12 @@ export function HomePage({ onShowLogin, onShowRegister,loggedInUser, onLogout })
           </div>
         </section>
       </main>
+
+      {loggedInUser?.role === 'admin' && (
+        <div className="container mx-auto px-4 mt-4">
+          <a href="/admin/accounts" className="inline-block px-3 py-2 bg-blue-600 text-white rounded">Vào trang Admin</a>
+        </div>
+      )}
 
       <Footer />
     </div>

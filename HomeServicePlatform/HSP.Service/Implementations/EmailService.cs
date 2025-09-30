@@ -1,22 +1,25 @@
-﻿using HSP.Core.Interfaces.External;
+﻿using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Interfaces.External;
 using HSP.Service.Dtos.EmailDto;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System.Net.Mail;
 
 namespace HSP.Service.Implementations
 {
 	public class EmailService : IEmailService
 	{
-		private readonly IConfiguration _config;
+		private readonly SmtpConfigurationDto _smtpConfig;
 		private readonly SmtpClient _smtpClient;
-		public EmailService(IConfiguration config)
+		public EmailService(IOptions<SmtpConfigurationDto> smtpOptions)
 		{
-			_config = config;
-			_smtpClient = new SmtpClient(_config["Smtp:Host"])
+			_smtpConfig = smtpOptions.Value;
+
+			_smtpClient = new SmtpClient(_smtpConfig.Host)
 			{
-				Port = int.Parse(_config["Smtp:Port"] ?? "587"),
-				Credentials = new System.Net.NetworkCredential(_config["Smtp:UserName"], _config["Smtp:Password"]),
-				EnableSsl = bool.Parse(_config["Smtp:EnableSsl"] ?? "true"),
+				Port = _smtpConfig.Port, 
+				Credentials = new System.Net.NetworkCredential(_smtpConfig.UserName, _smtpConfig.Password),
+				EnableSsl = _smtpConfig.UseSsl, 
 			};
 		}
 
@@ -26,10 +29,10 @@ namespace HSP.Service.Implementations
 				throw new ArgumentNullException(nameof(input), "Email input cannot be null");
 
 			if (string.IsNullOrWhiteSpace(input.FromEmail))
-				input.FromEmail = _config["Smtp:FromEmail"];
+				input.FromEmail = _smtpConfig.FromEmail;
 
 			if (string.IsNullOrWhiteSpace(input.FromName))
-				input.FromName = _config["Smtp:FromName"];
+				input.FromName = _smtpConfig.FromName;
 
 			var mailMessage = new MailMessage
 			{

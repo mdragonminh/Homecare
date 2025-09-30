@@ -1,12 +1,16 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Entities;
 using HSP.Core.Interfaces.External;
+using HSP.Core.Constans;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Text;
 
 namespace HSP.API.Controllers
@@ -17,19 +21,21 @@ namespace HSP.API.Controllers
 	{
 		private readonly IAuthenticationService _authenticationService;
 		private readonly IEmailService _emailService;
-		private readonly IConfiguration _configuration;
+		private readonly UrlSettingsDto _urlSettings;
 		private readonly ICustomerProfileService _customerProfileService;
 		private readonly SignInManager<AppUser> _signInManager;
+		private readonly UserManager<AppUser> _userManager;
 
-		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, 
-			IConfiguration configuration, ICustomerProfileService customerProfileService,
-			SignInManager<AppUser> signInManager)
+		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService,
+			IOptions<UrlSettingsDto> urlOptions, ICustomerProfileService customerProfileService,
+			SignInManager<AppUser> signInManager, UserManager<AppUser> userManager)
 		{
 			_authenticationService = authenticationService;
 			_emailService = emailService;
-			_configuration = configuration;
+			_urlSettings = urlOptions.Value;
 			_customerProfileService = customerProfileService;
 			_signInManager = signInManager;
+			_userManager = userManager;
 		}
 
 		[HttpPost("register")]
@@ -50,9 +56,9 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = ex.Message });
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
-				return BadRequest(new { message = ex.Message });
+				return BadRequest(new { message = "An error occurred" });
 			}
 		}
 		[HttpPost("register-technician")]
@@ -73,16 +79,16 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = ex.Message });
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
-				return BadRequest(new { message = ex.Message });
+				return BadRequest(new { message = "An error occurred" });
 			}
 		}
 		private async Task SendConfirmationEmailAsync(RegisterResponseDto result, string fullName)
 		{
 			var tokenBytes = Encoding.UTF8.GetBytes(result.EmailConfirmToken);
 			var base64Token = Convert.ToBase64String(tokenBytes);
-			var baseUrl = _configuration.GetValue<string>("BaseUrl");
+			var baseUrl = _urlSettings.BaseUrl;
 			var confirmUrl = $"{baseUrl}/api/Authentication/confirm-email?userId={result.UserId}&token={base64Token}";
 
 			var emailDto = new EmailDto
@@ -121,7 +127,7 @@ namespace HSP.API.Controllers
 			{
 				return Unauthorized(new { message = ex.Message }); 
 			}
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return StatusCode(500, new { message = "An internal server error occurred." }); 
 			}
@@ -140,7 +146,7 @@ namespace HSP.API.Controllers
 		public async Task<IActionResult> GoogleCallback()
 		{
 			var loginResponse = await _authenticationService.GoogleLogin();
-			var frontendSuccessUrl = _configuration.GetValue<string>("FrontendUrl:LoginSuccess");
+			var frontendSuccessUrl = _urlSettings.FrontendLoginSuccess;
 			return Redirect($"{frontendSuccessUrl}?token={loginResponse.JwtToken}");
 		}
 
@@ -154,9 +160,101 @@ namespace HSP.API.Controllers
 			var success = await _authenticationService.ConfirmEmail(userId, decodedToken);
 			if (success)
 			{
-				await _customerProfileService.CreateCustomerProfileAsync(userId);
+				// Lấy user và kiểm tra role
+				var user = await _userManager.FindByIdAsync(userId.ToString());
+				if (user != null)
+				{
+					var roles = await _userManager.GetRolesAsync(user);
+					// Chỉ tạo CustomerProfile cho Customer role
+					// TechnicianProfile đã được tạo trong quá trình register
+					if (roles.Contains(RoleNames.Customer))
+					{
+						await _customerProfileService.CreateCustomerProfileAsync(userId);
+					}
+				}
 			}
 			return success ? Ok("Email confirmed successfully") : BadRequest("Email confirmation failed");
+		}
+
+		[HttpPost("change-password")]
+		[Authorize]
+		public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto input)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			try
+			{
+				// Lấy user ID từ JWT token
+				var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+				if (!Guid.TryParse(userIdClaim, out var userId))
+				{
+					return Unauthorized(new { message = "Invalid user token" });
+				}
+
+				var result = await _authenticationService.ChangePassword(userId, input);
+				return Ok(result);
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." });
+			}
+		}
+		[HttpPost("add-password")]
+		[Authorize(Roles = RoleNames.Customer)]
+		public async Task<IActionResult> AddPassword([FromBody] AddPasswordDto input)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest();
+			}
+			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (userIdString == null || !Guid.TryParse(userIdString, out var userId))
+			{
+				return Unauthorized();
+			}
+			try
+			{
+				var result = await _authenticationService.AddPasswordAsync(userId, input);
+				if (!result)
+				{
+					BadRequest();
+				}
+				return Ok(new {message = "PasswordAddSuccess"});
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." });
+			}
+		}
+		[HttpPost("create-operator")]
+		[Authorize(Roles = RoleNames.Admin)]
+		public async Task<IActionResult> CreateOperator([FromBody] CreateOperatorRequestDto input)
+		{
+			if (!ModelState.IsValid) return BadRequest(ModelState);
+			try
+			{
+				var userId = await _authenticationService.CreateOperatorAsync(input);
+				return Ok(new { id = userId, message = "OperatorCreated" });
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." });
+			}
 		}
 	}
 }
