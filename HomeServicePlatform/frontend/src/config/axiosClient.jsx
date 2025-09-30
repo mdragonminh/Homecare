@@ -1,13 +1,13 @@
-// src/utils/axiosClient.jsx
+
 
 import axios from "axios";
 
-// Lấy base URL từ biến môi trường
+
 const API_URL = import.meta.env.VITE_API_URL;
 // Lấy biến debug
-const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true"; // Thêm dòng này nếu bạn có biến VITE_ENABLE_DEBUG
+const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true"; 
 
-// Tạo một instance (thể hiện) của axios
+
 const axiosClient = axios.create({
   baseURL: API_URL,
   headers: {
@@ -15,8 +15,7 @@ const axiosClient = axios.create({
   },
 });
 
-// --- Thiết lập Interceptor để tự động thêm Header Ngôn ngữ ---
-// Interceptor này sẽ chạy trước khi mọi request được gửi đi
+
 axiosClient.interceptors.request.use(
   (config) => {
     // 1. Lấy ngôn ngữ hiện tại được lưu trữ
@@ -25,13 +24,13 @@ axiosClient.interceptors.request.use(
     // 2. Thêm Header Ngôn ngữ
     config.headers["Accept-Language"] = lang; 
     
-    // 3. (TÙY CHỌN) Thêm Bearer Token nếu có
+    
     const token = localStorage.getItem("jwtToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // ⭐️ LOG XÁC NHẬN HEADER ĐÃ ĐƯỢC THÊM ⭐️
+    
     if (ENABLE_DEBUG) {
       console.groupCollapsed(`[Axios Interceptor] Gửi Request đến: ${config.url}`);
       console.log("Ngôn ngữ (Accept-Language):", lang);
@@ -39,7 +38,7 @@ axiosClient.interceptors.request.use(
       console.log("Full Config:", config);
       console.groupEnd();
     }
-    // ⭐️ KẾT THÚC LOG ⭐️
+   
     
     return config;
   },
@@ -48,7 +47,7 @@ axiosClient.interceptors.request.use(
   }
 );
 
-// --- (TÙY CHỌN) Thêm Interceptor cho Response để kiểm tra thành công/thất bại ---
+
 axiosClient.interceptors.response.use(
     (response) => {
         // Log khi request thành công (Status 2xx)

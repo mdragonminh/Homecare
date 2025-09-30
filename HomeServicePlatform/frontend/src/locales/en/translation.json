@@ -58,7 +58,7 @@
     "earn_with_skills": "Earn money with your skills",
     "by_registering": "By registering, you agree to the",
     "of_our_service": "of our service",
-    "home_management": "Home Management", 
+    "home_management": "Home Management",
     "home_management_description": "Manage and track all your homes",
     "search_by_name_or_address": "Search by name or address...",
     "advanced_filter": "Advanced Filter",
@@ -91,7 +91,7 @@
     "edit": "Edit",
     "view": "View",
     "details": "Details",
-    "manage_items": "Home Items", 
+    "manage_items": "Home Items",
     "items_management_description": "Manage devices and items in your home",
     "export_excel": "Export Excel",
     "all_types": "All Types",
@@ -116,10 +116,11 @@
     "add_item_modal_title": "Add Item/Device",
     "condo_mini": "Mini Condo",
     "adding": "Adding...",
+    "adding_item_loading": "Adding new item...", 
     "delete_confirm_message": "Are you sure you want to delete the item \"{{item_name}}\"? This action cannot be undone.",
     "saving": "Saving...",
-    "save_address": "SaveAddress",
-    "active_status": "Active" 
+    "save_address": "Save Address",
+    "active_status": "Active"
   },
   "form": {
     "label": {
@@ -165,14 +166,19 @@
     "terms_required": "Please agree to the terms of service!",
     "full_name_required": "Please enter your full name.",
     "confirm_password_required": "Please confirm your password.",
-    "item_name_type_required": "Please enter the item name and type."
+    "item_name_type_required": "Please enter the item name and type.",
+    "required_fields_missing": "Please fill in all required fields.",
+    "item_name_required": "Item name is required.",
+    "brand_required": "Brand is required.",
+    "type_required": "Item type is required.",
+    "model_number_required": "Model number is required."
   },
   "success": {
     "registration": "You have registered successfully. Please check your email to verify and log in.",
     "home_added": "New address successfully added.",
     "home_edited": "Address successfully updated.",
     "home_deleted": "Address successfully deleted.",
-    "item_added": "Item successfully added!",
+    "item_added": "\"{{item_name}}\" successfully added!", 
     "item_edited": "Item successfully updated!",
     "item_deleted": "Item successfully deleted!"
   },

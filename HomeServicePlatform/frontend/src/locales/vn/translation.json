@@ -105,6 +105,7 @@
     "add_item_modal_title": "Thêm Vật Phẩm/Thiết Bị",
     "condo_mini": "Chung cư mini",
     "adding": "Đang thêm...",
+    "adding_item_loading": "Đang thêm vật phẩm mới...",
     "export_excel": "Xuất Excel",
     "items_management_description": "Quản lý thiết bị và vật dụng trong ngôi nhà của bạn",
     "all_types": "Tất cả loại",
@@ -167,14 +168,19 @@
     "terms_required": "Vui lòng đồng ý với điều khoản dịch vụ!",
     "full_name_required": "Vui lòng nhập họ và tên.",
     "confirm_password_required": "Vui lòng xác nhận mật khẩu.",
-    "item_name_type_required": "Vui lòng nhập tên và chọn loại vật phẩm."
+    "item_name_type_required": "Vui lòng nhập tên và chọn loại vật phẩm.",
+    "required_fields_missing": "Vui lòng điền đầy đủ các trường bắt buộc.",
+    "item_name_required": "Tên vật phẩm là bắt buộc.",
+    "brand_required": "Thương hiệu là bắt buộc.",
+    "type_required": "Loại vật phẩm là bắt buộc.",
+    "model_number_required": "Mã Model là bắt buộc."
   },
   "success": {
     "registration": "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để xác minh và đăng nhập.",
     "home_added": "Địa chỉ mới đã được thêm thành công.",
     "home_edited": "Địa chỉ đã được cập nhật thành công.",
     "home_deleted": "Địa chỉ đã được xóa thành công.",
-    "item_added": "Thêm vật phẩm thành công!",
+    "item_added": "Đã thêm \"{{item_name}}\" thành công!",
     "item_edited": "Cập nhật vật phẩm thành công!",
     "item_deleted": "Xóa vật phẩm thành công!"
     
@@ -185,7 +191,7 @@
     "user_creation_failed": "Không thể tạo tài khoản. Email hoặc thông tin đã được sử dụng.",
     "try_again": "Đã xảy ra lỗi, vui lòng thử lại.",
     "invalid_registration_info": "Thông tin đăng ký không hợp lệ, vui lòng kiểm tra lại.",
-    "network_connect_failed": "Lỗi kết nối đến máy chủ, vui lòng kiểm tra mạng và thử lại.",
+    "network_connect_failed": "Lỗi kết nối mạng, vui lòng thử lại.",
     "api_fallback": "Đã xảy ra lỗi từ API, vui lòng thử lại sau.",
     "invalid_request": "Yêu cầu không hợp lệ, vui lòng kiểm tra thông tin.",
     "invalid_email_or_password": "Email hoặc mật khẩu không đúng.",

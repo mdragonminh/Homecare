@@ -1,5 +1,5 @@
 import axios from "axios";
-import axiosClient from "../utils/axiosClient"; 
+import axiosClient from "../config/axiosClient"; 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
 
@@ -226,7 +226,7 @@ export const homeApi = {
   // Hàm lấy danh sách vật phẩm của Home
   listHomeItems: async (homeId, page = 1, pageSize = 10, searchTerm = "") => {
     try {
-      // ⭐️ Không cần kiểm tra token thủ công
+     
 
       const queryParams = new URLSearchParams({
         homeId: homeId,
@@ -235,9 +235,9 @@ export const homeApi = {
         ...(searchTerm && { Search: searchTerm }),
       }).toString();
 
-      const url = `/HomeItem/list-home-item?${queryParams}`; // Dùng relative path
+      const url = `/HomeItem/list-home-item?${queryParams}`; 
 
-      // ⭐️ Sử dụng axiosClient.get
+      
       const res = await axiosClient.get(url);
 
       if (ENABLE_DEBUG) console.log("List home items success:", res.data);
@@ -268,12 +268,12 @@ export const homeApi = {
     }
   },
 
-  // Hàm cập nhật HomeItem (PUT /api/HomeItem/{homeItemId})
-  updateHomeItem: async (homeItemId, data) => { // 'data' chứa các trường cần cập nhật
+ 
+  updateHomeItem: async (homeItemId, data) => { 
     try {
       const res = await axiosClient.put(
         `/HomeItem/${homeItemId}`,
-        data // Ví dụ: { name, brand, type, modelNumber, serialNumber, notes, homeId }
+        data 
       );
 
       if (ENABLE_DEBUG) console.log(`Update home item ${homeItemId} success:`, res.data);
