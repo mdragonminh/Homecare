@@ -49,7 +49,6 @@ namespace HSP.API.Controllers
 			try
 			{
 				var result = await _authenticationService.Register(input);
-				await SendConfirmationEmailAsync(result, input.FullName);
 				return Ok(new { message = "Please check your email to confirm your registration." });
 			}
 			catch (ValidationException ex)
