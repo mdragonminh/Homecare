@@ -51,12 +51,28 @@ namespace HSP.Service.Implementations
 			_emailTemplateService = emailTemplateService;
 		}
 
-		public async Task<bool> ConfirmEmail(Guid userId, string token)
+		public async Task<ConfirmEmailResultDto> ConfirmEmail(Guid userId, string token)
 		{
 			var user = await _userRepository.FindByIdAsync(userId);
-			if (user == null) return false;
+			if (user == null) {
+				return new ConfirmEmailResultDto { Success = false, Error = "UserNotFound", Message = "User not found" };
+			}
 			var result = await _userRepository.ConfirmEmailAsync(user, token);
-			return true;
+			if (result.Succeeded)
+			{
+				return new ConfirmEmailResultDto { Success = true, Message = "Email confirmed" };
+			}
+			if (result.Errors.Any(e => e.Code.Contains("InvalidToken")))
+			{
+				return new ConfirmEmailResultDto { Success = false, Error = "InvalidToken", Message = "Invalid token" };
+			}
+
+			if (result.Errors.Any(e => e.Code.Contains("TokenExpired")))
+			{
+				return new ConfirmEmailResultDto { Success = false, Error = "TokenExpired", Message = "Token expired" };
+			}
+
+			return new ConfirmEmailResultDto { Success = false, Error = "UnknownError", Message = "Email confirmation failed" };
 		}
 
 		public async Task<LoginResponseDto> Login(LoginRequestDto input)
@@ -241,9 +257,11 @@ namespace HSP.Service.Implementations
 
 			if (input.Password != input.ConfirmPassword)
 				throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
-			var isEmailExisting = await _userRepository.FindByEmailAsync(input.Email);
-			if (isEmailExisting != null)
-				throw new ValidationException(_localizer["EmailAlreadyExists"]);
+			var userExisting = await _userRepository.FindByEmailAsync(input.Email);
+			if (userExisting != null)
+			{
+				return await HandleExistingUserAsync(userExisting);
+			}
 
 			using (var transaction = await _unitOfWork.BeginTransactionAsync())
 			{
@@ -251,9 +269,14 @@ namespace HSP.Service.Implementations
 				{
 					var user = await CreateCustomerAsync(input);
 					await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
-
 					await _unitOfWork.SaveChangesAsync();
-
+					var customerProfile = new CustomerProfile
+					{
+						UserId = user.Id,
+						DateCreated = DateTime.UtcNow,
+					};
+					await _customerProfileRepository.AddAsync(customerProfile);
+					await _unitOfWork.SaveChangesAsync();
 					var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
 					await SendConfirmationEmailAsync(user, token);
 
@@ -286,8 +309,25 @@ namespace HSP.Service.Implementations
 			var created = await _userRepository.CreateAsync(user, input.Password);
 			if (!created.Succeeded)
 				throw new Exception(_localizer["UserCreationFailed"]);
-
 			return user;
+		} 
+		
+		private async Task<RegisterResponseDto> HandleExistingUserAsync(AppUser userExisting)
+		{
+			if (userExisting.EmailConfirmed)
+			{
+				throw new ValidationException(_localizer["EmailAlreadyExists"]);
+			}
+
+			var newToken = await _userRepository.GenerateEmailConfirmationTokenAsync(userExisting);
+			await SendConfirmationEmailAsync(userExisting, newToken);
+
+			return new RegisterResponseDto
+			{
+				UserId = userExisting.Id,
+				Email = userExisting.Email,
+				EmailConfirmToken = newToken
+			};
 		}
 		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
 		{

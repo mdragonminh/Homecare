@@ -1,7 +1,9 @@
-﻿using HSP.Core.Dtos.ConfigurationDto;
+﻿using HSP.API.Models.Emails;
+using HSP.Core.Constans;
+using HSP.Core.Dtos.AuthenticationDto;
+using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.External;
-using HSP.Core.Constans;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
@@ -9,10 +11,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Razor.Templating.Core;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
-using HSP.Core.Dtos.AuthenticationDto;
 
 namespace HSP.API.Controllers
 {
@@ -25,10 +27,10 @@ namespace HSP.API.Controllers
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly ICustomerProfileService _customerProfileService;
 		private readonly SignInManager<AppUser> _signInManager;
-		private readonly UserManager<AppUser> _userManager;
 
 		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService,
 			IOptions<UrlSettingsDto> urlOptions, ICustomerProfileService customerProfileService,
+			IOptions<UrlSettingsDto> urlSetting,
 			SignInManager<AppUser> signInManager, UserManager<AppUser> userManager)
 		{
 			_authenticationService = authenticationService;
@@ -36,7 +38,6 @@ namespace HSP.API.Controllers
 			_urlSettings = urlOptions.Value;
 			_customerProfileService = customerProfileService;
 			_signInManager = signInManager;
-			_userManager = userManager;
 		}
 
 		[HttpPost("register")]
@@ -158,23 +159,32 @@ namespace HSP.API.Controllers
 		{
 			var decodedTokenBytes = Convert.FromBase64String(token);
 			var decodedToken = Encoding.UTF8.GetString(decodedTokenBytes);
-			var success = await _authenticationService.ConfirmEmail(userId, decodedToken);
-			if (success)
+			var result = await _authenticationService.ConfirmEmail(userId, decodedToken);
+			var vm = new ConfirmEmailResultViewModel();
+
+			if (result.Success)
 			{
-				// Lấy user và kiểm tra role
-				var user = await _userManager.FindByIdAsync(userId.ToString());
-				if (user != null)
-				{
-					var roles = await _userManager.GetRolesAsync(user);
-					// Chỉ tạo CustomerProfile cho Customer role
-					// TechnicianProfile đã được tạo trong quá trình register
-					if (roles.Contains(RoleNames.Customer))
-					{
-						await _customerProfileService.CreateCustomerProfileAsync(userId);
-					}
-				}
+				vm.Success = true;
+				vm.Code = "";
+				vm.Title = "Xác nhận email thành công";
+				vm.Heading = "Hoàn tất!";
+				vm.Message = "Tài khoản của bạn đã được xác nhận. Bạn có thể đăng nhập để tiếp tục.";
+				vm.PrimaryActionText = "Đăng nhập";
+				vm.PrimaryActionUrl = _urlSettings.FrontendLoginFailed;    
 			}
-			return success ? Ok("Email confirmed successfully") : BadRequest("Email confirmation failed");
+			else 
+			{
+				vm.Success = false;
+				vm.Code = "TokenExpired";
+				vm.Title = "Liên kết đã hết hạn";
+				vm.Heading = "Liên kết xác nhận hết hạn";
+				vm.Message = "Liên kết của bạn đã hết hạn. Vui lòng đăng ký lại để nhận liên kết mới!";
+				vm.PrimaryActionText = "Quay lại trang chủ";
+				vm.PrimaryActionUrl = _urlSettings.FrontendLoginFailed;
+			}
+
+			var html = await RazorTemplateEngine.RenderAsync("/Views/Authentications/ConfirmEmailResult.cshtml", vm);
+			return new ContentResult { Content = html, ContentType = "text/html" };
 		}
 
 		[HttpPost("change-password")]

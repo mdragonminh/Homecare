@@ -1,0 +1,157 @@
+﻿@using HSP.API.Models.Emails
+@model ConfirmEmailResultViewModel
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>@Model.Title</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --ok: #16a34a;
+      --bad: #ef4444;
+      --brand: #2563eb;
+      --ring: rgba(37,99,235,0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    .wrap {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 560px;
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.08);
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+      animation: pop .25s ease-out;
+    }
+    .banner {
+      padding: 18px 22px;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #4f46e5);
+    }
+
+    .content {
+      padding: 26px 26px 8px;
+    }
+
+    .heading {
+      margin: 6px 0 12px;
+      font-size: 22px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+      .heading .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        background: @(Model.Success ? "var(--ok)" : "var(--bad)");
+        box-shadow: 0 0 0 6px var(--ring);
+      }
+
+    p {
+      margin: 0 0 14px;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 16px 26px 26px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+    }
+
+      .btn-primary:hover {
+        filter: brightness(1.05);
+      }
+
+    .btn-ghost {
+      background: #f3f4f6;
+      color: var(--text);
+    }
+
+      .btn-ghost:hover {
+        background: #e5e7eb;
+      }
+
+    .note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .footer {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      padding: 12px;
+      border-top: 1px solid #e5e7eb;
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="banner">@Model.Title</div>
+      <div class="content">
+        <div class="heading">
+          <span class="dot"></span>
+          <span>@Model.Heading</span>
+        </div>
+        <p>@Model.Message</p>
+      </div>
+
+      <div class="actions">
+       
+          <a class="btn btn-primary" href="@Model.PrimaryActionUrl">@Model.PrimaryActionText</a>
+       
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,5 +1,6 @@
 ﻿using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Service.Dtos.AuthenticationDto;
+using HSP.Service.Dtos.EmailDto;
 
 namespace HSP.Service.Interfaces
 {
@@ -7,13 +8,13 @@ namespace HSP.Service.Interfaces
 	{
 		Task<RegisterResponseDto> Register(RegisterRequestDto input);
 		Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input);
-		Task<bool> ConfirmEmail(Guid userId, string token);
+		Task<ConfirmEmailResultDto> ConfirmEmail(Guid userId, string token);
 		Task<LoginResponseDto> Login(LoginRequestDto input);
 		Task<LoginResponseDto> GoogleLogin();
 		Task<ChangePasswordResponseDto> ChangePassword(Guid userId, ChangePasswordRequestDto input);
 		Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input);
 		Task<Guid> CreateOperatorAsync(CreateOperatorRequestDto input);
 		Task<bool> RequestPasswordResetAsync(ForgetPasswordDto input);
-		Task<bool> ResetPasswordAsync(ResetPasswordDto input);
+		Task<bool> ResetPasswordAsync(Core.Dtos.AuthenticationDto.ResetPasswordDto input);
 	}
 }

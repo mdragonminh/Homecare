@@ -14,6 +14,12 @@
 		public string FullName { get; set; } = string.Empty;
 		public string ConfirmUrl { get; set; } = string.Empty;
 	}
+	public class ConfirmEmailResultDto
+	{
+		public bool Success { get; set; }
+		public string? Error { get; set; } 
+		public string? Message { get; set; }
+	}
 	public class ResetPasswordDto
 	{
 		public string FullName { get; set; } = string.Empty;
