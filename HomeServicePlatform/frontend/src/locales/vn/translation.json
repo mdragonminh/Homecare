@@ -48,6 +48,22 @@
     "manage_account": "Quản lý tài khoản",
     "personal_info_settings": "Cài đặt thông tin cá nhân",
     "manage_homes": "Quản lý Địa chỉ",
+    "edit_profile": "Chỉnh sửa thông tin", 
+    "edit_info": "Chỉnh sửa",
+    "update_profile": "Cập nhật thông tin",
+    "save_changes": "Lưu thay đổi",
+    "phone_number": "Số điện thoại",
+    "enter_phone": "Nhập số điện thoại",
+    "personal_information": "Thông tin cá nhân",
+    "system_information": "Thông tin hệ thống", 
+    "account_created": "Ngày tạo tài khoản",
+    "account_verified": "Tài khoản đã xác thực",
+    "not_updated": "Chưa cập nhật",
+    "refresh": "Làm mới",
+    "change_password": "Đổi mật khẩu",
+    "view_manage_profile": "Xem và quản lý thông tin profile của bạn",
+    "loading_profile": "Đang tải thông tin profile...",
+    "error_loading_profile": "Có lỗi xảy ra khi tải thông tin profile",
     "add_new_delivery_address": "Thêm địa chỉ giao hàng mới",
     "exit_account": "Thoát khỏi tài khoản",
     "welcome": "Chào mừng bạn",
@@ -181,7 +197,12 @@
     "email_invalid": "Email không hợp lệ",
     "username_required": "Vui lòng nhập tên đăng nhập",
     "username_min": "Tối thiểu 3 ký tự",
-    "password_min": "Tối thiểu 8 ký tự"
+    "password_min": "Tối thiểu 8 ký tự",
+    "phone_required": "Vui lòng nhập số điện thoại",
+    "phone_invalid": "Số điện thoại không hợp lệ. Vui lòng nhập 10-11 số",
+    "phone_format": "Số điện thoại phải bắt đầu bằng 0 và có 10-11 chữ số",
+    "full_name_length": "Họ và tên phải từ 1-100 ký tự",
+    "phone_length": "Số điện thoại phải từ 10-11 chữ số"
   },
   "success": {
     "registration": "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để xác minh và đăng nhập.",
@@ -190,8 +211,9 @@
     "home_deleted": "Địa chỉ đã được xóa thành công.",
     "item_added": "Đã thêm \"{{item_name}}\" thành công!",
     "item_edited": "Cập nhật vật phẩm thành công!",
-    "item_deleted": "Xóa vật phẩm thành công!"
-    
+    "item_deleted": "Xóa vật phẩm thành công!",
+    "profile_updated": "Cập nhật thông tin thành công!",
+    "password_changed": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại."
   },
   "error": {
     "email_in_use": "Email đã được sử dụng, vui lòng dùng email khác.",

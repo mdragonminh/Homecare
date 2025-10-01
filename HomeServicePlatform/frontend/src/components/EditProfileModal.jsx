@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { X, User, Phone } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 const EditProfileModal = ({ isOpen, onClose, onSubmit, currentProfile }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     fullName: "",
     phoneNumber: "",
@@ -23,15 +26,20 @@ const EditProfileModal = ({ isOpen, onClose, onSubmit, currentProfile }) => {
     const newErrors = {};
 
     if (!formData.fullName.trim()) {
-      newErrors.fullName = "Họ và tên là bắt buộc";
+      newErrors.fullName = t("validation.full_name_required");
     } else if (formData.fullName.trim().length < 1 || formData.fullName.trim().length > 100) {
-      newErrors.fullName = "Họ và tên phải từ 1-100 ký tự";
+      newErrors.fullName = t("validation.full_name_length");
     }
 
     if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = "Số điện thoại là bắt buộc";
-    } else if (!/^[0-9]{10,15}$/.test(formData.phoneNumber.replace(/\s/g, ""))) {
-      newErrors.phoneNumber = "Số điện thoại phải từ 10-15 chữ số";
+      newErrors.phoneNumber = t("validation.phone_required");
+    } else {
+      // Chỉ cho phép số điện thoại Việt Nam bắt đầu bằng 0 và có 10-11 chữ số
+      const phoneRegex = /^0[0-9]{9,10}$/;
+      const cleanPhone = formData.phoneNumber.replace(/\s/g, "");
+      if (!phoneRegex.test(cleanPhone)) {
+        newErrors.phoneNumber = t("validation.phone_format");
+      }
     }
 
     setErrors(newErrors);
@@ -50,6 +58,7 @@ const EditProfileModal = ({ isOpen, onClose, onSubmit, currentProfile }) => {
       await onSubmit(formData.fullName.trim(), formData.phoneNumber.trim());
       onClose();
     } catch (error) {
+      toast.error(error.message);
       setErrors({ submit: error.message });
     } finally {
       setLoading(false);
@@ -74,12 +83,12 @@ const EditProfileModal = ({ isOpen, onClose, onSubmit, currentProfile }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div style={{background: 'rgba(1,1,1, 0.5)'}} className="fixed inset-0  bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
-            Chỉnh sửa thông tin
+            {t("ui.edit_profile")}
           </h3>
           <button
             onClick={onClose}
@@ -96,7 +105,7 @@ const EditProfileModal = ({ isOpen, onClose, onSubmit, currentProfile }) => {
             {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Họ và tên *
+                {t("ui.full_name")} *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -111,7 +120,7 @@ const EditProfileModal = ({ isOpen, onClose, onSubmit, currentProfile }) => {
                       ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                       : "border-gray-300"
                   }`}
-                  placeholder="Nhập họ và tên"
+                  placeholder={t("ui.enter_full_name")}
                   disabled={loading}
                 />
               </div>
@@ -123,7 +132,7 @@ const EditProfileModal = ({ isOpen, onClose, onSubmit, currentProfile }) => {
             {/* Phone Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Số điện thoại *
+                {t("ui.phone_number")} *
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -138,7 +147,7 @@ const EditProfileModal = ({ isOpen, onClose, onSubmit, currentProfile }) => {
                       ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                       : "border-gray-300"
                   }`}
-                  placeholder="Nhập số điện thoại"
+                  placeholder={t("ui.enter_phone")}
                   disabled={loading}
                 />
               </div>
@@ -163,7 +172,7 @@ const EditProfileModal = ({ isOpen, onClose, onSubmit, currentProfile }) => {
               className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
-              Hủy
+              {t("ui.cancel")}
             </button>
             <button
               type="submit"
@@ -173,10 +182,10 @@ const EditProfileModal = ({ isOpen, onClose, onSubmit, currentProfile }) => {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Đang lưu...
+                  {t("ui.saving")}
                 </>
               ) : (
-                "Lưu thay đổi"
+                t("ui.save_changes")
               )}
             </button>
           </div>

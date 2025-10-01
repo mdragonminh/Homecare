@@ -5,8 +5,11 @@ import { Footer } from "../components/Footer";
 import ChangePasswordModal from "../components/ChangePasswordModal";
 import EditProfileModal from "../components/EditProfileModal";
 import { Key, Edit, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,7 +32,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
         setError(result.message);
       }
     } catch (err) {
-      setError("Có lỗi xảy ra khi tải thông tin profile");
+      setError(t("ui.error_loading_profile"));
     } finally {
       setLoading(false);
     }
@@ -61,8 +64,10 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
       confirmNewPassword
     );
     if (result.success) {
-      alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
-      window.location.href = "/login";
+      toast.success(t("success.password_changed"));
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 2000);
     } else {
       throw new Error(result.message);
     }
@@ -76,7 +81,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     const result = await profileApi.updateMyProfile(fullName, phoneNumber);
     if (result.success) {
       setProfile(result.data);
-      alert("Cập nhật thông tin thành công!");
+      toast.success(t("success.profile_updated"));
     } else {
       throw new Error(result.message);
     }
@@ -86,7 +91,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     <div className="flex items-center justify-center py-32">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Đang tải thông tin profile...</p>
+        <p className="mt-4 text-gray-600">{t("ui.loading_profile")}</p>
       </div>
     </div>
   );
@@ -95,14 +100,14 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     <div className="flex items-center justify-center py-32">
       <div className="text-center">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg max-w-md">
-          <p className="font-bold">Có lỗi xảy ra!</p>
+          <p className="font-bold">{t("ui.error_occurred")}</p>
           <p>{error}</p>
         </div>
         <button
           onClick={fetchProfile}
           className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
-          Thử lại
+          {t("ui.try_again")}
         </button>
       </div>
     </div>
@@ -130,10 +135,10 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
               <div className="bg-white rounded-lg shadow-sm mb-6">
                 <div className="px-6 py-4 border-b border-gray-200">
                   <h1 className="text-2xl font-bold text-gray-900">
-                    Thông tin cá nhân
+                    {t("ui.personal_information")}
                   </h1>
                   <p className="text-gray-600 mt-1">
-                    Xem và quản lý thông tin profile của bạn
+                    {t("ui.view_manage_profile")}
                   </p>
                 </div>
               </div>
@@ -156,7 +161,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                         <p className="text-gray-600">{profile.email}</p>
                         <div className="flex items-center mt-2">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Tài khoản đã xác thực
+                            {t("ui.account_verified")}
                           </span>
                         </div>
                       </div>
@@ -167,33 +172,33 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                       <div className="space-y-6">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Họ và tên
+                            {t("ui.full_name")}
                           </label>
                           <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
                             <p className="text-gray-900">
-                              {profile.fullName || "Chưa cập nhật"}
+                              {profile.fullName || t("ui.not_updated")}
                             </p>
                           </div>
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Email
+                            {t("ui.email")}
                           </label>
                           <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
                             <p className="text-gray-900">
-                              {profile.email || "Chưa cập nhật"}
+                              {profile.email || t("ui.not_updated")}
                             </p>
                           </div>
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Số điện thoại
+                            {t("ui.phone_number")}
                           </label>
                           <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
                             <p className="text-gray-900">
-                              {profile.phoneNumber || "Chưa cập nhật"}
+                              {profile.phoneNumber || t("ui.not_updated")}
                             </p>
                           </div>
                         </div>
@@ -203,12 +208,12 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                         {/* Timestamps */}
                         <div className="mt-8 pt-6 border-t border-gray-200">
                           <h3 className="text-lg font-medium text-gray-900 mb-4">
-                            Thông tin hệ thống
+                            {t("ui.system_information")}
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Ngày tạo tài khoản
+                                {t("ui.account_created")}
                               </label>
                               <p className="text-sm text-gray-600">
                                 {formatDate(profile.dateCreated)}
@@ -227,7 +232,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
                           <RefreshCw className="w-4 h-4 mr-2" />
-                          Làm mới
+                          {t("ui.refresh")}
                         </button>
 
                         <button
@@ -235,7 +240,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                           onClick={handleEditProfile}
                         >
                           <Edit className="w-4 h-4 mr-2" />
-                          Chỉnh sửa
+                          {t("ui.edit_info")}
                         </button>
 
                         <button
@@ -243,7 +248,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                         >
                           <Key className="w-4 h-4 mr-2" />
-                          Đổi mật khẩu
+                          {t("ui.change_password")}
                         </button>
                       </div>
                     </div>
