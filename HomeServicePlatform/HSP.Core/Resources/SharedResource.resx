@@ -192,4 +192,7 @@
   <data name="EmailNotConfirmed" xml:space="preserve">
     <value>Email not confirmed</value>
   </data>
+  <data name="Pleasecheckyouremailforpasswordresetinstructions" xml:space="preserve">
+    <value>Please check your email for password reset instructions</value>
+  </data>
 </root>
