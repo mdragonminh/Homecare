@@ -1,68 +1,163 @@
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Dtos.TechnicianProfileDto;
+using HSP.Core.Entities;
+using HSP.Core.Enums;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
+using HSP.Core.Resources;
+using HSP.DAL.Extensions;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
+using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Implementations
 {
-    public class TechnicianProfileService : ITechnicianProfileService
+    public class TechnicianProfileService : BaseService, ITechnicianProfileService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IRepository<TechnicianProfile, Guid> _technicianProfileRepository;
         private readonly IEmailService _emailService;
 
-        public TechnicianProfileService(IUnitOfWork unitOfWork, IEmailService emailService)
+        public TechnicianProfileService(
+            IRepository<TechnicianProfile, Guid> technicianProfileRepository,
+            IEmailService emailService,
+            IUnitOfWork unitOfWork,
+            IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
         {
-            _unitOfWork = unitOfWork;
+            _technicianProfileRepository = technicianProfileRepository;
             _emailService = emailService;
         }
 
         public async Task<PagedList<TechnicianProfileResponseDto>> GetTechniciansAsync(TechnicianProfileFilterParams filterParams)
         {
-            return await _unitOfWork.TechnicianProfiles.GetTechniciansAsync(filterParams);
+            var query = _technicianProfileRepository.GetAll()
+                .Include(x => x.User)
+                .WhereIf(!string.IsNullOrEmpty(filterParams.SearchTerm), 
+                    x => x.SkillSet.ToLower().Contains(filterParams.SearchTerm!.ToLower()) ||
+                         (x.User != null && x.User.UserName != null && x.User.UserName.ToLower().Contains(filterParams.SearchTerm!.ToLower())) ||
+                         (x.User != null && x.User.Email != null && x.User.Email.ToLower().Contains(filterParams.SearchTerm!.ToLower())) ||
+                         (x.User != null && x.User.FullName.ToLower().Contains(filterParams.SearchTerm!.ToLower())))
+                .WhereIf(filterParams.ApprovalStatus.HasValue,
+                    x => x.ApprovalStatus == filterParams.ApprovalStatus!.Value)
+                .WhereIf(filterParams.MinExperienceYears.HasValue,
+                    x => x.ExperienceYears >= filterParams.MinExperienceYears!.Value)
+                .WhereIf(filterParams.MaxExperienceYears.HasValue,
+                    x => x.ExperienceYears <= filterParams.MaxExperienceYears!.Value)
+                .WhereIf(filterParams.CreatedFrom.HasValue,
+                    x => x.DateCreated >= filterParams.CreatedFrom!.Value)
+                .WhereIf(filterParams.CreatedTo.HasValue,
+                    x => x.DateCreated <= filterParams.CreatedTo!.Value);
+
+            var technicianDtos = query.Select(x => new TechnicianProfileResponseDto
+            {
+                Id = x.Id,
+                UserId = x.UserId,
+                UserName = x.User != null ? x.User.UserName ?? string.Empty : string.Empty,
+                Email = x.User != null ? x.User.Email ?? string.Empty : string.Empty,
+                PhoneNumber = x.User != null ? x.User.PhoneNumber ?? string.Empty : string.Empty,
+                FullName = x.User != null ? x.User.FullName : string.Empty,
+                SkillSet = x.SkillSet,
+                ExperienceYears = x.ExperienceYears,
+                ApprovalStatus = x.ApprovalStatus,
+                ApprovedAt = x.ApprovedAt,
+                ApprovedBy = x.ApprovedBy,
+                DateCreated = x.DateCreated,
+                DateModified = x.DateModified
+            });
+
+            var pagedTechnicians = await technicianDtos.ToPagedListAsync(filterParams);
+            return pagedTechnicians;
         }
 
         public async Task<TechnicianProfileResponseDto?> GetTechnicianByIdAsync(Guid id)
         {
-            return await _unitOfWork.TechnicianProfiles.GetTechnicianByIdAsync(id);
+            var technician = await _technicianProfileRepository.GetAll()
+                .Include(x => x.User)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (technician == null)
+                return null;
+
+            return new TechnicianProfileResponseDto
+            {
+                Id = technician.Id,
+                UserId = technician.UserId,
+                UserName = technician.User?.UserName ?? string.Empty,
+                Email = technician.User?.Email ?? string.Empty,
+                PhoneNumber = technician.User?.PhoneNumber ?? string.Empty,
+                FullName = technician.User?.FullName ?? string.Empty,
+                SkillSet = technician.SkillSet,
+                ExperienceYears = technician.ExperienceYears,
+                ApprovalStatus = technician.ApprovalStatus,
+                ApprovedAt = technician.ApprovedAt,
+                ApprovedBy = technician.ApprovedBy,
+                DateCreated = technician.DateCreated,
+                DateModified = technician.DateModified
+            };
         }
 
         public async Task<bool> ApproveTechnicianAsync(Guid technicianProfileId, string approvedBy)
         {
-            var result = await _unitOfWork.TechnicianProfiles.ApproveTechnicianAsync(technicianProfileId, approvedBy);
-            if (result)
+            var technician = await _technicianProfileRepository.GetAll()
+                .FirstOrDefaultAsync(x => x.Id == technicianProfileId);
+
+            if (technician == null)
             {
-                await _unitOfWork.SaveChangesAsync();
+                throw new ValidationException("Technician profile not found.");
             }
-            return result;
+
+            if (technician.ApprovalStatus == TechnicianApprovalStatus.Approved)
+            {
+                throw new ValidationException("Technician is already approved.");
+            }
+
+            technician.ApprovalStatus = TechnicianApprovalStatus.Approved;
+            technician.ApprovedAt = DateTime.UtcNow;
+            technician.ApprovedBy = approvedBy;
+            technician.DateModified = DateTime.UtcNow;
+
+            await _unitOfWork.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> RejectTechnicianAsync(Guid technicianProfileId, string rejectedBy)
         {
-            var result = await _unitOfWork.TechnicianProfiles.RejectTechnicianAsync(technicianProfileId, rejectedBy);
-            if (result)
+            var technician = await _technicianProfileRepository.GetAll()
+                .FirstOrDefaultAsync(x => x.Id == technicianProfileId);
+
+            if (technician == null)
             {
-                await _unitOfWork.SaveChangesAsync();
+                throw new ValidationException("Technician profile not found.");
             }
-            return result;
+
+            if (technician.ApprovalStatus == TechnicianApprovalStatus.Rejected)
+            {
+                throw new ValidationException("Technician is already rejected.");
+            }
+
+            technician.ApprovalStatus = TechnicianApprovalStatus.Rejected;
+            technician.ApprovedAt = DateTime.UtcNow;
+            technician.ApprovedBy = rejectedBy;
+            technician.DateModified = DateTime.UtcNow;
+
+            await _unitOfWork.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> ApproveTechnicianWithNotificationAsync(Guid technicianProfileId, string approvedBy)
         {
             // Get technician details before approval
-            var technicianDetail = await _unitOfWork.TechnicianProfiles.GetTechnicianByIdAsync(technicianProfileId);
+            var technicianDetail = await GetTechnicianByIdAsync(technicianProfileId);
             if (technicianDetail == null)
             {
                 return false;
             }
 
             // Approve technician
-            var result = await _unitOfWork.TechnicianProfiles.ApproveTechnicianAsync(technicianProfileId, approvedBy);
+            var result = await ApproveTechnicianAsync(technicianProfileId, approvedBy);
             if (result)
             {
-                await _unitOfWork.SaveChangesAsync();
-
                 // Send approval email notification
                 try
                 {
@@ -87,18 +182,16 @@ namespace HSP.Service.Implementations
         public async Task<bool> RejectTechnicianWithNotificationAsync(Guid technicianProfileId, string rejectedBy)
         {
             // Get technician details before rejection
-            var technicianDetail = await _unitOfWork.TechnicianProfiles.GetTechnicianByIdAsync(technicianProfileId);
+            var technicianDetail = await GetTechnicianByIdAsync(technicianProfileId);
             if (technicianDetail == null)
             {
                 return false;
             }
 
             // Reject technician
-            var result = await _unitOfWork.TechnicianProfiles.RejectTechnicianAsync(technicianProfileId, rejectedBy);
+            var result = await RejectTechnicianAsync(technicianProfileId, rejectedBy);
             if (result)
             {
-                await _unitOfWork.SaveChangesAsync();
-
                 // Send rejection email notification
                 try
                 {

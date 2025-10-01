@@ -1,7 +1,6 @@
 import axios from "axios";
+import axiosClient from "../config/axiosClient";
 
-// Lấy biến môi trường từ .env
-const API_URL = import.meta.env.VITE_API_URL;
 const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
 
 export const profileApi = {
@@ -13,7 +12,7 @@ export const profileApi = {
         throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
       }
 
-      const response = await axios.get(`${API_URL}/CustomerProfile/my-profile`, {
+      const response = await axiosClient.get(`/CustomerProfile/my-profile`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
         },
@@ -42,8 +41,8 @@ export const profileApi = {
         throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
       }
 
-      const response = await axios.get(
-        `${API_URL}/CustomerProfile/${profileId}`,
+      const response = await axiosClient.get(
+        `/CustomerProfile/${profileId}`,
         {
           headers: {
             Authorization: `Bearer ${jwtToken}`,
@@ -74,8 +73,8 @@ export const profileApi = {
         throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
       }
 
-      const response = await axios.get(
-        `${API_URL}/CustomerProfile/debug/token-info`,
+      const response = await axiosClient.get(
+        `/CustomerProfile/debug/token-info`,
         {
           headers: {
             Authorization: `Bearer ${jwtToken}`,
@@ -106,8 +105,8 @@ export const profileApi = {
         throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
       }
 
-      const response = await axios.post(
-        `${API_URL}/Authentication/change-password`,
+      const response = await axiosClient.post(
+        `/Authentication/change-password`,
         {
           currentPassword,
           newPassword,
