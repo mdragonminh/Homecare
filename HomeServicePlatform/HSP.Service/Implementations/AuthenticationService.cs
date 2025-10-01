@@ -442,6 +442,25 @@ namespace HSP.Service.Implementations
 			await SendPasswordResetEmail(user);
 			return true;
 		}
+		public async Task<bool> ResetPasswordAsync(Core.Dtos.AuthenticationDto.ResetPasswordDto input)
+		{
+			if (input == null)
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
+
+			if (input.NewPassword != input.ConfirmPassword)
+				throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
+
+			var user = await _userRepository.FindByIdAsync(input.UserId);
+			if (user == null)
+				throw new ValidationException(_localizer["UserNotFound"]);
+			var decodedTokenBytes = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(input.Token));
+			var result = await _userRepository.ResetPasswordAsync(user, decodedTokenBytes, input.NewPassword);
+			if (!result.Succeeded)
+			{
+				throw new ValidationException($"{_localizer["PasswordResetFailed"]}");
+			}
+			return true;
+		}
 		private async Task SendPasswordResetEmail(AppUser user)
 		{
 			var token = await _userRepository.GeneratePasswordResetTokenAsync(user);
@@ -481,5 +500,7 @@ namespace HSP.Service.Implementations
 				HtmlBody = body
 			});
 		}
+
+		
 	}
 }

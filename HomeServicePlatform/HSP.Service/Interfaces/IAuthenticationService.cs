@@ -14,5 +14,6 @@ namespace HSP.Service.Interfaces
 		Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input);
 		Task<Guid> CreateOperatorAsync(CreateOperatorRequestDto input);
 		Task<bool> RequestPasswordResetAsync(ForgetPasswordDto input);
+		Task<bool> ResetPasswordAsync(ResetPasswordDto input);
 	}
 }
