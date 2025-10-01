@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
+using HSP.Core.Dtos.AuthenticationDto;
 
 namespace HSP.API.Controllers
 {
@@ -246,6 +247,28 @@ namespace HSP.API.Controllers
 			{
 				var userId = await _authenticationService.CreateOperatorAsync(input);
 				return Ok(new { id = userId, message = "OperatorCreated" });
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." });
+			}
+		}
+		[HttpPost("reset-password")]
+		[AllowAnonymous]
+		public async Task<IActionResult> ResetPassword([FromBody] ForgetPasswordDto input)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+			try
+			{
+				await _authenticationService.RequestPasswordResetAsync(input);
+				return Ok(new { message = "Please check your email for password reset instructions." });
 			}
 			catch (ValidationException ex)
 			{
