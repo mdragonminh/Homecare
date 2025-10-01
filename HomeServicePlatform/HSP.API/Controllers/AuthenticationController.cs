@@ -257,7 +257,7 @@ namespace HSP.API.Controllers
 				return StatusCode(500, new { message = "An internal server error occurred." });
 			}
 		}
-		[HttpPost("reset-password")]
+		[HttpPost("forget-password")]
 		[AllowAnonymous]
 		public async Task<IActionResult> ResetPassword([FromBody] ForgetPasswordDto input)
 		{
