@@ -1,0 +1,10 @@
+﻿@using HSP.Service.Dtos.EmailDto;
+@model ConfirmEmailDto
+@{
+  Layout = "/Views/Emails/_EmailLayout.cshtml";
+}
+<p>Chào @Model.FullName,</p>
+<p>Cảm ơn bạn đã đăng ký. Vui lòng nhấn vào link dưới đây để xác nhận email:</p>
+<p>
+  <a href="@Model.ConfirmUrl" class="btn">Xác nhận Email</a>
+</p>
