@@ -259,7 +259,7 @@ namespace HSP.API.Controllers
 		}
 		[HttpPost("forget-password")]
 		[AllowAnonymous]
-		public async Task<IActionResult> ResetPassword([FromBody] ForgetPasswordDto input)
+		public async Task<IActionResult> ForgetPassword([FromBody] ForgetPasswordDto input)
 		{
 			if (!ModelState.IsValid)
 			{
@@ -269,6 +269,28 @@ namespace HSP.API.Controllers
 			{
 				await _authenticationService.RequestPasswordResetAsync(input);
 				return Ok(new { message = "Please check your email for password reset instructions." });
+			}
+			catch (ValidationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." });
+			}
+		}
+		[HttpPost("reset-password")]
+		[AllowAnonymous]
+		public async Task<IActionResult> ResetPassword([FromBody] Core.Dtos.AuthenticationDto.ResetPasswordDto input)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+			try
+			{
+				var result = await _authenticationService.ResetPasswordAsync(input);
+				return Ok(new { message = "Password has been reset successfully." });
 			}
 			catch (ValidationException ex)
 			{
