@@ -9,4 +9,14 @@
 		public string HtmlBody { get; set; } = string.Empty;
 		public string? TextBody { get; set; }
 	}
+	public class ConfirmEmailDto
+	{
+		public string FullName { get; set; } = string.Empty;
+		public string ConfirmUrl { get; set; } = string.Empty;
+	}
+	public class ResetPasswordDto
+	{
+		public string FullName { get; set; } = string.Empty;
+		public string ResetUrl { get; set; } = string.Empty;
+	}
 }
