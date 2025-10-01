@@ -259,6 +259,15 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Please check your email for password reset instructions.
+        /// </summary>
+        public static string Pleasecheckyouremailforpasswordresetinstructions {
+            get {
+                return ResourceManager.GetString("Pleasecheckyouremailforpasswordresetinstructions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The SkillSet field is required.
         /// </summary>
         public static string SkillSetIsRequired {

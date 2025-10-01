@@ -428,7 +428,7 @@ namespace HSP.Service.Implementations
 			}
 		}
 
-		public async Task RequestPasswordResetAsync(ForgetPasswordDto input)
+		public async Task<bool> RequestPasswordResetAsync(ForgetPasswordDto input)
 		{
 			if (input == null)
 			{
@@ -437,9 +437,10 @@ namespace HSP.Service.Implementations
 			var user = await _userRepository.FindByEmailAsync(input.Email);
 			if (user == null)
 			{
-				return;
+				throw new ValidationException(_localizer["UserNotFound"]);
 			}
 			await SendPasswordResetEmail(user);
+			return true;
 		}
 		private async Task SendPasswordResetEmail(AppUser user)
 		{
