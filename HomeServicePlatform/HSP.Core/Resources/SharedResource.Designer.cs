@@ -115,6 +115,15 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Email not confirmed.
+        /// </summary>
+        public static string EmailNotConfirmed {
+            get {
+                return ResourceManager.GetString("EmailNotConfirmed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Email not found from provider.
         /// </summary>
         public static string EmailNotFoundFromProvider {
@@ -255,6 +264,15 @@ namespace HSP.Core.Resources {
         public static string PasswordsDoNotMatch {
             get {
                 return ResourceManager.GetString("PasswordsDoNotMatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Please check your email for password reset instructions.
+        /// </summary>
+        public static string Pleasecheckyouremailforpasswordresetinstructions {
+            get {
+                return ResourceManager.GetString("Pleasecheckyouremailforpasswordresetinstructions", resourceCulture);
             }
         }
         

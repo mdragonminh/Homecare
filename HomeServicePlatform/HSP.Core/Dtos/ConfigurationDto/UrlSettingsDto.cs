@@ -5,5 +5,6 @@
 		public string BaseUrl { get; set; }
 		public string FrontendLoginSuccess { get; set; }
 		public string FrontendLoginFailed { get; set; }
+		public string FrontendResetPassword { get; set; }
 	}
 }

@@ -191,5 +191,10 @@
   </data>
   <data name="EmailAlreadyExists" xml:space="preserve">
     <value>Email đã tồn tại</value>
+  <data name="EmailNotConfirmed" xml:space="preserve">
+    <value>Email chưa được xác thực</value>
+  </data>
+  <data name="Pleasecheckyouremailforpasswordresetinstructions" xml:space="preserve">
+    <value>Hãy kiểm tra email của bạn để thay đổi mật khẩu</value>
   </data>
 </root>

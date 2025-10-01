@@ -30,7 +30,7 @@ namespace HSP.DAL.Extensions
 				.AddDefaultTokenProviders();
 			services.Configure<DataProtectionTokenProviderOptions>(options =>
 			{
-				options.TokenLifespan = TimeSpan.FromHours(1); 
+				options.TokenLifespan = TimeSpan.FromMinutes(10); 
 			});
 			services.AddScoped<IUserRepository, UserRepository>();
 			services.AddScoped<IRepository<TechnicianProfile, Guid>, Repository<TechnicianProfile,Guid>>();

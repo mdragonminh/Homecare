@@ -58,6 +58,8 @@ namespace HSP.API
 			builder.Services.Configure<LocalizationSettingsDto>(builder.Configuration.GetSection("LocalizationSettings"));
 			builder.Services.Configure<UrlSettingsDto>(builder.Configuration.GetSection("UrlSettings"));
 
+			builder.Services.AddRazorTemplating();
+
 			builder.Services.AddDALServices(builder.Configuration);
 			builder.Services.AddServiceServices();
 			builder.Services.AddUserAuthentication(builder.Configuration);
