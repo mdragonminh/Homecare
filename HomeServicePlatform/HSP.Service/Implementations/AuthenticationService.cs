@@ -305,7 +305,10 @@ namespace HSP.Service.Implementations
 
 			if (input.Password != input.ConfirmPassword)
 				throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
-			using (var transaction = await _unitOfWork.BeginTransactionAsync())
+			var isEmailExists = await _userRepository.FindByEmailAsync(input.Email);
+			if (isEmailExists != null)
+				throw new ValidationException(_localizer["EmailAlreadyExists"]);
+            using (var transaction = await _unitOfWork.BeginTransactionAsync())
 			{
 				try
 				{

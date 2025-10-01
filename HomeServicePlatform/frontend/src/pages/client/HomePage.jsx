@@ -1,3 +1,4 @@
+// src/pages/client/HomePage.jsx
 import { useState } from "react";
 import { 
   ArrowRight, 
@@ -21,8 +22,8 @@ import {
   Quote,
   CheckCircle
 } from "lucide-react";
-import { Header } from "../../components/Header";
-import { Footer } from "../../components/Footer";
+// LOẠI BỎ: import { Header } from "../../components/Header";
+// LOẠI BỎ: import { Footer } from "../../components/Footer";
 
 // --- Data sections (features, services, technicians, testimonials) --- //
 const features = [
@@ -92,15 +93,18 @@ const testimonials = [
 ];
 
 // --- Main HomePage --- //
-export function HomePage({ onShowLogin, onShowRegister, loggedInUser, onLogout }) {
+export function HomePage({  onShowRegister, loggedInUser }) {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header onShowLogin={onShowLogin} onShowRegister={onShowRegister}  loggedInUser={loggedInUser}
-        onLogout={onLogout}/>
+    // LOẠI BỎ: min-h-screen flex flex-col (đã được bọc bởi Layout)
+    <div className="flex-1"> 
+      {/* LOẠI BỎ: Header component */}
+      {/* <Header onShowLogin={onShowLogin} onShowRegister={onShowRegister}  loggedInUser={loggedInUser}
+        onLogout={onLogout}/> */}
 
-      <main className="flex-1">
+      {/* LOẠI BỎ: main component wrapper vì đã có trong Layout.jsx */}
+      <div className="flex-1"> 
         {/* Hero Section */}
         <section className="bg-gradient-to-br from-gray-50 to-gray-100 py-20">
           <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
@@ -217,7 +221,8 @@ export function HomePage({ onShowLogin, onShowRegister, loggedInUser, onLogout }
             </div>
           </div>
         </section>
-      </main>
+      {/* Đóng main component wrapper */}
+      </div>
 
       {loggedInUser?.role === 'admin' && (
         <div className="container mx-auto px-4 mt-4">
@@ -225,7 +230,8 @@ export function HomePage({ onShowLogin, onShowRegister, loggedInUser, onLogout }
         </div>
       )}
 
-      <Footer />
+      {/* LOẠI BỎ: Footer component */}
+      {/* <Footer /> */}
     </div>
   );
 }

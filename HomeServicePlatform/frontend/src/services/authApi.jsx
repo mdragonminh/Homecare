@@ -16,17 +16,45 @@ export const authApi = {
     } catch (error) {
       console.error("Register error:", error);
 
+      // Nếu không phải lỗi có response (ví dụ: lỗi mạng), ném lại lỗi đó
+      if (!error.response) {
+        throw error;
+      }
+      const responseData = error.response?.data;
+      const serverMessage =
+        responseData?.message || error.message || "Đăng ký thất bại.";
+      return {
+        success: false,
+        message: serverMessage,
+        status: error.response.status, // Thêm status code
+        data: responseData, // Thêm data từ server
+      };
+    }
+  },
+  addPassword: async ({ newPassword, confirmPassword }) => {
+    try {
+      const res = await axiosClient.post("/Authentication/add-password", {
+        newPassword,
+        confirmPassword,
+      });
+      return { success: true, data: res.data };
+    } catch (error) {
+      console.error("Add password error:", error);
+
       const responseData = error.response?.data;
 
-      if (responseData && typeof responseData === "object" && !Array.isArray(responseData)) {
+      if (
+        responseData &&
+        typeof responseData === "object" &&
+        !Array.isArray(responseData)
+      ) {
         return { success: false, validationErrors: responseData };
       }
 
-      const message = responseData?.message || "Đăng ký thất bại";
+      const message = responseData?.message || "Thêm mật khẩu thất bại";
       return { success: false, message };
     }
   },
-
   // --- Đăng ký kỹ thuật viên ---
   registerTechnician: async ({
     email,
@@ -105,7 +133,10 @@ export const authApi = {
   // --- Đăng nhập ---
   login: async ({ email, password }) => {
     try {
-      const res = await axiosClient.post(`/Authentication/login`, { email, password });
+      const res = await axiosClient.post(`/Authentication/login`, {
+        email,
+        password,
+      });
 
       if (res.status === 200 && res.data?.jwtToken) {
         return {
@@ -114,37 +145,52 @@ export const authApi = {
             userId: res.data.userId,
             email: res.data.email,
             jwtToken: res.data.jwtToken,
+            requirePasswordSetup: res.data.requirePasswordSetup || false,
           },
         };
       }
 
-      return { success: false, message: "Đăng nhập thất bại. Sai định dạng phản hồi từ server." };
+      return {
+        success: false,
+        message: "Đăng nhập thất bại. Sai định dạng phản hồi từ server.",
+      };
     } catch (error) {
       console.error("Login error:", error);
 
       const responseData = error.response?.data;
-      if (responseData && typeof responseData === "object" && !Array.isArray(responseData)) {
+      if (
+        responseData &&
+        typeof responseData === "object" &&
+        !Array.isArray(responseData)
+      ) {
         return { success: false, validationErrors: responseData };
       }
 
       const message =
         responseData?.message ||
-        (error.response?.status === 401 ? "Email hoặc mật khẩu không đúng." : "Đăng nhập thất bại.");
+        (error.response?.status === 401
+          ? "Email hoặc mật khẩu không đúng."
+          : "Đăng nhập thất bại.");
       return { success: false, message };
     }
   },
-
   // --- Xác thực email ---
-  confirmEmail: async (token) => {
+  confirmEmail: async ({ userId, token }) => {
     try {
-      const res = await axiosClient.post("/Authentication/confirm-email", { token });
+      const res = await axiosClient.get("/Authentication/confirm-email", {
+        params: { userId, token },
+      });
       return { success: true, data: res.data };
     } catch (error) {
       console.error("Confirm email error:", error);
 
       const responseData = error.response?.data;
 
-      if (responseData && typeof responseData === "object" && !Array.isArray(responseData)) {
+      if (
+        responseData &&
+        typeof responseData === "object" &&
+        !Array.isArray(responseData)
+      ) {
         return { success: false, validationErrors: responseData };
       }
 
@@ -155,16 +201,40 @@ export const authApi = {
 
   // --- Google Login ---
   googleLogin: () => {
-    const API_URL = axiosClient.defaults.baseURL; // ✅ lấy từ config axiosClient
+    const API_URL = axiosClient.defaults.baseURL;
     window.location.href = `${API_URL}/Authentication/google-login`;
   },
 
   // --- Parse Google token từ URL ---
+  // authApi.jsx
+
+  // --- Parse Google token từ URL ---
   parseGoogleTokenFromUrl: (searchParams) => {
     try {
-      const token = new URLSearchParams(searchParams).get("token");
+      const urlParams = new URLSearchParams(searchParams);
+      const token = urlParams.get("token");
+
+      // ✅ SỬA: Chuyển về lowercase để so sánh, tránh case-sensitive
+      const requirePasswordSetupParam = urlParams
+        .get("requirePasswordSetup")
+        ?.toLowerCase();
+      const requirePasswordSetup = requirePasswordSetupParam === "true";
+
       if (!token) return { success: false, message: "No token found in URL" };
-      return { success: true, data: { jwtToken: token } };
+
+      // Lưu requirePasswordSetup vào localStorage (đã có từ sửa trước)
+      localStorage.setItem(
+        "requirePasswordSetup",
+        requirePasswordSetup.toString()
+      );
+
+      return {
+        success: true,
+        data: {
+          jwtToken: token,
+          requirePasswordSetup: requirePasswordSetup,
+        },
+      };
     } catch (error) {
       console.error("Parse token error:", error);
       return { success: false, message: "Failed to parse token from URL" };
@@ -173,6 +243,13 @@ export const authApi = {
 
   // --- Logout ---
   logout: () => {
-    ["jwtToken", "userId", "email", "name", "role"].forEach((key) => localStorage.removeItem(key));
+    [
+      "jwtToken",
+      "userId",
+      "email",
+      "name",
+      "role",
+      "requirePasswordSetup",
+    ].forEach((key) => localStorage.removeItem(key));
   },
 };

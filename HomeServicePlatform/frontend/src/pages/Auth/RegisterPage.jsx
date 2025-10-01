@@ -1,13 +1,14 @@
-// RegisterPage.jsx - ĐÃ ĐIỀU CHỈNH: THÊM LANGUAGE SWITCHER
+// RegisterPage.jsx - ĐÃ SỬA ĐỔI HOÀN TOÀN THEO YÊU CẦU
+
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock, User, Home, ArrowLeft, Wrench, Shield, CheckCircle } from "lucide-react";
 import { authApi } from "../../services/authApi.jsx";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next"; // ✅ Thêm useTranslation
-import LanguageSwitcher from '../../components/LanguageSwitcher.jsx'; // ✅ THÊM
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from '../../components/LanguageSwitcher.jsx';
 
 export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUser }) {
-  const { t } = useTranslation(); // ✅ Khởi tạo useTranslation
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,6 +23,9 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState(""); // success | warning | error
   const navigate = useNavigate();
+
+  // Regex cơ bản để kiểm tra định dạng email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; 
 
   useEffect(() => {
     if (loggedInUser) {
@@ -76,6 +80,12 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
       setMessageType("error");
       return;
     }
+    // ✅ THÊM: KIỂM TRA ĐỊNH DẠNG EMAIL (sau khi tắt noValidate)
+    if (!emailRegex.test(formData.email)) {
+      setMessage(t("validation.email_invalid_format")); 
+      setMessageType("error");
+      return;
+    }
     if (!formData.password) {
       setMessage(t("validation.password_required"));
       setMessageType("error");
@@ -110,6 +120,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
 
     try {
       const res = await authApi.register(formData);
+      console.log("Register response:", res); 
 
       if (res.success) {
         setMessage(t("success.registration"));
@@ -129,48 +140,68 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
         }, 2500);
       } else {
         const errorMessage = res.message?.toLowerCase() || '';
+        console.log("Error message from res:", errorMessage); 
         
-        if (errorMessage.includes('email') && (errorMessage.includes('tồn tại') || errorMessage.includes('exist'))) {
+        // ✅ CẢI THIỆN: LOGIC KIỂM TRA LỖI EMAIL ĐÃ TỒN TẠI (LỖI 400 không phải là Axios Error)
+        if (
+          errorMessage.includes('email') && 
+          (
+            errorMessage.includes('exist') || 
+            errorMessage.includes('tồn tại') || 
+            errorMessage.includes('emailalreadyexists') ||
+            errorMessage.includes('đã tồn tại') ||
+            errorMessage.includes('already exists')
+          )
+        ) {
           setMessage(t("error.email_in_use"));
           setMessageType("error");
-        } else if (errorMessage.includes('username') && (errorMessage.includes('tồn tại') || errorMessage.includes('exist'))) {
+        } else if (
+          errorMessage.includes('username') && 
+          (errorMessage.includes('exist') || errorMessage.includes('tồn tại') || errorMessage.includes('đã tồn tại'))
+        ) {
           setMessage(t("error.username_in_use"));
           setMessageType("error");
         } else if (errorMessage.includes('user creation failed')) {
           setMessage(t("error.user_creation_failed"));
           setMessageType("error");
-        } else if (res.message) {
-          setMessage(res.message);
-          setMessageType("error");
         } else {
-          setMessage(t("error.try_again"));
+          setMessage(res.message || t("error.try_again"));
           setMessageType("error");
         }
       }
-    } catch (err) {
-      console.error('Register error:', err);
-      
-      if (err.response?.data?.message) {
-        const serverMessage = err.response.data.message.toLowerCase();
-        
-        if (serverMessage.includes('email') && serverMessage.includes('exist')) {
-          setMessage(t("error.email_in_use"));
-        } else if (serverMessage.includes('username') && serverMessage.includes('exist')) {
-          setMessage(t("error.username_in_use"));
-        } else if (serverMessage.includes('user creation failed')) {
-          setMessage(t("error.user_creation_failed"));
-        } else {
-          setMessage(err.response.data.message);
-        }
-      } else if (err.response?.status === 400) {
-        setMessage(t("error.invalid_registration_info"));
-      } else if (err.response?.status === 500) {
-        setMessage(t("error.server_internal"));
-      } else {
-        setMessage(t("error.network_connect_failed"));
-      }
-      
-      setMessageType("error");
+    }catch (err) {
+  console.error('Register error:', err);
+  console.log("Error response status:", err.response?.status);
+
+  if (err.response?.data?.message) {
+    const serverMessage = err.response.data.message.toLowerCase();
+    console.log("Server error message:", serverMessage);
+
+    if (
+      serverMessage.includes('email') &&
+      (serverMessage.includes('exist') || serverMessage.includes('already exist'))
+    ) {
+      setMessage(t("error.email_in_use"));
+    } else if (
+      serverMessage.includes('username') &&
+      (serverMessage.includes('exist') || serverMessage.includes('tồn tại') || serverMessage.includes('đã tồn tại'))
+    ) {
+      setMessage(t("error.username_in_use"));
+    } else if (serverMessage.includes('user creation failed')) {
+      setMessage(t("error.user_creation_failed"));
+    } else {
+      setMessage(err.response.data.message || t("error.try_again"));
+    }
+  } else if (err.response?.status === 400) {
+    setMessage(t("error.invalid_registration_info"));
+  } else if (err.response?.status === 500) {
+    setMessage(t("error.server_internal"));
+  } else {
+    setMessage(t("error.network_connect_failed"));
+  }
+
+  setMessageType("error");
+
     } finally {
       setLoading(false);
     }
@@ -187,7 +218,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 relative">
       <div className="absolute top-4 right-4 z-20"> 
-        <LanguageSwitcher /> {/* ✅ THÊM LanguageSwitcher để nhất quán */}
+        <LanguageSwitcher />
       </div>
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-20 left-20 w-32 h-32 bg-blue-600 rounded-full blur-3xl"></div>
@@ -277,7 +308,8 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                {/* ✅ SỬA: Thêm noValidate vào form để tắt validation mặc định của trình duyệt */}
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate> 
                   <div className="space-y-1">
                     <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700">
                       {t("form.label.fullname")}

@@ -1,11 +1,12 @@
-// LoginPage.jsx - ĐÃ ĐIỀU CHỈNH
+// LoginPage.jsx - ĐÃ SỬA ĐỔI ĐẦY ĐỦ
+
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock, Home, ArrowLeft, Wrench, Shield, CheckCircle } from "lucide-react";
 import { authApi } from "../../services/authApi.jsx";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import LanguageSwitcher from '../../components/LanguageSwitcher.jsx';
-import { useTranslation } from "react-i18next"; // ✅ Đã có
+import { useTranslation } from "react-i18next";
 
 export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, loggedInUser }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +19,9 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, lo
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { t } = useTranslation(); 
+
+  // Regex cơ bản để kiểm tra định dạng email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; 
 
   useEffect(() => {
     if (loggedInUser) {
@@ -36,14 +40,25 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, lo
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    
+    // 1. KIỂM TRA TRƯỜNG RỖNG
     if (!formData.email) {
       setError(t("validation.email_required"));
       return;
     }
+
+    // 2. KIỂM TRA ĐỊNH DẠNG EMAIL
+    if (!emailRegex.test(formData.email)) {
+        // Khóa dịch này cần được định nghĩa trong file ngôn ngữ của bạn
+        setError(t("validation.email_invalid_format")); 
+        return;
+    }
+
     if (!formData.password) {
       setError(t("validation.password_required"));
       return;
     }
+    
     setLoading(true);
 
     try {
@@ -57,10 +72,10 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, lo
         const name = decoded["name"] || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
         const role = decoded["role"] || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 
-        onLoginSuccess({ userId, email, jwtToken, name, role });
+        onLoginSuccess({ userId, email, jwtToken, name, role, requirePasswordSetup: res.data.requirePasswordSetup });
         
       } else {
-        // SỬ DỤNG CÁC KHÓA ĐÃ THÊM/TỒN TẠI
+        // Lỗi từ authApi (thường là lỗi 400 hoặc 401 đã được xử lý trong authApi.js)
         setError(res.message || t("error.try_again")); 
       }
     } catch (err) {
@@ -73,17 +88,17 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, lo
         if (status === 400) {
           setError(backendMessage || t("error.invalid_request")); 
         } else if (status === 401) {
-          if (backendMessage && backendMessage.includes("Invalid credentials")) {
+          // Logic kiểm tra lỗi 401 (Unauthorized)
+          if (backendMessage && (backendMessage.includes("Invalid credentials") || backendMessage.includes("Invalid password"))) {
             setError(t("error.invalid_email_or_password")); 
-          } else if (backendMessage && backendMessage.includes("Invalid password")) {
-            setError(t("error.invalid_email_or_password")); 
+          } else if (backendMessage && backendMessage.includes("not confirmed")) {
+            setError(t("error.account_not_activated")); 
           } else {
             setError(t("error.account_not_activated")); 
           }
         } else if (status === 500) {
           setError(t("error.server_internal")); 
         } else {
-          // Sử dụng status làm tham số cho lỗi không xác định
           setError(t("error.unknown", { status })); 
         }
       } else if (err.request) {
@@ -101,14 +116,12 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, lo
   };
 
   const handleForgotPassword = () => {
-    // Dùng khóa đã thêm
     alert(t("ui.forgot_password_alert"));
   };
 
   if (loggedInUser) {
     return (
       <div className="min-h-screen flex justify-center items-center">
-        {/* Dùng khóa đã thêm */}
         <p className="text-xl text-blue-600 font-semibold">{t("ui.redirecting_home")}</p>
       </div>
     );
@@ -118,7 +131,7 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, lo
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 relative">
        <div className="absolute top-4 right-4 z-20"> 
-      <LanguageSwitcher />
+       <LanguageSwitcher />
     </div>
       {/* Background Pattern */}
       {/* ... (phần background giữ nguyên) ... */}
@@ -207,10 +220,10 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, lo
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                {/* SỬA: Thêm noValidate vào form */}
+                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                   {/* Email */}
                   <div className="space-y-2">
-                    {/* ✅ SỬA: Dùng khóa form.label.email */}
                     <label className="block text-sm font-semibold text-gray-700">{t("form.label.email")}</label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -228,7 +241,6 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, lo
 
                   {/* Password */}
                   <div className="space-y-2">
-                    {/* ✅ SỬA: Dùng khóa form.label.password */}
                     <label className="block text-sm font-semibold text-gray-700">{t("form.label.password")}</label>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -237,7 +249,6 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, lo
                         type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={handleInputChange}
-                        // ✅ SỬA: Dùng khóa form.placeholder.password
                         placeholder={t("form.placeholder.password")}
                         className="w-full pl-12 pr-12 py-4 bg-gray-50 border rounded-xl focus:ring focus:ring-blue-200"
 
@@ -299,7 +310,6 @@ export function LoginPage({ onSwitchToRegister, onBackToHome, onLoginSuccess, lo
                 </button>
 
                 <div className="mt-6 text-center">
-                  {/* ✅ SỬA: Dùng khóa ui.no_account */}
                   <span className="text-gray-600">{t("ui.no_account")} </span>
                   <button
                     onClick={onSwitchToRegister}

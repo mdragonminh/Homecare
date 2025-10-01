@@ -88,6 +88,24 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Current password is incorrect.
+        /// </summary>
+        public static string CurrentPasswordIncorrect {
+            get {
+                return ResourceManager.GetString("CurrentPasswordIncorrect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email already exist.
+        /// </summary>
+        public static string EmailAlreadyExists {
+            get {
+                return ResourceManager.GetString("EmailAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The Email field is required.
         /// </summary>
         public static string EmailIsRequired {
@@ -196,6 +214,24 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Password change failed.
+        /// </summary>
+        public static string PasswordChangeFailed {
+            get {
+                return ResourceManager.GetString("PasswordChangeFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password changed successfully.
+        /// </summary>
+        public static string PasswordChangeSuccess {
+            get {
+                return ResourceManager.GetString("PasswordChangeSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The Password field is required.
         /// </summary>
         public static string PasswordIsRequired {
@@ -237,6 +273,15 @@ namespace HSP.Core.Resources {
         public static string UserCreationFailed {
             get {
                 return ResourceManager.GetString("UserCreationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User not found.
+        /// </summary>
+        public static string UserNotFound {
+            get {
+                return ResourceManager.GetString("UserNotFound", resourceCulture);
             }
         }
     }
