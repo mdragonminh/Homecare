@@ -48,6 +48,22 @@
     "manage_account": "Manage Account",
     "personal_info_settings": "Personal info and settings",
     "manage_homes": "Manage Addresses",
+    "edit_profile": "Edit Profile",
+    "edit_info": "Edit",
+    "update_profile": "Update Profile",
+    "save_changes": "Save Changes",
+    "phone_number": "Phone Number",
+    "enter_phone": "Enter phone number",
+    "personal_information": "Personal Information",
+    "system_information": "System Information",
+    "account_created": "Account Created",
+    "account_verified": "Account Verified",
+    "not_updated": "Not updated",
+    "refresh": "Refresh",
+    "change_password": "Change Password",
+    "view_manage_profile": "View and manage your profile information",
+    "loading_profile": "Loading profile information...",
+    "error_loading_profile": "Error occurred while loading profile information",
     "add_new_delivery_address": "Add new delivery address",
     "exit_account": "Sign out of your account",
     "welcome": "Welcome",
@@ -179,7 +195,12 @@
     "email_invalid": "Invalid email",
     "username_required": "Please enter username",
     "username_min": "Minimum 3 characters",
-    "password_min": "Minimum 8 characters"
+    "password_min": "Minimum 8 characters",
+    "phone_required": "Please enter phone number",
+    "phone_invalid": "Invalid phone number. Please enter 10-11 digits",
+    "phone_format": "Phone number must start with 0 and have 10-11 digits",
+    "full_name_length": "Full name must be 1-100 characters",
+    "phone_length": "Phone number must be 10-11 digits"
   },
   "success": {
     "registration": "You have registered successfully. Please check your email to verify and log in.",
@@ -188,7 +209,9 @@
     "home_deleted": "Address successfully deleted.",
     "item_added": "\"{{item_name}}\" successfully added!", 
     "item_edited": "Item successfully updated!",
-    "item_deleted": "Item successfully deleted!"
+    "item_deleted": "Item successfully deleted!",
+    "profile_updated": "Profile updated successfully!",
+    "password_changed": "Password changed successfully! Please log in again."
   },
   "error": {
     "email_in_use": "Email is already in use, please use another email.",

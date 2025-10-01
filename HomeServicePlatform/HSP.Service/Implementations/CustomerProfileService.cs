@@ -99,6 +99,27 @@ namespace HSP.Service.Implementations
 			return customerProfile;
 		}
 
+		public async Task<CustomerProfileDto> UpdateCustomerProfileAsync(string userId, UpdateCustomerProfileDto updateDto)
+		{
+			var customerProfile = await _customerProfileRepository.GetAll()
+				.Include(x => x.User)
+				.Where(x => x.UserId.ToString().Equals(userId) && !x.IsDeleted)
+				.FirstOrDefaultAsync();
+
+			if (customerProfile == null)
+			{
+				throw new KeyNotFoundException($"Customer profile not found for user ID: {userId}");
+			}
+
+			customerProfile.User.FullName = updateDto.FullName;
+			customerProfile.User.PhoneNumber = updateDto.PhoneNumber;
+			customerProfile.DateModified = DateTime.UtcNow;
+
+			await _unitOfWork.SaveChangesAsync();
+
+			return await GetCustomerProfileByUserIdAsync(userId);
+		}
+
 		public async Task<object> GetDebugInfoAsync()
 		{
 			try

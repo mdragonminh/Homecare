@@ -1,8 +1,8 @@
+import { LockOutlined, MailOutlined, UserAddOutlined, UserOutlined } from "@ant-design/icons";
+import { Button, Card, Form, Input, Space, Typography } from "antd";
 import { useState } from "react";
-import { Card, Form, Input, Button, Typography, Space, message } from "antd";
-import { MailOutlined, LockOutlined, UserOutlined, UserAddOutlined } from "@ant-design/icons";
+import { toast } from "sonner";
 import { adminApi } from "../../services/adminApi";
-import { toast } from "react-toastify";
 
 const { Title, Text } = Typography;
 
@@ -15,14 +15,14 @@ export default function OperatorCreatePage() {
       setLoading(true);
       const res = await adminApi.createOperator(values);
       if (res.success) {
-        message.success("Tạo operator thành công! 🎉");
+        toast.success("Tạo operator thành công! 🎉");
         form.resetFields();
       } else {
-        message.error(res.message || "Tạo operator thất bại");
+        toast.error(res.message || "Tạo operator thất bại");
       }
     } catch (error) {
       console.error("Create operator error:", error);
-      message.error("Có lỗi xảy ra, vui lòng thử lại");
+      toast.error("Có lỗi xảy ra, vui lòng thử lại");
     } finally {
       setLoading(false);
     }
