@@ -77,25 +77,25 @@
     "error_occurred": "Có lỗi xảy ra",
     "try_again": "Thử lại",
     "no_name": "Chưa có tên",
-    "property_title": "Tiêu đề bất động sản",
+    "property_title": "Tiêu đề nhà ở",
     "short_description": "Mô tả ngắn gọn về sản phẩm, biệt thự đơn lập với sân vườn và hiện đại, nhà phố tá mạc và hết sức diệp gần đại.",
     "rooms": "{{count}} phòng",
     "area": "{{size}} m²",
     "edit_address": "Chỉnh sửa địa chỉ",
     "manage_rooms_devices": "Quản lý Phòng & Thiết bị",
     "confirm_delete": "Xác nhận xóa",
-    "confirm_delete_message": "Bạn có chắc chắn muốn xóa bất động sản này? Hành động này không thể hoàn tác.",
+    "confirm_delete_message": "Bạn có chắc chắn muốn xóa nhà ở này? Hành động này không thể hoàn tác.",
     "cancel": "Hủy bỏ",
     "delete": "Xóa",
     "deleting": "Đang xóa...",
     "edit": "Sửa",
     "view": "Xem",            
     "details": "Chi tiết",     
-    
+    "homes": "nhà ở",
     "manage_items": "Vật phẩm trong nhà",
     "members": "thành viên",
     "loading_data": "Đang tải dữ liệu...",
-    "no_properties_match": "Không tìm thấy bất động sản nào phù hợp.",
+    "no_properties_match": "Không tìm thấy nhà ở nào phù hợp.",
     "manage_items_title": "Quản lý Thiết Bị/Vật Phẩm (Nhà ID: {{homeId}})",
     "add_item": "Thêm Vật Phẩm",
     "search_item_placeholder": "Tìm kiếm vật phẩm theo tên, model...",
@@ -122,7 +122,14 @@
     "delete_confirm_message": "Bạn có chắc chắn muốn xóa vật phẩm \"{{item_name}}\"? Thao tác này không thể hoàn tác.", 
     
     "saving": "Đang lưu...",
-    "save_address": "Lưu địa chỉ"
+    "save_address": "Lưu địa chỉ",
+    "active_status": "hoạt động",
+    "set_password_title": "Thêm mật khẩu cho tài khoản",
+    "set_password_subtitle": "Tạo mật khẩu để bảo vệ tài khoản của bạn",
+    "set_password_button": " Lưu mật khẩu",
+    "password_set_success_message": "Mật khẩu đã được thiết lập thành công.",
+    "go_to_home": "Về trang chủ",
+    "password_set_success_title": "Thiết lập mật khẩu thành công"
   },
   "form": {
     "label": {
@@ -138,7 +145,9 @@
       "brand": "Thương hiệu",
       "model_number": "Model",
       "serial_number": "Serial Number",
-      "notes": "Ghi chú"
+      "notes": "Ghi chú",
+      "new_password": "Mật khẩu mới",
+      "confirm_new_password": "Xác nhận mật khẩu mới"
     },
     "placeholder": {
       "fullname": "Nhập họ tên đầy đủ của bạn",
@@ -149,7 +158,8 @@
       "brand": "Ví dụ: Daikin, Samsung",
       "model_number": "Ví dụ: FTKQ25SVMV",
       "serial_number": "Mã số duy nhất của thiết bị",
-      "notes": "Thông tin thêm về thiết bị (ví dụ: vị trí, ngày mua...)"
+      "notes": "Thông tin thêm về thiết bị (ví dụ: vị trí, ngày mua...)",
+      "new_password": "Nhập mật khẩu mới"
     },
     "usertype": {
       "customer": "Khách hàng",
@@ -158,6 +168,7 @@
   },
   "validation": {
     "email_required": "Vui lòng nhập email.",
+    "email_invalid_format": "Email không hợp lệ.",
     "password_required": "Vui lòng nhập mật khẩu.",
     "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự!",
     "password_uppercase": "Mật khẩu phải chứa ít nhất một chữ hoa!",
@@ -173,7 +184,10 @@
     "item_name_required": "Tên vật phẩm là bắt buộc.",
     "brand_required": "Thương hiệu là bắt buộc.",
     "type_required": "Loại vật phẩm là bắt buộc.",
-    "model_number_required": "Mã Model là bắt buộc."
+    "model_number_required": "Mã Model là bắt buộc.",
+    "new_password_required": "Vui lòng nhập mật khẩu mới.",
+    "confirm_new_password_required": "Vui lòng xác nhận mật khẩu mới.",
+    "password_format": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
   },
   "success": {
     "registration": "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để xác minh và đăng nhập.",
@@ -205,7 +219,7 @@
     "delete_failed": "Xóa địa chỉ thất bại.",
     "item_delete_failed": "Xóa vật phẩm thất bại. Vui lòng thử lại.",
     "delete_unknown": "Lỗi không xác định khi xóa địa chỉ.",
-    "fetch_home_failed": "Không thể tải danh sách bất động sản.",
+    "fetch_home_failed": "Không thể tải danh sách nhà ở.",
     "fetch_home_failed_toast": "Lỗi tải danh sách nhà.",
     "fetch_items_failed": "Không thể tải danh sách vật phẩm.",
     "missing_home_id": "Thiếu ID nhà để xem vật phẩm.",
@@ -251,7 +265,8 @@
       "add_new": "Thêm địa chỉ mới"
     },
     "subtitle": {
-      "fill_map": "Điền thông tin và chọn vị trí trên bản đồ"
+      "fill_map": "Điền thông tin và chọn vị trí trên bản đồ",
+      "update_details": "Cập nhật chi tiết địa chỉ và vị trí trên bản đồ"
     },
     "error": {
       "user_not_found": "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.",
@@ -281,5 +296,9 @@
       "tip2": "Sử dụng ô \"Địa chỉ chi tiết\" để tìm kiếm nhanh (Google Autocomplete)",
       "tip3": "Tọa độ và địa chỉ sẽ được cập nhật tự động"
     }
+  },
+  "toast":{
+    "login_success": "Đăng nhập thành công!",
+    "logout_success": "Đăng xuất thành công!"
   }
 }

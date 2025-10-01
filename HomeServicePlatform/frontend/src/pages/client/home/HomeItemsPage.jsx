@@ -14,7 +14,6 @@ import {
   Filter,
   Loader2,
   AlertTriangle,
-  Home as HomeIcon,
   Package,
   Monitor,
   Sofa,
@@ -59,7 +58,12 @@ export default function HomeItemsInterface() {
 
       setLoading(true);
       try {
-        const res = await homeApi.listHomeItems(homeId, page, pageSize, search || "");
+        const res = await homeApi.listHomeItems(
+          homeId,
+          page,
+          pageSize,
+          search || ""
+        );
         if (res.success) {
           setItems(res.data.items || []);
           setCurrentPage(res.data.currentPage || 1);
@@ -119,9 +123,15 @@ export default function HomeItemsInterface() {
       success: (res) => {
         if (res.success) {
           setItemToDelete(null);
-          const newPage = (items.length === 1 && currentPage > 1) ? currentPage - 1 : currentPage;
+          const newPage =
+            items.length === 1 && currentPage > 1
+              ? currentPage - 1
+              : currentPage;
           fetchHomeItems(newPage, debouncedSearch);
-          return t("success.item_deleted", { item_name: itemToDelete.name }) || `Đã xóa "${itemToDelete.name}" thành công!`;
+          return (
+            t("success.item_deleted", { item_name: itemToDelete.name }) ||
+            `Đã xóa "${itemToDelete.name}" thành công!`
+          );
         } else {
           return res.message;
         }
@@ -132,7 +142,7 @@ export default function HomeItemsInterface() {
       },
       finally: () => {
         setLoading(false);
-      }
+      },
     });
   };
 
@@ -185,7 +195,9 @@ export default function HomeItemsInterface() {
         ))}
         {endPage < totalPages && (
           <>
-            {endPage < totalPages - 1 && <span className="px-2 text-gray-400">...</span>}
+            {endPage < totalPages - 1 && (
+              <span className="px-2 text-gray-400">...</span>
+            )}
             <button
               onClick={() => setCurrentPage(totalPages)}
               className="min-w-[40px] h-10 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-all duration-200 shadow-sm"
@@ -272,46 +284,47 @@ export default function HomeItemsInterface() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <nav className="flex items-center text-sm text-gray-700 gap-2">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-2 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-all duration-200 shadow-sm"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <HomeIcon className="w-6 h-6 text-blue-600" />
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-              <span>{t("ui.home_management")}</span>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-900 font-medium">{t("ui.manage_items")}</span>
-            </nav>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium shadow-sm"
-            >
-              <Plus size={18} />
-              {t("ui.add_item")}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Title */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t("ui.manage_items")}</h1>
-          <p className="text-gray-600">{t("ui.items_management_description")}</p>
+       
+        <div className="mb-8 flex items-center justify-between">
+        
+          <div className="flex items-center gap-4">
+          
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-all duration-200 shadow-sm"
+              title={t("ui.go_back") || "Quay lại"}
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            {/* 2. Title (Nằm sát bên phải nút Back) */}
+            <h1 className="text-3xl font-bold text-gray-900">
+              {t("ui.manage_items")}
+            </h1>
+          </div>
+          {/* END: Nhóm Nút Quay lại và Tiêu đề */}
+
+          {/* 3. Add Button (Bên phải) */}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium shadow-sm"
+            title={t("ui.add_item")}
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">{t("ui.add_item")}</span>
+          </button>
         </div>
+        {/* END: Header mới */}
 
         {/* Search and Filters */}
         <div className="flex flex-col lg:flex-row gap-4 mb-8">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               placeholder={t("ui.search_item_placeholder")}
               className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white text-gray-900"
@@ -342,7 +355,9 @@ export default function HomeItemsInterface() {
               <Package size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">{t("ui.total_items")}</p>
+              <p className="text-sm text-gray-600 mb-1">
+                {t("ui.total_items")}
+              </p>
               <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
             </div>
           </div>
@@ -351,7 +366,9 @@ export default function HomeItemsInterface() {
               <Monitor size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">{t("item.type.electronics")}</p>
+              <p className="text-sm text-gray-600 mb-1">
+                {t("item.type.electronics")}
+              </p>
               <p className="text-2xl font-bold text-gray-900">...</p>
             </div>
           </div>
@@ -360,7 +377,9 @@ export default function HomeItemsInterface() {
               <Sofa size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">{t("item.type.furniture")}</p>
+              <p className="text-sm text-gray-600 mb-1">
+                {t("item.type.furniture")}
+              </p>
               <p className="text-2xl font-bold text-gray-900">...</p>
             </div>
           </div>
@@ -369,7 +388,9 @@ export default function HomeItemsInterface() {
               <AlertCircle size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">{t("ui.needs_maintenance")}</p>
+              <p className="text-sm text-gray-600 mb-1">
+                {t("ui.needs_maintenance")}
+              </p>
               <p className="text-2xl font-bold text-gray-900">...</p>
             </div>
           </div>
@@ -386,9 +407,7 @@ export default function HomeItemsInterface() {
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               {t("ui.no_items_found")}
             </h3>
-            <p className="text-gray-600 mb-6">
-              {t("ui.add_first_item_hint")}
-            </p>
+            <p className="text-gray-600 mb-6">{t("ui.add_first_item_hint")}</p>
             <button
               onClick={() => setShowAddModal(true)}
               className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm"
@@ -404,7 +423,11 @@ export default function HomeItemsInterface() {
                   key={item.id}
                   className="bg-white p-6 rounded-xl border border-gray-200 flex items-center gap-6 hover:shadow-md transition-all duration-200"
                 >
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center border ${getItemColor(index)}`}>
+                  <div
+                    className={`w-14 h-14 rounded-xl flex items-center justify-center border ${getItemColor(
+                      index
+                    )}`}
+                  >
                     {getItemIcon(item.type)}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -414,10 +437,15 @@ export default function HomeItemsInterface() {
                     <div className="flex flex-wrap items-center gap-3 text-sm mb-2">
                       <span className="inline-flex items-center gap-1.5 text-gray-700 bg-gray-100 px-3 py-1 rounded-lg font-medium">
                         <Tag size={14} />
-                        {t(`item.type.${item.type?.toLowerCase()}`, item.type) || t("ui.uncategorized")}
+                        {t(
+                          `item.type.${item.type?.toLowerCase()}`,
+                          item.type
+                        ) || t("ui.uncategorized")}
                       </span>
                       {item.brand && (
-                        <span className="text-gray-600 font-medium">{item.brand}</span>
+                        <span className="text-gray-600 font-medium">
+                          {item.brand}
+                        </span>
                       )}
                       {item.modelNumber && (
                         <span className="inline-flex items-center gap-1.5 text-gray-600">
@@ -433,7 +461,7 @@ export default function HomeItemsInterface() {
                       </span>
                       <span className="inline-flex items-center gap-1.5">
                         <Calendar size={12} />
-                        {t("ui.purchase_info", { date: '10/01/2023' })}
+                        {t("ui.purchase_info", { date: "10/01/2023" })}
                       </span>
                     </div>
                   </div>
@@ -496,7 +524,9 @@ export default function HomeItemsInterface() {
               <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6 text-red-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">{t("ui.confirm_delete") || "Xác nhận xóa"}</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                {t("ui.confirm_delete") || "Xác nhận xóa"}
+              </h3>
             </div>
             <p className="text-gray-600 mb-6">
               {t("ui.delete_confirm_message", { item_name: itemToDelete.name })}

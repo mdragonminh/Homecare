@@ -1,39 +1,87 @@
-// src/routes/ClientRoutes.jsx
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { HomePage } from "../pages/client/HomePage";
 import HomeManagementPage from "../pages/client/home/HomeManagementPage";
 import HomeItemsPage from "../pages/client/home/HomeItemsPage";
 import Profile from "../pages/Profile";
-export default function ClientRoutes({ loggedInUser, onLogout, onShowLogin, onShowRegister }) {
+import { jwtDecode } from "jwt-decode";
+
+const ProtectedRoute = ({ element: Element, loggedInUser }) => {
+  if (!loggedInUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return Element;
+};
+
+const ProtectedHomePage = ({ element: Element, loggedInUser }) => {
+  if (loggedInUser) {
+    try {
+      const decoded = jwtDecode(loggedInUser.jwtToken);
+      const requirePasswordSetup = decoded.requirePasswordSetup || false;
+      if (requirePasswordSetup) {
+        return <Navigate to="/add-password" replace />;
+      }
+    } catch (error) {
+      console.error("Error decoding token:", error);
+    }
+  }
+  return Element;
+};
+
+export default function ClientRoutes({
+  loggedInUser,
+  onLogout,
+  onShowLogin,
+  onShowRegister,
+}) {
   return (
     <Routes>
       <Route
         path="/"
         element={
-          <HomePage
+          <ProtectedHomePage
             loggedInUser={loggedInUser}
-            onLogout={onLogout}
-            onShowLogin={onShowLogin}
-            onShowRegister={onShowRegister}
+            element={
+              <HomePage
+                loggedInUser={loggedInUser}
+                onShowRegister={onShowRegister}
+              />
+            }
+          />
+        }
+      />
+
+      <Route
+        path="/list-home"
+        element={
+          <ProtectedRoute
+            loggedInUser={loggedInUser}
+            element={<HomeManagementPage loggedInUser={loggedInUser} />}
           />
         }
       />
       <Route
-        path="/list-home"
-        element={<HomeManagementPage loggedInUser={loggedInUser} />}
-      />
-      <Route
         path="/home-items/:homeId"
-        element={<HomeItemsPage loggedInUser={loggedInUser} />}
+        element={
+          <ProtectedRoute
+            loggedInUser={loggedInUser}
+            element={<HomeItemsPage loggedInUser={loggedInUser} />}
+          />
+        }
       />
       <Route
         path="/profile"
         element={
-          <Profile 
+          <ProtectedRoute
             loggedInUser={loggedInUser}
-            onLogout={onLogout}
-            onShowLogin={onShowLogin}
-            onShowRegister={onShowRegister}
+            element={
+              <Profile
+                loggedInUser={loggedInUser}
+                onLogout={onLogout}
+                onShowLogin={onShowLogin}
+                onShowRegister={onShowRegister}
+              />
+            }
           />
         }
       />

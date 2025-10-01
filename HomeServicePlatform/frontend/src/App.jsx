@@ -1,33 +1,40 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 import { authApi } from "./services/authApi";
-import { Toaster, toast } from "sonner"; 
-
+import { Toaster, toast } from "sonner";
+import { useTranslation } from "react-i18next";
 export default function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
-  // THÊM: State mới để kiểm soát việc hiển thị toast
-  const [showLoginToast, setShowLoginToast] = useState(false); 
-  
-  const updateLoggedInUserFromStorage = () => {
+  const [showLoginToast, setShowLoginToast] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const { t } = useTranslation();
+  // Lấy thông tin user từ localStorage
+  const updateLoggedInUserFromStorage = useCallback(() => {
     const jwtToken = localStorage.getItem("jwtToken");
     const userId = localStorage.getItem("userId");
     const email = localStorage.getItem("email");
     const name = localStorage.getItem("name");
     const role = localStorage.getItem("role");
+    const requirePasswordSetup =
+      localStorage.getItem("requirePasswordSetup") === "true";
 
-    if (jwtToken && userId && email) {
+    console.log("requirePasswordSetup:", requirePasswordSetup); // Log để kiểm tra
+
+    if (jwtToken && userId && email && !requirePasswordSetup) {
       setLoggedInUser({
         userId,
         email,
         jwtToken,
         name: name || "",
-        role: role || ""
+        role: role || "",
       });
     } else {
       setLoggedInUser(null);
     }
-  };
+
+    setIsInitialized(true);
+  }, []);
 
   useEffect(() => {
     updateLoggedInUserFromStorage();
@@ -35,9 +42,9 @@ export default function App() {
     window.addEventListener("storage", handleStorageChange);
 
     return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+  }, [updateLoggedInUserFromStorage]);
 
-  const handleLoginSuccess = (data) => {
+  const handleLoginSuccess = useCallback((data, skipStateUpdate = false) => {
     const token = data.jwtToken || data.token;
     if (token) {
       localStorage.setItem("jwtToken", token);
@@ -45,50 +52,67 @@ export default function App() {
       localStorage.setItem("email", data.email);
       localStorage.setItem("name", data.name || "");
       localStorage.setItem("role", data.role || "");
+      localStorage.setItem(
+        "requirePasswordSetup",
+        data.requirePasswordSetup?.toString() || "false"
+      );
 
-      setLoggedInUser({
-        userId: data.userId,
-        email: data.email,
-        jwtToken: token,
-        name: data.name || "",
-        role: data.role || ""
-      });
-
-      // THAY THẾ setTimeout: Chỉ set cờ hiển thị toast
-      setShowLoginToast(true); 
-      
-      // Đã loại bỏ logic setTimeout gây ra lỗi double-toast
+      if (!skipStateUpdate) {
+        setLoggedInUser({
+          userId: data.userId,
+          email: data.email,
+          jwtToken: token,
+          name: data.name || "",
+          role: data.role || "",
+        });
+        setShowLoginToast(true);
+      }
     }
-  };
+  }, []);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     authApi.logout();
     setLoggedInUser(null);
+    // Thay thế chuỗi này:
+    toast.info(t("toast.logout_success") || "Đăng xuất thành công 👋", {
+      duration: 500,
+    });
+  }, [t]); // Thêm 't' vào dependencies
 
-    toast.info("Đăng xuất thành công 👋", { duration: 500 }); 
-  };
-  
-  
+  const handlePasswordSetSuccess = useCallback(() => {
+    localStorage.setItem("requirePasswordSetup", "false"); // Cập nhật sau khi thêm mật khẩu
+    updateLoggedInUserFromStorage();
+    setShowLoginToast(true);
+  }, [updateLoggedInUserFromStorage]);
+
   useEffect(() => {
     if (showLoginToast) {
-      toast.dismiss(); 
-      toast.success("Đăng nhập thành công! 🎉", { duration: 500 });
-      setShowLoginToast(false); 
+      toast.dismiss();
+      // Thay thế chuỗi này:
+      toast.success(t("toast.login_success") || "Đăng nhập thành công! 🎉", {
+        duration: 500,
+      });
+      setShowLoginToast(false);
     }
-  }, [showLoginToast]); 
+  }, [showLoginToast, t]); // Thêm 't' vào dependencies
 
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col">
-        {/* Component Header và Footer (nếu có) thường nằm ở đây */}
-        
-        <AppRoutes
-          loggedInUser={loggedInUser}
-          onLoginSuccess={handleLoginSuccess}
-          onLogout={handleLogout}
-        />
-        <Toaster position="top-right" richColors  duration={500}/>
+        {isInitialized ? (
+          <AppRoutes
+            loggedInUser={loggedInUser}
+            onLoginSuccess={handleLoginSuccess}
+            onLogout={handleLogout}
+            onPasswordSetSuccess={handlePasswordSetSuccess}
+          />
+        ) : (
+          <div className="flex justify-center items-center h-screen">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        )}
       </div>
+      <Toaster position="top-right" richColors duration={500} />
     </BrowserRouter>
   );
 }
