@@ -146,7 +146,15 @@
     "set_password_button": " Lưu mật khẩu",
     "password_set_success_message": "Mật khẩu đã được thiết lập thành công.",
     "go_to_home": "Về trang chủ",
-    "password_set_success_title": "Thiết lập mật khẩu thành công"
+    "password_set_success_title": "Thiết lập mật khẩu thành công",
+    "forgot_password_instruction": "Nhập email của bạn để nhận liên kết đặt lại mật khẩu.",
+    "send_reset_link": " Gửi liên kết đặt lại",
+    "back_to_login": "Quay lại đăng nhập",
+    "sending_request": "Đang gửi yêu cầu...",
+    "reset_password_title": "Đặt lại mật khẩu mới",
+    "reset_password_tagline": "Nhập mật khẩu mới cho tài khoản của bạn",
+    "reset_password_button_submit": "Đặt lại mật khẩu",
+    "processing": "Đang xử lý..."
   },
   "form": {
     "label": {
@@ -213,7 +221,8 @@
     "phone_invalid": "Số điện thoại không hợp lệ. Vui lòng nhập 10-11 số",
     "phone_format": "Số điện thoại phải bắt đầu bằng 0 và có 10-11 chữ số",
     "full_name_length": "Họ và tên phải từ 1-100 ký tự",
-    "phone_length": "Số điện thoại phải từ 10-11 chữ số"
+    "phone_length": "Số điện thoại phải từ 10-11 chữ số",
+    "password_strong": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
   },
   "success": {
     "registration": "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để xác minh và đăng nhập.",

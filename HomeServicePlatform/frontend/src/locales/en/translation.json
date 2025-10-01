@@ -144,7 +144,15 @@
     "password_set_success_message": "Password has been set successfully.",
     "go_to_home": "Go to Home",
     "password_set_success_title": "Password Set Successfully",
-    "homes": "homes"
+    "homes": "homes",
+    "forgot_password_instruction": "Enter your email to receive a password reset link.",
+    "send_reset_link": " Send Reset Link",
+    "back_to_login": "Back to Login",
+    "sending_request": "Sending request...",
+    "reset_password_title": "Reset Password",
+    "reset_password_tagline": "Enter a new password for your account",
+    "reset_password_button_submit": "Reset Password",
+    "processing": "Processing..."
   },
   "form": {
     "label": {
@@ -211,7 +219,8 @@
     "phone_invalid": "Invalid phone number. Please enter 10-11 digits",
     "phone_format": "Phone number must start with 0 and have 10-11 digits",
     "full_name_length": "Full name must be 1-100 characters",
-    "phone_length": "Phone number must be 10-11 digits"
+    "phone_length": "Phone number must be 10-11 digits",
+    "password_strong": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character"
   },
   "success": {
     "registration": "You have registered successfully. Please check your email to verify and log in.",

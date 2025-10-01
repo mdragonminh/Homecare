@@ -328,7 +328,7 @@ export default function HomeManagementPage() {
                     <button
                         onClick={() => navigate(-1)}
                         title={t("ui.back")}
-                        className="p-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-sm flex-shrink-0 h-12 w-12 flex items-center justify-center"
+                        className="p-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-sm flex-shrink-0 h-8 w-8 flex items-center justify-center"
                     >
                         <ChevronLeft size={20} />
                     </button>

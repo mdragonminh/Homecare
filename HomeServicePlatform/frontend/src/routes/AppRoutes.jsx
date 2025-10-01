@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { LoginPage } from "../pages/Auth/LoginPage";
 import RegisterPage from "../pages/Auth/RegisterPage";
 import ClientRoutes from "./ClientRoutes";
@@ -9,6 +9,8 @@ import AccountsPage from "../pages/admin/AccountsPage";
 import TechniciansPage from "../pages/admin/TechniciansPage";
 import Layout from "../layouts/Layout";
 import { AddPasswordPage } from "../pages/Auth/AddPasswordPage";
+import ResetPasswordPage from "../pages/Auth/ResetPasswordPage";
+import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage";
 
 export default function AppRoutes({
   loggedInUser,
@@ -24,6 +26,10 @@ export default function AppRoutes({
 
   const handleShowRegister = () => {
     navigate("/register");
+  };
+
+  const handleShowForgotPassword = () => {
+    navigate("/forgot-password");
   };
 
   const handleLogoutAndNavigate = () => {
@@ -69,27 +75,57 @@ export default function AppRoutes({
         />
       </Route>
 
+      {/* ---- Auth routes ---- */}
       <Route
         path="/login"
         element={
-          <LoginPage
-            onSwitchToRegister={() => navigate("/register")}
-            onBackToHome={() => navigate("/")}
-            onLoginSuccess={onLoginSuccess}
-            loggedInUser={loggedInUser}
-          />
+          loggedInUser ? (
+            <Navigate to="/" replace />
+          ) : (
+            <LoginPage
+              onSwitchToRegister={() => navigate("/register")}
+              onSwitchToForgotPassword={handleShowForgotPassword}
+              onBackToHome={() => navigate("/")}
+              onLoginSuccess={onLoginSuccess}
+              loggedInUser={loggedInUser}
+            />
+          )
         }
       />
+
       <Route
         path="/register"
         element={
-          <RegisterPage
-            onSwitchToLogin={() => navigate("/login")}
-            onBackToHome={() => navigate("/")}
-            loggedInUser={loggedInUser}
-          />
+          loggedInUser ? (
+            <Navigate to="/" replace />
+          ) : (
+            <RegisterPage
+              onSwitchToLogin={() => navigate("/login")}
+              onBackToHome={() => navigate("/")}
+              loggedInUser={loggedInUser}
+            />
+          )
         }
       />
+
+      <Route
+        path="/forgot-password"
+        element={
+          loggedInUser ? (
+            <Navigate to="/" replace />
+          ) : (
+            <ForgotPasswordPage onSwitchToLogin={handleShowLogin} />
+          )
+        }
+      />
+
+      <Route
+        path="/reset-password"
+        element={
+          loggedInUser ? <Navigate to="/" replace /> : <ResetPasswordPage />
+        }
+      />
+
       <Route
         path="/google-callback"
         element={<GoogleCallbackPage onLoginSuccess={onLoginSuccess} />}
@@ -101,6 +137,8 @@ export default function AppRoutes({
           <AddPasswordPage onPasswordSetSuccess={onPasswordSetSuccess} />
         }
       />
+
+      {/* ---- Admin ---- */}
       <Route
         path="/admin"
         element={<AdminLayout loggedInUser={loggedInUser} />}

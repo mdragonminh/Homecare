@@ -174,6 +174,86 @@ export const authApi = {
       return { success: false, message };
     }
   },
+  requestPasswordReset: async ({ email }) => {
+    try {
+      const res = await axiosClient.post("/Authentication/forget-password", {
+        email,
+      });
+      return {
+        success: true,
+        data: res.data,
+        message:
+          "Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư của bạn.",
+      };
+    } catch (error) {
+      console.error("Request password reset error:", error);
+
+      const responseData = error.response?.data;
+      let message = "Yêu cầu đặt lại mật khẩu thất bại.";
+
+      if (responseData && responseData.message) {
+        message = responseData.message;
+
+        const lowerCaseMessage = message.toLowerCase();
+        if (
+          lowerCaseMessage.includes("user not found") ||
+          lowerCaseMessage.includes("không tìm thấy người dùng")
+        ) {
+          message = "Địa chỉ email này không tồn tại trong hệ thống.";
+        }
+      } else if (error.response?.status === 400) {
+        message =
+          "Thông tin yêu cầu không hợp lệ. Vui lòng kiểm tra lại email.";
+      }
+
+      return { success: false, message };
+    }
+  },
+  resetPassword: async ({ userId, token, newPassword, confirmPassword }) => {
+    try {
+      const res = await axiosClient.post("/Authentication/reset-password", {
+        userId,
+        token,
+        newPassword,
+        confirmPassword,
+      });
+      return {
+        success: true,
+        data: res.data,
+        message: "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay.",
+      };
+    } catch (error) {
+      console.error("Reset password error:", error);
+
+      const responseData = error.response?.data;
+      let message = "Đặt lại mật khẩu thất bại.";
+
+      if (responseData && responseData.message) {
+        message = responseData.message;
+
+        const lowerCaseMessage = message.toLowerCase();
+        if (
+          lowerCaseMessage.includes("passwords do not match") ||
+          lowerCaseMessage.includes("mật khẩu không khớp")
+        ) {
+          message = "Mật khẩu mới và xác nhận mật khẩu không khớp.";
+        } else if (
+          lowerCaseMessage.includes("password reset failed") ||
+          lowerCaseMessage.includes("đặt lại mật khẩu thất bại")
+        ) {
+          message =
+            "Mã token không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu mới.";
+        } else if (lowerCaseMessage.includes("user not found")) {
+          message = "Thông tin người dùng không hợp lệ.";
+        }
+      } else if (error.response?.status === 400) {
+        message =
+          "Yêu cầu không hợp lệ. Kiểm tra token và định dạng mật khẩu mới.";
+      }
+
+      return { success: false, message };
+    }
+  },
   // --- Xác thực email ---
   confirmEmail: async ({ userId, token }) => {
     try {
@@ -205,16 +285,11 @@ export const authApi = {
     window.location.href = `${API_URL}/Authentication/google-login`;
   },
 
-  // --- Parse Google token từ URL ---
-  // authApi.jsx
-
-  // --- Parse Google token từ URL ---
   parseGoogleTokenFromUrl: (searchParams) => {
     try {
       const urlParams = new URLSearchParams(searchParams);
       const token = urlParams.get("token");
 
-      // ✅ SỬA: Chuyển về lowercase để so sánh, tránh case-sensitive
       const requirePasswordSetupParam = urlParams
         .get("requirePasswordSetup")
         ?.toLowerCase();
@@ -222,7 +297,6 @@ export const authApi = {
 
       if (!token) return { success: false, message: "No token found in URL" };
 
-      // Lưu requirePasswordSetup vào localStorage (đã có từ sửa trước)
       localStorage.setItem(
         "requirePasswordSetup",
         requirePasswordSetup.toString()

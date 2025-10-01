@@ -1,9 +1,25 @@
 // src/components/AuthButtons.jsx
 import { useState, useRef, useEffect } from "react";
-import { LogIn, UserPlus, LogOut, User, Wrench, ChevronDown, Settings, UserCircle, MapPin } from "lucide-react";
+import {
+  LogIn,
+  UserPlus,
+  LogOut,
+  User,
+  Wrench,
+  ChevronDown,
+  Settings,
+  UserCircle,
+  MapPin,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogout, navigate }) {
+export function AuthButtons({
+  loggedInUser,
+  onShowLogin,
+  onShowRegister,
+  onLogout,
+  navigate,
+}) {
   const { t } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -66,7 +82,11 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
             <span className="hidden sm:inline">{t("ui.account")}</span>
           </>
         )}
-        <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-3 h-3 transition-transform duration-300 ${
+            isDropdownOpen ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       {/* Dropdown Menu */}
@@ -91,9 +111,11 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
                       </p>
                       {loggedInUser.role && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                          {loggedInUser.role === 'customer' ? t("ui.customer") : 
-                           loggedInUser.role === 'technician' ? t("ui.technician") : 
-                           loggedInUser.role}
+                          {loggedInUser.role === "customer"
+                            ? t("ui.customer")
+                            : loggedInUser.role === "technician"
+                            ? t("ui.technician")
+                            : loggedInUser.role}
                         </span>
                       )}
                     </div>
@@ -102,46 +124,59 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
 
                 {/* Menu Items */}
                 <div className="space-y-1">
-                  {loggedInUser.role === 'admin' && (
+                  {loggedInUser.role === "admin" && (
                     <button
-                      onClick={() => handleNavigate('/admin/accounts')}
+                      onClick={() => handleNavigate("/admin/accounts")}
                       className="flex items-center w-full px-3 py-2.5 text-sm text-gray-700 rounded-xl hover:bg-gray-50 hover:text-blue-600 transition-all duration-200 group"
                     >
                       <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-blue-100 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="w-4 h-4"
+                        >
                           <path d="M3 6a3 3 0 013-3h3a3 3 0 013 3v3a3 3 0 01-3 3H6a3 3 0 01-3-3V6zM12 6a3 3 0 013-3h3a3 3 0 013 3v3a3 3 0 01-3 3h-3a3 3 0 01-3-3V6zM3 15a3 3 0 013-3h3a3 3 0 013 3v3a3 3 0 01-3 3H6a3 3 0 01-3-3v-3zM12 15a3 3 0 013-3h3a3 3 0 013 3v3a3 3 0 01-3 3h-3a3 3 0 01-3-3v-3z" />
                         </svg>
                       </div>
                       <div className="flex-1 text-left">
                         <div className="font-medium">Admin Panel</div>
-                        <div className="text-xs text-gray-500">Quản trị hệ thống</div>
+                        <div className="text-xs text-gray-500">
+                          Quản trị hệ thống
+                        </div>
                       </div>
                     </button>
                   )}
 
                   <button
-                    onClick={() => handleNavigate('/profile')}
-                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-all duration-200 group"
+                    onClick={() => handleNavigate("/profile")}
+                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 group"
                   >
-                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-blue-100 transition-colors">
-                      <Settings className="w-4 h-4 group-hover:text-blue-600" />
+                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-purple-200 transition-colors">
+                      <Settings className="w-4 h-4 text-purple-600" />
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="font-medium">{t("ui.manage_account")}</div>
-                      <div className="text-xs text-gray-500">{t("ui.personal_info_settings")}</div>
+                      <div className="font-medium">
+                        {t("ui.manage_account")}
+                      </div>
+                      <div className="text-xs text-purple-500">
+                        {t("ui.personal_info_settings")}
+                      </div>
                     </div>
                   </button>
 
                   <button
-                    onClick={() => handleNavigate('/list-home')}
-                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-all duration-200 group"
+                    onClick={() => handleNavigate("/list-home")}
+                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-green-50 hover:text-green-600 transition-all duration-200 group"
                   >
-                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-blue-100 transition-colors">
-                      <MapPin className="w-4 h-4 group-hover:text-blue-600" />
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-green-200 transition-colors">
+                      <MapPin className="w-4 h-4 text-green-600" />
                     </div>
                     <div className="flex-1 text-left">
                       <div className="font-medium">{t("ui.manage_homes")}</div>
-                      <div className="text-xs text-gray-500">{t("ui.add_new_delivery_address")}</div>
+                      <div className="text-xs text-green-500">
+                        {t("ui.add_new_delivery_address")}
+                      </div>
                     </div>
                   </button>
 
@@ -156,7 +191,9 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
                     </div>
                     <div className="flex-1 text-left">
                       <div className="font-medium">{t("ui.logout")}</div>
-                      <div className="text-xs text-red-400">{t("ui.exit_account")}</div>
+                      <div className="text-xs text-red-400">
+                        {t("ui.exit_account")}
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -165,8 +202,12 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
               // Guest User Menu
               <>
                 <div className="px-3 py-2 text-center border-b border-gray-100 mb-2">
-                  <h3 className="font-bold text-gray-900 mb-1">{t("ui.welcome")}</h3>
-                  <p className="text-sm text-gray-600">{t("ui.login_to_experience")}</p>
+                  <h3 className="font-bold text-gray-900 mb-1">
+                    {t("ui.welcome")}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t("ui.login_to_experience")}
+                  </p>
                 </div>
 
                 <div className="space-y-1">
@@ -181,8 +222,12 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
                       <LogIn className="w-4 h-4" />
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="font-semibold">{t("ui.login_button")}</div>
-                      <div className="text-xs text-blue-100">{t("ui.access_account")}</div>
+                      <div className="font-semibold">
+                        {t("ui.login_button")}
+                      </div>
+                      <div className="text-xs text-blue-100">
+                        {t("ui.access_account")}
+                      </div>
                     </div>
                   </button>
 
@@ -197,8 +242,12 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
                       <UserPlus className="w-4 h-4 group-hover:text-green-600" />
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="font-medium">{t("ui.register_account")}</div>
-                      <div className="text-xs text-gray-500 group-hover:text-green-400">{t("ui.create_free_account")}</div>
+                      <div className="font-medium">
+                        {t("ui.register_account")}
+                      </div>
+                      <div className="text-xs text-gray-500 group-hover:text-green-400">
+                        {t("ui.create_free_account")}
+                      </div>
                     </div>
                   </button>
 
@@ -212,8 +261,12 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
                       <Wrench className="w-4 h-4 text-orange-600" />
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="font-medium">{t("ui.become_technician")}</div>
-                      <div className="text-xs text-orange-500">{t("ui.earn_with_skills")}</div>
+                      <div className="font-medium">
+                        {t("ui.become_technician")}
+                      </div>
+                      <div className="text-xs text-orange-500">
+                        {t("ui.earn_with_skills")}
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -221,7 +274,9 @@ export function AuthButtons({ loggedInUser, onShowLogin, onShowRegister, onLogou
                 <div className="px-3 py-2 text-center mt-2 bg-gray-50 rounded-lg">
                   <p className="text-xs text-gray-600">
                     {t("ui.by_registering")}{" "}
-                    <span className="text-blue-600 font-medium">{t("ui.terms_of_service")}</span>{" "}
+                    <span className="text-blue-600 font-medium">
+                      {t("ui.terms_of_service")}
+                    </span>{" "}
                     {t("ui.of_our_service")}
                   </p>
                 </div>
