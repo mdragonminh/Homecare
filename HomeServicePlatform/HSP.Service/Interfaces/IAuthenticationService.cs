@@ -1,4 +1,5 @@
-﻿using HSP.Service.Dtos.AuthenticationDto;
+﻿using HSP.Core.Dtos.AuthenticationDto;
+using HSP.Service.Dtos.AuthenticationDto;
 
 namespace HSP.Service.Interfaces
 {
@@ -12,5 +13,6 @@ namespace HSP.Service.Interfaces
 		Task<ChangePasswordResponseDto> ChangePassword(Guid userId, ChangePasswordRequestDto input);
 		Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input);
 		Task<Guid> CreateOperatorAsync(CreateOperatorRequestDto input);
+		Task RequestPasswordResetAsync(ForgetPasswordDto input);
 	}
 }
