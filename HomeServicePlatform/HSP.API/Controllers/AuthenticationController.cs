@@ -25,18 +25,16 @@ namespace HSP.API.Controllers
 		private readonly IAuthenticationService _authenticationService;
 		private readonly IEmailService _emailService;
 		private readonly UrlSettingsDto _urlSettings;
-		private readonly ICustomerProfileService _customerProfileService;
 		private readonly SignInManager<AppUser> _signInManager;
 
 		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService,
-			IOptions<UrlSettingsDto> urlOptions, ICustomerProfileService customerProfileService,
+			IOptions<UrlSettingsDto> urlOptions,
 			IOptions<UrlSettingsDto> urlSetting,
-			SignInManager<AppUser> signInManager, UserManager<AppUser> userManager)
+			SignInManager<AppUser> signInManager)
 		{
 			_authenticationService = authenticationService;
 			_emailService = emailService;
 			_urlSettings = urlOptions.Value;
-			_customerProfileService = customerProfileService;
 			_signInManager = signInManager;
 		}
 
