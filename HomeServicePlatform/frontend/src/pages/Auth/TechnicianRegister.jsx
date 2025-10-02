@@ -21,6 +21,7 @@ import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 const SPECIALIZATION_KEYS = [
   "electrical",
   "plumbing", 
@@ -129,7 +130,7 @@ export default function TechnicianRegister({
       !formData.agreeToTerms ||
       !formData.agreeToBackgroundCheck
     ) {
-      alert(t("technician_register.validation.fill_required_fields"));
+      toast.error(t("technician_register.validation.fill_required_fields"));
       return;
     }
 
@@ -150,14 +151,14 @@ export default function TechnicianRegister({
       });
 
       if (res.success) {
-        alert(t("technician_register.validation.register_success"));
+        toast.success(t("technician_register.validation.register_success"));
         // TODO: điều hướng về trang đăng nhập hoặc dashboard nếu cần
       } else {
-        alert(res.message || t("technician_register.validation.register_failed"));
+        toast.error(res.message || t("technician_register.validation.register_failed"));
       }
     } catch (err) {
       console.error(err);
-      alert(t("technician_register.validation.error_occurred"));
+      toast.error(t("technician_register.validation.error_occurred"))
     } finally {
       setSubmitting(false);
     }
@@ -576,9 +577,6 @@ export default function TechnicianRegister({
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

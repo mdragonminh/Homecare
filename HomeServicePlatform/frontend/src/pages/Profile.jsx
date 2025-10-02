@@ -271,9 +271,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
         </div>
       </main>
 
-      {/* Footer */}
-      <Footer />
-
       {/* Change Password Modal */}
       <ChangePasswordModal
         isOpen={showChangePasswordModal}
