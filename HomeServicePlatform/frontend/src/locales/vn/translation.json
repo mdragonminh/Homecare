@@ -109,6 +109,8 @@
     "view": "Xem",            
     "details": "Chi tiết",     
     "homes": "nhà ở",
+    "total_homes": "Tổng số nhà ở",
+    "manage_addresses": "Quản lý địa chỉ",
     "manage_items": "Vật phẩm trong nhà",
     "members": "thành viên",
     "loading_data": "Đang tải dữ liệu...",
