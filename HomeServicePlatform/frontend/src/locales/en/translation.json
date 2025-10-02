@@ -144,7 +144,9 @@
     "password_set_success_message": "Password has been set successfully.",
     "go_to_home": "Go to Home",
     "password_set_success_title": "Password Set Successfully",
-    "homes": "homes"
+    "homes": "homes",
+    "total_homes": "Total Homes",
+    "manage_addresses": "Manage Addresses"
   },
   "form": {
     "label": {
