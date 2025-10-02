@@ -349,6 +349,7 @@ namespace HSP.Service.Implementations
 					Email = input.Email,
 					UserName = input.Email,
 					FullName = input.FullName,
+					PhoneNumber = input.PhoneNumber,
 					EmailConfirmed = false
 				};
 
