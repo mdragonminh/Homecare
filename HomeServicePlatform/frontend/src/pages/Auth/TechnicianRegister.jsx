@@ -20,27 +20,28 @@ import { authApi } from "../../services/authApi";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
 import { useNavigate } from "react-router-dom";
-const SPECIALIZATIONS = [
-  "Điện",
-  "Nước",
-  "Điều hòa",
-  "Sửa chữa đồ điện tử",
-  "Sơn nhà",
-  "Dọn dẹp",
-  "Làm vườn",
-  "Sửa chữa nội thất",
-  "Lắp đặt thiết bị",
-  "Bảo trì máy móc",
+import { useTranslation } from "react-i18next";
+const SPECIALIZATION_KEYS = [
+  "electrical",
+  "plumbing", 
+  "ac",
+  "electronics",
+  "painting",
+  "cleaning",
+  "gardening",
+  "interior",
+  "installation",
+  "maintenance",
 ];
 
-const AVAILABILITY_OPTIONS = [
-  "Thứ 2",
-  "Thứ 3",
-  "Thứ 4",
-  "Thứ 5",
-  "Thứ 6",
-  "Thứ 7",
-  "Chủ nhật",
+const AVAILABILITY_KEYS = [
+  "monday",
+  "tuesday", 
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
 ];
 
 export default function TechnicianRegister({
@@ -49,6 +50,7 @@ export default function TechnicianRegister({
   onShowLogin,
   onShowRegister,
 }) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -99,21 +101,21 @@ export default function TechnicianRegister({
     }
   };
 
-  const toggleSpecialization = (spec) => {
+  const toggleSpecialization = (specKey) => {
     updateFormData(
       "specializations",
-      formData.specializations.includes(spec)
-        ? formData.specializations.filter((s) => s !== spec)
-        : [...formData.specializations, spec]
+      formData.specializations.includes(specKey)
+        ? formData.specializations.filter((s) => s !== specKey)
+        : [...formData.specializations, specKey]
     );
   };
 
-  const toggleAvailability = (day) => {
+  const toggleAvailability = (dayKey) => {
     updateFormData(
       "availability",
-      formData.availability.includes(day)
-        ? formData.availability.filter((d) => d !== day)
-        : [...formData.availability, day]
+      formData.availability.includes(dayKey)
+        ? formData.availability.filter((d) => d !== dayKey)
+        : [...formData.availability, dayKey]
     );
   };
 
@@ -127,7 +129,7 @@ export default function TechnicianRegister({
       !formData.agreeToTerms ||
       !formData.agreeToBackgroundCheck
     ) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
+      alert(t("technician_register.validation.fill_required_fields"));
       return;
     }
 
@@ -148,14 +150,14 @@ export default function TechnicianRegister({
       });
 
       if (res.success) {
-        alert("Đăng ký thành công! Vui lòng chờ quản trị viên duyệt.");
+        alert(t("technician_register.validation.register_success"));
         // TODO: điều hướng về trang đăng nhập hoặc dashboard nếu cần
       } else {
-        alert(res.message || "Đăng ký kỹ thuật viên thất bại");
+        alert(res.message || t("technician_register.validation.register_failed"));
       }
     } catch (err) {
       console.error(err);
-      alert("Có lỗi xảy ra. Vui lòng thử lại sau.");
+      alert(t("technician_register.validation.error_occurred"));
     } finally {
       setSubmitting(false);
     }
@@ -186,11 +188,10 @@ export default function TechnicianRegister({
 
               {/* Tiêu đề chính */}
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Trở Thành Kỹ Thuật Viên Chuyên Nghiệp
+                {t("technician_register.title")}
               </h1>
               <p className="text-xl mb-12">
-                Tham gia nền tảng dịch vụ gia đình hàng đầu Việt Nam và bắt đầu
-                kiếm tiền ngay hôm nay
+                {t("technician_register.subtitle")}
               </p>
 
               {/* 3 cards benefit */}
@@ -200,10 +201,10 @@ export default function TechnicianRegister({
                     <Star className="w-6 h-6 text-blue-600" />
                   </div>
                   <h3 className="font-semibold text-lg text-gray-800 mb-2">
-                    Thu nhập cao
+                    {t("technician_register.benefits.high_income")}
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    Lên đến 15 triệu/tháng
+                    {t("technician_register.benefits.high_income_desc")}
                   </p>
                 </div>
 
@@ -212,10 +213,10 @@ export default function TechnicianRegister({
                     <Shield className="w-6 h-6 text-blue-600" />
                   </div>
                   <h3 className="font-semibold text-lg text-gray-800 mb-2">
-                    Bảo hiểm đầy đủ
+                    {t("technician_register.benefits.full_insurance")}
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    An toàn trong công việc
+                    {t("technician_register.benefits.full_insurance_desc")}
                   </p>
                 </div>
 
@@ -224,10 +225,10 @@ export default function TechnicianRegister({
                     <Zap className="w-6 h-6 text-blue-600" />
                   </div>
                   <h3 className="font-semibold text-lg text-gray-800 mb-2">
-                    Linh hoạt thời gian
+                    {t("technician_register.benefits.flexible_time")}
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    Tự do sắp xếp lịch làm việc
+                    {t("technician_register.benefits.flexible_time_desc")}
                   </p>
                 </div>
               </div>
@@ -247,10 +248,10 @@ export default function TechnicianRegister({
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-gray-800">
-                      Thông Tin Cá Nhân
+                      {t("technician_register.personal_info.title")}
                     </h2>
                     <p className="text-sm text-gray-600">
-                      Cung cấp thông tin cơ bản về bản thân
+                      {t("technician_register.personal_info.subtitle")}
                     </p>
                   </div>
                 </div>
@@ -259,7 +260,7 @@ export default function TechnicianRegister({
                   {/* Full Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Họ và tên *
+                      {t("technician_register.personal_info.full_name_required")}
                     </label>
                     <input
                       type="text"
@@ -268,42 +269,42 @@ export default function TechnicianRegister({
                         updateFormData("fullName", e.target.value)
                       }
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
-                      placeholder="Nhập họ và tên đầy đủ"
+                      placeholder={t("technician_register.personal_info.full_name_placeholder")}
                     />
                   </div>
 
                   {/* Email */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email *
+                      {t("technician_register.personal_info.email_required")}
                     </label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => updateFormData("email", e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
-                      placeholder="example@email.com"
+                      placeholder={t("technician_register.personal_info.email_placeholder")}
                     />
                   </div>
 
                   {/* Phone */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số điện thoại *
+                      {t("technician_register.personal_info.phone_required")}
                     </label>
                     <input
                       type="text"
                       value={formData.phone}
                       onChange={(e) => updateFormData("phone", e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
-                      placeholder="0123 456 789"
+                      placeholder={t("technician_register.personal_info.phone_placeholder")}
                     />
                   </div>
 
                   {/* Date of Birth */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ngày sinh
+                      {t("technician_register.personal_info.date_of_birth")}
                     </label>
                     <input
                       type="date"
@@ -330,19 +331,19 @@ export default function TechnicianRegister({
                 {/* City */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Thành phố
+                      {t("technician_register.personal_info.city")}
                     </label>
                     <select
                       value={formData.city}
                       onChange={(e) => updateFormData("city", e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
                     >
-                      <option value="">Chọn thành phố</option>
-                      <option value="hanoi">Hà Nội</option>
-                      <option value="hcm">TP. Hồ Chí Minh</option>
-                      <option value="danang">Đà Nẵng</option>
-                      <option value="haiphong">Hải Phòng</option>
-                      <option value="cantho">Cần Thơ</option>
+                      <option value="">{t("technician_register.personal_info.city_placeholder")}</option>
+                      <option value="hanoi">{t("technician_register.personal_info.cities.hanoi")}</option>
+                      <option value="hcm">{t("technician_register.personal_info.cities.hcm")}</option>
+                      <option value="danang">{t("technician_register.personal_info.cities.danang")}</option>
+                      <option value="haiphong">{t("technician_register.personal_info.cities.haiphong")}</option>
+                      <option value="cantho">{t("technician_register.personal_info.cities.cantho")}</option>
                     </select>
                   </div>
                 </div>
@@ -356,10 +357,10 @@ export default function TechnicianRegister({
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-gray-800">
-                      Kinh Nghiệm & Kỹ Năng
+                      {t("technician_register.experience_skills.title")}
                     </h2>
                     <p className="text-sm text-gray-600">
-                      Chia sẻ về chuyên môn và kinh nghiệm làm việc
+                      {t("technician_register.experience_skills.subtitle")}
                     </p>
                   </div>
                 </div>
@@ -368,7 +369,7 @@ export default function TechnicianRegister({
                   {/* Experience */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số năm kinh nghiệm *
+                      {t("technician_register.experience_skills.years_experience_required")}
                     </label>
                     <select
                       value={formData.experience}
@@ -377,34 +378,34 @@ export default function TechnicianRegister({
                       }
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                     >
-                      <option value="">Chọn số năm kinh nghiệm</option>
-                      <option value="0-1">Dưới 1 năm</option>
-                      <option value="1-3">1-3 năm</option>
-                      <option value="3-5">3-5 năm</option>
-                      <option value="5-10">5-10 năm</option>
-                      <option value="10+">Trên 10 năm</option>
+                      <option value="">{t("technician_register.experience_skills.years_experience_placeholder")}</option>
+                      <option value="0-1">{t("technician_register.experience_skills.experience_options.0-1")}</option>
+                      <option value="1-3">{t("technician_register.experience_skills.experience_options.1-3")}</option>
+                      <option value="3-5">{t("technician_register.experience_skills.experience_options.3-5")}</option>
+                      <option value="5-10">{t("technician_register.experience_skills.experience_options.5-10")}</option>
+                      <option value="10+">{t("technician_register.experience_skills.experience_options.10+")}</option>
                     </select>
                   </div>
 
                   {/* Specializations */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Lĩnh vực chuyên môn *
+                      {t("technician_register.experience_skills.specialization_required")}
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {SPECIALIZATIONS.map((spec) => (
+                      {SPECIALIZATION_KEYS.map((specKey) => (
                         <label
-                          key={spec}
+                          key={specKey}
                           className="flex items-center gap-3 cursor-pointer"
                         >
                           <input
                             type="checkbox"
-                            checked={formData.specializations.includes(spec)}
-                            onChange={() => toggleSpecialization(spec)}
+                            checked={formData.specializations.includes(specKey)}
+                            onChange={() => toggleSpecialization(specKey)}
                             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             style={{ minWidth: "1rem" }}
                           />
-                          {spec}
+                          {t(`technician_register.experience_skills.specializations.${specKey}`)}
                         </label>
                       ))}
                     </div>
@@ -413,7 +414,7 @@ export default function TechnicianRegister({
                   {/* Certifications */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Chứng chỉ & Bằng cấp
+                      {t("technician_register.experience_skills.certifications")}
                     </label>
                     <textarea
                       rows={4}
@@ -422,27 +423,29 @@ export default function TechnicianRegister({
                         updateFormData("certifications", e.target.value)
                       }
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none"
-                      placeholder="Liệt kê các chứng chỉ chuyên môn, bằng cấp có liên quan..."
+                      placeholder={t("technician_register.experience_skills.certifications_placeholder")}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Thời gian có thể làm việc
+                      {t("technician_register.experience_skills.availability")}
                     </label>
                     <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
-                      {AVAILABILITY_OPTIONS.map((day) => (
+                      {AVAILABILITY_KEYS.map((dayKey) => (
                         <label
-                          key={day}
+                          key={dayKey}
                           className="flex items-center gap-2 cursor-pointer"
                         >
                           <input
                             type="checkbox"
-                            checked={formData.availability.includes(day)}
-                            onChange={() => toggleAvailability(day)}
+                            checked={formData.availability.includes(dayKey)}
+                            onChange={() => toggleAvailability(dayKey)}
                             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
-                          <span className="text-sm text-gray-700">{day}</span>
+                          <span className="text-sm text-gray-700">
+                            {t(`technician_register.experience_skills.availability_options.${dayKey}`)}
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -450,10 +453,9 @@ export default function TechnicianRegister({
                 </div>
               </div>
 
-              {/* Hourly Rate */}
-              <div className="p-6">
+              {/* <div className="p-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mức lương mong muốn (VNĐ/giờ) *
+                  {t("technician_register.rate_bio.hourly_rate_required")}
                 </label>
                 <div className="relative">
                   <input
@@ -463,27 +465,26 @@ export default function TechnicianRegister({
                       updateFormData("hourlyRate", e.target.value)
                     }
                     className="w-full border border-gray-300 rounded-lg pl-4 pr-16 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
-                    placeholder="150000"
+                    placeholder={t("technician_register.rate_bio.hourly_rate_placeholder")}
                   />
                   <span className="absolute right-0 top-0 h-full flex items-center pr-4 text-gray-500 text-sm font-medium">
-                    VNĐ/giờ
+                    {t("technician_register.rate_bio.hourly_rate_unit")}
                   </span>
                 </div>
               </div>
 
-              {/* Bio */}
               <div className="p-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Giới thiệu bản thân *
+                  {t("technician_register.rate_bio.bio_required")}
                 </label>
                 <textarea
                   rows={5}
                   value={formData.bio}
                   onChange={(e) => updateFormData("bio", e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors resize-none"
-                  placeholder="Mô tả về kinh nghiệm, kỹ năng và những điều đặc biệt khách hàng nên biết về bạn..."
+                  placeholder={t("technician_register.rate_bio.bio_placeholder")}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -495,10 +496,10 @@ export default function TechnicianRegister({
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">
-                  Điều khoản & Xác nhận
+                  {t("technician_register.terms.title")}
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Vui lòng đọc và đồng ý với các điều khoản
+                  {t("technician_register.terms.subtitle")}
                 </p>
               </div>
             </div>
@@ -514,15 +515,15 @@ export default function TechnicianRegister({
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
                 />
                 <span className="text-sm text-gray-700">
-                  Tôi đồng ý với{" "}
+                  {t("technician_register.terms.agree_terms")}{" "}
                   <span className="text-blue-600 underline">
-                    Điều khoản sử dụng
+                    {t("technician_register.terms.terms_of_use")}
                   </span>{" "}
-                  và{" "}
+                  {t("technician_register.terms.and")}{" "}
                   <span className="text-blue-600 underline">
-                    Chính sách bảo mật
+                    {t("technician_register.terms.privacy_policy")}
                   </span>{" "}
-                  của nền tảng
+                  {t("technician_register.terms.of_platform")}
                 </span>
               </label>
 
@@ -536,8 +537,7 @@ export default function TechnicianRegister({
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
                 />
                 <span className="text-sm text-gray-700">
-                  Tôi đồng ý cho phép nền tảng kiểm tra lý lịch và xác thực
-                  thông tin cá nhân để đảm bảo chất lượng dịch vụ
+                  {t("technician_register.terms.agree_background_check")}
                 </span>
               </label>
             </div>
@@ -549,28 +549,28 @@ export default function TechnicianRegister({
                 disabled={submitting}
                 className="bg-blue-600 text-white px-12 py-4 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-60"
               >
-                {submitting ? "Đang gửi..." : "Đăng Ký Ngay"}
+                {submitting ? t("technician_register.submit.submitting") : t("technician_register.submit.register_now")}
               </button>
             </div>
           </div>
 
           {/* Footer */}
           <div className="text-center mt-8 text-gray-600 pb-12">
-            <p className="mb-2">Cần hỗ trợ? Liên hệ ngay với chúng tôi</p>
+            <p className="mb-2">{t("technician_register.submit.need_support")}</p>
             <div className="flex items-center justify-center gap-6">
               <a
                 href="mailto:support@homeservice.com"
                 className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
               >
                 <Mail className="w-4 h-4" />
-                support@homeservice.com
+                {t("technician_register.submit.support_email")}
               </a>
               <a
                 href="tel:1900-1234"
                 className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
               >
                 <Phone className="w-4 h-4" />
-                1900-1234
+                {t("technician_register.submit.support_phone")}
               </a>
             </div>
           </div>
