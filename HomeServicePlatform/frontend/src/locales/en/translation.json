@@ -152,7 +152,7 @@
     "reset_password_title": "Reset Password",
     "reset_password_tagline": "Enter a new password for your account",
     "reset_password_button_submit": "Reset Password",
-    "processing": "Processing..."
+    "processing": "Processing...",
     "total_homes": "Total Homes",
     "manage_addresses": "Manage Addresses"
   },
@@ -222,7 +222,8 @@
     "phone_format": "Phone number must start with 0 and have 10-11 digits",
     "full_name_length": "Full name must be 1-100 characters",
     "phone_length": "Phone number must be 10-11 digits",
-    "password_strong": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character"
+    "password_strong": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character",
+    "new_password_required": "Please enter new password"
   },
   "success": {
     "registration": "You have registered successfully. Please check your email to verify and log in.",

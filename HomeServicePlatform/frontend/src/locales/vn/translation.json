@@ -224,7 +224,8 @@
     "phone_format": "Số điện thoại phải bắt đầu bằng 0 và có 10-11 chữ số",
     "full_name_length": "Họ và tên phải từ 1-100 ký tự",
     "phone_length": "Số điện thoại phải từ 10-11 chữ số",
-    "password_strong": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
+    "password_strong": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
+    "new_password_required": "Vui lòng nhập mật khẩu mới"
   },
   "success": {
     "registration": "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để xác minh và đăng nhập.",

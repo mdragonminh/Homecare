@@ -3,18 +3,18 @@
 import { useState } from 'react';
 import { Mail, Loader2, ArrowLeft } from 'lucide-react';
 import { authApi } from '../../services/authApi';
-import { useTranslation } from 'react-i18next'; // Sử dụng useTranslation
-import LanguageSwitcher from '../../components/LanguageSwitcher.jsx'; // Thêm để giữ giao diện nhất quán
+import { useTranslation } from 'react-i18next'; 
+import LanguageSwitcher from '../../components/LanguageSwitcher.jsx'; 
 
 export default function ForgotPasswordPage({ onSwitchToLogin }) {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState(''); // 'success' | 'error'
-  const [validationError, setValidationError] = useState({}); // Dùng để lưu lỗi validation
+  const [messageType, setMessageType] = useState(''); 
+  const [validationError, setValidationError] = useState({}); 
 
-  // Regex cơ bản để kiểm tra định dạng email
+ 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; 
 
   const handleValidation = () => {
