@@ -21,6 +21,9 @@ namespace HSP.DAL.Data
 		public DbSet<TechnicianProfile> TechnicianProfiles { get; set; }
 		public DbSet<Home> Homes { get; set; }
 		public DbSet<HomeItem> HomeItems { get; set; }
+		public DbSet<File> Files { get; set; }
+		public DbSet<ObjectType> ObjectTypes { get; set; }
+		public DbSet<FileRelation> FileRelations { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
