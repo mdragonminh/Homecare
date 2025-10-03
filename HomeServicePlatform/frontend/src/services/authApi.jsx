@@ -1,9 +1,6 @@
-// authApi.jsx
-
 import axiosClient from "../config/axiosClient";
 
 export const authApi = {
-  // --- Đăng ký ---
   register: async ({ email, fullName, password }) => {
     try {
       const res = await axiosClient.post("/Authentication/register", {
@@ -16,7 +13,6 @@ export const authApi = {
     } catch (error) {
       console.error("Register error:", error);
 
-      // Nếu không phải lỗi có response (ví dụ: lỗi mạng), ném lại lỗi đó
       if (!error.response) {
         throw error;
       }
@@ -26,8 +22,8 @@ export const authApi = {
       return {
         success: false,
         message: serverMessage,
-        status: error.response.status, // Thêm status code
-        data: responseData, // Thêm data từ server
+        status: error.response.status,
+        data: responseData,
       };
     }
   },
@@ -55,22 +51,17 @@ export const authApi = {
       return { success: false, message };
     }
   },
-  // --- Đăng ký kỹ thuật viên ---
   registerTechnician: async ({
     email,
     fullName,
+    phone,
     specializations = [],
-    experience, // dạng range: "0-1", "1-3", ...
+    experience,
     bio,
     certifications,
     availability = [],
-    // phone,
-    // address,
-    // city,
-    // hourlyRate,
   }) => {
     try {
-      // Chuyển range -> số năm (int)
       const expMap = {
         "0-1": 1,
         "1-3": 2,
@@ -80,28 +71,18 @@ export const authApi = {
       };
       const experienceYears = expMap[experience] ?? 0;
 
-      // Gom skillsets thành JSON string (giữ gọn để không vượt quá 200 ký tự theo backend)
       let skillObj = {
         specializations,
-        // Các field dưới đây không có trong API nhưng gom lại để lưu tóm tắt
-        // Lưu ý: backend giới hạn SkillSet tối đa 200 ký tự
         bio: bio?.slice(0, 80),
         certifications: certifications?.slice(0, 80),
-        availability: availability.slice(0, 5), // cắt bớt nếu quá dài
-        // phone, address, city, hourlyRate có thể dài -> comment lại để tránh vượt quá 200
-        // phone,
-        // address,
-        // city,
-        // hourlyRate,
+        availability: availability.slice(0, 5),
       };
 
       let skillSet = JSON.stringify(skillObj);
       if (skillSet.length > 200) {
-        // Thu gọn thêm nếu vượt
         skillObj = { specializations: specializations.slice(0, 5) };
         skillSet = JSON.stringify(skillObj);
         if (skillSet.length > 200) {
-          // Chốt phương án rút gọn tối đa
           skillSet = JSON.stringify({ s: specializations.slice(0, 3) });
         }
       }
@@ -109,6 +90,7 @@ export const authApi = {
       const payload = {
         email,
         fullName,
+        phoneNumber: phone,
         skillSet,
         experienceYears,
       };
@@ -130,7 +112,6 @@ export const authApi = {
     }
   },
 
-  // --- Đăng nhập ---
   login: async ({ email, password }) => {
     try {
       const res = await axiosClient.post(`/Authentication/login`, {
@@ -279,7 +260,6 @@ export const authApi = {
     }
   },
 
-  // --- Google Login ---
   googleLogin: () => {
     const API_URL = axiosClient.defaults.baseURL;
     window.location.href = `${API_URL}/Authentication/google-login`;
@@ -315,7 +295,6 @@ export const authApi = {
     }
   },
 
-  // --- Logout ---
   logout: () => {
     [
       "jwtToken",

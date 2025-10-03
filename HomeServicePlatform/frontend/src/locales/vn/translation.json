@@ -109,6 +109,8 @@
     "view": "Xem",            
     "details": "Chi tiết",     
     "homes": "nhà ở",
+    "total_homes": "Tổng số nhà ở",
+    "manage_addresses": "Quản lý địa chỉ",
     "manage_items": "Vật phẩm trong nhà",
     "members": "thành viên",
     "loading_data": "Đang tải dữ liệu...",
@@ -415,6 +417,106 @@
       "approval_date": "Ngày duyệt",
       "rejection_date": "Ngày từ chối",
       "by": "Bởi"
+    }
+  },
+  "technician_register": {
+    "title": "Trở Thành Kỹ Thuật Viên Chuyên Nghiệp",
+    "subtitle": "Tham gia nền tảng dịch vụ gia đình hàng đầu Việt Nam và bắt đầu kiếm tiền ngay hôm nay",
+    "benefits": {
+      "high_income": "Thu nhập cao",
+      "high_income_desc": "Lên đến 15 triệu/tháng",
+      "full_insurance": "Bảo hiểm đầy đủ",
+      "full_insurance_desc": "An toàn trong công việc",
+      "flexible_time": "Linh hoạt thời gian",
+      "flexible_time_desc": "Tự do sắp xếp lịch làm việc"
+    },
+    "personal_info": {
+      "title": "Thông Tin Cá Nhân",
+      "subtitle": "Cung cấp thông tin cơ bản về bản thân",
+      "full_name_required": "Họ và tên *",
+      "full_name_placeholder": "Nhập họ và tên đầy đủ",
+      "email_required": "Email *",
+      "email_placeholder": "example@email.com",
+      "phone_required": "Số điện thoại *",
+      "phone_placeholder": "0123 456 789",
+      "date_of_birth": "Ngày sinh",
+      "city": "Thành phố",
+      "city_placeholder": "Chọn thành phố",
+      "cities": {
+        "hanoi": "Hà Nội",
+        "hcm": "TP. Hồ Chí Minh", 
+        "danang": "Đà Nẵng",
+        "haiphong": "Hải Phòng",
+        "cantho": "Cần Thơ"
+      }
+    },
+    "experience_skills": {
+      "title": "Kinh Nghiệm & Kỹ Năng",
+      "subtitle": "Chia sẻ về chuyên môn và kinh nghiệm làm việc",
+      "years_experience_required": "Số năm kinh nghiệm *",
+      "years_experience_placeholder": "Chọn số năm kinh nghiệm",
+      "experience_options": {
+        "0-1": "Dưới 1 năm",
+        "1-3": "1-3 năm",
+        "3-5": "3-5 năm", 
+        "5-10": "5-10 năm",
+        "10+": "Trên 10 năm"
+      },
+      "specialization_required": "Lĩnh vực chuyên môn *",
+      "specializations": {
+        "electrical": "Điện",
+        "plumbing": "Nước", 
+        "ac": "Điều hòa",
+        "electronics": "Sửa chữa đồ điện tử",
+        "painting": "Sơn nhà",
+        "cleaning": "Dọn dẹp",
+        "gardening": "Làm vườn", 
+        "interior": "Sửa chữa nội thất",
+        "installation": "Lắp đặt thiết bị",
+        "maintenance": "Bảo trì máy móc"
+      },
+      "certifications": "Chứng chỉ & Bằng cấp",
+      "certifications_placeholder": "Liệt kê các chứng chỉ chuyên môn, bằng cấp có liên quan...",
+      "availability": "Thời gian có thể làm việc",
+      "availability_options": {
+        "monday": "Thứ 2",
+        "tuesday": "Thứ 3",
+        "wednesday": "Thứ 4",
+        "thursday": "Thứ 5", 
+        "friday": "Thứ 6",
+        "saturday": "Thứ 7",
+        "sunday": "Chủ nhật"
+      }
+    },
+    "rate_bio": {
+      "hourly_rate_required": "Mức lương mong muốn (VNĐ/giờ) *",
+      "hourly_rate_placeholder": "150000",
+      "hourly_rate_unit": "VNĐ/giờ",
+      "bio_required": "Giới thiệu bản thân *",
+      "bio_placeholder": "Mô tả về kinh nghiệm, kỹ năng và những điều đặc biệt khách hàng nên biết về bạn..."
+    },
+    "terms": {
+      "title": "Điều khoản & Xác nhận",
+      "subtitle": "Vui lòng đọc và đồng ý với các điều khoản",
+      "agree_terms": "Tôi đồng ý với",
+      "terms_of_use": "Điều khoản sử dụng",
+      "and": "và", 
+      "privacy_policy": "Chính sách bảo mật",
+      "of_platform": "của nền tảng",
+      "agree_background_check": "Tôi đồng ý cho phép nền tảng kiểm tra lý lịch và xác thực thông tin cá nhân để đảm bảo chất lượng dịch vụ"
+    },
+    "submit": {
+      "register_now": "Đăng Ký Ngay",
+      "submitting": "Đang gửi...",
+      "need_support": "Cần hỗ trợ? Liên hệ ngay với chúng tôi",
+      "support_email": "support@homeservice.com",
+      "support_phone": "1900-1234"
+    },
+    "validation": {
+      "fill_required_fields": "Vui lòng điền đầy đủ thông tin bắt buộc!",
+      "register_success": "Đăng ký thành công! Vui lòng chờ quản trị viên duyệt.",
+      "register_failed": "Đăng ký kỹ thuật viên thất bại",
+      "error_occurred": "Có lỗi xảy ra. Vui lòng thử lại sau."
     }
   },
   "toast":{

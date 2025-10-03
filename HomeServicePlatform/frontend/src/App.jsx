@@ -111,7 +111,7 @@ export default function App() {
           </div>
         )}
       </div>
-      <Toaster position="top-right" richColors duration={500} />
+      <Toaster position="top-right" richColors duration={1500} />
     </BrowserRouter>
   );
 }
