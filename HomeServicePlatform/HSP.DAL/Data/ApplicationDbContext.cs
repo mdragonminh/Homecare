@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
+using File = HSP.Core.Entities.File;
 
 namespace HSP.DAL.Data
 {
@@ -56,11 +58,24 @@ namespace HSP.DAL.Data
 				.WithOne(hi => hi.Home)
 				.HasForeignKey(hi => hi.HomeId)
 				.OnDelete(DeleteBehavior.Cascade);
+			builder.Entity<File>()
+					.HasMany(f => f.FileRelations)
+					.WithOne(fr => fr.File)
+					.HasForeignKey(fr => fr.FileId)
+					.OnDelete(DeleteBehavior.Cascade);
+			builder.Entity<ObjectType>()
+					.HasMany(ot => ot.FileRelations)
+					.WithOne(fr => fr.ObjectType)
+					.HasForeignKey(fr => fr.ObjectTypeId)
+					.OnDelete(DeleteBehavior.Restrict);
+			builder.Entity<FileRelation>()
+					.HasIndex(fr => new { fr.ObjectTypeId, fr.ObjectId });
 
 			builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
 			builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
 			builder.Entity<CustomerProfile>().HasQueryFilter(cp => !cp.IsDeleted);
 			builder.Entity<TechnicianProfile>().HasQueryFilter(tp => !tp.IsDeleted);
+			builder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
 		}
 	}
 }
