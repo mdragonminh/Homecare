@@ -1,33 +1,29 @@
-import { useState, useEffect } from "react";
-import { 
-  Card, 
-  Table, 
-  Tag, 
-  Button, 
-  Input, 
-  Select, 
-  Space, 
-  message, 
-  Modal, 
-  Tooltip,
-  Dropdown,
-  Badge
-} from "antd";
-import { 
-  SearchOutlined, 
-  CheckOutlined, 
-  CloseOutlined, 
+import {
+  CheckOutlined,
+  CloseOutlined,
   EyeOutlined,
-  DownOutlined,
-  ExclamationCircleOutlined
+  SearchOutlined
 } from "@ant-design/icons";
-import { adminApi } from "../../services/adminApi";
-import { 
-  TechnicianApprovalStatus, 
-  TechnicianApprovalStatusLabels, 
-  TechnicianApprovalStatusColors 
-} from "../../constants/enums";
+import {
+  Button,
+  Card,
+  Input,
+  Modal,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Tooltip
+} from "antd";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from 'sonner';
+import {
+  TechnicianApprovalStatus,
+  TechnicianApprovalStatusColors,
+  TechnicianApprovalStatusLabels
+} from "../../constants/enums";
+import { adminApi } from "../../services/adminApi";
 
 const { Option } = Select;
 const { confirm } = Modal;
@@ -45,7 +41,6 @@ export default function TechniciansPage() {
     searchTerm: "",
     approvalStatus: undefined,
   });
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [technicianDetail, setTechnicianDetail] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
@@ -88,10 +83,10 @@ export default function TechniciansPage() {
           total: response.data.totalCount || 0,
         });
       } else {
-        message.error(response.message);
+        toast.error(response.message);
       }
     } catch (error) {
-      message.error(t("technicians.error_loading_list"));
+      toast.error(t("technicians.error_loading_list"));
     }
     setLoading(false);
   };
@@ -115,13 +110,13 @@ export default function TechniciansPage() {
     try {
       const response = await adminApi.approveTechnician(technicianId);
       if (response.success) {
-        message.success(t("technicians.approve_success"));
+        toast.success(t("technicians.approve_success"));
         fetchTechnicians();
       } else {
-        message.error(response.message);
+        toast.error(response.message);
       }
     } catch (error) {
-      message.error(t("technicians.error_approving"));
+      toast.error(t("technicians.error_approving"));
     }
   };
 
@@ -130,75 +125,14 @@ export default function TechniciansPage() {
     try {
       const response = await adminApi.rejectTechnician(technicianId);
       if (response.success) {
-        message.success(t("technicians.reject_success"));
+        toast.success(t("technicians.reject_success"));
         fetchTechnicians();
       } else {
-        message.error(response.message);
+        toast.error(response.message);
       }
     } catch (error) {
-      message.error(t("technicians.error_rejecting"));
+      toast.error(t("technicians.error_rejecting"));
     }
-  };
-
-  // Handle batch operations
-  const handleBatchApprove = () => {
-    if (selectedRowKeys.length === 0) {
-      message.warning(t("technicians.select_at_least_one"));
-      return;
-    }
-
-    confirm({
-      title: t("technicians.confirm_batch_approve"),
-      icon: <ExclamationCircleOutlined />,
-      content: t("technicians.confirm_batch_approve_message", { count: selectedRowKeys.length }),
-      async onOk() {
-        try {
-          const response = await adminApi.batchApproveTechnicians(selectedRowKeys);
-          if (response.success) {
-            message.success(t("technicians.batch_approve_success", { 
-              successCount: response.data.successCount, 
-              totalCount: response.data.totalCount 
-            }));
-            setSelectedRowKeys([]);
-            fetchTechnicians();
-          } else {
-            message.error(response.message);
-          }
-        } catch (error) {
-          message.error(t("technicians.error_batch_approve"));
-        }
-      },
-    });
-  };
-
-  const handleBatchReject = () => {
-    if (selectedRowKeys.length === 0) {
-      message.warning(t("technicians.select_at_least_one"));
-      return;
-    }
-
-    confirm({
-      title: t("technicians.confirm_batch_reject"),
-      icon: <ExclamationCircleOutlined />,
-      content: t("technicians.confirm_batch_reject_message", { count: selectedRowKeys.length }),
-      async onOk() {
-        try {
-          const response = await adminApi.batchRejectTechnicians(selectedRowKeys);
-          if (response.success) {
-            message.success(t("technicians.batch_reject_success", { 
-              successCount: response.data.successCount, 
-              totalCount: response.data.totalCount 
-            }));
-            setSelectedRowKeys([]);
-            fetchTechnicians();
-          } else {
-            message.error(response.message);
-          }
-        } catch (error) {
-          message.error(t("technicians.error_batch_reject"));
-        }
-      },
-    });
   };
 
   // Handle view technician details
@@ -209,10 +143,10 @@ export default function TechniciansPage() {
         setTechnicianDetail(response.data);
         setDetailModalVisible(true);
       } else {
-        message.error(response.message);
+        toast.error(response?.message ?? "Cannot load technician details");
       }
     } catch (error) {
-      message.error(t("technicians.error_loading_detail"));
+      toast.error(t("technicians.error_loading_detail"));
     }
   };
 
@@ -322,32 +256,6 @@ export default function TechniciansPage() {
     },
   ];
 
-  // Row selection
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (selectedKeys) => {
-      setSelectedRowKeys(selectedKeys);
-    },
-    getCheckboxProps: (record) => ({
-      disabled: record.approvalStatus !== TechnicianApprovalStatus.Pending, // Only pending technicians can be selected
-    }),
-  };
-
-  // Batch actions menu
-  const batchActionsMenu = [
-    {
-      key: "approve",
-      label: t("technicians.approve_selected"),
-      icon: <CheckOutlined />,
-      onClick: handleBatchApprove,
-    },
-    {
-      key: "reject", 
-      label: t("technicians.reject_selected"),
-      icon: <CloseOutlined />,
-      onClick: handleBatchReject,
-    },
-  ];
 
   useEffect(() => {
     fetchTechnicians();
@@ -391,13 +299,6 @@ export default function TechniciansPage() {
             ))}
           </Select>
 
-          {selectedRowKeys.length > 0 && (
-            <Dropdown menu={{ items: batchActionsMenu }} placement="bottomLeft">
-              <Button>
-                {t("technicians.batch_actions")} ({selectedRowKeys.length}) <DownOutlined />
-              </Button>
-            </Dropdown>
-          )}
         </div>
 
         {/* Statistics */}

@@ -35,6 +35,11 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		[StringLength(100, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "FullNameMaxLength")]
 		public string FullName { get; set; } = string.Empty;
 
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberIsRequired")]
+		[Phone(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "InvalidPhoneNumberFormat")]
+		[StringLength(20, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberMaxLength")]
+		public string PhoneNumber { get; set; } = string.Empty;
+
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "SkillSetIsRequired")]
 		[StringLength(200, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "SkillSetMaxLength")]
 		public string SkillSet { get; set; } = string.Empty;

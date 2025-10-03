@@ -139,12 +139,12 @@ export default function TechnicianRegister({
       const res = await authApi.registerTechnician({
         email: formData.email,
         fullName: formData.fullName,
+        phone: formData.phone,
         specializations: formData.specializations,
         experience: formData.experience,
         bio: formData.bio,
         certifications: formData.certifications,
         availability: formData.availability,
-        phone: formData.phone,
         address: formData.address,
         city: formData.city,
         hourlyRate: formData.hourlyRate,
@@ -152,7 +152,6 @@ export default function TechnicianRegister({
 
       if (res.success) {
         toast.success(t("technician_register.validation.register_success"));
-        // TODO: điều hướng về trang đăng nhập hoặc dashboard nếu cần
       } else {
         toast.error(res.message || t("technician_register.validation.register_failed"));
       }
@@ -490,7 +489,7 @@ export default function TechnicianRegister({
           </div>
 
           {/* Điều khoản */}
-          <div className="p-8">
+          <div className="p-8 flex flex-col items-center">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                 <FileText className="w-5 h-5 text-purple-600" />

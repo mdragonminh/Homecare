@@ -73,11 +73,10 @@ export default function App() {
   const handleLogout = useCallback(() => {
     authApi.logout();
     setLoggedInUser(null);
-    // Thay thế chuỗi này:
     toast.info(t("toast.logout_success") || "Đăng xuất thành công 👋", {
       duration: 500,
     });
-  }, [t]); // Thêm 't' vào dependencies
+  }, [t]);
 
   const handlePasswordSetSuccess = useCallback(() => {
     localStorage.setItem("requirePasswordSetup", "false"); // Cập nhật sau khi thêm mật khẩu
@@ -94,7 +93,7 @@ export default function App() {
       });
       setShowLoginToast(false);
     }
-  }, [showLoginToast, t]); // Thêm 't' vào dependencies
+  }, [showLoginToast, t]); 
 
   return (
     <BrowserRouter>
