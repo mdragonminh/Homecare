@@ -23,6 +23,8 @@ namespace HSP.DAL.Data
 				RoleNames.Operator,
 				RoleNames.Technician,
 				RoleNames.Customer,
+				RoleNames.EquipmentManagement,
+				RoleNames.Receptionist
 			};
 
 			foreach (var role in roles)
