@@ -154,7 +154,8 @@
     "reset_password_button_submit": "Reset Password",
     "processing": "Processing...",
     "total_homes": "Total Homes",
-    "manage_addresses": "Manage Addresses"
+    "manage_addresses": "Manage Addresses",
+    "status": "Status"
   },
   "form": {
     "label": {

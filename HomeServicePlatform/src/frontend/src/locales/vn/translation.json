@@ -137,7 +137,7 @@
     "serial_label": "Serial",
     "working_well": "Hoạt động tốt",
     "purchase_info": "Mua ngày: {{date}}",
-    
+    "status": "Trạng thái",
     "delete_confirm_message": "Bạn có chắc chắn muốn xóa vật phẩm \"{{item_name}}\"? Thao tác này không thể hoàn tác.", 
     
     "saving": "Đang lưu...",

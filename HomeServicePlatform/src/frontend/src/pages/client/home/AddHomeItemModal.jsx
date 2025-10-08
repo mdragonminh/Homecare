@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { X, Wrench, Package, Tag, Hash, FileText, Loader2 } from "lucide-react";
 import { homeApi } from "../../../services/homeApi";
 import { useTranslation } from "react-i18next";
@@ -7,11 +7,36 @@ import { toast } from "sonner";
 // Danh sách các loại vật phẩm (keys)
 const itemTypes = ["appliance", "furniture", "electronics", "tool", "other"];
 
+// 1. Simulate API for Suggestions
+// In a real application, you'd replace this with an actual API call (e.g., homeApi.searchBrands(query))
+const MOCK_BRANDS = [
+  "Samsung",
+  "LG",
+  "Sony",
+  "Apple",
+  "Bosch",
+  "Siemens",
+  "Panasonic",
+  "Electrolux",
+  "Xiaomi",
+  "Daikin",
+  "Casio",
+  "Lenovo",
+];
+
+const getBrandSuggestions = (query) => {
+  if (!query) return [];
+  const lowerQuery = query.toLowerCase();
+  return MOCK_BRANDS.filter((brand) =>
+    brand.toLowerCase().includes(lowerQuery)
+  ).slice(0, 5); // Giới hạn 5 kết quả
+};
+
 /**
  * Modal thêm vật phẩm/thiết bị vào một Home cụ thể.
  * @param {object} props
- * @param {string} props.homeId 
- * @param {function} props.onClose 
+ * @param {string} props.homeId
+ * @param {function} props.onClose
  * @param {function} props.onSuccess - Hàm gọi khi thêm thành công (để refresh data).
  */
 export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
@@ -26,14 +51,28 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
     notes: "",
   });
 
+  // 2. Add Suggestion State
+  const [brandSuggestions, setBrandSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null); 
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError(null);
+
+    // Cập nhật gợi ý cho trường brand
+    if (name === "brand") {
+      const suggestions = getBrandSuggestions(value);
+      setBrandSuggestions(suggestions);
+    }
   };
+
+  // 5. Handle Selection
+  const handleSelectBrand = useCallback((selectedBrand) => {
+    setFormData((prev) => ({ ...prev, brand: selectedBrand }));
+    setBrandSuggestions([]); // Ẩn danh sách gợi ý sau khi chọn
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,11 +83,11 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
       !formData.brand ||
       !formData.modelNumber
     ) {
+      // Logic kiểm tra validation giữ nguyên...
       let validationError =
         t("validation.required_fields_missing") ||
         "Vui lòng điền đầy đủ các trường bắt buộc (Tên, Loại, Thương hiệu, Mã Model).";
 
-     
       if (!formData.name)
         validationError =
           t("validation.item_name_required") || "Tên vật phẩm là bắt buộc.";
@@ -81,14 +120,13 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
       success: (result) => {
         setLoading(false);
         if (result.success) {
-          onSuccess && onSuccess(); 
-          onClose(); 
+          onSuccess && onSuccess();
+          onClose();
           return (
             t("success.item_added", { item_name: formData.name }) ||
             `Đã thêm "${formData.name}" thành công!`
           );
         } else {
-        
           return (
             result.message ||
             t("error.add_item_unknown") ||
@@ -99,7 +137,7 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
       error: (err) => {
         setLoading(false);
         console.error("Submission error:", err);
-      
+
         return (
           t("error.network_connect_failed") ||
           "Lỗi kết nối mạng, vui lòng thử lại."
@@ -108,13 +146,12 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
     });
   };
 
-  
   const getItemTypeLabel = (typeKey) => {
     return t(`item.type.${typeKey}`);
   };
 
   return (
-    
+    // ... (Modal wrapper and Header remain the same)
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-100 animate-scale-in">
         {/* Header */}
@@ -136,9 +173,8 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
           </button>
         </div>
 
-       
         <form onSubmit={handleSubmit} className="p-6 space-y-5" noValidate>
-          
+          {/* Tên Vật Phẩm */}
           <div>
             <label
               htmlFor="name"
@@ -166,8 +202,8 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            
-            <div>
+            {/* Thương Hiệu (Brand) - Có Autocomplete */}
+            <div className="relative">
               <label
                 htmlFor="brand"
                 className="block text-sm font-medium text-gray-700 mb-1"
@@ -184,15 +220,39 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                   name="brand"
                   value={formData.brand}
                   onChange={handleChange}
+                  // Xử lý khi blur để ẩn suggestions nếu không chọn gì
+                  onBlur={() =>
+                    setTimeout(() => setBrandSuggestions([]), 200)
+                  }
                   type="text"
                   placeholder={t("form.placeholder.brand")}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                   disabled={loading}
+                  autoComplete="off" // Tắt autocomplete mặc định của trình duyệt
                 />
               </div>
+
+              {/* 4. Create Suggestion UI */}
+              {brandSuggestions.length > 0 && (
+                <ul className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  {brandSuggestions.map((brand) => (
+                    <li
+                      key={brand}
+                      // Thêm onMouseDown để ngăn input bị blur trước khi click xử lý
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSelectBrand(brand);
+                      }}
+                      className="px-4 py-2 cursor-pointer hover:bg-blue-50 text-gray-800"
+                    >
+                      {brand}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
-            {/* Loại - KHÔNG CÓ required HTML */}
+            {/* Loại */}
             <div>
               <label
                 htmlFor="type"
@@ -225,7 +285,7 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Mã Model - KHÔNG CÓ required HTML. Đã thêm kiểm tra JS */}
+            {/* Mã Model */}
             <div>
               <label
                 htmlFor="modelNumber"
@@ -305,7 +365,7 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* Error Messages (Hiện lỗi validation cục bộ từ state 'error') */}
+          {/* Error Messages */}
           {error && (
             <div className="p-3 rounded-lg text-sm font-medium bg-red-100 text-red-700">
               {error}
