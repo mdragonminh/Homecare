@@ -6,7 +6,7 @@ namespace HSP.Core.Dtos.ServiceDto
 	{
 		public string Name { get; set; }
 		public decimal BasePrice { get; set; }
-		//public ServiceCategory Category { get; set; } = null!;
+		public ServiceCategoryDto? Category { get; set; }
 	}
 	public class ServiceCategoryDto : BaseEntity<Guid>
 	{

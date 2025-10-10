@@ -31,7 +31,12 @@ namespace HSP.Service.Implementations
 			{
 				Id = x.Id,
 				Name = x.Name,
-				BasePrice = x.BasePrice
+				BasePrice = x.BasePrice,
+				Category = x.Category == null ? null : new ServiceCategoryDto
+				{
+					Id = x.Category.Id,
+					Name = x.Category.Name
+				}
 			}).ToListAsync();
 			return result;
 		}
