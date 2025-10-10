@@ -376,7 +376,7 @@ namespace HSP.Service.Implementations
 				var technicianProfile = new TechnicianProfile
 				{
 					UserId = user.Id,
-					SkillSet = input.SkillSet,
+					//SkillSet = input.SkillSet,
 					ExperienceYears = input.ExperienceYears,
 					DateCreated = DateTime.UtcNow,
 					DateModified = DateTime.UtcNow,

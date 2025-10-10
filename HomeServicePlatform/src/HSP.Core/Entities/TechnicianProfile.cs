@@ -10,9 +10,10 @@ namespace HSP.Core.Entities
 		public Guid UserId { get; set; }
 		[ForeignKey("UserId")]
 		public AppUser User { get; set; } = null!;
-		[Required]
-		[StringLength(200)]
-		public string SkillSet { get; set; } = string.Empty;
+		//[Required]
+		//[StringLength(200)]
+		//public string SkillSet { get; set; } = string.Empty;
+
 		[Range(0, 50)]
 		public int ExperienceYears { get; set; }
 
@@ -23,5 +24,7 @@ namespace HSP.Core.Entities
 		public DateTime DateCreated { get ; set ; }
 		public DateTime DateModified { get; set; }
 		public bool IsDeleted { get ; set ; }
+
+		public ICollection<Service> Services { get; set; } = new List<Service>();
 	}
 }

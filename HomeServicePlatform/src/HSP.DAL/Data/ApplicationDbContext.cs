@@ -23,6 +23,7 @@ namespace HSP.DAL.Data
 		public DbSet<File> Files { get; set; }
 		public DbSet<ObjectType> ObjectTypes { get; set; }
 		public DbSet<FileRelation> FileRelations { get; set; }
+		public DbSet<Core.Entities.Service> Services { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -72,12 +73,17 @@ namespace HSP.DAL.Data
 					.OnDelete(DeleteBehavior.Restrict);
 			builder.Entity<FileRelation>()
 					.HasIndex(fr => new { fr.ObjectTypeId, fr.ObjectId });
+			builder.Entity<TechnicianProfile>()
+				.HasMany(t => t.Services)
+				.WithMany(s => s.Technicians)
+				.UsingEntity(j => j.ToTable("TechnicianServices"));
 
 			builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
 			builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
 			builder.Entity<CustomerProfile>().HasQueryFilter(cp => !cp.IsDeleted);
 			builder.Entity<TechnicianProfile>().HasQueryFilter(tp => !tp.IsDeleted);
 			builder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
+			builder.Entity<Core.Entities.Service>().HasQueryFilter(s => !s.IsDeleted);
 		}
 	}
 }

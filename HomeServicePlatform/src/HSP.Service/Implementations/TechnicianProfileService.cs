@@ -34,8 +34,8 @@ namespace HSP.Service.Implementations
             var query = _technicianProfileRepository.GetAll()
                 .Include(x => x.User)
                 .WhereIf(!string.IsNullOrEmpty(filterParams.SearchTerm), 
-                    x => x.SkillSet.ToLower().Contains(filterParams.SearchTerm!.ToLower()) ||
-                         (x.User != null && x.User.UserName != null && x.User.UserName.ToLower().Contains(filterParams.SearchTerm!.ToLower())) ||
+                    x => /*x.SkillSet.ToLower().Contains(filterParams.SearchTerm!.ToLower())||*/
+												 (x.User != null && x.User.UserName != null && x.User.UserName.ToLower().Contains(filterParams.SearchTerm!.ToLower())) ||
                          (x.User != null && x.User.Email != null && x.User.Email.ToLower().Contains(filterParams.SearchTerm!.ToLower())) ||
                          (x.User != null && x.User.FullName.ToLower().Contains(filterParams.SearchTerm!.ToLower())))
                 .WhereIf(filterParams.ApprovalStatus.HasValue,
@@ -57,7 +57,7 @@ namespace HSP.Service.Implementations
                 Email = x.User != null ? x.User.Email ?? string.Empty : string.Empty,
                 PhoneNumber = x.User != null ? x.User.PhoneNumber ?? string.Empty : string.Empty,
                 FullName = x.User != null ? x.User.FullName : string.Empty,
-                SkillSet = x.SkillSet,
+                //SkillSet = x.SkillSet,
                 ExperienceYears = x.ExperienceYears,
                 ApprovalStatus = x.ApprovalStatus,
                 ApprovedAt = x.ApprovedAt,
@@ -87,7 +87,7 @@ namespace HSP.Service.Implementations
                 Email = technician.User?.Email ?? string.Empty,
                 PhoneNumber = technician.User?.PhoneNumber ?? string.Empty,
                 FullName = technician.User?.FullName ?? string.Empty,
-                SkillSet = technician.SkillSet,
+                //SkillSet = technician.SkillSet,
                 ExperienceYears = technician.ExperienceYears,
                 ApprovalStatus = technician.ApprovalStatus,
                 ApprovedAt = technician.ApprovedAt,
