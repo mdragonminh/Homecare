@@ -4,7 +4,8 @@ namespace HSP.Service.Interfaces
 {
 	public interface IHomeServiceService
 	{
-		Task<IEnumerable<HomeServiceDto>> GetAllServicesAsync(HomeServiceInput input);
+		Task<IEnumerable<ServiceGroupDto>> GetAllServicesAsync(HomeServiceInput input);
+
 
 		#region service category
 		Task<IEnumerable<ServiceCategoryDto>> GetAllServicesCategoryAsync();

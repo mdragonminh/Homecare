@@ -24,20 +24,26 @@ namespace HSP.Service.Implementations
 		public async Task<IEnumerable<HomeServiceDto>> GetAllServicesAsync(HomeServiceInput input)
 		{
 			var services = _homeServiceRepository.GetAll()
-				.Include(x=>x.Category)
+				.Include(x => x.Category)
 				.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
-				.WhereIf(input.CategoryId!= null, x=>x.Category.Id == input.CategoryId);
-			var result = await services.Select(x => new HomeServiceDto
-			{
-				Id = x.Id,
-				Name = x.Name,
-				BasePrice = x.BasePrice,
-				Category = x.Category == null ? null : new ServiceCategoryDto
+				.WhereIf(input.CategoryId != null, x => x.Category.Id == input.CategoryId);
+			var result = await services
+				.OrderBy(x => x.Name)
+				.GroupBy(x => new { x.Category.Id, x.Category.Name })
+				.Select(g => new ServiceGroupDto
 				{
-					Id = x.Category.Id,
-					Name = x.Category.Name
-				}
-			}).ToListAsync();
+					Category = new ServiceCategoryDto
+					{
+						Id = g.Key.Id,
+						Name = g.Key.Name
+					},
+					Services = g.Select(s => new HomeServiceDto
+					{
+						Id = s.Id,
+						Name = s.Name,
+						BasePrice = s.BasePrice
+					}).ToList()
+				}).ToListAsync();
 			return result;
 		}
 
