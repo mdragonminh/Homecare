@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthButtons } from "./AuthButtons";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./LanguageSwitcher"; 
-
+import { ServiceMegaMenu } from "../pages/client/service/ServiceMegaMenu.jsx"; // ⚠️ Điều chỉnh đường dẫn cho đúng
 export function Header({ onShowLogin, onShowRegister, loggedInUser, onLogout }) {
   const navigate = useNavigate();
   const { t } = useTranslation(); 
@@ -37,12 +37,7 @@ export function Header({ onShowLogin, onShowRegister, loggedInUser, onLogout }) 
             >
               {t("nav.home")} 
             </button>
-            <a 
-              href="/services" 
-              className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
-            >
-              {t("nav.services")} 
-            </a>
+            <ServiceMegaMenu />
             <a 
               href="/about" 
               className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
