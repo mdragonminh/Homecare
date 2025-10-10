@@ -21,7 +21,7 @@ namespace HSP.Service.Implementations
 			_serviceCategoryRepository = serviceCategoryRepository;
 		}
 
-		public async Task<IEnumerable<HomeServiceDto>> GetAllServicesAsync(HomeServiceInput input)
+		public async Task<IEnumerable<ServiceGroupDto>> GetAllServicesAsync(HomeServiceInput input)
 		{
 			var services = _homeServiceRepository.GetAll()
 				.Include(x => x.Category)

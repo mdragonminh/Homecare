@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace HSP.DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class abc : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -81,6 +81,22 @@ namespace HSP.DAL.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ObjectTypes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ServiceCategories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DateModified = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ServiceCategories", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -216,7 +232,6 @@ namespace HSP.DAL.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SkillSet = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     ExperienceYears = table.Column<int>(type: "int", nullable: false),
                     ApprovalStatus = table.Column<int>(type: "int", nullable: false),
                     ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -266,6 +281,30 @@ namespace HSP.DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Services",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    BasePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DateModified = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Services", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Services_ServiceCategories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "ServiceCategories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Homes",
                 columns: table => new
                 {
@@ -286,6 +325,30 @@ namespace HSP.DAL.Migrations
                         name: "FK_Homes_CustomerProfiles_CustomerProfileId",
                         column: x => x.CustomerProfileId,
                         principalTable: "CustomerProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TechnicianServices",
+                columns: table => new
+                {
+                    ServicesId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TechniciansId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TechnicianServices", x => new { x.ServicesId, x.TechniciansId });
+                    table.ForeignKey(
+                        name: "FK_TechnicianServices_Services_ServicesId",
+                        column: x => x.ServicesId,
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TechnicianServices_TechnicianProfiles_TechniciansId",
+                        column: x => x.TechniciansId,
+                        principalTable: "TechnicianProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -383,10 +446,20 @@ namespace HSP.DAL.Migrations
                 column: "CustomerProfileId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Services_CategoryId",
+                table: "Services",
+                column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TechnicianProfiles_UserId",
                 table: "TechnicianProfiles",
                 column: "UserId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TechnicianServices_TechniciansId",
+                table: "TechnicianServices",
+                column: "TechniciansId");
         }
 
         /// <inheritdoc />
@@ -414,7 +487,7 @@ namespace HSP.DAL.Migrations
                 name: "HomeItems");
 
             migrationBuilder.DropTable(
-                name: "TechnicianProfiles");
+                name: "TechnicianServices");
 
             migrationBuilder.DropTable(
                 name: "AppRoles");
@@ -429,7 +502,16 @@ namespace HSP.DAL.Migrations
                 name: "Homes");
 
             migrationBuilder.DropTable(
+                name: "Services");
+
+            migrationBuilder.DropTable(
+                name: "TechnicianProfiles");
+
+            migrationBuilder.DropTable(
                 name: "CustomerProfiles");
+
+            migrationBuilder.DropTable(
+                name: "ServiceCategories");
 
             migrationBuilder.DropTable(
                 name: "AppUsers");

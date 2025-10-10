@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HSP.DAL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251004061920_Initial")]
-    partial class Initial
+    [Migration("20251010132316_abc")]
+    partial class abc
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -337,6 +337,72 @@ namespace HSP.DAL.Migrations
                     b.ToTable("ObjectTypes");
                 });
 
+            modelBuilder.Entity("HSP.Core.Entities.Service", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("BasePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("Services");
+                });
+
+            modelBuilder.Entity("HSP.Core.Entities.ServiceCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateModified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ServiceCategories");
+                });
+
             modelBuilder.Entity("HSP.Core.Entities.TechnicianProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -363,11 +429,6 @@ namespace HSP.DAL.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<string>("SkillSet")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -483,6 +544,21 @@ namespace HSP.DAL.Migrations
                     b.ToTable("AppUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ServiceTechnicianProfile", b =>
+                {
+                    b.Property<Guid>("ServicesId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TechniciansId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ServicesId", "TechniciansId");
+
+                    b.HasIndex("TechniciansId");
+
+                    b.ToTable("TechnicianServices", (string)null);
+                });
+
             modelBuilder.Entity("HSP.Core.Entities.CustomerProfile", b =>
                 {
                     b.HasOne("HSP.Core.Entities.AppUser", "User")
@@ -533,6 +609,17 @@ namespace HSP.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("Home");
+                });
+
+            modelBuilder.Entity("HSP.Core.Entities.Service", b =>
+                {
+                    b.HasOne("HSP.Core.Entities.ServiceCategory", "Category")
+                        .WithMany("Services")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.TechnicianProfile", b =>
@@ -597,6 +684,21 @@ namespace HSP.DAL.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ServiceTechnicianProfile", b =>
+                {
+                    b.HasOne("HSP.Core.Entities.Service", null)
+                        .WithMany()
+                        .HasForeignKey("ServicesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HSP.Core.Entities.TechnicianProfile", null)
+                        .WithMany()
+                        .HasForeignKey("TechniciansId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HSP.Core.Entities.AppUser", b =>
                 {
                     b.Navigation("CustomerProfile");
@@ -622,6 +724,11 @@ namespace HSP.DAL.Migrations
             modelBuilder.Entity("HSP.Core.Entities.ObjectType", b =>
                 {
                     b.Navigation("FileRelations");
+                });
+
+            modelBuilder.Entity("HSP.Core.Entities.ServiceCategory", b =>
+                {
+                    b.Navigation("Services");
                 });
 #pragma warning restore 612, 618
         }
