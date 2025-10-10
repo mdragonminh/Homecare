@@ -24,6 +24,7 @@ namespace HSP.DAL.Data
 		public DbSet<ObjectType> ObjectTypes { get; set; }
 		public DbSet<FileRelation> FileRelations { get; set; }
 		public DbSet<Core.Entities.Service> Services { get; set; }
+		public DbSet<ServiceCategory> ServiceCategories { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -84,6 +85,7 @@ namespace HSP.DAL.Data
 			builder.Entity<TechnicianProfile>().HasQueryFilter(tp => !tp.IsDeleted);
 			builder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
 			builder.Entity<Core.Entities.Service>().HasQueryFilter(s => !s.IsDeleted);
+			builder.Entity<ServiceCategory>().HasQueryFilter(s => !s.IsDeleted);
 		}
 	}
 }
