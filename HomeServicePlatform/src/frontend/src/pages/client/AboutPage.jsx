@@ -1,5 +1,6 @@
 // src/pages/client/AboutPage.jsx
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Heart,
   Users,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 
 export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
+  const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState(0);
   const [stats, setStats] = useState({
     customers: 0,
@@ -58,30 +60,26 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
   const values = [
     {
       icon: Heart,
-      title: "Tận tâm phục vụ",
-      description:
-        "Chúng tôi luôn đặt khách hàng làm trung tâm, mang đến trải nghiệm dịch vụ tốt nhất.",
+      title: t("about.core_values.values.dedication.title"),
+      description: t("about.core_values.values.dedication.description"),
       color: "text-red-500",
     },
     {
       icon: Shield,
-      title: "Uy tín & Chất lượng",
-      description:
-        "Cam kết cung cấp dịch vụ chất lượng cao với đội ngũ kỹ thuật viên được đào tạo bài bản.",
+      title: t("about.core_values.values.quality.title"),
+      description: t("about.core_values.values.quality.description"),
       color: "text-blue-500",
     },
     {
       icon: Users,
-      title: "Đồng hành cùng gia đình",
-      description:
-        "Hiểu rõu nhu cầu của mỗi gia đình Việt, tạo nên không gian sống hoàn hảo.",
+      title: t("about.core_values.values.family.title"),
+      description: t("about.core_values.values.family.description"),
       color: "text-green-500",
     },
     {
       icon: Clock,
-      title: "Nhanh chóng & Tiện lợi",
-      description:
-        "Phản hồi nhanh 24/7, hỗ trợ khách hàng trong mọi tình huống khẩn cấp.",
+      title: t("about.core_values.values.convenience.title"),
+      description: t("about.core_values.values.convenience.description"),
       color: "text-purple-500",
     },
   ];
@@ -89,53 +87,49 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
   const timeline = [
     {
       year: "2020",
-      title: "Khởi đầu hành trình",
-      description:
-        "Ra đời với sứ mệnh kết nối chủ nhà và thợ sửa chữa chuyên nghiệp.",
+      title: t("about.timeline.milestones.2020.title"),
+      description: t("about.timeline.milestones.2020.description"),
     },
     {
       year: "2021",
-      title: "Mở rộng dịch vụ",
-      description:
-        "Phát triển đa dạng các loại hình dịch vụ gia đình từ sửa chữa đến bảo trì.",
+      title: t("about.timeline.milestones.2021.title"),
+      description: t("about.timeline.milestones.2021.description"),
     },
     {
       year: "2022",
-      title: "Công nghệ tiên tiến",
-      description:
-        "Ứng dụng công nghệ AI và IoT để tối ưu hóa trải nghiệm khách hàng.",
+      title: t("about.timeline.milestones.2022.title"),
+      description: t("about.timeline.milestones.2022.description"),
     },
     {
       year: "2023",
-      title: "Vươn tầm toàn quốc",
-      description:
-        "Mở rộng hoạt động trên toàn quốc với hơn 500 kỹ thuật viên.",
+      title: t("about.timeline.milestones.2023.title"),
+      description: t("about.timeline.milestones.2023.description"),
     },
     {
       year: "2024",
-      title: "Dẫn đầu thị trường",
-      description: "Trở thành nền tảng số 1 về dịch vụ gia đình tại Việt Nam.",
+      title: t("about.timeline.milestones.2024.title"),
+      description: t("about.timeline.milestones.2024.description"),
     },
   ];
 
   const team = [
     {
-      name: "Nguyễn Văn An",
-      position: "CEO & Co-founder",
+      name: t("about.team.members.ceo.name"),
+      position: t("about.team.members.ceo.position"),
       image: "/api/placeholder/300/300",
-      description: "10+ năm kinh nghiệm trong lĩnh vực công nghệ và dịch vụ",
+      description: t("about.team.members.ceo.description"),
     },
     {
-      name: "Trần Thị Bình",
-      position: "CTO",
+      name: t("about.team.members.cto.name"),
+      position: t("about.team.members.cto.position"),
       image: "/api/placeholder/300/300",
-      description: "Chuyên gia về AI và Machine Learning với 8 năm kinh nghiệm",
+      description: t("about.team.members.cto.description"),
     },
     {
-      name: "Lê Minh Cường",
-      position: "COO",
+      name: t("about.team.members.coo.name"),
+      position: t("about.team.members.coo.position"),
       image: "/api/placeholder/300/300",
-      description: "Chuyên gia vận hành với 12 năm kinh nghiệm quản lý dịch vụ",
+      description: t("about.team.members.coo.description"),
     },
   ];
 
@@ -156,18 +150,18 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-white">
               <h1 className="text-5xl lg:text-6xl font-bold leading-tight mb-6">
-                Về chúng tôi
+                {t("about.hero.title")}
               </h1>
               <p className="text-xl lg:text-2xl text-blue-100 mb-8 leading-relaxed">
-                Kết nối mọi gia đình với dịch vụ chăm sóc nhà chuyên nghiệp, tạo
-                nên không gian sống hoàn hảo cho người Việt.
+                {t("about.hero.subtitle")}
               </p>
               <div className="flex flex-wrap gap-4">
                 <button className="bg-white text-blue-900 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200 flex items-center gap-2">
-                  Tìm hiểu thêm <ChevronRight className="w-5 h-5" />
+                  {t("about.hero.learn_more")}{" "}
+                  <ChevronRight className="w-5 h-5" />
                 </button>
                 <button className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-blue-900 transition-colors duration-200 flex items-center gap-2">
-                  <Play className="w-5 h-5" /> Xem video
+                  <Play className="w-5 h-5" /> {t("about.hero.watch_video")}
                 </button>
               </div>
             </div>
@@ -178,25 +172,33 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
                     <div className="text-4xl font-bold mb-2">
                       {Math.floor(stats.customers).toLocaleString()}+
                     </div>
-                    <div className="text-blue-200">Khách hàng</div>
+                    <div className="text-blue-200">
+                      {t("about.hero.stats.customers")}
+                    </div>
                   </div>
                   <div>
                     <div className="text-4xl font-bold mb-2">
                       {Math.floor(stats.technicians)}+
                     </div>
-                    <div className="text-blue-200">Thợ sửa chữa</div>
+                    <div className="text-blue-200">
+                      {t("about.hero.stats.technicians")}
+                    </div>
                   </div>
                   <div>
                     <div className="text-4xl font-bold mb-2">
                       {Math.floor(stats.services).toLocaleString()}+
                     </div>
-                    <div className="text-blue-200">Dịch vụ hoàn thành</div>
+                    <div className="text-blue-200">
+                      {t("about.hero.stats.services_completed")}
+                    </div>
                   </div>
                   <div>
                     <div className="text-4xl font-bold mb-2">
                       {Math.floor(stats.satisfaction)}%
                     </div>
-                    <div className="text-blue-200">Hài lòng</div>
+                    <div className="text-blue-200">
+                      {t("about.hero.stats.satisfaction")}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -210,11 +212,10 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Sứ mệnh & Tầm nhìn
+              {t("about.mission_vision.title")}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Chúng tôi mong muốn tạo ra một nền tảng kết nối hoàn hảo giữa nhu
-              cầu chăm sóc nhà và dịch vụ chuyên nghiệp.
+              {t("about.mission_vision.subtitle")}
             </p>
           </div>
 
@@ -225,13 +226,12 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
                   <div className="bg-blue-600 p-3 rounded-lg mr-4">
                     <Heart className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900">Sứ mệnh</h3>
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    {t("about.mission_vision.mission.title")}
+                  </h3>
                 </div>
                 <p className="text-gray-700 leading-relaxed">
-                  Mang đến cho mọi gia đình Việt Nam những dịch vụ chăm sóc nhà
-                  chất lượng cao, tiện lợi và đáng tin cậy. Chúng tôi không chỉ
-                  sửa chữa mà còn chăm sóc ngôi nhà như chính ngôi nhà của chúng
-                  tôi.
+                  {t("about.mission_vision.mission.content")}
                 </p>
               </div>
 
@@ -240,12 +240,12 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
                   <div className="bg-green-600 p-3 rounded-lg mr-4">
                     <Star className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900">Tầm nhìn</h3>
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    {t("about.mission_vision.vision.title")}
+                  </h3>
                 </div>
                 <p className="text-gray-700 leading-relaxed">
-                  Trở thành nền tảng dịch vụ gia đình số 1 Đông Nam Á, nơi mọi
-                  người có thể tìm thấy giải pháp hoàn hảo cho mọi nhu cầu chăm
-                  sóc và bảo trì ngôi nhà.
+                  {t("about.mission_vision.vision.content")}
                 </p>
               </div>
             </div>
@@ -267,10 +267,10 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Giá trị cốt lõi
+              {t("about.core_values.title")}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Những giá trị định hướng mọi hoạt động và quyết định của chúng tôi
+              {t("about.core_values.subtitle")}
             </p>
           </div>
 
@@ -302,10 +302,10 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Hành trình phát triển
+              {t("about.timeline.title")}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Từ những bước đầu tiên đến thành công ngày hôm nay
+              {t("about.timeline.subtitle")}
             </p>
           </div>
 
@@ -345,11 +345,10 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Đội ngũ lãnh đạo
+              {t("about.team.title")}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Những con người tài năng và tâm huyết đằng sau thành công của
-              chúng tôi
+              {t("about.team.subtitle")}
             </p>
           </div>
 
@@ -385,11 +384,10 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
       <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-4">
-            Sẵn sàng trải nghiệm dịch vụ của chúng tôi?
+            {t("about.cta.title")}
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Tham gia cùng hàng nghìn gia đình đã tin tưởng và sử dụng dịch vụ
-            của chúng tôi
+            {t("about.cta.subtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {!loggedInUser ? (
@@ -398,18 +396,18 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
                   onClick={onShowRegister}
                   className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200"
                 >
-                  Đăng ký ngay
+                  {t("about.cta.register_now")}
                 </button>
                 <button
                   onClick={onShowLogin}
                   className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors duration-200"
                 >
-                  Đăng nhập
+                  {t("about.cta.login")}
                 </button>
               </>
             ) : (
               <button className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200">
-                Đặt dịch vụ ngay
+                {t("about.cta.book_service")}
               </button>
             )}
           </div>

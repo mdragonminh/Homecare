@@ -1,5 +1,6 @@
 // src/pages/client/ContactPage.jsx
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Phone,
   Mail,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 
 export const ContactPage = ({ loggedInUser }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -64,33 +66,33 @@ export const ContactPage = ({ loggedInUser }) => {
   const contactInfo = [
     {
       icon: Phone,
-      title: "Hotline 24/7",
-      content: "1900 1234",
-      description: "Hỗ trợ khẩn cấp mọi lúc",
+      title: t("contact.contact_info.hotline.title"),
+      content: t("contact.contact_info.hotline.content"),
+      description: t("contact.contact_info.hotline.description"),
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
     {
       icon: Mail,
-      title: "Email hỗ trợ",
-      content: "support@homecare.vn",
-      description: "Phản hồi trong 2 giờ",
+      title: t("contact.contact_info.email.title"),
+      content: t("contact.contact_info.email.content"),
+      description: t("contact.contact_info.email.description"),
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
     {
       icon: MapPin,
-      title: "Địa chỉ văn phòng",
-      content: "123 Nguyễn Huệ, Q.1, TP.HCM",
-      description: "Thứ 2 - Chủ nhật: 8:00 - 22:00",
+      title: t("contact.contact_info.address.title"),
+      content: t("contact.contact_info.address.content"),
+      description: t("contact.contact_info.address.description"),
       color: "text-purple-600",
       bgColor: "bg-purple-50",
     },
     {
       icon: MessageCircle,
-      title: "Chat trực tuyến",
-      content: "Messenger/Zalo",
-      description: "Phản hồi tức thì",
+      title: t("contact.contact_info.chat.title"),
+      content: t("contact.contact_info.chat.content"),
+      description: t("contact.contact_info.chat.description"),
       color: "text-orange-600",
       bgColor: "bg-orange-50",
     },
@@ -98,34 +100,30 @@ export const ContactPage = ({ loggedInUser }) => {
 
   const faqData = [
     {
-      question: "Làm thế nào để đặt dịch vụ sửa chữa?",
-      answer:
-        "Bạn có thể đặt dịch vụ thông qua website, ứng dụng di động hoặc gọi hotline. Chỉ cần mô tả vấn đề và chúng tôi sẽ cử thợ phù hợp đến tận nơi.",
+      question: t("contact.faq.questions.how_to_book.question"),
+      answer: t("contact.faq.questions.how_to_book.answer"),
     },
     {
-      question: "Chi phí dịch vụ được tính như thế nào?",
-      answer:
-        "Chi phí dịch vụ được tính dựa trên loại công việc, thời gian thực hiện và vật liệu cần thiết. Bạn sẽ được báo giá chi tiết trước khi thực hiện.",
+      question: t("contact.faq.questions.pricing.question"),
+      answer: t("contact.faq.questions.pricing.answer"),
     },
     {
-      question: "Có đảm bảo chất lượng dịch vụ không?",
-      answer:
-        "Chúng tôi cam kết đảm bảo chất lượng 100%. Nếu không hài lòng, bạn có thể yêu cầu làm lại miễn phí hoặc được hoàn tiền.",
+      question: t("contact.faq.questions.guarantee.question"),
+      answer: t("contact.faq.questions.guarantee.answer"),
     },
     {
-      question: "Thời gian phản hồi nhanh nhất là bao lâu?",
-      answer:
-        "Đối với dịch vụ khẩn cấp, chúng tôi có thể có mặt trong vòng 30-60 phút. Các dịch vụ thường sẽ được lên lịch trong ngày hoặc ngày hôm sau.",
+      question: t("contact.faq.questions.response_time.question"),
+      answer: t("contact.faq.questions.response_time.answer"),
     },
   ];
 
   const serviceTypes = [
-    "Sửa chữa điện nước",
-    "Vệ sinh nhà cửa",
-    "Sửa chữa điện tử",
-    "Chăm sóc cây cảnh",
-    "Sửa chữa nội thất",
-    "Dịch vụ khác",
+    t("contact.service_types.electrical_plumbing"),
+    t("contact.service_types.house_cleaning"),
+    t("contact.service_types.electronics_repair"),
+    t("contact.service_types.plant_care"),
+    t("contact.service_types.furniture_repair"),
+    t("contact.service_types.other"),
   ];
 
   return (
@@ -142,24 +140,23 @@ export const ContactPage = ({ loggedInUser }) => {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-            Liên hệ với chúng tôi
+            {t("contact.hero.title")}
           </h1>
           <p className="text-xl lg:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn 24/7. Hãy liên hệ
-            ngay để được tư vấn miễn phí!
+            {t("contact.hero.subtitle")}
           </p>
           <div className="flex items-center justify-center gap-8 text-white/80">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              <span>24/7 Support</span>
+              <span>{t("contact.hero.features.support")}</span>
             </div>
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5" />
-              <span>Secure & Private</span>
+              <span>{t("contact.hero.features.secure")}</span>
             </div>
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5" />
-              <span>5-Star Service</span>
+              <span>{t("contact.hero.features.service")}</span>
             </div>
           </div>
         </div>
@@ -170,11 +167,10 @@ export const ContactPage = ({ loggedInUser }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Thông tin liên hệ
+              {t("contact.contact_info.title")}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Nhiều cách để kết nối với chúng tôi, chọn cách phù hợp nhất với
-              bạn
+              {t("contact.contact_info.subtitle")}
             </p>
           </div>
 
@@ -209,15 +205,14 @@ export const ContactPage = ({ loggedInUser }) => {
             {/* Contact Form */}
             <div className="bg-white p-8 rounded-2xl shadow-xl">
               <h3 className="text-3xl font-bold text-gray-900 mb-6">
-                Gửi tin nhắn cho chúng tôi
+                {t("contact.contact_form.title")}
               </h3>
 
               {submitStatus === "success" && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <span className="text-green-800">
-                    Tin nhắn đã được gửi thành công! Chúng tôi sẽ phản hồi sớm
-                    nhất.
+                    {t("contact.contact_form.success_message")}
                   </span>
                 </div>
               )}
