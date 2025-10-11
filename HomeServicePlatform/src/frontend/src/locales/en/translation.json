@@ -523,5 +523,202 @@
   "toast":{
     "login_success": "Logged in successfully!",
     "logout_success": "Logged out successfully!"
+  },
+  "about": {
+    "title": "About Us",
+    "hero": {
+      "title": "About Us",
+      "subtitle": "Connecting every family with professional home care services, creating perfect living spaces for Vietnamese people.",
+      "learn_more": "Learn More",
+      "watch_video": "Watch Video",
+      "stats": {
+        "customers": "Customers",
+        "technicians": "Technicians",
+        "services_completed": "Services Completed",
+        "satisfaction": "Satisfaction"
+      }
+    },
+    "mission_vision": {
+      "title": "Mission & Vision",
+      "subtitle": "We aspire to create a perfect connection platform between home care needs and professional services.",
+      "mission": {
+        "title": "Mission",
+        "content": "Bringing high-quality, convenient, and reliable home care services to every Vietnamese family. We not only repair but also care for homes as if they were our own."
+      },
+      "vision": {
+        "title": "Vision", 
+        "content": "To become the #1 home services platform in Southeast Asia, where everyone can find the perfect solution for all home care and maintenance needs."
+      }
+    },
+    "core_values": {
+      "title": "Core Values",
+      "subtitle": "Values that guide all our activities and decisions",
+      "values": {
+        "dedication": {
+          "title": "Dedicated Service",
+          "description": "We always put customers at the center, delivering the best service experience."
+        },
+        "quality": {
+          "title": "Trust & Quality",
+          "description": "Committed to providing high-quality services with professionally trained technicians."
+        },
+        "family": {
+          "title": "Accompanying Families",
+          "description": "Understanding the needs of every Vietnamese family, creating perfect living spaces."
+        },
+        "convenience": {
+          "title": "Fast & Convenient",
+          "description": "Quick response 24/7, supporting customers in all emergency situations."
+        }
+      }
+    },
+    "timeline": {
+      "title": "Development Journey",
+      "subtitle": "From first steps to today's success",
+      "milestones": {
+        "2020": {
+          "title": "Journey Begins",
+          "description": "Founded with the mission to connect homeowners and professional repair technicians."
+        },
+        "2021": {
+          "title": "Service Expansion",
+          "description": "Developed diverse family service types from repair to maintenance."
+        },
+        "2022": {
+          "title": "Advanced Technology",
+          "description": "Applied AI and IoT technology to optimize customer experience."
+        },
+        "2023": {
+          "title": "Nationwide Expansion",
+          "description": "Expanded operations nationwide with over 500 technicians."
+        },
+        "2024": {
+          "title": "Market Leader",
+          "description": "Became the #1 family services platform in Vietnam."
+        }
+      }
+    },
+    "team": {
+      "title": "Leadership Team",
+      "subtitle": "Talented and passionate people behind our success",
+      "members": {
+        "ceo": {
+          "name": "Nguyen Van An",
+          "position": "CEO & Co-founder",
+          "description": "10+ years of experience in technology and services"
+        },
+        "cto": {
+          "name": "Tran Thi Binh", 
+          "position": "CTO",
+          "description": "AI and Machine Learning expert with 8 years of experience"
+        },
+        "coo": {
+          "name": "Le Minh Cuong",
+          "position": "COO", 
+          "description": "Operations expert with 12 years of service management experience"
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to experience our services?",
+      "subtitle": "Join thousands of families who trust and use our services",
+      "register_now": "Register Now",
+      "login": "Login",
+      "book_service": "Book Service Now"
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "hero": {
+      "title": "Contact Us", 
+      "subtitle": "We are always ready to listen and support you 24/7. Contact us now for free consultation!",
+      "features": {
+        "support": "24/7 Support",
+        "secure": "Secure & Private",
+        "service": "5-Star Service"
+      }
+    },
+    "contact_info": {
+      "title": "Contact Information",
+      "subtitle": "Multiple ways to connect with us, choose what suits you best",
+      "hotline": {
+        "title": "24/7 Hotline",
+        "content": "1900 1234",
+        "description": "Emergency support anytime"
+      },
+      "email": {
+        "title": "Support Email",
+        "content": "support@homecare.vn",
+        "description": "Response within 2 hours"
+      },
+      "address": {
+        "title": "Office Address",
+        "content": "123 Nguyen Hue, District 1, Ho Chi Minh City",
+        "description": "Monday - Sunday: 8:00 - 22:00"
+      },
+      "chat": {
+        "title": "Online Chat",
+        "content": "Messenger/Zalo",
+        "description": "Instant response"
+      }
+    },
+    "contact_form": {
+      "title": "Send us a message",
+      "success_message": "Message sent successfully! We will respond as soon as possible.",
+      "full_name": "Full Name",
+      "full_name_placeholder": "Enter your full name",
+      "email": "Email",
+      "email_placeholder": "Enter your email",
+      "phone": "Phone Number",
+      "phone_placeholder": "Enter your phone number",
+      "service_type": "Service Type",
+      "service_type_placeholder": "Select service type",
+      "subject": "Subject",
+      "subject_placeholder": "Message subject",
+      "message": "Message Content",
+      "message_placeholder": "Describe your requirements in detail...",
+      "sending": "Sending...",
+      "send_message": "Send Message",
+      "required": "*"
+    },
+    "map": {
+      "main_office": "Main Office",
+      "office_hours": "8:00 - 22:00 daily"
+    },
+    "social": {
+      "title": "Follow Us"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Questions that customers care about most",
+      "questions": {
+        "how_to_book": {
+          "question": "How to book repair services?",
+          "answer": "You can book services through website, mobile app, or call our hotline. Just describe the problem and we will send suitable technicians to your location."
+        },
+        "pricing": {
+          "question": "How is service cost calculated?",
+          "answer": "Service cost is calculated based on type of work, execution time, and necessary materials. You will receive detailed quotes before execution."
+        },
+        "guarantee": {
+          "question": "Is service quality guaranteed?",
+          "answer": "We commit to 100% quality guarantee. If not satisfied, you can request free rework or get a refund."
+        },
+        "response_time": {
+          "question": "What is the fastest response time?",
+          "answer": "For emergency services, we can be there within 30-60 minutes. Regular services will be scheduled on the same day or next day."
+        }
+      },
+      "no_answer": "Can't find the answer?",
+      "direct_support": "Contact Direct Support"
+    },
+    "service_types": {
+      "electrical_plumbing": "Electrical & Plumbing",
+      "house_cleaning": "House Cleaning",
+      "electronics_repair": "Electronics Repair",
+      "plant_care": "Plant Care",
+      "furniture_repair": "Furniture Repair",
+      "other": "Other Services"
+    }
   }
 }
