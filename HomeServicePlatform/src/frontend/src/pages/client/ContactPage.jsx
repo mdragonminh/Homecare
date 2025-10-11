@@ -221,7 +221,8 @@ export const ContactPage = ({ loggedInUser }) => {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Họ và tên *
+                      {t("contact.contact_form.full_name")}{" "}
+                      {t("contact.contact_form.required")}
                     </label>
                     <input
                       type="text"
@@ -230,12 +231,15 @@ export const ContactPage = ({ loggedInUser }) => {
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Nhập họ và tên"
+                      placeholder={t(
+                        "contact.contact_form.full_name_placeholder"
+                      )}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email *
+                      {t("contact.contact_form.email")}{" "}
+                      {t("contact.contact_form.required")}
                     </label>
                     <input
                       type="email"
@@ -244,7 +248,7 @@ export const ContactPage = ({ loggedInUser }) => {
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Nhập email"
+                      placeholder={t("contact.contact_form.email_placeholder")}
                     />
                   </div>
                 </div>

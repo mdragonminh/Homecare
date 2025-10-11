@@ -1,11 +1,12 @@
 import axiosClient from "../config/axiosClient";
 
 export const authApi = {
-  register: async ({ email, fullName, password }) => {
+  register: async ({ email, fullName, phoneNumber, password }) => {
     try {
       const res = await axiosClient.post("/Authentication/register", {
         email,
         fullName,
+        phoneNumber,
         password,
         confirmPassword: password,
       });
