@@ -54,7 +54,8 @@ namespace HSP.Service.Implementations
 		public async Task<ConfirmEmailResultDto> ConfirmEmail(Guid userId, string token)
 		{
 			var user = await _userRepository.FindByIdAsync(userId);
-			if (user == null) {
+			if (user == null)
+			{
 				return new ConfirmEmailResultDto { Success = false, Error = "UserNotFound", Message = "User not found" };
 			}
 			var result = await _userRepository.ConfirmEmailAsync(user, token);
@@ -303,6 +304,7 @@ namespace HSP.Service.Implementations
 				Email = input.Email,
 				UserName = input.Email,
 				FullName = input.FullName,
+				PhoneNumber = input.PhoneNumber,
 				EmailConfirmed = false,
 			};
 
@@ -310,8 +312,8 @@ namespace HSP.Service.Implementations
 			if (!created.Succeeded)
 				throw new Exception(_localizer["UserCreationFailed"]);
 			return user;
-		} 
-		
+		}
+
 		private async Task<RegisterResponseDto> HandleExistingUserAsync(AppUser userExisting)
 		{
 			if (userExisting.EmailConfirmed)
@@ -405,7 +407,7 @@ namespace HSP.Service.Implementations
 				throw;
 			}
 		}
-		
+
 		public async Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input)
 		{
 			var user = _userRepository.FindByIdAsync(userId).Result;
@@ -542,6 +544,6 @@ namespace HSP.Service.Implementations
 			});
 		}
 
-		
+
 	}
 }
