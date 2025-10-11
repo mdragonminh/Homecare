@@ -161,6 +161,7 @@
     "label": {
       "fullname": "Full name",
       "email": "Email",
+      "phone": "Phone Number",
       "password": "Password",
       "confirm_password": "Confirm password",
       "agree_to_terms": "I agree to the",
@@ -179,6 +180,7 @@
     "placeholder": {
       "fullname": "Enter your full name",
       "email": "e.g: yourname@example.com",
+      "phone": "e.g: 0123456789",
       "password": "Minimum 8 characters, with uppercase, number",
       "confirm_password": "Re-enter password",
       "item_name": "E.g: Daikin Air Conditioner",
@@ -220,6 +222,7 @@
     "password_min": "Minimum 8 characters",
     "phone_required": "Please enter phone number",
     "phone_invalid": "Invalid phone number. Please enter 10-11 digits",
+    "phone_invalid_format": "Invalid phone number format. Must be 8-20 characters and contain only numbers, +, -, (), spaces",
     "phone_format": "Phone number must start with 0 and have 10-11 digits",
     "full_name_length": "Full name must be 1-100 characters",
     "phone_length": "Phone number must be 10-11 digits",

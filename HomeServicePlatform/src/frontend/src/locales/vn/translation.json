@@ -162,6 +162,7 @@
     "label": {
       "fullname": "Họ và tên",
       "email": "Email",
+      "phone": "Số điện thoại",
       "password": "Mật khẩu",
       "confirm_password": "Xác nhận mật khẩu",
       "agree_to_terms": "Tôi đồng ý với",
@@ -180,6 +181,7 @@
     "placeholder": {
       "fullname": "Nhập họ tên đầy đủ của bạn",
       "email": "ví dụ: tenban@example.com",
+      "phone": "ví dụ: 0123456789",
       "password": "Tối thiểu 8 ký tự, có chữ hoa, chữ số",
       "confirm_password": "Nhập lại mật khẩu",
       "item_name": "Ví dụ: Máy lạnh Daikin",
@@ -221,6 +223,7 @@
     "password_min": "Tối thiểu 8 ký tự",
     "phone_required": "Vui lòng nhập số điện thoại",
     "phone_invalid": "Số điện thoại không hợp lệ. Vui lòng nhập 10-11 số",
+    "phone_invalid_format": "Định dạng số điện thoại không hợp lệ. Phải từ 8-20 ký tự và chỉ chứa số, +, -, (), khoảng trắng",
     "phone_format": "Số điện thoại phải bắt đầu bằng 0 và có 10-11 chữ số",
     "full_name_length": "Họ và tên phải từ 1-100 ký tự",
     "phone_length": "Số điện thoại phải từ 10-11 chữ số",
