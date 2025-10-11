@@ -156,18 +156,14 @@ namespace HSP.Service.Test.Implementations
 			var userId = Guid.NewGuid();
 			var input = new UpdateHomeDto { Name = "Updated Home", Address = "456 valid street" };
 			var coordinates = new CoordinatesDto { Latitude = 30.0, Longitude = 40.0 };
-			var homes = new List<Home>
+			var homeToUpdate = new Home
 			{
-					new Home
-					{
-							Id = homeId,
-							Name = "Old Home",
-							Address = "123 old street",
-							Latitude = 10.0,
-							Longitude = 20.0,
-							CustomerProfile = new CustomerProfile { UserId = userId }
-					}
+				Id = homeId,
+				Name = "Old Home",
+				Address = "123 old street",
+				CustomerProfile = new CustomerProfile { UserId = userId }
 			};
+			var homes = new List<Home>{ homeToUpdate };
 			var mockQueryable = homes.BuildMock();
 			_mockGeocodingService.Setup(s => s.GetCoordinatesForAddressAsync(input.Address))
 						.ReturnsAsync(coordinates);
@@ -175,8 +171,13 @@ namespace HSP.Service.Test.Implementations
 			_mockHomeRepository
 				.Setup(r => r.GetAll())
 				.Returns(mockQueryable);
+			
 			var result = await _homeService.UpdateHomeAsync(homeId, input, userId.ToString());
+			
 			Assert.True(result);
+			Assert.Equal("Updated Home", homeToUpdate.Name);
+			Assert.Equal("456 valid street", homeToUpdate.Address);
+			Assert.Equal(30.0, homeToUpdate.Latitude);
 			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
 			_mockHomeRepository.Verify(r => r.GetAll(), Times.Once);
 		}
