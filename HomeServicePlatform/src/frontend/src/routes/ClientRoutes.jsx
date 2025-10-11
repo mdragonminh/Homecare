@@ -4,7 +4,7 @@ import HomeManagementPage from "../pages/client/home/HomeManagementPage";
 import HomeItemsPage from "../pages/client/home/HomeItemsPage";
 import Profile from "../pages/Profile";
 import { jwtDecode } from "jwt-decode";
-
+import { ServiceListPage } from "../pages/client/service/ServiceListPage";
 const ProtectedRoute = ({ element: Element, loggedInUser }) => {
   if (!loggedInUser) {
     return <Navigate to="/login" replace />;
@@ -82,6 +82,15 @@ export default function ClientRoutes({
                 onShowRegister={onShowRegister}
               />
             }
+          />
+        }
+      />
+       <Route
+        path="/services"
+        element={
+          <ProtectedHomePage
+            loggedInUser={loggedInUser}
+            element={<ServiceListPage loggedInUser={loggedInUser} />}
           />
         }
       />
