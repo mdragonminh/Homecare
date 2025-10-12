@@ -25,6 +25,9 @@ namespace HSP.DAL.Data
 		public DbSet<FileRelation> FileRelations { get; set; }
 		public DbSet<Core.Entities.Service> Services { get; set; }
 		public DbSet<ServiceCategory> ServiceCategories { get; set; }
+		public DbSet<Booking> Bookings { get; set; }
+		public DbSet<BookingFeedback> BookingFeedbacks { get; set; }
+		public DbSet<BookingCancellation> BookingCancellations { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -78,6 +81,37 @@ namespace HSP.DAL.Data
 				.HasMany(t => t.Services)
 				.WithMany(s => s.Technicians)
 				.UsingEntity(j => j.ToTable("TechnicianServices"));
+			builder.Entity<Booking>(entity =>
+			{
+				entity.HasOne(b => b.Customer)
+							.WithMany()
+							.HasForeignKey(b => b.CustomerProfileId)
+							.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(b => b.Technician)
+							.WithMany()
+							.HasForeignKey(b => b.TechnicianId)
+							.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(b => b.Service)
+							.WithMany(s => s.Bookings)
+							.HasForeignKey(b => b.ServiceId)
+							.OnDelete(DeleteBehavior.Restrict);
+			});
+			builder.Entity<BookingFeedback>()
+			.HasKey(f => f.BookingId);
+			builder.Entity<BookingFeedback>()
+					.HasOne(f => f.Booking)
+					.WithOne(b => b.Feedback)
+					.HasForeignKey<BookingFeedback>(f => f.BookingId)
+					.OnDelete(DeleteBehavior.Cascade);
+			builder.Entity<BookingCancellation>()
+					.HasKey(c => c.BookingId);
+			builder.Entity<BookingCancellation>()
+					.HasOne(c => c.Booking)
+					.WithOne(b => b.Cancellation)
+					.HasForeignKey<BookingCancellation>(c => c.BookingId)
+					.OnDelete(DeleteBehavior.Cascade);
 
 			builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
 			builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
@@ -86,6 +120,7 @@ namespace HSP.DAL.Data
 			builder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
 			builder.Entity<Core.Entities.Service>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<ServiceCategory>().HasQueryFilter(s => !s.IsDeleted);
+			builder.Entity<Booking>().HasQueryFilter(b => !b.IsDeleted);
 		}
 	}
 }

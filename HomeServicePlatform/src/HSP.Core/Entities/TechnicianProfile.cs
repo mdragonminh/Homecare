@@ -7,16 +7,15 @@ namespace HSP.Core.Entities
 {
 	public class TechnicianProfile : BaseEntity<Guid>, IApprovable, IDateTracking, IHasSoftedDelete
 	{
+		[Required]
 		public Guid UserId { get; set; }
 		[ForeignKey("UserId")]
 		public AppUser User { get; set; } = null!;
-		//[Required]
-		//[StringLength(200)]
-		//public string SkillSet { get; set; } = string.Empty;
 
 		[Range(0, 50)]
 		public int ExperienceYears { get; set; }
 
+		[Required]
 		public TechnicianApprovalStatus ApprovalStatus { get; set; } = TechnicianApprovalStatus.Pending;
 
 		public DateTime? ApprovedAt { get; set; }

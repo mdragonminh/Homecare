@@ -21,5 +21,6 @@ namespace HSP.Core.Entities
 		public DateTime DateModified { get; set; }
 
 		public ICollection<TechnicianProfile> Technicians { get; set; } = new List<TechnicianProfile>();
+		public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 	}
 }
