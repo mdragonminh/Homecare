@@ -19,11 +19,10 @@ namespace HSP.Core.Entities
 		public TechnicianApprovalStatus ApprovalStatus { get; set; } = TechnicianApprovalStatus.Pending;
 
 		[Required]
-		[Column(TypeName = "decimal(9,6)")]
+		[Range(-90, 90)]
 		public double Latitude { get; set; }
-
 		[Required]
-		[Column(TypeName = "decimal(9,6)")]
+		[Range(-180, 180)]
 		public double Longitude { get; set; }
 
 		[MaxLength(255)]
