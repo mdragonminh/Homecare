@@ -18,6 +18,17 @@ namespace HSP.Core.Entities
 		[Required]
 		public TechnicianApprovalStatus ApprovalStatus { get; set; } = TechnicianApprovalStatus.Pending;
 
+		[Required]
+		[Column(TypeName = "decimal(9,6)")]
+		public decimal Latitude { get; set; }
+
+		[Required]
+		[Column(TypeName = "decimal(9,6)")]
+		public decimal Longitude { get; set; }
+
+		[MaxLength(255)]
+		public string? Address { get; set; }
+
 		public DateTime? ApprovedAt { get; set; }
 		public string? ApprovedBy { get; set; }
 		public DateTime DateCreated { get ; set ; }
