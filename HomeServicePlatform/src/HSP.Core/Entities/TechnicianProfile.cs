@@ -20,11 +20,11 @@ namespace HSP.Core.Entities
 
 		[Required]
 		[Column(TypeName = "decimal(9,6)")]
-		public decimal Latitude { get; set; }
+		public double Latitude { get; set; }
 
 		[Required]
 		[Column(TypeName = "decimal(9,6)")]
-		public decimal Longitude { get; set; }
+		public double Longitude { get; set; }
 
 		[MaxLength(255)]
 		public string? Address { get; set; }
