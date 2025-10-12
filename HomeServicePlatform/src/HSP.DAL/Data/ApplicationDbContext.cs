@@ -28,6 +28,10 @@ namespace HSP.DAL.Data
 		public DbSet<Booking> Bookings { get; set; }
 		public DbSet<BookingFeedback> BookingFeedbacks { get; set; }
 		public DbSet<BookingCancellation> BookingCancellations { get; set; }
+		public DbSet<Warehouse> Warehouses { get; set; }
+		public DbSet<Equipment> Equipments { get; set; }
+		public DbSet<CustomerSupporter> CustomerSupporters { get; set; }
+		public DbSet<Ticket> Tickets { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -112,6 +116,34 @@ namespace HSP.DAL.Data
 					.WithOne(b => b.Cancellation)
 					.HasForeignKey<BookingCancellation>(c => c.BookingId)
 					.OnDelete(DeleteBehavior.Cascade);
+			builder.Entity<Warehouse>()
+				.HasMany(w => w.Equipments)
+				.WithOne(e => e.Warehouse)
+				.HasForeignKey(e => e.WarehouseId)
+				.OnDelete(DeleteBehavior.Restrict);
+			builder.Entity<Warehouse>()
+			.HasOne(w => w.Manager)
+			.WithMany()
+			.HasForeignKey(w => w.ManagerId)
+			.OnDelete(DeleteBehavior.Restrict);
+
+			builder.Entity<Ticket>()
+					.HasOne(t => t.Equipment)
+					.WithMany()
+					.HasForeignKey(t => t.EquipmentId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+			builder.Entity<Ticket>()
+					.HasOne(t => t.Supporter)
+					.WithMany()
+					.HasForeignKey(t => t.SupporterId)
+					.OnDelete(DeleteBehavior.Restrict);
+
+			builder.Entity<Ticket>()
+					.HasOne(t => t.Technician)
+					.WithMany()
+					.HasForeignKey(t => t.TechnicianId)
+					.OnDelete(DeleteBehavior.Restrict);
 
 			builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
 			builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
@@ -121,6 +153,10 @@ namespace HSP.DAL.Data
 			builder.Entity<Core.Entities.Service>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<ServiceCategory>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<Booking>().HasQueryFilter(b => !b.IsDeleted);
+			builder.Entity<Warehouse>().HasQueryFilter(w => !w.IsDeleted);
+			builder.Entity<Equipment>().HasQueryFilter(e => !e.IsDeleted);
+			builder.Entity<CustomerSupporter>().HasQueryFilter(s => !s.IsDeleted);
+			builder.Entity<Ticket>().HasQueryFilter(t => !t.IsDeleted);
 		}
 	}
 }
