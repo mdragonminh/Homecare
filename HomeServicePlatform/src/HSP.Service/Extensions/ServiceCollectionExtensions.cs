@@ -22,6 +22,7 @@ namespace HSP.Service.Extensions
 			});
 			services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 			services.AddScoped<IHomeServiceService, HomeServiceService>();
+			services.AddScoped<IServiceRequestService, ServiceRequestService>();
 			return services;
 		}
 	}
