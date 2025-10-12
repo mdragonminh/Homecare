@@ -32,6 +32,8 @@ namespace HSP.DAL.Data
 		public DbSet<Equipment> Equipments { get; set; }
 		public DbSet<CustomerSupporter> CustomerSupporters { get; set; }
 		public DbSet<Ticket> Tickets { get; set; }
+		public DbSet<SystemSetting> SystemSettings { get; set; }
+		public DbSet<AuditLog> auditLogs { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -144,6 +146,24 @@ namespace HSP.DAL.Data
 					.WithMany()
 					.HasForeignKey(t => t.TechnicianId)
 					.OnDelete(DeleteBehavior.Restrict);
+			builder.Entity<SystemSetting>(entity =>
+			{
+				entity.HasIndex(s => s.Key).IsUnique();
+				entity.HasIndex(s => s.Group);
+				entity.HasIndex(s => new { s.Group, s.Key });
+			});
+			builder.Entity<AuditLog>(entity =>
+			{
+				entity.HasIndex(a => a.UserId);
+				entity.HasIndex(a => a.EntityType);
+				entity.HasIndex(a => a.Action);
+				entity.HasIndex(a => a.DateCreated);
+				entity.HasIndex(a => new { a.EntityType, a.EntityId });
+				entity.HasOne(a => a.User)
+					.WithMany()
+					.HasForeignKey(a => a.UserId)
+					.OnDelete(DeleteBehavior.Restrict);
+			});
 
 			builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
 			builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
@@ -157,6 +177,7 @@ namespace HSP.DAL.Data
 			builder.Entity<Equipment>().HasQueryFilter(e => !e.IsDeleted);
 			builder.Entity<CustomerSupporter>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<Ticket>().HasQueryFilter(t => !t.IsDeleted);
+			builder.Entity<SystemSetting>().HasQueryFilter(s => !s.IsDeleted);
 		}
 	}
 }
