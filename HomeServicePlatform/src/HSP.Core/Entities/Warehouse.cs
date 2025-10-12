@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HSP.Core.Entities
 {
-	public class Warehouse : BaseEntity<Guid>, IDateTracking, IHasSoftedDelete
+	public class Warehouse : BaseEntity<Guid>, IDateTracking, IHasSoftedDelete, IUserTracking
 	{
 		[Required, MaxLength(100)]
 		public string Name { get; set; } = null!;
@@ -21,5 +21,7 @@ namespace HSP.Core.Entities
 		public DateTime DateCreated { get; set; }
 		public DateTime DateModified { get; set; }
 		public bool IsDeleted { get; set; }
+		public Guid? CreatedBy { get; set; }
+		public Guid? ModifiedBy { get; set; }
 	}
 }
