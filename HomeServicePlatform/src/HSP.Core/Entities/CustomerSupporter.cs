@@ -15,8 +15,6 @@ namespace HSP.Core.Entities
 		[MaxLength(255)]
 		public string? Note { get; set; }
 
-		public bool IsActive { get; set; } = true;
-
 		public DateTime DateCreated { get; set; }
 		public DateTime DateModified { get; set; }
 		public bool IsDeleted { get; set; }
