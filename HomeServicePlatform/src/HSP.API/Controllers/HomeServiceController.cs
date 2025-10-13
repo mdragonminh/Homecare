@@ -19,6 +19,12 @@ namespace HSP.API.Controllers
 			var services = await _homeServiceService.GetAllServicesAsync(input);
 			return Ok(services);
 		}
+		[HttpGet("services-homepage")]
+		public async Task<IActionResult> GetAllServiceHomePage()
+		{
+			var services = await _homeServiceService.GetAllServiceHomePageAsync();
+			return Ok(services);
+		}
 		#region service category
 		[HttpGet("service-categories")]
 		public async Task<IActionResult> GetAllServiceCategories()

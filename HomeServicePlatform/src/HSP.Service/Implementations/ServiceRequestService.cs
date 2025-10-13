@@ -34,42 +34,27 @@ namespace HSP.Service.Implementations
 				coordinates = await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
 						?? throw new Exception(_localizer["CannotFoundcoordinates."]);
 			}
-			else if (input.Lat.HasValue && input.Lng.HasValue)
-			{
-				coordinates = new CoordinatesDto
-				{
-					Latitude = input.Lat.Value,
-					Longitude = input.Lng.Value
-				};
-			}
 			else
 			{
-				throw new ArgumentException(_localizer["MustHaveAddressOr(Lat/Lng)."]);
+				throw new ArgumentException(_localizer["MustHaveAddress"]);
 			}
 			var allTechnicians = await _technicianRepository.GetAll()
 				.Include(x => x.User)
-				.Include(x=>x.Services)
-				.Where(x=>x.ApprovalStatus == TechnicianApprovalStatus.Approved)
+				.Where(x => x.ApprovalStatus == TechnicianApprovalStatus.Approved)
+				.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), x=>x.Services.Any(s=>input.ServiceIds.Contains(s.Id)))
 				.ToListAsync();
 			var filtered = allTechnicians
 							 .Select(t => new
 							 {
 								 Technician = t,
-								 MinPrice = t.Services.Any() ? t.Services.Min(s => s.BasePrice) : 0,
-								 MaxPrice = t.Services.Any() ? t.Services.Max(s => s.BasePrice) : 0,
 								 Distance = CalculateDistance(coordinates.Latitude, coordinates.Longitude, t.Latitude, t.Longitude)
 							 })
-							 .Where(x => !input.MinPrice.HasValue || x.MinPrice >= input.MinPrice)
-								.Where(x => !input.MaxPrice.HasValue || x.MaxPrice <= input.MaxPrice)
 							 .Where(x => x.Distance <= input.MaxDistanceKm)
 							 .OrderBy(x => x.Distance)
-							 .ThenBy(x => x.MinPrice)
 							 .Select(x => new TechnicianResultDto
 							 {
 								 Id = x.Technician.Id,
 								 Name = x.Technician.User.FullName,
-								 MinPrice = x.MinPrice,
-								 MaxPrice = x.MaxPrice,
 								 //Rating = x.Technician.Rating,
 								 DistanceKm = Math.Round(x.Distance, 2),
 								 Latitude = x.Technician.Latitude,
