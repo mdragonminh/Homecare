@@ -156,7 +156,21 @@
     "reset_password_title": "Đặt lại mật khẩu mới",
     "reset_password_tagline": "Nhập mật khẩu mới cho tài khoản của bạn",
     "reset_password_button_submit": "Đặt lại mật khẩu",
-    "processing": "Đang xử lý..."
+    "processing": "Đang xử lý...",
+    "search_technicians_title": "Tìm Kiếm Technician Chuyên Nghiệp",
+    "confirm_address_and_range": "Xác nhận địa chỉ và phạm vi",
+    "select_service_needed": "Chọn Địa Chỉ Phục Vụ",
+    "select_service_address": "Chọn địa chỉ đã lưu",
+    "search_radius_label": "Bán Kính Tìm Kiếm (Km)",
+    "search_radius_unit": "Km",
+    "manual_address_label": "Địa Chỉ Thủ Công/Vị trí Bản Đồ",
+    "searching_technicians": "Đang tìm kiếm Technician xung quanh {{address}} trong bán kính {{radius}}km...",
+    "technicians_list_title": "Danh sách Technician Gần Bạn ({{count}} người)",
+    "no_technicians_found": "Rất tiếc, không tìm thấy Technician nào phù hợp trong phạm vi {{radius}}km",
+    "select_technician": "Chọn Technician",
+    "technicians.distance_label": "Cách bạn: {{distance}} km",
+    "searching": "Đang tìm kiếm...",
+    "find_technicians_button": "Tìm Technician Xung Quanh {{radius}} km"
   },
   "form": {
     "label": {
@@ -236,7 +250,10 @@
     "item_edited": "Cập nhật vật phẩm thành công!",
     "item_deleted": "Xóa vật phẩm thành công!",
     "profile_updated": "Cập nhật thông tin thành công!",
-    "password_changed": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại."
+    "password_changed": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.",
+    "geocode_success" : "Đã xác định vị trí. Nhấn Tìm kiếm để tiếp tục.",
+    "location_updated": "Vị trí được cập nhật từ bản đồ: {{address}}. Nhấn Tìm kiếm.",
+    "technician_found": "Tìm thấy {{count}} Technician gần bạn trong {{radius}}km."
   },
   "error": {
     "email_in_use": "Email đã được sử dụng, vui lòng dùng email khác.",
