@@ -86,7 +86,7 @@ export default function ClientRoutes({
         }
       />
       <Route
-        path="/find-technician/:serviceId"
+        path="/find-technician"
         element={
           <ProtectedRoute
             loggedInUser={loggedInUser}

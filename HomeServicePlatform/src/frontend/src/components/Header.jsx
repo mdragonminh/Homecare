@@ -5,11 +5,16 @@ import { Home, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AuthButtons } from "./AuthButtons";
 import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "./LanguageSwitcher"; 
-import { ServiceMegaMenu } from "../pages/client/service/ServiceListPage";
-export function Header({ onShowLogin, onShowRegister, loggedInUser, onLogout }) {
+import LanguageSwitcher from "./LanguageSwitcher";
+
+export function Header({
+  onShowLogin,
+  onShowRegister,
+  loggedInUser,
+  onLogout,
+}) {
   const navigate = useNavigate();
-  const { t } = useTranslation(); 
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   return (
@@ -17,38 +22,43 @@ export function Header({ onShowLogin, onShowRegister, loggedInUser, onLogout }) 
       <div className="container mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo + Brand - Improved with gradient and hover effects */}
-          <div 
-            className="flex items-center space-x-3 cursor-pointer group" 
+          <div
+            className="flex items-center space-x-3 cursor-pointer group"
             onClick={() => navigate("/")}
           >
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
               <Home className="w-5 h-5 text-white" />
             </div>
             <span className="font-bold text-xl text-gray-800 group-hover:text-blue-600 transition-colors">
-              {t("app.name")} 
+              {t("app.name")}
             </span>
           </div>
 
           {/* Desktop Navigation - Enhanced with hover states */}
           <nav className="hidden md:flex items-center space-x-1">
-            <button 
-              onClick={() => navigate("/")} 
+            <button
+              onClick={() => navigate("/")}
               className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
             >
-              {t("nav.home")} 
+              {t("nav.home")}
             </button>
-             <ServiceMegaMenu />
-            <a 
-              href="/about" 
+            <button
+              onClick={() => navigate("/find-technician")}
               className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
             >
-              {t("nav.about_us")} 
+              {t("nav.services")}
+            </button>
+            <a
+              href="/about"
+              className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+            >
+              {t("nav.about_us")}
             </a>
-            <a 
-              href="/contact" 
+            <a
+              href="/contact"
               className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
             >
-              {t("nav.contact")} 
+              {t("nav.contact")}
             </a>
           </nav>
 
@@ -85,35 +95,35 @@ export function Header({ onShowLogin, onShowRegister, loggedInUser, onLogout }) 
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-100">
             <nav className="flex flex-col space-y-1 mb-4">
-              <button 
+              <button
                 onClick={() => {
                   navigate("/");
                   setMobileMenuOpen(false);
-                }} 
+                }}
                 className="px-4 py-3 text-left text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"
               >
-                {t("nav.home")} 
+                {t("nav.home")}
               </button>
-              <a 
-                href="/services" 
+              <a
+                href="/services"
                 className="px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {t("nav.services")} 
+                {t("nav.services")}
               </a>
-              <a 
-                href="/about" 
+              <a
+                href="/about"
                 className="px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {t("nav.about_us")} 
+                {t("nav.about_us")}
               </a>
-              <a 
-                href="/contact" 
+              <a
+                href="/contact"
                 className="px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {t("nav.contact")} 
+                {t("nav.contact")}
               </a>
             </nav>
 

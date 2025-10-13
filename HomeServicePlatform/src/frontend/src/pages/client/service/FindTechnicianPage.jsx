@@ -28,6 +28,10 @@ import {
 import AddHomeModal from "../home/AddHome.jsx";
 import EditHomeModal from "../home/EditHomePage.jsx";
 
+// ---------------------------------------------------------------------
+// 1. CONSTANTS AND UTILITY FUNCTIONS
+// ---------------------------------------------------------------------
+
 const customMarkerIcon = new L.Icon({
   iconUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
@@ -53,7 +57,7 @@ const technicianIcon = new L.Icon({
 });
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Earth radius in km
+  const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a =
@@ -66,7 +70,11 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return (R * c).toFixed(2);
 };
 
-const MapDisplay = ({ lat, lng, technicians, onDragEnd }) => {
+// ---------------------------------------------------------------------
+// 2. MAP DISPLAY COMPONENT
+// ---------------------------------------------------------------------
+
+const MapDisplay = ({ lat, lng, technicians }) => {
   const { t } = useTranslation();
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -94,13 +102,8 @@ const MapDisplay = ({ lat, lng, technicians, onDragEnd }) => {
 
       markerInstance.current = L.marker([initialLat, initialLng], {
         icon: customMarkerIcon,
-        draggable: true,
+        draggable: false,
       }).addTo(mapInstance.current);
-
-      markerInstance.current.on("dragend", (e) => {
-        const position = e.target.getLatLng();
-        onDragEnd(position.lat, position.lng);
-      });
     }
 
     if (lat && lng) {
@@ -114,7 +117,7 @@ const MapDisplay = ({ lat, lng, technicians, onDragEnd }) => {
 
       markerInstance.current
         .setLatLng(newLatlng)
-        .bindPopup(`<b>${t("ui.search_by_name_or_address")}</b>`)
+        .bindPopup(`<b>${t("ui.your_service_location")}</b>`)
         .openPopup();
     }
 
@@ -124,32 +127,58 @@ const MapDisplay = ({ lat, lng, technicians, onDragEnd }) => {
     if (technicians && technicians.length > 0) {
       const bounds = L.latLngBounds(L.latLng(lat, lng));
 
-      technicians.forEach((tech) => {
-        const techLatLng = L.latLng(tech.lat, tech.lng);
-        bounds.extend(techLatLng);
+      const groupedTechs = technicians.reduce((acc, tech) => {
+        const key = `${tech.lat}_${tech.lng}`;
+        if (!acc[key]) {
+          acc[key] = {
+            lat: tech.lat,
+            lng: tech.lng,
+            techs: [],
+          };
+        }
+        acc[key].techs.push(tech);
+        return acc;
+      }, {});
 
-        const marker = L.marker([tech.lat, tech.lng], {
+      Object.values(groupedTechs).forEach((group) => {
+        const groupLatLng = L.latLng(group.lat, group.lng);
+        bounds.extend(groupLatLng);
+
+        let popupContent = group.techs
+          .map(
+            (tech) =>
+              `<b>${tech.name}</b><br>${t("ui.technicians.distance_label", {
+                distance: tech.distance,
+              })}`
+          )
+          .join("<br><hr>");
+
+        const marker = L.marker([group.lat, group.lng], {
           icon: technicianIcon,
         })
           .addTo(mapInstance.current)
-          .bindPopup(
-            `<b>${tech.name}</b><br>${t("ui.technicians.distance_label", {
-              distance: tech.distance,
-            })}`
-          );
+          .bindPopup(popupContent);
         technicianMarkers.current.push(marker);
       });
+
+      if (technicians.length > 0 && lat && lng) {
+        mapInstance.current.fitBounds(bounds, { padding: [50, 50] });
+      }
     }
-  }, [lat, lng, technicians, onDragEnd, t]);
+  }, [lat, lng, technicians, t]);
 
   return (
     <div
       ref={mapRef}
-      className="h-[500px] w-full rounded-xl shadow-lg border-2 border-gray-500 relative z-0 overflow-hidden transition-all duration-300"
-      style={{ minHeight: "500px" }}
+      className="w-full h-full rounded-xl shadow-lg border-2 border-gray-500 relative z-0 overflow-hidden transition-all duration-300"
+      style={{ minHeight: "400px" }}
     />
   );
 };
+
+// ---------------------------------------------------------------------
+// 3. FIND TECHNICIAN PAGE COMPONENT
+// ---------------------------------------------------------------------
 
 export function FindTechnicianPage() {
   const { t } = useTranslation();
@@ -162,14 +191,41 @@ export function FindTechnicianPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
-  const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
   const [isAddHomeModalOpen, setIsAddHomeModalOpen] = useState(false);
   const [isEditHomeModalOpen, setIsEditHomeModalOpen] = useState(false);
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+  
+  const [services, setServices] = useState([]);
+  const [selectedServiceId, setSelectedServiceId] = useState("");
+  const [isServicesLoading, setIsServicesLoading] = useState(false);
+  const [serviceSearchInput, setServiceSearchInput] = useState("");
+  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
 
   const currentHomeData = useMemo(() => {
     return homes.find((home) => home.id === selectedHomeId);
   }, [homes, selectedHomeId]);
+  
+  const filteredServices = useMemo(() => {
+    if (!serviceSearchInput) {
+        return services;
+    }
+    const lowercasedInput = serviceSearchInput.toLowerCase();
+    return services.filter(service =>
+        service.name.toLowerCase().includes(lowercasedInput)
+    );
+  }, [services, serviceSearchInput]);
+
+
+  const loadServices = useCallback(async () => {
+    setIsServicesLoading(true);
+    const result = await serviceApi.getServices();
+    if (result.success) {
+      setServices(result.data || []);
+    } else {
+      console.error("Failed to load services:", result.message);
+    }
+    setIsServicesLoading(false);
+  }, []);
 
   const loadUserHomes = useCallback(async () => {
     setIsLoading(true);
@@ -197,7 +253,7 @@ export function FindTechnicianPage() {
         initialAddress = defaultHome.address;
         initialLat = defaultHome.latitude;
         initialLng = defaultHome.longitude;
-        message = t("success.home_added", { count: allHomes.length, name: defaultHome.name });
+        message = t("success.home_loaded", { count: allHomes.length, name: defaultHome.name });
       } else {
         initialHomeId = allHomes[0].id;
         message = t("error.address_invalid");
@@ -222,6 +278,8 @@ export function FindTechnicianPage() {
 
     setSelectedHomeId(newHomeId);
     setTechnicians(null);
+    setSelectedServiceId("");
+    setServiceSearchInput("");
 
     if (newHome && newHome.latitude && newHome.longitude) {
       setAddressInput(newHome.address);
@@ -247,14 +305,16 @@ export function FindTechnicianPage() {
     }
 
     setIsSearching(true);
-    setTechnicians(null);
+    // FIX: Reset về mảng rỗng để tránh nháy màn hình
+    setTechnicians([]); 
     setStatusMessage(
       t("ui.searching_technicians", { address: addressInput, radius })
     );
-
+    
     const searchResult = await serviceApi.getNearbyTechnicians(
-      addressInput, // Truyền địa chỉ (string)
-      radius       
+      addressInput,
+      radius,
+      selectedServiceId
     );
 
     setIsSearching(false);
@@ -294,18 +354,19 @@ export function FindTechnicianPage() {
         searchResult.message || t("ui.no_technicians_found")
       );
     }
-  }, [addressInput, coords.latitude, coords.longitude, searchRadius, t]);
+  }, [addressInput, coords.latitude, coords.longitude, searchRadius, selectedServiceId, t]);
 
   const reloadHomeData = () => {
     setIsAddHomeModalOpen(false);
     setIsEditHomeModalOpen(false);
-    setTechnicians(null);
+    setTechnicians(null); 
     loadUserHomes();
   };
 
   useEffect(() => {
     loadUserHomes();
-  }, [loadUserHomes]);
+    loadServices();
+  }, [loadUserHomes, loadServices]);
 
   useEffect(() => {
     if (
@@ -352,36 +413,6 @@ export function FindTechnicianPage() {
     }
   };
 
-  const handleDragEnd = async (lat, lng) => {
-    setIsReverseGeocoding(true);
-    setTechnicians(null);
-    setStatusMessage(t("ui.loading_data"));
-
-    setCoords({ latitude: lat, longitude: lng });
-    setSelectedHomeId(null);
-
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-      );
-      const data = await res.json();
-      if (data?.display_name) {
-        setAddressInput(data.display_name);
-        setStatusMessage(
-          t("success.location_updated", { address: data.display_name })
-        );
-      } else {
-        setAddressInput(`Lat: ${lat}, Lng: ${lng}`);
-        setStatusMessage(t("error.address_invalid"));
-      }
-    } catch (error) {
-      console.error("Reverse geocoding error:", error);
-      setStatusMessage(t("error.unexpected"));
-    } finally {
-      setIsReverseGeocoding(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="p-8 max-w-7xl mx-auto text-center pt-32">
@@ -394,23 +425,24 @@ export function FindTechnicianPage() {
   }
 
   const renderStatusMessage = (message) => {
-    let icon, colorClass, text;
-    if (message.startsWith(t("success.home_added").substring(0, 2))) {
+    let icon, colorClass;
+    
+    const successKey = t("success.home_loaded").substring(0, 10);
+    const errorKey = t("error.address_invalid").substring(0, 10);
+    const searchingKey = t("ui.searching_technicians").substring(0, 10);
+
+    if (message.startsWith(t("success.home_added").substring(0, 10)) || message.startsWith(t("success.home_edited").substring(0, 10)) || message.startsWith(successKey)) {
       icon = <CheckCircle className="h-5 w-5 mr-2" />;
       colorClass = "text-green-700 bg-green-100 border-green-300";
-      text = message.substring(3);
-    } else if (message.startsWith(t("error.address_invalid").substring(0, 2))) {
+    } else if (message.startsWith(errorKey) || message.startsWith(t("error.address_invalid").substring(0, 10))) {
       icon = <AlertTriangle className="h-5 w-5 mr-2" />;
       colorClass = "text-amber-700 bg-amber-100 border-amber-300";
-      text = message.substring(3);
-    } else if (message.startsWith(t("ui.searching_technicians").substring(0, 2))) {
+    } else if (message.startsWith(searchingKey) || message.startsWith(t("ui.searching_technicians").substring(0, 10))) {
       icon = <Loader2 className="h-5 w-5 mr-2 animate-spin" />;
       colorClass = "text-blue-700 bg-blue-100 border-blue-300";
-      text = message.substring(3);
     } else {
       icon = <MapPin className="h-5 w-5 mr-2" />;
       colorClass = "text-gray-600 bg-gray-100 border-gray-300";
-      text = message;
     }
 
     return (
@@ -418,7 +450,7 @@ export function FindTechnicianPage() {
         className={`flex items-center p-3 mt-4 text-sm border rounded-lg transition-colors shadow-sm ${colorClass}`}
       >
         {icon}
-        <span className="font-medium">{text}</span>
+        <span className="font-medium">{message}</span> 
       </div>
     );
   };
@@ -445,15 +477,16 @@ export function FindTechnicianPage() {
         {t("ui.search_technicians_title")}
       </h1>
 
-      <div className="flex flex-col lg:flex-row gap-8 mb-8">
-        <div className="lg:w-1/2 space-y-6">
-          <div className="p-6 border rounded-xl shadow-md bg-white space-y-5 h-full">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center border-b pb-3 mb-4">
+      <div className="flex flex-col lg:flex-row gap-6 mb-6 lg:items-stretch">
+        <div className="lg:w-1/2 flex flex-col">
+          <div className="p-6 border rounded-xl shadow-md bg-white space-y-3 flex-1 flex flex-col">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center border-b pb-3 mb-2">
               <MapPin className="h-5 w-5 text-blue-600 mr-2" />
               {t("ui.confirm_address_and_range")}
             </h2>
+            
             {homes.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     {t("ui.select_service_address")}
@@ -465,7 +498,7 @@ export function FindTechnicianPage() {
                       className="flex-grow min-w-[180px] h-10 p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 hover:border-blue-500 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer shadow-sm"
                     >
                       <option value="" disabled>
-                        {t("ui.select_saved_address")}
+                        {t("ui.select_service_needed")}
                       </option>
                       {homes.map((home) => (
                         <option key={home.id} value={home.id}>
@@ -493,14 +526,13 @@ export function FindTechnicianPage() {
                   </div>
 
                   {currentHomeData && (
-                    <p className="mt-3 text-sm text-gray-700 flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner">
+                    <p className="mt-2 text-sm text-gray-700 flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner">
                       <Home className="h-5 w-5 flex-shrink-0 text-blue-600" />
                       <span className="font-bold">{currentHomeData.name}:</span>{" "}
                       {currentHomeData.address}
                     </p>
                   )}
                 </div>
-                <div className="border-t border-gray-100 my-4"></div>
               </div>
             ) : (
               <div className="text-center p-5 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
@@ -516,7 +548,95 @@ export function FindTechnicianPage() {
                 </button>
               </div>
             )}
-            <div className="mt-4">
+            
+            <div className="relative">
+                <label
+                    htmlFor="service-search-input"
+                    className="block text-sm font-semibold text-gray-700 mb-2"
+                >
+                    {t("ui.select_service_label", { defaultValue: "Tìm kiếm hoặc Chọn Dịch vụ" })}
+                </label>
+                <input
+                    id="service-search-input"
+                    type="text"
+                    placeholder={t("ui.search_service_placeholder", { defaultValue: "Gõ tên dịch vụ..." })}
+                    value={serviceSearchInput}
+                    onChange={(e) => {
+                        setServiceSearchInput(e.target.value);
+                        setIsServiceDropdownOpen(true);
+                        setSelectedServiceId(""); 
+                    }}
+                    onFocus={() => setIsServiceDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setIsServiceDropdownOpen(false), 200)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-all text-base font-medium pr-12 shadow-sm"
+                    disabled={isSearching || isServicesLoading}
+                />
+                
+                {selectedServiceId && (
+                    <div className="mt-2 p-2 bg-blue-100 border border-blue-300 text-blue-800 rounded-lg flex items-center justify-between">
+                        <span>
+                            {t("ui.selected_service_label", { defaultValue: "Đã chọn" })}: 
+                            <strong className="ml-1">
+                                {services.find(s => s.id === selectedServiceId)?.name}
+                            </strong>
+                        </span>
+                        <button 
+                            onClick={() => {
+                                setSelectedServiceId("");
+                                setServiceSearchInput("");
+                            }}
+                            title={t("ui.clear_selection", { defaultValue: "Xóa lựa chọn" })}
+                            className="text-blue-600 hover:text-blue-800 ml-3"
+                        >
+                            <XCircle className="h-5 w-5" />
+                        </button>
+                    </div>
+                )}
+
+                {(isServiceDropdownOpen && !isServicesLoading) && (
+                    <ul className="absolute z-10 w-full bg-white border border-gray-300 mt-1 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        <li 
+                            key="all-services" 
+                            onClick={() => {
+                                setSelectedServiceId("");
+                                setServiceSearchInput(t("ui.all_services", { defaultValue: "Tất cả Dịch vụ" }));
+                                setIsServiceDropdownOpen(false);
+                            }}
+                            className={`p-3 cursor-pointer hover:bg-gray-100 font-bold ${!selectedServiceId ? 'bg-blue-50 text-blue-600' : 'text-gray-900'}`}
+                        >
+                            {t("ui.all_services", { defaultValue: "Tất cả Dịch vụ" })}
+                        </li>
+                        {filteredServices.map((service) => (
+                            <li
+                                key={service.id}
+                                onClick={() => {
+                                    setSelectedServiceId(service.id);
+                                    setServiceSearchInput(service.name);
+                                    setIsServiceDropdownOpen(false);
+                                }}
+                                className={`p-3 cursor-pointer hover:bg-gray-100 ${service.id === selectedServiceId ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-800'}`}
+                            >
+                                {service.name}
+                            </li>
+                        ))}
+                        {filteredServices.length === 0 && serviceSearchInput && (
+                             <li className="p-3 text-gray-500 text-sm">
+                                 {t("ui.no_results_found", { defaultValue: "Không tìm thấy kết quả" })}
+                            </li>
+                        )}
+                    </ul>
+                )}
+
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none mt-4">
+                    {isServicesLoading ? (
+                        <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+                    ) : (
+                        <ChevronsDown className="h-5 w-5" />
+                    )}
+                </div>
+            </div>
+
+            <div className="mt-1">
               <label
                 htmlFor="search-radius"
                 className="block text-sm font-semibold text-gray-700 mb-2"
@@ -539,8 +659,9 @@ export function FindTechnicianPage() {
                 </span>
               </div>
             </div>
+            
             {!selectedHomeId && (
-              <div className="relative mt-4">
+              <div className="relative mt-1">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   {t("ui.manual_address_label")}
                 </label>
@@ -551,27 +672,24 @@ export function FindTechnicianPage() {
                   onChange={(e) => setAddressInput(e.target.value)}
                   onBlur={handleGeocode}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-all pr-10 shadow-sm"
-                  disabled={isSearching || isReverseGeocoding}
+                  disabled={isSearching}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center mt-7">
-                  {isReverseGeocoding ? (
-                    <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
-                  ) : (
-                    <Navigation className="h-5 w-5 text-gray-400" />
-                  )}
+                  <Navigation className="h-5 w-5 text-gray-400" />
                 </div>
               </div>
             )}
+            
             {renderStatusMessage(statusMessage)}
+            
             <button
               onClick={handleFindTechnician}
               disabled={
                 !coords.latitude ||
                 isSearching ||
-                isReverseGeocoding ||
                 parseFloat(searchRadius) <= 0
               }
-              className="w-full mt-6 py-3 bg-blue-600 text-white font-bold text-base rounded-lg shadow-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transform hover:scale-[1.005] active:scale-[0.995]"
+              className="w-full mt-4 py-3 bg-blue-600 text-white font-bold text-base rounded-lg shadow-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transform hover:scale-[1.005] active:scale-[0.995]"
             >
               {isSearching ? (
                 <>
@@ -588,12 +706,11 @@ export function FindTechnicianPage() {
           </div>
         </div>
 
-        <div className="lg:w-1/2">
+       <div className="lg:w-1/2 flex"> 
           <MapDisplay
             lat={coords.latitude}
             lng={coords.longitude}
             technicians={technicians}
-            onDragEnd={handleDragEnd}
           />
         </div>
       </div>

@@ -170,7 +170,10 @@
     "select_technician": "Chọn Technician",
     "technicians.distance_label": "Cách bạn: {{distance}} km",
     "searching": "Đang tìm kiếm...",
-    "find_technicians_button": "Tìm Technician Xung Quanh {{radius}} km"
+    "find_technicians_button": "Tìm Technician Xung Quanh {{radius}} km",
+    "your_service_location": "Vị trí  của bạn",
+    "select_service_label": "Tìm kiếm hoặc Chọn Dịch vụ",
+    "search_service_placeholder": "Tìm kiếm dịch vụ..."
   },
   "form": {
     "label": {
@@ -203,7 +206,8 @@
       "operator_username": "operator001",
       "serial_number": "Mã số duy nhất của thiết bị",
       "notes": "Thông tin thêm về thiết bị (ví dụ: vị trí, ngày mua...)",
-      "new_password": "Nhập mật khẩu mới"
+      "new_password": "Nhập mật khẩu mới",
+      "search_radius": "Chọn bán kính tìm kiếm"
     },
     "usertype": {
       "customer": "Khách hàng",
@@ -253,7 +257,8 @@
     "password_changed": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.",
     "geocode_success" : "Đã xác định vị trí. Nhấn Tìm kiếm để tiếp tục.",
     "location_updated": "Vị trí được cập nhật từ bản đồ: {{address}}. Nhấn Tìm kiếm.",
-    "technician_found": "Tìm thấy {{count}} Technician gần bạn trong {{radius}}km."
+    "technician_found": "Tìm thấy {{count}} Technician gần bạn trong {{radius}}km.",
+    "home_loaded": "Đã tải {{count}} địa chỉ. Địa chỉ mặc định: {{name}}"
   },
   "error": {
     "email_in_use": "Email đã được sử dụng, vui lòng dùng email khác.",
