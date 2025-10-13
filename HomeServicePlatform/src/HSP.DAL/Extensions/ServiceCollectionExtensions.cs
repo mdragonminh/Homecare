@@ -41,6 +41,8 @@ namespace HSP.DAL.Extensions
 			services.AddScoped<IRepository<ServiceCategory, Guid>, Repository<ServiceCategory, Guid>>();
 			services.AddScoped<IRepository<HSP.Core.Entities.File, Guid>, Repository<HSP.Core.Entities.File, Guid>>();
 			services.AddScoped<IRepository<FileRelation, Guid>, Repository<FileRelation, Guid>>();
+			services.AddScoped<IRepository<Warehouse, Guid>, Repository<Warehouse, Guid>>();
+			services.AddScoped<IRepository<Equipment, Guid>, Repository<Equipment, Guid>>();
 			services.AddScoped<IUnitOfWork, UnitOfWork>();
 			services.AddScoped<IDbInitializer, DbInitializer>();
 			return services;
