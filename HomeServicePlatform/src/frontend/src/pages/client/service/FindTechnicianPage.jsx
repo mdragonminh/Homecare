@@ -253,10 +253,8 @@ export function FindTechnicianPage() {
     );
 
     const searchResult = await serviceApi.getNearbyTechnicians(
-      coords.latitude,
-      coords.longitude,
-      radius,
-      0
+      addressInput, // Truyền địa chỉ (string)
+      radius       
     );
 
     setIsSearching(false);

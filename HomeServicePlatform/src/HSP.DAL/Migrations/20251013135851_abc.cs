@@ -311,6 +311,7 @@ namespace HSP.DAL.Migrations
                     Latitude = table.Column<double>(type: "float", nullable: false),
                     Longitude = table.Column<double>(type: "float", nullable: false),
                     Address = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    CertificatePaths = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ApprovedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -349,35 +350,6 @@ namespace HSP.DAL.Migrations
                         name: "FK_Warehouses_AppUsers_ManagerId",
                         column: x => x.ManagerId,
                         principalTable: "AppUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "FileRelations",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ObjectTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ObjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RelationType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DateModified = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FileRelations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_FileRelations_Files_FileId",
-                        column: x => x.FileId,
-                        principalTable: "Files",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_FileRelations_ObjectTypes_ObjectTypeId",
-                        column: x => x.ObjectTypeId,
-                        principalTable: "ObjectTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -431,6 +403,41 @@ namespace HSP.DAL.Migrations
                         principalTable: "CustomerProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FileRelations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ObjectTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ObjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RelationType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DateModified = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TechnicianProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FileRelations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FileRelations_Files_FileId",
+                        column: x => x.FileId,
+                        principalTable: "Files",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_FileRelations_ObjectTypes_ObjectTypeId",
+                        column: x => x.ObjectTypeId,
+                        principalTable: "ObjectTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_FileRelations_TechnicianProfiles_TechnicianProfileId",
+                        column: x => x.TechnicianProfileId,
+                        principalTable: "TechnicianProfiles",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -732,6 +739,11 @@ namespace HSP.DAL.Migrations
                 name: "IX_FileRelations_ObjectTypeId_ObjectId",
                 table: "FileRelations",
                 columns: new[] { "ObjectTypeId", "ObjectId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FileRelations_TechnicianProfileId",
+                table: "FileRelations",
+                column: "TechnicianProfileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_HomeItems_HomeId",

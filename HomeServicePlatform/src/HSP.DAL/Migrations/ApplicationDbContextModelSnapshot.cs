@@ -440,9 +440,14 @@ namespace HSP.DAL.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<Guid?>("TechnicianProfileId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FileId");
+
+                    b.HasIndex("TechnicianProfileId");
 
                     b.HasIndex("ObjectTypeId", "ObjectId");
 
@@ -711,6 +716,10 @@ namespace HSP.DAL.Migrations
 
                     b.Property<string>("ApprovedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CertificatePaths")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
@@ -1053,6 +1062,10 @@ namespace HSP.DAL.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("HSP.Core.Entities.TechnicianProfile", null)
+                        .WithMany("CertificateFiles")
+                        .HasForeignKey("TechnicianProfileId");
+
                     b.Navigation("File");
 
                     b.Navigation("ObjectType");
@@ -1246,6 +1259,11 @@ namespace HSP.DAL.Migrations
             modelBuilder.Entity("HSP.Core.Entities.ServiceCategory", b =>
                 {
                     b.Navigation("Services");
+                });
+
+            modelBuilder.Entity("HSP.Core.Entities.TechnicianProfile", b =>
+                {
+                    b.Navigation("CertificateFiles");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.Warehouse", b =>
