@@ -24,16 +24,19 @@ namespace HSP.API.Controllers
 	{
 		private readonly IAuthenticationService _authenticationService;
 		private readonly IEmailService _emailService;
+		private readonly IFileService _fileService;
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly SignInManager<AppUser> _signInManager;
 
 		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService,
+			IFileService fileService,
 			IOptions<UrlSettingsDto> urlOptions,
 			IOptions<UrlSettingsDto> urlSetting,
 			SignInManager<AppUser> signInManager)
 		{
 			_authenticationService = authenticationService;
 			_emailService = emailService;
+			_fileService = fileService;
 			_urlSettings = urlOptions.Value;
 			_signInManager = signInManager;
 		}
@@ -60,6 +63,48 @@ namespace HSP.API.Controllers
 				return BadRequest(new { message = "An error occurred" });
 			}
 		}
+		[HttpPost("upload-certificates")]
+		[AllowAnonymous]
+		public async Task<IActionResult> UploadCertificates([FromForm] IList<IFormFile> certificates)
+		{
+			try
+			{
+				if (certificates == null || !certificates.Any())
+				{
+					return BadRequest(new { message = "No certificates provided" });
+				}
+
+				var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
+				var maxFileSize = 5 * 1024 * 1024; // 5MB
+
+				// Validate files
+				foreach (var file in certificates)
+				{
+					if (!_fileService.ValidateFileType(file, allowedExtensions))
+					{
+						return BadRequest(new { message = $"File type not allowed: {file.FileName}" });
+					}
+					if (!_fileService.ValidateFileSize(file, maxFileSize))
+					{
+						return BadRequest(new { message = $"File size too large: {file.FileName}" });
+					}
+				}
+
+				// Upload files
+				var uploadedPaths = await _fileService.UploadMultipleFilesAsync(certificates, "certificates");
+
+				return Ok(new
+				{
+					message = "Certificates uploaded successfully",
+					filePaths = uploadedPaths
+				});
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "An error occurred while uploading certificates", details = ex.Message });
+			}
+		}
+
 		[HttpPost("register-technician")]
 		[AllowAnonymous]
 		public async Task<IActionResult> RegisterTechnician([FromBody] RegisterTechnicianRequestDto input)
@@ -120,15 +165,15 @@ namespace HSP.API.Controllers
 			}
 			catch (ValidationException ex)
 			{
-				return BadRequest(new { message = ex.Message }); 
+				return BadRequest(new { message = ex.Message });
 			}
 			catch (UnauthorizedAccessException ex)
 			{
-				return Unauthorized(new { message = ex.Message }); 
+				return Unauthorized(new { message = ex.Message });
 			}
 			catch (Exception)
 			{
-				return StatusCode(500, new { message = "An internal server error occurred." }); 
+				return StatusCode(500, new { message = "An internal server error occurred." });
 			}
 		}
 		[HttpGet("google-login")]
@@ -168,9 +213,9 @@ namespace HSP.API.Controllers
 				vm.Heading = "Hoàn tất!";
 				vm.Message = "Tài khoản của bạn đã được xác nhận. Bạn có thể đăng nhập để tiếp tục.";
 				vm.PrimaryActionText = "Đăng nhập";
-				vm.PrimaryActionUrl = _urlSettings.FrontendLoginFailed;    
+				vm.PrimaryActionUrl = _urlSettings.FrontendLoginFailed;
 			}
-			else 
+			else
 			{
 				vm.Success = false;
 				vm.Code = "TokenExpired";
@@ -235,7 +280,7 @@ namespace HSP.API.Controllers
 				{
 					BadRequest();
 				}
-				return Ok(new {message = "PasswordAddSuccess"});
+				return Ok(new { message = "PasswordAddSuccess" });
 			}
 			catch (ValidationException ex)
 			{
