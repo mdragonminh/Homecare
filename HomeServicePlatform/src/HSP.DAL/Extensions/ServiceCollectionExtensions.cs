@@ -30,15 +30,17 @@ namespace HSP.DAL.Extensions
 				.AddDefaultTokenProviders();
 			services.Configure<DataProtectionTokenProviderOptions>(options =>
 			{
-				options.TokenLifespan = TimeSpan.FromMinutes(10); 
+				options.TokenLifespan = TimeSpan.FromMinutes(10);
 			});
 			services.AddScoped<IUserRepository, UserRepository>();
-			services.AddScoped<IRepository<TechnicianProfile, Guid>, Repository<TechnicianProfile,Guid>>();
+			services.AddScoped<IRepository<TechnicianProfile, Guid>, Repository<TechnicianProfile, Guid>>();
 			services.AddScoped<IRepository<CustomerProfile, Guid>, Repository<CustomerProfile, Guid>>();
 			services.AddScoped<IRepository<Home, Guid>, Repository<Home, Guid>>();
 			services.AddScoped<IRepository<HomeItem, Guid>, Repository<HomeItem, Guid>>();
 			services.AddScoped<IRepository<Core.Entities.Service, Guid>, Repository<Core.Entities.Service, Guid>>();
 			services.AddScoped<IRepository<ServiceCategory, Guid>, Repository<ServiceCategory, Guid>>();
+			services.AddScoped<IRepository<HSP.Core.Entities.File, Guid>, Repository<HSP.Core.Entities.File, Guid>>();
+			services.AddScoped<IRepository<FileRelation, Guid>, Repository<FileRelation, Guid>>();
 			services.AddScoped<IUnitOfWork, UnitOfWork>();
 			services.AddScoped<IDbInitializer, DbInitializer>();
 			return services;

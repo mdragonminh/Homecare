@@ -24,7 +24,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 const SPECIALIZATION_KEYS = [
   "electrical",
-  "plumbing", 
+  "plumbing",
   "ac",
   "electronics",
   "painting",
@@ -37,7 +37,7 @@ const SPECIALIZATION_KEYS = [
 
 const AVAILABILITY_KEYS = [
   "monday",
-  "tuesday", 
+  "tuesday",
   "wednesday",
   "thursday",
   "friday",
@@ -61,7 +61,8 @@ export default function TechnicianRegister({
     city: "",
     experience: "",
     specializations: [],
-    certifications: "",
+    certificateFiles: [], // Array của File objects
+    certificateFilePaths: [], // Array của file paths từ server
     availability: [],
     hourlyRate: "",
     bio: "",
@@ -71,6 +72,7 @@ export default function TechnicianRegister({
     agreeToBackgroundCheck: false,
   });
   const [loading, setLoading] = useState(false);
+  const [uploadingCertificates, setUploadingCertificates] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState(""); // success | error
   const navigate = useNavigate();
@@ -120,6 +122,83 @@ export default function TechnicianRegister({
     );
   };
 
+  const handleCertificateUpload = async (files) => {
+    if (!files || files.length === 0) return;
+
+    // Validate files
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    const validFiles = Array.from(files).filter((file) => {
+      if (file.size > maxFileSize) {
+        toast.error(
+          `File ${file.name} ${t(
+            "technician_register.experience_skills.file_too_large"
+          )}`
+        );
+        return false;
+      }
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(
+          `File ${file.name} ${t(
+            "technician_register.experience_skills.file_invalid_format"
+          )}`
+        );
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    try {
+      setUploadingCertificates(true);
+      const response = await authApi.uploadCertificates(validFiles);
+
+      if (response.success) {
+        updateFormData("certificateFiles", [
+          ...formData.certificateFiles,
+          ...validFiles,
+        ]);
+        updateFormData("certificateFilePaths", [
+          ...formData.certificateFilePaths,
+          ...response.data.filePaths,
+        ]);
+        toast.success(
+          t("technician_register.experience_skills.upload_success", {
+            count: validFiles.length,
+          })
+        );
+      } else {
+        toast.error(
+          response.message ||
+            t("technician_register.experience_skills.upload_failed")
+        );
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error(t("technician_register.experience_skills.upload_error"));
+    } finally {
+      setUploadingCertificates(false);
+    }
+  };
+
+  const removeCertificate = (index) => {
+    const newFiles = [...formData.certificateFiles];
+    const newPaths = [...formData.certificateFilePaths];
+    newFiles.splice(index, 1);
+    newPaths.splice(index, 1);
+    updateFormData("certificateFiles", newFiles);
+    updateFormData("certificateFilePaths", newPaths);
+  };
+
   const handleSubmit = async () => {
     if (
       !formData.fullName ||
@@ -143,21 +222,23 @@ export default function TechnicianRegister({
         specializations: formData.specializations,
         experience: formData.experience,
         bio: formData.bio,
-        certifications: formData.certifications,
         availability: formData.availability,
         address: formData.address,
         city: formData.city,
         hourlyRate: formData.hourlyRate,
+        certificateFilePaths: formData.certificateFilePaths,
       });
 
       if (res.success) {
         toast.success(t("technician_register.validation.register_success"));
       } else {
-        toast.error(res.message || t("technician_register.validation.register_failed"));
+        toast.error(
+          res.message || t("technician_register.validation.register_failed")
+        );
       }
     } catch (err) {
       console.error(err);
-      toast.error(t("technician_register.validation.error_occurred"))
+      toast.error(t("technician_register.validation.error_occurred"));
     } finally {
       setSubmitting(false);
     }
@@ -260,7 +341,9 @@ export default function TechnicianRegister({
                   {/* Full Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("technician_register.personal_info.full_name_required")}
+                      {t(
+                        "technician_register.personal_info.full_name_required"
+                      )}
                     </label>
                     <input
                       type="text"
@@ -269,7 +352,9 @@ export default function TechnicianRegister({
                         updateFormData("fullName", e.target.value)
                       }
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
-                      placeholder={t("technician_register.personal_info.full_name_placeholder")}
+                      placeholder={t(
+                        "technician_register.personal_info.full_name_placeholder"
+                      )}
                     />
                   </div>
 
@@ -283,7 +368,9 @@ export default function TechnicianRegister({
                       value={formData.email}
                       onChange={(e) => updateFormData("email", e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
-                      placeholder={t("technician_register.personal_info.email_placeholder")}
+                      placeholder={t(
+                        "technician_register.personal_info.email_placeholder"
+                      )}
                     />
                   </div>
 
@@ -297,7 +384,9 @@ export default function TechnicianRegister({
                       value={formData.phone}
                       onChange={(e) => updateFormData("phone", e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
-                      placeholder={t("technician_register.personal_info.phone_placeholder")}
+                      placeholder={t(
+                        "technician_register.personal_info.phone_placeholder"
+                      )}
                     />
                   </div>
 
@@ -338,12 +427,26 @@ export default function TechnicianRegister({
                       onChange={(e) => updateFormData("city", e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-colors"
                     >
-                      <option value="">{t("technician_register.personal_info.city_placeholder")}</option>
-                      <option value="hanoi">{t("technician_register.personal_info.cities.hanoi")}</option>
-                      <option value="hcm">{t("technician_register.personal_info.cities.hcm")}</option>
-                      <option value="danang">{t("technician_register.personal_info.cities.danang")}</option>
-                      <option value="haiphong">{t("technician_register.personal_info.cities.haiphong")}</option>
-                      <option value="cantho">{t("technician_register.personal_info.cities.cantho")}</option>
+                      <option value="">
+                        {t(
+                          "technician_register.personal_info.city_placeholder"
+                        )}
+                      </option>
+                      <option value="hanoi">
+                        {t("technician_register.personal_info.cities.hanoi")}
+                      </option>
+                      <option value="hcm">
+                        {t("technician_register.personal_info.cities.hcm")}
+                      </option>
+                      <option value="danang">
+                        {t("technician_register.personal_info.cities.danang")}
+                      </option>
+                      <option value="haiphong">
+                        {t("technician_register.personal_info.cities.haiphong")}
+                      </option>
+                      <option value="cantho">
+                        {t("technician_register.personal_info.cities.cantho")}
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -369,7 +472,9 @@ export default function TechnicianRegister({
                   {/* Experience */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("technician_register.experience_skills.years_experience_required")}
+                      {t(
+                        "technician_register.experience_skills.years_experience_required"
+                      )}
                     </label>
                     <select
                       value={formData.experience}
@@ -378,19 +483,45 @@ export default function TechnicianRegister({
                       }
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                     >
-                      <option value="">{t("technician_register.experience_skills.years_experience_placeholder")}</option>
-                      <option value="0-1">{t("technician_register.experience_skills.experience_options.0-1")}</option>
-                      <option value="1-3">{t("technician_register.experience_skills.experience_options.1-3")}</option>
-                      <option value="3-5">{t("technician_register.experience_skills.experience_options.3-5")}</option>
-                      <option value="5-10">{t("technician_register.experience_skills.experience_options.5-10")}</option>
-                      <option value="10+">{t("technician_register.experience_skills.experience_options.10+")}</option>
+                      <option value="">
+                        {t(
+                          "technician_register.experience_skills.years_experience_placeholder"
+                        )}
+                      </option>
+                      <option value="0-1">
+                        {t(
+                          "technician_register.experience_skills.experience_options.0-1"
+                        )}
+                      </option>
+                      <option value="1-3">
+                        {t(
+                          "technician_register.experience_skills.experience_options.1-3"
+                        )}
+                      </option>
+                      <option value="3-5">
+                        {t(
+                          "technician_register.experience_skills.experience_options.3-5"
+                        )}
+                      </option>
+                      <option value="5-10">
+                        {t(
+                          "technician_register.experience_skills.experience_options.5-10"
+                        )}
+                      </option>
+                      <option value="10+">
+                        {t(
+                          "technician_register.experience_skills.experience_options.10+"
+                        )}
+                      </option>
                     </select>
                   </div>
 
                   {/* Specializations */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
-                      {t("technician_register.experience_skills.specialization_required")}
+                      {t(
+                        "technician_register.experience_skills.specialization_required"
+                      )}
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {SPECIALIZATION_KEYS.map((specKey) => (
@@ -405,26 +536,98 @@ export default function TechnicianRegister({
                             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                             style={{ minWidth: "1rem" }}
                           />
-                          {t(`technician_register.experience_skills.specializations.${specKey}`)}
+                          {t(
+                            `technician_register.experience_skills.specializations.${specKey}`
+                          )}
                         </label>
                       ))}
                     </div>
                   </div>
 
-                  {/* Certifications */}
+                  {/* Upload Certificates */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("technician_register.experience_skills.certifications")}
+                      {t(
+                        "technician_register.experience_skills.certifications"
+                      )}
                     </label>
-                    <textarea
-                      rows={4}
-                      value={formData.certifications}
-                      onChange={(e) =>
-                        updateFormData("certifications", e.target.value)
-                      }
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none"
-                      placeholder={t("technician_register.experience_skills.certifications_placeholder")}
-                    />
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 transition-colors">
+                      <div className="text-center">
+                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                        <div className="mt-4">
+                          <label
+                            htmlFor="certificates-upload"
+                            className="cursor-pointer"
+                          >
+                            <span className="mt-2 block text-sm font-medium text-gray-900">
+                              {uploadingCertificates
+                                ? t(
+                                    "technician_register.experience_skills.uploading"
+                                  )
+                                : t(
+                                    "technician_register.experience_skills.upload_certificates"
+                                  )}
+                            </span>
+                            <span className="mt-1 block text-xs text-gray-500">
+                              {t(
+                                "technician_register.experience_skills.upload_certificates_desc"
+                              )}
+                            </span>
+                            <input
+                              id="certificates-upload"
+                              name="certificates-upload"
+                              type="file"
+                              multiple
+                              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                              className="sr-only"
+                              onChange={(e) =>
+                                handleCertificateUpload(e.target.files)
+                              }
+                              disabled={uploadingCertificates}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Display uploaded files */}
+                    {formData.certificateFiles.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        <p className="text-sm font-medium text-gray-700">
+                          {t(
+                            "technician_register.experience_skills.uploaded_files"
+                          )}{" "}
+                          ({formData.certificateFiles.length}):
+                        </p>
+                        <div className="space-y-2">
+                          {formData.certificateFiles.map((file, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <FileText className="h-5 w-5 text-blue-600" />
+                                <span className="text-sm text-gray-700 truncate max-w-xs">
+                                  {file.name}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  ({Math.round(file.size / 1024)}KB)
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeCertificate(index)}
+                                className="text-red-600 hover:text-red-800 text-sm font-medium"
+                              >
+                                {t(
+                                  "technician_register.experience_skills.remove_file"
+                                )}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -444,7 +647,9 @@ export default function TechnicianRegister({
                             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                           />
                           <span className="text-sm text-gray-700">
-                            {t(`technician_register.experience_skills.availability_options.${dayKey}`)}
+                            {t(
+                              `technician_register.experience_skills.availability_options.${dayKey}`
+                            )}
                           </span>
                         </label>
                       ))}
@@ -549,14 +754,18 @@ export default function TechnicianRegister({
                 disabled={submitting}
                 className="bg-blue-600 text-white px-12 py-4 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-60"
               >
-                {submitting ? t("technician_register.submit.submitting") : t("technician_register.submit.register_now")}
+                {submitting
+                  ? t("technician_register.submit.submitting")
+                  : t("technician_register.submit.register_now")}
               </button>
             </div>
           </div>
 
           {/* Footer */}
           <div className="text-center mt-8 text-gray-600 pb-12">
-            <p className="mb-2">{t("technician_register.submit.need_support")}</p>
+            <p className="mb-2">
+              {t("technician_register.submit.need_support")}
+            </p>
             <div className="flex items-center justify-center gap-6">
               <a
                 href="mailto:support@homeservice.com"
