@@ -105,7 +105,7 @@ const EquipmentPage = () => {
     });
     setShowModal(true);
   };
-
+  console.log("equipment", equipments);
   const openQuantityModal = (equipment) => {
     setQuantityEquipment(equipment);
     setQuantityData({ quantity: equipment.quantity, notes: "" });
@@ -248,9 +248,6 @@ const EquipmentPage = () => {
                 {t("equipment.name", "Name")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t("equipment.equipmentDescription", "Description")}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {t("equipment.warehouse", "Warehouse")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -282,19 +279,11 @@ const EquipmentPage = () => {
                       {equipment.name}
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div
-                      className="text-sm text-gray-900 max-w-xs truncate"
-                      title={equipment.description}
-                    >
-                      {equipment.description || "-"}
-                    </div>
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <BuildingStorefrontIcon className="w-4 h-4 mr-2 text-gray-400" />
                       <span className="text-sm text-gray-900">
-                        {getWarehouseName(equipment.warehouseId)}
+                        {equipment.warehouseName}
                       </span>
                     </div>
                   </td>
@@ -398,7 +387,10 @@ const EquipmentPage = () => {
 
       {/* Equipment Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div
+          style={{ background: "rgba(1,1,1, 0.5)" }}
+          className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+        >
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
