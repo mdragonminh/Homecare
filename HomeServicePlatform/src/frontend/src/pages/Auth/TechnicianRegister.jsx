@@ -138,12 +138,18 @@ export default function TechnicianRegister({
 
     const validFiles = Array.from(files).filter((file) => {
       if (file.size > maxFileSize) {
-        toast.error(`File ${file.name} quá lớn (tối đa 5MB)`);
+        toast.error(
+          `File ${file.name} ${t(
+            "technician_register.experience_skills.file_too_large"
+          )}`
+        );
         return false;
       }
       if (!allowedTypes.includes(file.type)) {
         toast.error(
-          `File ${file.name} không đúng định dạng (chỉ chấp nhận PDF, DOC, DOCX, JPG, PNG)`
+          `File ${file.name} ${t(
+            "technician_register.experience_skills.file_invalid_format"
+          )}`
         );
         return false;
       }
@@ -166,14 +172,19 @@ export default function TechnicianRegister({
           ...response.data.filePaths,
         ]);
         toast.success(
-          `Đã upload ${validFiles.length} file chứng chỉ thành công!`
+          t("technician_register.experience_skills.upload_success", {
+            count: validFiles.length,
+          })
         );
       } else {
-        toast.error(response.message || "Upload chứng chỉ thất bại");
+        toast.error(
+          response.message ||
+            t("technician_register.experience_skills.upload_failed")
+        );
       }
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Có lỗi xảy ra khi upload chứng chỉ");
+      toast.error(t("technician_register.experience_skills.upload_error"));
     } finally {
       setUploadingCertificates(false);
     }
@@ -550,11 +561,17 @@ export default function TechnicianRegister({
                           >
                             <span className="mt-2 block text-sm font-medium text-gray-900">
                               {uploadingCertificates
-                                ? "Đang upload..."
-                                : "Chọn file chứng chỉ để upload"}
+                                ? t(
+                                    "technician_register.experience_skills.uploading"
+                                  )
+                                : t(
+                                    "technician_register.experience_skills.upload_certificates"
+                                  )}
                             </span>
                             <span className="mt-1 block text-xs text-gray-500">
-                              PDF, DOC, DOCX, JPG, PNG (tối đa 5MB mỗi file)
+                              {t(
+                                "technician_register.experience_skills.upload_certificates_desc"
+                              )}
                             </span>
                             <input
                               id="certificates-upload"
@@ -577,8 +594,10 @@ export default function TechnicianRegister({
                     {formData.certificateFiles.length > 0 && (
                       <div className="mt-4 space-y-2">
                         <p className="text-sm font-medium text-gray-700">
-                          Các file đã upload ({formData.certificateFiles.length}
-                          ):
+                          {t(
+                            "technician_register.experience_skills.uploaded_files"
+                          )}{" "}
+                          ({formData.certificateFiles.length}):
                         </p>
                         <div className="space-y-2">
                           {formData.certificateFiles.map((file, index) => (
@@ -600,7 +619,9 @@ export default function TechnicianRegister({
                                 onClick={() => removeCertificate(index)}
                                 className="text-red-600 hover:text-red-800 text-sm font-medium"
                               >
-                                Xóa
+                                {t(
+                                  "technician_register.experience_skills.remove_file"
+                                )}
                               </button>
                             </div>
                           ))}
