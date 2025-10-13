@@ -549,5 +549,46 @@
   "toast":{
     "login_success": "Logged in successfully!",
     "logout_success": "Logged out successfully!"
+  },
+  "warehouse": {
+    "title": "Warehouse Management",
+    "description": "Manage warehouses and their information",
+    "add": "Add Warehouse",
+    "edit": "Edit Warehouse",
+    "name": "Warehouse Name",
+    "address": "Address", 
+    "manager": "Manager",
+    "equipments": "Equipments",
+    "noManager": "No Manager",
+    "selectManager": "Select Manager",
+    "noData": "No warehouses found"
+  },
+  "equipment": {
+    "title": "Equipment Management",
+    "description": "Manage equipments and their inventory",
+    "add": "Add Equipment",
+    "edit": "Edit Equipment", 
+    "name": "Equipment Name",
+    "equipmentDescription": "Description",
+    "warehouse": "Warehouse",
+    "quantity": "Quantity",
+    "allWarehouses": "All Warehouses",
+    "selectWarehouse": "Select Warehouse",
+    "noData": "No equipments found",
+    "updateQuantity": "Update Quantity",
+    "currentQuantity": "Current Quantity",
+    "newQuantity": "New Quantity",
+    "notes": "Notes"
+  },
+  "common": {
+    "search": "Search...",
+    "actions": "Actions",
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "create": "Create",
+    "update": "Update",
+    "delete": "Delete",
+    "previous": "Previous",
+    "next": "Next"
   }
 }

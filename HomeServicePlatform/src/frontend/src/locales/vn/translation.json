@@ -549,5 +549,46 @@
   "toast":{
     "login_success": "Đăng nhập thành công!",
     "logout_success": "Đăng xuất thành công!"
+  },
+  "warehouse": {
+    "title": "Quản lý Kho",
+    "description": "Quản lý thông tin các kho hàng",
+    "add": "Thêm Kho",
+    "edit": "Sửa Kho",
+    "name": "Tên Kho",
+    "address": "Địa chỉ", 
+    "manager": "Quản lý",
+    "equipments": "Thiết bị",
+    "noManager": "Chưa có quản lý",
+    "selectManager": "Chọn quản lý",
+    "noData": "Không tìm thấy kho nào"
+  },
+  "equipment": {
+    "title": "Quản lý Thiết bị",
+    "description": "Quản lý thiết bị và tồn kho",
+    "add": "Thêm Thiết bị",
+    "edit": "Sửa Thiết bị", 
+    "name": "Tên Thiết bị",
+    "equipmentDescription": "Mô tả",
+    "warehouse": "Kho",
+    "quantity": "Số lượng",
+    "allWarehouses": "Tất cả Kho",
+    "selectWarehouse": "Chọn Kho",
+    "noData": "Không tìm thấy thiết bị nào",
+    "updateQuantity": "Cập nhật Số lượng",
+    "currentQuantity": "Số lượng hiện tại",
+    "newQuantity": "Số lượng mới",
+    "notes": "Ghi chú"
+  },
+  "common": {
+    "search": "Tìm kiếm...",
+    "actions": "Thao tác",
+    "loading": "Đang tải...",
+    "cancel": "Hủy",
+    "create": "Tạo",
+    "update": "Cập nhật",
+    "delete": "Xóa",
+    "previous": "Trước",
+    "next": "Tiếp"
   }
 }
