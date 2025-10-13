@@ -21,6 +21,18 @@ namespace HSP.Service.Implementations
 			_serviceCategoryRepository = serviceCategoryRepository;
 		}
 
+		public async Task<IEnumerable<HomeServiceDto>> GetAllServiceHomePageAsync()
+		{
+			var services = await _homeServiceRepository.GetAll()
+				.OrderBy(x => x.Name)
+				.Select(s => new HomeServiceDto
+				{
+					Id = s.Id,
+					Name = s.Name,
+				}).ToListAsync();
+			return services;
+		}
+
 		public async Task<IEnumerable<ServiceGroupDto>> GetAllServicesAsync(HomeServiceInput input)
 		{
 			var services = _homeServiceRepository.GetAll()
