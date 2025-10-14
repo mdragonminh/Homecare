@@ -207,4 +207,7 @@
   <data name="PhoneNumberMaxLength" xml:space="preserve">
     <value>Số điện thoại không được vượt quá 20 ký tự</value>
   </data>
+  <data name="EmailOrPhoneIsRequired" xml:space="preserve">
+    <value>Trường Email hoặc Số điện thoại là bắt buộc</value>
+  </data>
 </root>

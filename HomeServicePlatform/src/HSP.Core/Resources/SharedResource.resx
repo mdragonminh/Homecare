@@ -207,4 +207,7 @@
 	<data name="PhoneNumberMaxLength" xml:space="preserve">
     <value>Phone number cannot exceed 20 characters</value>
   </data>
+	<data name="EmailOrPhoneIsRequired" xml:space="preserve">
+    <value>The Email or Phone Number field is required</value>
+  </data>
 </root>
