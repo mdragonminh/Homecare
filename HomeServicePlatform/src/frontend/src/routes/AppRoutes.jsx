@@ -16,6 +16,7 @@ import Layout from "../layouts/Layout";
 import { AddPasswordPage } from "../pages/Auth/AddPasswordPage";
 import ResetPasswordPage from "../pages/Auth/ResetPasswordPage";
 import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage";
+import ConfirmEmailChangePage from "../pages/Auth/ConfirmEmailChangePage";
 import EquipmentManagerLayout from "../pages/equipmentmanager/EquipmentManagerLayout";
 import EquipmentManagerEquipmentPage from "../pages/equipmentmanager/EquipmentManagerEquipmentPage";
 import EquipmentManagerWarehousePage from "../pages/equipmentmanager/EquipmentManagerWarehousePage";
@@ -144,6 +145,11 @@ export default function AppRoutes({
         element={
           <AddPasswordPage onPasswordSetSuccess={onPasswordSetSuccess} />
         }
+      />
+
+      <Route
+        path="/confirm-email-change"
+        element={<ConfirmEmailChangePage />}
       />
 
       {/* ---- Admin ---- */}
