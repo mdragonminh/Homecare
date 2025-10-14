@@ -262,13 +262,6 @@ export default function AccountsPage() {
       ),
     },
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: 120,
-      render: (id) => (id ? id.substring(0, 8) + "..." : "N/A"),
-    },
-    {
       title: "Username",
       dataIndex: "username",
       key: "username",

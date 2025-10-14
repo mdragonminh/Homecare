@@ -16,6 +16,9 @@ import Layout from "../layouts/Layout";
 import { AddPasswordPage } from "../pages/Auth/AddPasswordPage";
 import ResetPasswordPage from "../pages/Auth/ResetPasswordPage";
 import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage";
+import EquipmentManagerLayout from "../pages/equipmentmanager/EquipmentManagerLayout";
+import EquipmentManagerEquipmentPage from "../pages/equipmentmanager/EquipmentManagerEquipmentPage";
+import EquipmentManagerWarehousePage from "../pages/equipmentmanager/EquipmentManagerWarehousePage";
 
 export default function AppRoutes({
   loggedInUser,
@@ -163,6 +166,14 @@ export default function AppRoutes({
         <Route path="customers" element={<OperatorCustomersPage />} />
         <Route path="technicians" element={<OperatorTechniciansPage />} />
         <Route path="settings" element={<OperatorSettingsPage />} />
+      </Route>
+
+      <Route
+        path="/warehouse"
+        element={<EquipmentManagerLayout loggedInUser={loggedInUser} />}
+      >
+        <Route index element={<EquipmentManagerWarehousePage />} />
+        <Route path="equipments" element={<EquipmentManagerEquipmentPage />} />
       </Route>
     </Routes>
   );
