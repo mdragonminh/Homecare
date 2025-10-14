@@ -10,5 +10,7 @@ namespace HSP.Service.Interfaces
 		Task<CustomerProfileDto> UpdateCustomerProfileAsync(string userId, UpdateCustomerProfileDto updateDto);
 		Task<object> GetCustomersAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null);
 		Task<object> GetDebugInfoAsync();
+		Task<EmailChangeResponseDto> RequestEmailChangeAsync(string userId, string newEmail);
+		Task<EmailChangeResponseDto> ConfirmEmailChangeAsync(string userId, string token);
 	}
 }
