@@ -754,12 +754,13 @@
       "furniture_repair": "Furniture Repair",
       "other": "Other Services"
     }
-  "warehouse": {
-    "title": "Warehouse Management",
-    "description": "Manage warehouses and their information",
-    "add": "Add Warehouse",
-    "edit": "Edit Warehouse",
-    "name": "Warehouse Name",
+  },
+    "warehouse": {
+      "title": "Warehouse Management",
+      "description": "Manage warehouses and their information",
+      "add": "Add Warehouse",
+      "edit": "Edit Warehouse",
+      "name": "Warehouse Name",
     "address": "Address", 
     "manager": "Manager",
     "equipments": "Equipments",

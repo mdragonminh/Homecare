@@ -179,6 +179,7 @@
     "label": {
       "fullname": "Họ và tên",
       "email": "Email",
+      "email_or_phone": "Email hoặc Số điện thoại",
       "phone": "Số điện thoại",
       "password": "Mật khẩu",
       "confirm_password": "Xác nhận mật khẩu",
@@ -198,6 +199,7 @@
     "placeholder": {
       "fullname": "Nhập họ tên đầy đủ của bạn",
       "email": "ví dụ: tenban@example.com",
+      "email_or_phone": "ví dụ: tenban@example.com hoặc 0123456789",
       "phone": "ví dụ: 0123456789",
       "password": "Tối thiểu 8 ký tự, có chữ hoa, chữ số",
       "confirm_password": "Nhập lại mật khẩu",
@@ -218,6 +220,8 @@
   },
   "validation": {
     "email_required": "Vui lòng nhập email.",
+    "email_or_phone_required": "Vui lòng nhập email hoặc số điện thoại.",
+    "email_or_phone_invalid_format": "Email hoặc số điện thoại không đúng định dạng.",
     "email_invalid_format": "Email không hợp lệ.",
     "password_required": "Vui lòng nhập mật khẩu.",
     "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự!",
@@ -754,6 +758,7 @@
       "furniture_repair": "Sửa chữa nội thất",
       "other": "Dịch vụ khác"
     }
+  },
   "warehouse": {
     "title": "Quản lý Kho",
     "description": "Quản lý thông tin các kho hàng",
