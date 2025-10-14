@@ -1,19 +1,36 @@
 // RegisterPage.jsx - ĐÃ SỬA ĐỔI HOÀN TOÀN THEO YÊU CẦU
 
 import { useState, useEffect } from "react";
-import { Eye, EyeOff, Mail, Lock, User, Home, ArrowLeft, Wrench, Shield, CheckCircle } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  Home,
+  ArrowLeft,
+  Wrench,
+  Shield,
+  CheckCircle,
+  Phone,
+} from "lucide-react";
 import { authApi } from "../../services/authApi.jsx";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import LanguageSwitcher from '../../components/LanguageSwitcher.jsx';
+import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
 
-export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUser }) {
+export default function RegisterPage({
+  onSwitchToLogin,
+  onBackToHome,
+  loggedInUser,
+}) {
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
     userType: "",
@@ -24,8 +41,9 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
   const [messageType, setMessageType] = useState(""); // success | warning | error
   const navigate = useNavigate();
 
-  // Regex cơ bản để kiểm tra định dạng email
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; 
+  // Regex cơ bản để kiểm tra định dạng email và số điện thoại
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[+]?[\s\d\-\(\)]*$/; // Cho phép số, dấu +, dấu cách, dấu gạch ngang và dấu ngoặc
 
   useEffect(() => {
     if (loggedInUser) {
@@ -82,7 +100,21 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
     }
     // ✅ THÊM: KIỂM TRA ĐỊNH DẠNG EMAIL (sau khi tắt noValidate)
     if (!emailRegex.test(formData.email)) {
-      setMessage(t("validation.email_invalid_format")); 
+      setMessage(t("validation.email_invalid_format"));
+      setMessageType("error");
+      return;
+    }
+    if (!formData.phoneNumber) {
+      setMessage(t("validation.phone_required"));
+      setMessageType("error");
+      return;
+    }
+    if (
+      !phoneRegex.test(formData.phoneNumber) ||
+      formData.phoneNumber.length < 8 ||
+      formData.phoneNumber.length > 20
+    ) {
+      setMessage(t("validation.phone_invalid_format"));
       setMessageType("error");
       return;
     }
@@ -120,7 +152,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
 
     try {
       const res = await authApi.register(formData);
-      console.log("Register response:", res); 
+      console.log("Register response:", res);
 
       if (res.success) {
         setMessage(t("success.registration"));
@@ -129,6 +161,7 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
         setFormData({
           fullName: "",
           email: "",
+          phoneNumber: "",
           password: "",
           confirmPassword: "",
           userType: "",
@@ -139,29 +172,29 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
           onSwitchToLogin();
         }, 2500);
       } else {
-        const errorMessage = res.message?.toLowerCase() || '';
-        console.log("Error message from res:", errorMessage); 
-        
+        const errorMessage = res.message?.toLowerCase() || "";
+        console.log("Error message from res:", errorMessage);
+
         // ✅ CẢI THIỆN: LOGIC KIỂM TRA LỖI EMAIL ĐÃ TỒN TẠI (LỖI 400 không phải là Axios Error)
         if (
-          errorMessage.includes('email') && 
-          (
-            errorMessage.includes('exist') || 
-            errorMessage.includes('tồn tại') || 
-            errorMessage.includes('emailalreadyexists') ||
-            errorMessage.includes('đã tồn tại') ||
-            errorMessage.includes('already exists')
-          )
+          errorMessage.includes("email") &&
+          (errorMessage.includes("exist") ||
+            errorMessage.includes("tồn tại") ||
+            errorMessage.includes("emailalreadyexists") ||
+            errorMessage.includes("đã tồn tại") ||
+            errorMessage.includes("already exists"))
         ) {
           setMessage(t("error.email_in_use"));
           setMessageType("error");
         } else if (
-          errorMessage.includes('username') && 
-          (errorMessage.includes('exist') || errorMessage.includes('tồn tại') || errorMessage.includes('đã tồn tại'))
+          errorMessage.includes("username") &&
+          (errorMessage.includes("exist") ||
+            errorMessage.includes("tồn tại") ||
+            errorMessage.includes("đã tồn tại"))
         ) {
           setMessage(t("error.username_in_use"));
           setMessageType("error");
-        } else if (errorMessage.includes('user creation failed')) {
+        } else if (errorMessage.includes("user creation failed")) {
           setMessage(t("error.user_creation_failed"));
           setMessageType("error");
         } else {
@@ -169,39 +202,41 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
           setMessageType("error");
         }
       }
-    }catch (err) {
-  console.error('Register error:', err);
-  console.log("Error response status:", err.response?.status);
+    } catch (err) {
+      console.error("Register error:", err);
+      console.log("Error response status:", err.response?.status);
 
-  if (err.response?.data?.message) {
-    const serverMessage = err.response.data.message.toLowerCase();
-    console.log("Server error message:", serverMessage);
+      if (err.response?.data?.message) {
+        const serverMessage = err.response.data.message.toLowerCase();
+        console.log("Server error message:", serverMessage);
 
-    if (
-      serverMessage.includes('email') &&
-      (serverMessage.includes('exist') || serverMessage.includes('already exist'))
-    ) {
-      setMessage(t("error.email_in_use"));
-    } else if (
-      serverMessage.includes('username') &&
-      (serverMessage.includes('exist') || serverMessage.includes('tồn tại') || serverMessage.includes('đã tồn tại'))
-    ) {
-      setMessage(t("error.username_in_use"));
-    } else if (serverMessage.includes('user creation failed')) {
-      setMessage(t("error.user_creation_failed"));
-    } else {
-      setMessage(err.response.data.message || t("error.try_again"));
-    }
-  } else if (err.response?.status === 400) {
-    setMessage(t("error.invalid_registration_info"));
-  } else if (err.response?.status === 500) {
-    setMessage(t("error.server_internal"));
-  } else {
-    setMessage(t("error.network_connect_failed"));
-  }
+        if (
+          serverMessage.includes("email") &&
+          (serverMessage.includes("exist") ||
+            serverMessage.includes("already exist"))
+        ) {
+          setMessage(t("error.email_in_use"));
+        } else if (
+          serverMessage.includes("username") &&
+          (serverMessage.includes("exist") ||
+            serverMessage.includes("tồn tại") ||
+            serverMessage.includes("đã tồn tại"))
+        ) {
+          setMessage(t("error.username_in_use"));
+        } else if (serverMessage.includes("user creation failed")) {
+          setMessage(t("error.user_creation_failed"));
+        } else {
+          setMessage(err.response.data.message || t("error.try_again"));
+        }
+      } else if (err.response?.status === 400) {
+        setMessage(t("error.invalid_registration_info"));
+      } else if (err.response?.status === 500) {
+        setMessage(t("error.server_internal"));
+      } else {
+        setMessage(t("error.network_connect_failed"));
+      }
 
-  setMessageType("error");
-
+      setMessageType("error");
     } finally {
       setLoading(false);
     }
@@ -210,14 +245,16 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
   if (loggedInUser) {
     return (
       <div className="min-h-screen flex justify-center items-center">
-        <p className="text-xl text-blue-600 font-semibold">{t("ui.redirecting_home")}</p>
+        <p className="text-xl text-blue-600 font-semibold">
+          {t("ui.redirecting_home")}
+        </p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 relative">
-      <div className="absolute top-4 right-4 z-20"> 
+      <div className="absolute top-4 right-4 z-20">
         <LanguageSwitcher />
       </div>
       <div className="absolute inset-0 opacity-5">
@@ -237,10 +274,14 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold">{t("app.name")}</h1>
-                  <p className="text-blue-100 text-sm">{t("ui.service_tagline")}</p>
+                  <p className="text-blue-100 text-sm">
+                    {t("ui.service_tagline")}
+                  </p>
                 </div>
               </div>
-              <p className="text-blue-100 text-lg leading-relaxed">{t("ui.service_description_long")}</p>
+              <p className="text-blue-100 text-lg leading-relaxed">
+                {t("ui.service_description_long")}
+              </p>
             </div>
 
             <div className="space-y-6">
@@ -249,8 +290,12 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                   <CheckCircle className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">{t("feature.professional_worker.title")}</h3>
-                  <p className="text-blue-100 text-sm">{t("feature.professional_worker.subtitle")}</p>
+                  <h3 className="font-semibold text-lg">
+                    {t("feature.professional_worker.title")}
+                  </h3>
+                  <p className="text-blue-100 text-sm">
+                    {t("feature.professional_worker.subtitle")}
+                  </p>
                 </div>
               </div>
 
@@ -259,8 +304,12 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">{t("feature.quality_warranty.title")}</h3>
-                  <p className="text-blue-100 text-sm">{t("feature.quality_warranty.subtitle")}</p>
+                  <h3 className="font-semibold text-lg">
+                    {t("feature.quality_warranty.title")}
+                  </h3>
+                  <p className="text-blue-100 text-sm">
+                    {t("feature.quality_warranty.subtitle")}
+                  </p>
                 </div>
               </div>
 
@@ -269,8 +318,12 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                   <Home className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">{t("feature.home_service.title")}</h3>
-                  <p className="text-blue-100 text-sm">{t("feature.home_service.subtitle")}</p>
+                  <h3 className="font-semibold text-lg">
+                    {t("feature.home_service.title")}
+                  </h3>
+                  <p className="text-blue-100 text-sm">
+                    {t("feature.home_service.subtitle")}
+                  </p>
                 </div>
               </div>
             </div>
@@ -292,7 +345,9 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                 <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg mb-6">
                   <Home className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">{t("ui.register_account")}</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  {t("ui.register_account")}
+                </h2>
                 <p className="text-gray-500">{t("ui.register_tagline")}</p>
               </div>
 
@@ -300,18 +355,33 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                 {message && (
                   <div
                     className={`mb-6 p-4 rounded-xl text-sm font-medium sticky top-0 z-10
-                      ${messageType === "success" ? "bg-green-50 text-green-700 border border-green-200" : ""}
-                      ${messageType === "warning" ? "bg-yellow-50 text-yellow-700 border border-yellow-200" : ""}
-                      ${messageType === "error" ? "bg-red-50 text-red-700 border border-red-200" : ""}`}
+                      ${
+                        messageType === "success"
+                          ? "bg-green-50 text-green-700 border border-green-200"
+                          : ""
+                      }
+                      ${
+                        messageType === "warning"
+                          ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                          : ""
+                      }
+                      ${
+                        messageType === "error"
+                          ? "bg-red-50 text-red-700 border border-red-200"
+                          : ""
+                      }`}
                   >
                     {message}
                   </div>
                 )}
 
                 {/* ✅ SỬA: Thêm noValidate vào form để tắt validation mặc định của trình duyệt */}
-                <form onSubmit={handleSubmit} className="space-y-4" noValidate> 
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                   <div className="space-y-1">
-                    <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700">
+                    <label
+                      htmlFor="fullName"
+                      className="block text-sm font-semibold text-gray-700"
+                    >
                       {t("form.label.fullname")}
                     </label>
                     <div className="relative">
@@ -329,7 +399,10 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                   </div>
 
                   <div className="space-y-1">
-                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-semibold text-gray-700"
+                    >
                       {t("form.label.email")}
                     </label>
                     <div className="relative">
@@ -347,7 +420,31 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                   </div>
 
                   <div className="space-y-1">
-                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
+                    <label
+                      htmlFor="phoneNumber"
+                      className="block text-sm font-semibold text-gray-700"
+                    >
+                      {t("form.label.phone")}
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        type="tel"
+                        placeholder={t("form.placeholder.phone")}
+                        value={formData.phoneNumber}
+                        onChange={handleInputChange}
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-semibold text-gray-700"
+                    >
                       {t("form.label.password")}
                     </label>
                     <div className="relative">
@@ -366,14 +463,23 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                         className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
                       </button>
                     </div>
-                    <p className="text-xs text-gray-500">{t("error.password_strength_hint")}</p>
+                    <p className="text-xs text-gray-500">
+                      {t("error.password_strength_hint")}
+                    </p>
                   </div>
 
                   <div className="space-y-1">
-                    <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700">
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-sm font-semibold text-gray-700"
+                    >
                       {t("form.label.confirm_password")}
                     </label>
                     <div className="relative">
@@ -390,9 +496,15 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                       <button
                         type="button"
                         className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                       >
-                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -406,7 +518,10 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                       onChange={handleInputChange}
                       className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                     />
-                    <label htmlFor="agreeToTerms" className="text-sm font-medium text-gray-600 cursor-pointer">
+                    <label
+                      htmlFor="agreeToTerms"
+                      className="text-sm font-medium text-gray-600 cursor-pointer"
+                    >
                       {t("ui.i_agree_to")}{" "}
                       <a href="#" className="text-blue-600 hover:underline">
                         {t("ui.terms_of_service")}
@@ -435,7 +550,9 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
                 </form>
 
                 <div className="mt-6 text-center">
-                  <span className="text-gray-600">{t("ui.already_have_account")}</span>{" "}
+                  <span className="text-gray-600">
+                    {t("ui.already_have_account")}
+                  </span>{" "}
                   <button
                     className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
                     onClick={onSwitchToLogin}
@@ -449,7 +566,9 @@ export default function RegisterPage({ onSwitchToLogin, onBackToHome, loggedInUs
             <div className="lg:hidden mt-8 text-center">
               <div className="flex items-center justify-center mb-2">
                 <Wrench className="w-6 h-6 text-blue-600 mr-2" />
-                <span className="text-xl font-bold text-gray-900">{t("app.name")}</span>
+                <span className="text-xl font-bold text-gray-900">
+                  {t("app.name")}
+                </span>
               </div>
               <p className="text-sm text-gray-500">{t("ui.service_tagline")}</p>
             </div>

@@ -198,4 +198,16 @@
 	<data name="Pleasecheckyouremailforpasswordresetinstructions" xml:space="preserve">
     <value>Please check your email for password reset instructions</value>
   </data>
+	<data name="PhoneNumberIsRequired" xml:space="preserve">
+    <value>The Phone Number field is required</value>
+  </data>
+	<data name="InvalidPhoneNumberFormat" xml:space="preserve">
+    <value>Invalid phone number format</value>
+  </data>
+	<data name="PhoneNumberMaxLength" xml:space="preserve">
+    <value>Phone number cannot exceed 20 characters</value>
+  </data>
+	<data name="EmailOrPhoneIsRequired" xml:space="preserve">
+    <value>The Email or Phone Number field is required</value>
+  </data>
 </root>

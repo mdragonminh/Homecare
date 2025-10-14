@@ -1,11 +1,12 @@
 import axiosClient from "../config/axiosClient";
 
 export const authApi = {
-  register: async ({ email, fullName, password }) => {
+  register: async ({ email, fullName, phoneNumber, password }) => {
     try {
       const res = await axiosClient.post("/Authentication/register", {
         email,
         fullName,
+        phoneNumber,
         password,
         confirmPassword: password,
       });
@@ -141,10 +142,10 @@ export const authApi = {
     }
   },
 
-  login: async ({ email, password }) => {
+  login: async ({ emailOrPhone, password }) => {
     try {
       const res = await axiosClient.post(`/Authentication/login`, {
-        email,
+        emailOrPhone,
         password,
       });
 
@@ -153,7 +154,7 @@ export const authApi = {
           success: true,
           data: {
             userId: res.data.userId,
-            email: res.data.email,
+            emailOrPhone: res.data.emailOrPhone,
             jwtToken: res.data.jwtToken,
             requirePasswordSetup: res.data.requirePasswordSetup || false,
           },

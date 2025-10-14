@@ -1,10 +1,12 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { HomePage } from "../pages/client/HomePage";
+import { AboutPage } from "../pages/client/AboutPage";
+import { ContactPage } from "../pages/client/ContactPage";
 import HomeManagementPage from "../pages/client/home/HomeManagementPage";
 import HomeItemsPage from "../pages/client/home/HomeItemsPage";
 import Profile from "../pages/Profile";
 import { jwtDecode } from "jwt-decode";
-import {FindTechnicianPage} from "../pages/client/service/FindTechnicianPage";
+import { FindTechnicianPage } from "../pages/client/service/FindTechnicianPage";
 const ProtectedRoute = ({ element: Element, loggedInUser }) => {
   if (!loggedInUser) {
     return <Navigate to="/login" replace />;
@@ -84,6 +86,22 @@ export default function ClientRoutes({
             }
           />
         }
+      />
+
+      <Route
+        path="/about"
+        element={
+          <AboutPage
+            loggedInUser={loggedInUser}
+            onShowLogin={onShowLogin}
+            onShowRegister={onShowRegister}
+          />
+        }
+      />
+
+      <Route
+        path="/contact"
+        element={<ContactPage loggedInUser={loggedInUser} />}
       />
       <Route
         path="/find-technician"

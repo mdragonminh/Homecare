@@ -8,6 +8,7 @@ namespace HSP.Core.Interfaces.DataAccess
 		Task<IdentityResult> CreateAsync(AppUser user, string password);
 		Task<AppUser?> FindByIdAsync(Guid id);
 		Task<AppUser?> FindByEmailAsync(string email);
+		Task<AppUser?> FindByPhoneNumberAsync(string phoneNumber);
 		Task<bool> CheckPasswordAsync(AppUser user, string password);
 		Task<string> GenerateEmailConfirmationTokenAsync(AppUser user);
 		Task<IdentityResult> ConfirmEmailAsync(AppUser user, string token);

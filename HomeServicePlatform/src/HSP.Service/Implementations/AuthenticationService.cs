@@ -82,7 +82,21 @@ namespace HSP.Service.Implementations
 			{
 				throw new ArgumentException(_localizer["InputCannotBeNull"]);
 			}
-			var user = await _userRepository.FindByEmailAsync(input.Email);
+
+			// Tìm user bằng email hoặc số điện thoại
+			AppUser? user = null;
+
+			// Kiểm tra xem input có phải là email không
+			if (IsValidEmail(input.EmailOrPhone))
+			{
+				user = await _userRepository.FindByEmailAsync(input.EmailOrPhone);
+			}
+			else
+			{
+				// Tìm bằng số điện thoại
+				user = await _userRepository.FindByPhoneNumberAsync(input.EmailOrPhone);
+			}
+
 			if (user == null)
 			{
 				throw new ValidationException(_localizer["InvalidEmailOrPassword"]);
@@ -196,6 +210,20 @@ namespace HSP.Service.Implementations
 				}
 			}
 		}
+
+		private static bool IsValidEmail(string input)
+		{
+			try
+			{
+				var emailRegex = new System.Text.RegularExpressions.Regex(@"^[^\s@]+@[^\s@]+\.[^\s@]+$");
+				return emailRegex.IsMatch(input);
+			}
+			catch
+			{
+				return false;
+			}
+		}
+
 		private async Task<string> GenerateJwtToken(AppUser user)
 		{
 			var roles = await _userRepository.GetRolesAsync(user);
@@ -304,6 +332,7 @@ namespace HSP.Service.Implementations
 				Email = input.Email,
 				UserName = input.Email,
 				FullName = input.FullName,
+				PhoneNumber = input.PhoneNumber,
 				EmailConfirmed = false,
 			};
 

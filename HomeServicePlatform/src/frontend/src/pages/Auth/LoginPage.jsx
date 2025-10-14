@@ -27,7 +27,7 @@ export function LoginPage({
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
+    emailOrPhone: "",
     password: "",
     rememberMe: false,
   });
@@ -58,15 +58,21 @@ export function LoginPage({
     setError("");
 
     // 1. KIỂM TRA TRƯỜNG RỖNG
-    if (!formData.email) {
-      setError(t("validation.email_required"));
+    if (!formData.emailOrPhone) {
+      setError(t("validation.email_or_phone_required"));
       return;
     }
 
-    // 2. KIỂM TRA ĐỊNH DẠNG EMAIL
-    if (!emailRegex.test(formData.email)) {
-      // Khóa dịch này cần được định nghĩa trong file ngôn ngữ của bạn
-      setError(t("validation.email_invalid_format"));
+    // 2. KIỂM TRA ĐỊNH DẠNG (email hoặc số điện thoại)
+    const phoneRegex = /^[+]?[\s\d\-\(\)]*$/;
+    const isValidEmail = emailRegex.test(formData.emailOrPhone);
+    const isValidPhone =
+      phoneRegex.test(formData.emailOrPhone) &&
+      formData.emailOrPhone.length >= 8 &&
+      formData.emailOrPhone.length <= 20;
+
+    if (!isValidEmail && !isValidPhone) {
+      setError(t("validation.email_or_phone_invalid_format"));
       return;
     }
 
@@ -278,19 +284,19 @@ export function LoginPage({
                   </div>
                 )}
                 <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-                  {/* Email */}
+                  {/* Email or Phone */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      {t("form.label.email")}
+                      {t("form.label.email_or_phone")}
                     </label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
-                        name="email"
-                        type="email"
-                        value={formData.email}
+                        name="emailOrPhone"
+                        type="text"
+                        value={formData.emailOrPhone}
                         onChange={handleInputChange}
-                        placeholder={t("form.placeholder.email")}
+                        placeholder={t("form.placeholder.email_or_phone")}
                         className="w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-xl focus:ring focus:ring-blue-200"
                       />
                     </div>

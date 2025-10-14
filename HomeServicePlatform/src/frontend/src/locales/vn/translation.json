@@ -53,7 +53,23 @@
     "update_profile": "Cập nhật thông tin",
     "save_changes": "Lưu thay đổi",
     "phone_number": "Số điện thoại",
-    "enter_phone": "Nhập số điện thoại",
+        "enter_phone_number": "Nhập số điện thoại",
+    "enter_email": "Nhập địa chỉ email",
+    "email_verification_pending": "Email đang chờ xác thực",
+    "confirm_email_change": "Xác nhận thay đổi email",
+    "email_change_verification": "Xác thực thay đổi địa chỉ email",
+    "verifying_email_change": "Đang xác thực thay đổi email...",
+    "please_wait_verifying": "Vui lòng đợi trong khi chúng tôi xác thực email của bạn",
+    "email_change_success": "Thay đổi email thành công!",
+    "email_change_failed": "Thay đổi email thất bại",
+    "email_change_error_help": "Vui lòng thử lại hoặc liên hệ bộ phận hỗ trợ nếu vấn đề vẫn tiếp tục",
+    "redirecting_to_profile_in": "Đang chuyển hướng về trang hồ sơ trong",
+    "seconds": "giây",
+    "go_to_profile": "Đi đến trang hồ sơ",
+    "email_change_help_text": "Nếu bạn gặp vấn đề, vui lòng liên hệ bộ phận hỗ trợ của chúng tôi",
+    "ready_to_confirm": "Sẵn sàng xác nhận",
+    "click_confirm_to_change_email": "Nhấn nút xác nhận bên dưới để hoàn tất việc thay đổi địa chỉ email của bạn.",
+    "confirm_email_change_button": "Xác nhận thay đổi email",
     "personal_information": "Thông tin cá nhân",
     "system_information": "Thông tin hệ thống", 
     "account_created": "Ngày tạo tài khoản",
@@ -101,6 +117,7 @@
     "manage_rooms_devices": "Quản lý Phòng & Thiết bị",
     "confirm_delete": "Xác nhận xóa",
     "confirm_delete_message": "Bạn có chắc chắn muốn xóa nhà ở này? Hành động này không thể hoàn tác.",
+    "save": "Lưu",
     "cancel": "Hủy bỏ",
     "close": "Đóng",
     "delete": "Xóa",
@@ -179,6 +196,8 @@
     "label": {
       "fullname": "Họ và tên",
       "email": "Email",
+      "email_or_phone": "Email hoặc Số điện thoại",
+      "phone": "Số điện thoại",
       "password": "Mật khẩu",
       "confirm_password": "Xác nhận mật khẩu",
       "agree_to_terms": "Tôi đồng ý với",
@@ -197,6 +216,8 @@
     "placeholder": {
       "fullname": "Nhập họ tên đầy đủ của bạn",
       "email": "ví dụ: tenban@example.com",
+      "email_or_phone": "ví dụ: tenban@example.com hoặc 0123456789",
+      "phone": "ví dụ: 0123456789",
       "password": "Tối thiểu 8 ký tự, có chữ hoa, chữ số",
       "confirm_password": "Nhập lại mật khẩu",
       "item_name": "Ví dụ: Máy lạnh Daikin",
@@ -216,6 +237,8 @@
   },
   "validation": {
     "email_required": "Vui lòng nhập email.",
+    "email_or_phone_required": "Vui lòng nhập email hoặc số điện thoại.",
+    "email_or_phone_invalid_format": "Email hoặc số điện thoại không đúng định dạng.",
     "email_invalid_format": "Email không hợp lệ.",
     "password_required": "Vui lòng nhập mật khẩu.",
     "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự!",
@@ -239,6 +262,7 @@
     "password_min": "Tối thiểu 8 ký tự",
     "phone_required": "Vui lòng nhập số điện thoại",
     "phone_invalid": "Số điện thoại không hợp lệ. Vui lòng nhập 10-11 số",
+    "phone_invalid_format": "Định dạng số điện thoại không hợp lệ. Phải từ 8-20 ký tự và chỉ chứa số, +, -, (), khoảng trắng",
     "phone_format": "Số điện thoại phải bắt đầu bằng 0 và có 10-11 chữ số",
     "full_name_length": "Họ và tên phải từ 1-100 ký tự",
     "phone_length": "Số điện thoại phải từ 10-11 chữ số",
@@ -255,6 +279,8 @@
     "item_deleted": "Xóa vật phẩm thành công!",
     "profile_updated": "Cập nhật thông tin thành công!",
     "password_changed": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.",
+    "email_verification_sent": "Email xác thực đã được gửi đến địa chỉ email mới",
+    "profile_updated_email_pending": "Thông tin đã được cập nhật. Vui lòng kiểm tra email để xác nhận thay đổi địa chỉ email",
     "geocode_success" : "Đã xác định vị trí. Nhấn Tìm kiếm để tiếp tục.",
     "location_updated": "Vị trí được cập nhật từ bản đồ: {{address}}. Nhấn Tìm kiếm.",
     "technician_found": "Tìm thấy {{count}} Technician gần bạn trong {{radius}}km.",
@@ -554,6 +580,203 @@
   "toast":{
     "login_success": "Đăng nhập thành công!",
     "logout_success": "Đăng xuất thành công!"
+  },
+  "about": {
+    "title": "Về chúng tôi",
+    "hero": {
+      "title": "Về chúng tôi",
+      "subtitle": "Kết nối mọi gia đình với dịch vụ chăm sóc nhà chuyên nghiệp, tạo nên không gian sống hoàn hảo cho người Việt.",
+      "learn_more": "Tìm hiểu thêm",
+      "watch_video": "Xem video",
+      "stats": {
+        "customers": "Khách hàng",
+        "technicians": "Thợ sửa chữa",
+        "services_completed": "Dịch vụ hoàn thành",
+        "satisfaction": "Hài lòng"
+      }
+    },
+    "mission_vision": {
+      "title": "Sứ mệnh & Tầm nhìn",
+      "subtitle": "Chúng tôi mong muốn tạo ra một nền tảng kết nối hoàn hảo giữa nhu cầu chăm sóc nhà và dịch vụ chuyên nghiệp.",
+      "mission": {
+        "title": "Sứ mệnh",
+        "content": "Mang đến cho mọi gia đình Việt Nam những dịch vụ chăm sóc nhà chất lượng cao, tiện lợi và đáng tin cậy. Chúng tôi không chỉ sửa chữa mà còn chăm sóc ngôi nhà như chính ngôi nhà của chúng tôi."
+      },
+      "vision": {
+        "title": "Tầm nhìn",
+        "content": "Trở thành nền tảng dịch vụ gia đình số 1 Đông Nam Á, nơi mọi người có thể tìm thấy giải pháp hoàn hảo cho mọi nhu cầu chăm sóc và bảo trì ngôi nhà."
+      }
+    },
+    "core_values": {
+      "title": "Giá trị cốt lõi",
+      "subtitle": "Những giá trị định hướng mọi hoạt động và quyết định của chúng tôi",
+      "values": {
+        "dedication": {
+          "title": "Tận tâm phục vụ",
+          "description": "Chúng tôi luôn đặt khách hàng làm trung tâm, mang đến trải nghiệm dịch vụ tốt nhất."
+        },
+        "quality": {
+          "title": "Uy tín & Chất lượng",
+          "description": "Cam kết cung cấp dịch vụ chất lượng cao với đội ngũ kỹ thuật viên được đào tạo bài bản."
+        },
+        "family": {
+          "title": "Đồng hành cùng gia đình",
+          "description": "Hiểu rõu nhu cầu của mỗi gia đình Việt, tạo nên không gian sống hoàn hảo."
+        },
+        "convenience": {
+          "title": "Nhanh chóng & Tiện lợi",
+          "description": "Phản hồi nhanh 24/7, hỗ trợ khách hàng trong mọi tình huống khẩn cấp."
+        }
+      }
+    },
+    "timeline": {
+      "title": "Hành trình phát triển",
+      "subtitle": "Từ những bước đầu tiên đến thành công ngày hôm nay",
+      "milestones": {
+        "2020": {
+          "title": "Khởi đầu hành trình",
+          "description": "Ra đời với sứ mệnh kết nối chủ nhà và thợ sửa chữa chuyên nghiệp."
+        },
+        "2021": {
+          "title": "Mở rộng dịch vụ",
+          "description": "Phát triển đa dạng các loại hình dịch vụ gia đình từ sửa chữa đến bảo trì."
+        },
+        "2022": {
+          "title": "Công nghệ tiên tiến",
+          "description": "Ứng dụng công nghệ AI và IoT để tối ưu hóa trải nghiệm khách hàng."
+        },
+        "2023": {
+          "title": "Vươn tầm toàn quốc",
+          "description": "Mở rộng hoạt động trên toàn quốc với hơn 500 kỹ thuật viên."
+        },
+        "2024": {
+          "title": "Dẫn đầu thị trường",
+          "description": "Trở thành nền tảng số 1 về dịch vụ gia đình tại Việt Nam."
+        }
+      }
+    },
+    "team": {
+      "title": "Đội ngũ lãnh đạo",
+      "subtitle": "Những con người tài năng và tâm huyết đằng sau thành công của chúng tôi",
+      "members": {
+        "ceo": {
+          "name": "Nguyễn Văn An",
+          "position": "CEO & Co-founder",
+          "description": "10+ năm kinh nghiệm trong lĩnh vực công nghệ và dịch vụ"
+        },
+        "cto": {
+          "name": "Trần Thị Bình",
+          "position": "CTO",
+          "description": "Chuyên gia về AI và Machine Learning với 8 năm kinh nghiệm"
+        },
+        "coo": {
+          "name": "Lê Minh Cường",
+          "position": "COO",
+          "description": "Chuyên gia vận hành với 12 năm kinh nghiệm quản lý dịch vụ"
+        }
+      }
+    },
+    "cta": {
+      "title": "Sẵn sàng trải nghiệm dịch vụ của chúng tôi?",
+      "subtitle": "Tham gia cùng hàng nghìn gia đình đã tin tưởng và sử dụng dịch vụ của chúng tôi",
+      "register_now": "Đăng ký ngay",
+      "login": "Đăng nhập",
+      "book_service": "Đặt dịch vụ ngay"
+    }
+  },
+  "contact": {
+    "title": "Liên hệ",
+    "hero": {
+      "title": "Liên hệ với chúng tôi",
+      "subtitle": "Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn 24/7. Hãy liên hệ ngay để được tư vấn miễn phí!",
+      "features": {
+        "support": "24/7 Support",
+        "secure": "Secure & Private",
+        "service": "5-Star Service"
+      }
+    },
+    "contact_info": {
+      "title": "Thông tin liên hệ",
+      "subtitle": "Nhiều cách để kết nối với chúng tôi, chọn cách phù hợp nhất với bạn",
+      "hotline": {
+        "title": "Hotline 24/7",
+        "content": "1900 1234",
+        "description": "Hỗ trợ khẩn cấp mọi lúc"
+      },
+      "email": {
+        "title": "Email hỗ trợ",
+        "content": "support@homecare.vn",
+        "description": "Phản hồi trong 2 giờ"
+      },
+      "address": {
+        "title": "Địa chỉ văn phòng",
+        "content": "123 Nguyễn Huệ, Q.1, TP.HCM",
+        "description": "Thứ 2 - Chủ nhật: 8:00 - 22:00"
+      },
+      "chat": {
+        "title": "Chat trực tuyến",
+        "content": "Messenger/Zalo",
+        "description": "Phản hồi tức thì"
+      }
+    },
+    "contact_form": {
+      "title": "Gửi tin nhắn cho chúng tôi",
+      "success_message": "Tin nhắn đã được gửi thành công! Chúng tôi sẽ phản hồi sớm nhất.",
+      "full_name": "Họ và tên",
+      "full_name_placeholder": "Nhập họ và tên",
+      "email": "Email",
+      "email_placeholder": "Nhập email",
+      "phone": "Số điện thoại",
+      "phone_placeholder": "Nhập số điện thoại",
+      "service_type": "Loại dịch vụ",
+      "service_type_placeholder": "Chọn loại dịch vụ",
+      "subject": "Tiêu đề",
+      "subject_placeholder": "Tiêu đề tin nhắn",
+      "message": "Nội dung tin nhắn",
+      "message_placeholder": "Mô tả chi tiết yêu cầu của bạn...",
+      "sending": "Đang gửi...",
+      "send_message": "Gửi tin nhắn",
+      "required": "*"
+    },
+    "map": {
+      "main_office": "Văn phòng chính",
+      "office_hours": "8:00 - 22:00 hàng ngày"
+    },
+    "social": {
+      "title": "Theo dõi chúng tôi"
+    },
+    "faq": {
+      "title": "Câu hỏi thường gặp",
+      "subtitle": "Những câu hỏi được khách hàng quan tâm nhất",
+      "questions": {
+        "how_to_book": {
+          "question": "Làm thế nào để đặt dịch vụ sửa chữa?",
+          "answer": "Bạn có thể đặt dịch vụ thông qua website, ứng dụng di động hoặc gọi hotline. Chỉ cần mô tả vấn đề và chúng tôi sẽ cử thợ phù hợp đến tận nơi."
+        },
+        "pricing": {
+          "question": "Chi phí dịch vụ được tính như thế nào?",
+          "answer": "Chi phí dịch vụ được tính dựa trên loại công việc, thời gian thực hiện và vật liệu cần thiết. Bạn sẽ được báo giá chi tiết trước khi thực hiện."
+        },
+        "guarantee": {
+          "question": "Có đảm bảo chất lượng dịch vụ không?",
+          "answer": "Chúng tôi cam kết đảm bảo chất lượng 100%. Nếu không hài lòng, bạn có thể yêu cầu làm lại miễn phí hoặc được hoàn tiền."
+        },
+        "response_time": {
+          "question": "Thời gian phản hồi nhanh nhất là bao lâu?",
+          "answer": "Đối với dịch vụ khẩn cấp, chúng tôi có thể có mặt trong vòng 30-60 phút. Các dịch vụ thường sẽ được lên lịch trong ngày hoặc ngày hôm sau."
+        }
+      },
+      "no_answer": "Không tìm thấy câu trả lời?",
+      "direct_support": "Liên hệ hỗ trợ trực tiếp"
+    },
+    "service_types": {
+      "electrical_plumbing": "Sửa chữa điện nước",
+      "house_cleaning": "Vệ sinh nhà cửa",
+      "electronics_repair": "Sửa chữa điện tử",
+      "plant_care": "Chăm sóc cây cảnh",
+      "furniture_repair": "Sửa chữa nội thất",
+      "other": "Dịch vụ khác"
+    }
   },
   "warehouse": {
     "title": "Quản lý Kho",

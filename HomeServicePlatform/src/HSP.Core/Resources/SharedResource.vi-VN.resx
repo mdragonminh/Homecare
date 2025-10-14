@@ -198,4 +198,16 @@
   <data name="Pleasecheckyouremailforpasswordresetinstructions" xml:space="preserve">
     <value>Hãy kiểm tra email của bạn để thay đổi mật khẩu</value>
   </data>
+  <data name="PhoneNumberIsRequired" xml:space="preserve">
+    <value>Trường Số điện thoại là bắt buộc</value>
+  </data>
+  <data name="InvalidPhoneNumberFormat" xml:space="preserve">
+    <value>Định dạng số điện thoại không hợp lệ</value>
+  </data>
+  <data name="PhoneNumberMaxLength" xml:space="preserve">
+    <value>Số điện thoại không được vượt quá 20 ký tự</value>
+  </data>
+  <data name="EmailOrPhoneIsRequired" xml:space="preserve">
+    <value>Trường Email hoặc Số điện thoại là bắt buộc</value>
+  </data>
 </root>
