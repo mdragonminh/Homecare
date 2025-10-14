@@ -28,7 +28,6 @@ export function AuthButtons({
     setIsDropdownOpen(!isDropdownOpen);
   };
 
-  // Đóng dropdown khi click ra ngoài hoặc nhấn Escape
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -115,6 +114,8 @@ export function AuthButtons({
                             ? t("ui.customer")
                             : loggedInUser.role === "technician"
                             ? t("ui.technician")
+                            : loggedInUser.role === "equipmentmanager"
+                            ? "Quản lý kho"
                             : loggedInUser.role}
                         </span>
                       )}
@@ -167,6 +168,35 @@ export function AuthButtons({
                         <div className="font-medium">Operator Panel</div>
                         <div className="text-xs text-gray-500">
                           Quản lý vận hành
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
+                  {loggedInUser.role === "equipmentmanager" && (
+                    <button
+                      onClick={() => handleNavigate("/warehouse")}
+                      className="flex items-center w-full px-3 py-2.5 text-sm text-gray-700 rounded-xl hover:bg-gray-50 hover:text-orange-600 transition-all duration-200 group"
+                    >
+                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-orange-100 transition-colors">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="w-4 h-4"
+                        >
+                          <path d="M3.375 3C2.339 3 1.5 3.84 1.5 4.875v.75c0 1.036.84 1.875 1.875 1.875h17.25c1.035 0 1.875-.84 1.875-1.875v-.75C22.5 3.839 21.66 3 20.625 3H3.375z" />
+                          <path
+                            fillRule="evenodd"
+                            d="M3.087 9l.54 9.176A3 3 0 006.62 21h10.757a3 3 0 002.995-2.824L20.913 9H3.087zM12 10.5a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V12.75h-1.5a.75.75 0 010-1.5H12z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium">Warehouse Manager</div>
+                        <div className="text-xs text-gray-500">
+                          Quản lý kho thiết bị
                         </div>
                       </div>
                     </button>
