@@ -41,7 +41,7 @@ namespace HSP.Service.Implementations
 			var allTechnicians = await _technicianRepository.GetAll()
 				.Include(x => x.User)
 				.Where(x => x.ApprovalStatus == TechnicianApprovalStatus.Approved)
-				.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), x=>x.Services.Any(s=>input.ServiceIds.Contains(s.Id)))
+				.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), x => x.Services.Any(s => input.ServiceIds.Contains(s.Id)))
 				.ToListAsync();
 			var filtered = allTechnicians
 							 .Select(t => new

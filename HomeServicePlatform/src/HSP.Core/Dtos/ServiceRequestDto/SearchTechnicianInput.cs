@@ -11,6 +11,6 @@
 		//public decimal? MinPrice { get; set; } 
 		//public decimal? MaxPrice { get; set; }
 		public List<Guid>? ServiceIds { get; set; }
-		public double MinRating { get; set; }
+		//public double MinRating { get; set; }
 	}
 }
