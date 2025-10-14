@@ -1,32 +1,32 @@
-import {
-  DashboardOutlined,
-  HomeOutlined,
-  TeamOutlined,
-  ToolOutlined,
-} from "@ant-design/icons";
-import { Button, Layout, Menu, Space, Typography } from "antd";
 import { useMemo, useState } from "react";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
+import { Layout, Menu, Typography, Space, Button } from "antd";
+import {
+  WrenchScrewdriverIcon,
+  CubeIcon,
+  ClipboardDocumentListIcon,
+  HomeIcon,
+} from "@heroicons/react/24/outline";
 import { useTranslation } from "react-i18next";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
 
 const { Sider, Content, Header } = Layout;
 const { Title } = Typography;
 
-export default function AdminLayout({ loggedInUser }) {
+export default function EquipmentManagerLayout({ loggedInUser }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const { t } = useTranslation();
 
   const selectedKeys = useMemo(() => {
-    if (location.pathname.startsWith("/admin/dashboard")) return ["dashboard"];
-    if (location.pathname.startsWith("/admin/accounts")) return ["accounts"];
-    if (location.pathname.startsWith("/admin/settings")) return ["settings"];
-    return ["dashboard"];
+    if (location.pathname.startsWith("/warehouse")) return ["warehouse"];
+    if (location.pathname.startsWith("/equipments")) return ["equipments"];
+
+    return ["warehouse"];
   }, [location.pathname]);
 
-  if (!loggedInUser || loggedInUser.role !== "admin") {
+  if (!loggedInUser || loggedInUser.role !== "equipmentmanager") {
     return null;
   }
 
@@ -48,7 +48,7 @@ export default function AdminLayout({ loggedInUser }) {
           style={{
             padding: "24px 20px",
             borderBottom: "1px solid #f0f0f0",
-            background: "linear-gradient(135deg, #103af3ff 0%, #1140a7ff 100%)",
+            background: "linear-gradient(135deg, #722ed1 0%, #531dab 100%)",
           }}
         >
           <Space align="center">
@@ -63,14 +63,16 @@ export default function AdminLayout({ loggedInUser }) {
                 justifyContent: "center",
               }}
             >
-              <DashboardOutlined style={{ color: "#fff", fontSize: 18 }} />
+              <WrenchScrewdriverIcon
+                style={{ color: "#fff", fontSize: 18, width: 20, height: 20 }}
+              />
             </div>
             {!collapsed && (
               <Title
                 level={4}
                 style={{ margin: 0, color: "#fff", fontWeight: 600 }}
               >
-                {t("admin.panel_title")}
+                {t("equipment.panel_title", "Equipment Manager")}
               </Title>
             )}
           </Space>
@@ -82,27 +84,20 @@ export default function AdminLayout({ loggedInUser }) {
           selectedKeys={selectedKeys}
           style={{ borderRight: "none", marginTop: 8 }}
           onClick={({ key }) => {
-            if (key === "dashboard") navigate("/admin/dashboard");
-            if (key === "accounts") navigate("/admin/accounts");
-            if (key === "settings") navigate("/admin/settings");
+            if (key === "warehouse") navigate("/warehouse");
+            if (key === "equipments") navigate("/warehouse/equipments");
           }}
           items={[
             {
-              key: "dashboard",
-              icon: <DashboardOutlined />,
-              label: t("admin.menu.dashboard", "Dashboard"),
+              key: "warehouse",
+              icon: <CubeIcon style={{ width: 16, height: 16 }} />,
+              label: t("equipment.menu.warehouses", "Warehouses"),
               style: { marginBottom: 4 },
             },
             {
-              key: "accounts",
-              icon: <TeamOutlined />,
-              label: t("admin.menu.manage_accounts", "Manager Accounts"),
-              style: { marginBottom: 4 },
-            },
-            {
-              key: "settings",
-              icon: <ToolOutlined />,
-              label: t("admin.menu.settings", "Settings"),
+              key: "equipments",
+              icon: <WrenchScrewdriverIcon style={{ width: 16, height: 16 }} />,
+              label: t("equipment.menu.equipments", "Equipments"),
               style: { marginBottom: 4 },
             },
           ]}
@@ -122,18 +117,20 @@ export default function AdminLayout({ loggedInUser }) {
           }}
         >
           <Title level={3} style={{ margin: 0, color: "#262626" }}>
-            🏠 {t("admin.platform_title")}
+            🔧 {t("equipment.platform_title", "Equipment Management")}
           </Title>
           <Space>
             <LanguageSwitcher />
             <Button
               type="default"
-              icon={<HomeOutlined />}
+              icon={<HomeIcon style={{ width: 16, height: 16 }} />}
               onClick={() => navigate("/")}
               style={{
                 borderRadius: 8,
                 height: 36,
                 fontWeight: 500,
+                display: "flex",
+                alignItems: "center",
               }}
             >
               {t("ui.back_to_home")}

@@ -8,6 +8,7 @@ namespace HSP.Service.Interfaces
 		Task<CustomerProfileDto> GetCustomerProfileByUserIdAsync(string userId);
 		Task<CustomerProfileDto> GetCustomerProfileByIdAsync(Guid profileId);
 		Task<CustomerProfileDto> UpdateCustomerProfileAsync(string userId, UpdateCustomerProfileDto updateDto);
+		Task<object> GetCustomersAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null);
 		Task<object> GetDebugInfoAsync();
 	}
 }

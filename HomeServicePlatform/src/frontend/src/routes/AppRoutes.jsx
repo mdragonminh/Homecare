@@ -5,14 +5,20 @@ import ClientRoutes from "./ClientRoutes";
 import TechnicianRegister from "../pages/Auth/TechnicianRegister";
 import { GoogleCallbackPage } from "../pages/Auth/GoogleCallbackPage";
 import AdminLayout from "../pages/admin/AdminLayout";
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import AdminSettingsPage from "../pages/admin/AdminSettingsPage";
 import AccountsPage from "../pages/admin/AccountsPage";
-import TechniciansPage from "../pages/admin/TechniciansPage";
-import WarehousePage from "../pages/admin/WarehousePage";
-import EquipmentPage from "../pages/admin/EquipmentPage";
+import OperatorLayout from "../pages/operator/OperatorLayout";
+import OperatorCustomersPage from "../pages/operator/OperatorCustomersPage";
+import OperatorTechniciansPage from "../pages/operator/OperatorTechniciansPage";
+import OperatorSettingsPage from "../pages/operator/OperatorSettingsPage";
 import Layout from "../layouts/Layout";
 import { AddPasswordPage } from "../pages/Auth/AddPasswordPage";
 import ResetPasswordPage from "../pages/Auth/ResetPasswordPage";
 import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage";
+import EquipmentManagerLayout from "../pages/equipmentmanager/EquipmentManagerLayout";
+import EquipmentManagerEquipmentPage from "../pages/equipmentmanager/EquipmentManagerEquipmentPage";
+import EquipmentManagerWarehousePage from "../pages/equipmentmanager/EquipmentManagerWarehousePage";
 
 export default function AppRoutes({
   loggedInUser,
@@ -145,10 +151,29 @@ export default function AppRoutes({
         path="/admin"
         element={<AdminLayout loggedInUser={loggedInUser} />}
       >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="accounts" element={<AccountsPage />} />
-        <Route path="technicians" element={<TechniciansPage />} />
-        <Route path="warehouses" element={<WarehousePage />} />
-        <Route path="equipments" element={<EquipmentPage />} />
+        <Route path="settings" element={<AdminSettingsPage />} />
+      </Route>
+
+      {/* ---- Operator ---- */}
+      <Route
+        path="/operator"
+        element={<OperatorLayout loggedInUser={loggedInUser} />}
+      >
+        <Route index element={<Navigate to="customers" replace />} />
+        <Route path="customers" element={<OperatorCustomersPage />} />
+        <Route path="technicians" element={<OperatorTechniciansPage />} />
+        <Route path="settings" element={<OperatorSettingsPage />} />
+      </Route>
+
+      <Route
+        path="/warehouse"
+        element={<EquipmentManagerLayout loggedInUser={loggedInUser} />}
+      >
+        <Route index element={<EquipmentManagerWarehousePage />} />
+        <Route path="equipments" element={<EquipmentManagerEquipmentPage />} />
       </Route>
     </Routes>
   );

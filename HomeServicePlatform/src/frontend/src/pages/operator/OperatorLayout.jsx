@@ -1,32 +1,35 @@
+import { useMemo, useState } from "react";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
+import { Layout, Menu, Button, Typography, Space } from "antd";
 import {
-  DashboardOutlined,
-  HomeOutlined,
+  UserOutlined,
   TeamOutlined,
+  SettingOutlined,
+  HomeOutlined,
   ToolOutlined,
 } from "@ant-design/icons";
-import { Button, Layout, Menu, Space, Typography } from "antd";
-import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
 
 const { Sider, Content, Header } = Layout;
 const { Title } = Typography;
 
-export default function AdminLayout({ loggedInUser }) {
+export default function OperatorLayout({ loggedInUser }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const { t } = useTranslation();
 
   const selectedKeys = useMemo(() => {
-    if (location.pathname.startsWith("/admin/dashboard")) return ["dashboard"];
-    if (location.pathname.startsWith("/admin/accounts")) return ["accounts"];
-    if (location.pathname.startsWith("/admin/settings")) return ["settings"];
-    return ["dashboard"];
+    if (location.pathname.startsWith("/operator/customers"))
+      return ["customers"];
+    if (location.pathname.startsWith("/operator/technicians"))
+      return ["technicians"];
+    if (location.pathname.startsWith("/operator/settings")) return ["settings"];
+    return ["customers"];
   }, [location.pathname]);
 
-  if (!loggedInUser || loggedInUser.role !== "admin") {
+  if (!loggedInUser || loggedInUser.role !== "operator") {
     return null;
   }
 
@@ -48,7 +51,7 @@ export default function AdminLayout({ loggedInUser }) {
           style={{
             padding: "24px 20px",
             borderBottom: "1px solid #f0f0f0",
-            background: "linear-gradient(135deg, #103af3ff 0%, #1140a7ff 100%)",
+            background: "linear-gradient(135deg, #52c41a 0%, #389e0d 100%)",
           }}
         >
           <Space align="center">
@@ -63,14 +66,14 @@ export default function AdminLayout({ loggedInUser }) {
                 justifyContent: "center",
               }}
             >
-              <DashboardOutlined style={{ color: "#fff", fontSize: 18 }} />
+              <TeamOutlined style={{ color: "#fff", fontSize: 18 }} />
             </div>
             {!collapsed && (
               <Title
                 level={4}
                 style={{ margin: 0, color: "#fff", fontWeight: 600 }}
               >
-                {t("admin.panel_title")}
+                {t("operator.panel_title", "Operator Panel")}
               </Title>
             )}
           </Space>
@@ -82,27 +85,27 @@ export default function AdminLayout({ loggedInUser }) {
           selectedKeys={selectedKeys}
           style={{ borderRight: "none", marginTop: 8 }}
           onClick={({ key }) => {
-            if (key === "dashboard") navigate("/admin/dashboard");
-            if (key === "accounts") navigate("/admin/accounts");
-            if (key === "settings") navigate("/admin/settings");
+            if (key === "customers") navigate("/operator/customers");
+            if (key === "technicians") navigate("/operator/technicians");
+            if (key === "settings") navigate("/operator/settings");
           }}
           items={[
             {
-              key: "dashboard",
-              icon: <DashboardOutlined />,
-              label: t("admin.menu.dashboard", "Dashboard"),
+              key: "customers",
+              icon: <UserOutlined />,
+              label: t("operator.menu.customers", "Customers"),
               style: { marginBottom: 4 },
             },
             {
-              key: "accounts",
-              icon: <TeamOutlined />,
-              label: t("admin.menu.manage_accounts", "Manager Accounts"),
+              key: "technicians",
+              icon: <ToolOutlined />,
+              label: t("operator.menu.tech", "Tech"),
               style: { marginBottom: 4 },
             },
             {
               key: "settings",
-              icon: <ToolOutlined />,
-              label: t("admin.menu.settings", "Settings"),
+              icon: <SettingOutlined />,
+              label: t("operator.menu.settings", "Operator Settings"),
               style: { marginBottom: 4 },
             },
           ]}
@@ -122,7 +125,7 @@ export default function AdminLayout({ loggedInUser }) {
           }}
         >
           <Title level={3} style={{ margin: 0, color: "#262626" }}>
-            🏠 {t("admin.platform_title")}
+            🏠 {t("operator.platform_title", "Operator Dashboard")}
           </Title>
           <Space>
             <LanguageSwitcher />

@@ -21,7 +21,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> GetWarehouses([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null)
         {
             try
@@ -39,7 +39,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> GetWarehouse(Guid id)
         {
             try
@@ -59,7 +59,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> CreateWarehouse([FromBody] CreateWarehouseDto input)
         {
             if (!ModelState.IsValid)
@@ -89,7 +89,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> UpdateWarehouse(Guid id, [FromBody] UpdateWarehouseDto input)
         {
             if (!ModelState.IsValid)
@@ -143,7 +143,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpGet("all")]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> GetAllWarehouses()
         {
             try
@@ -158,7 +158,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpGet("{id}/exists")]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> CheckWarehouseExists(Guid id)
         {
             try
