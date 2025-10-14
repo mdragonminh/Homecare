@@ -118,6 +118,7 @@
     "manage_rooms_devices": "Manage Rooms & Devices",
     "confirm_delete": "Confirm Deletion",
     "confirm_delete_message": "Are you sure you want to delete this home? This action cannot be undone.",
+    "save": "Save",
     "cancel": "Cancel",
     "close": "Close",
     "delete": "Delete",
