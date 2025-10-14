@@ -21,7 +21,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> GetEquipments(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
@@ -43,7 +43,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> GetEquipment(Guid id)
         {
             try
@@ -63,7 +63,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> CreateEquipment([FromBody] CreateEquipmentDto input)
         {
             if (!ModelState.IsValid)
@@ -93,7 +93,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> UpdateEquipment(Guid id, [FromBody] UpdateEquipmentDto input)
         {
             if (!ModelState.IsValid)
@@ -143,7 +143,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpPatch("{id}/quantity")]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> UpdateEquipmentQuantity(Guid id, [FromBody] UpdateEquipmentQuantityDto input)
         {
             if (!ModelState.IsValid)
@@ -173,7 +173,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpGet("warehouse/{warehouseId}")]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> GetEquipmentsByWarehouse(Guid warehouseId)
         {
             try
@@ -188,7 +188,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpGet("{id}/exists")]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> CheckEquipmentExists(Guid id)
         {
             try
