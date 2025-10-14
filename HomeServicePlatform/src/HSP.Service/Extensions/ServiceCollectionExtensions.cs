@@ -11,6 +11,7 @@ namespace HSP.Service.Extensions
 		{
 			services.AddScoped<IAuthenticationService, AuthenticationService>();
 			services.AddScoped<IEmailService, EmailService>();
+			services.AddScoped<IFileService, FileService>();
 			services.AddScoped<IHomeService, HomeService>();
 			services.AddScoped<IGeocodingService, GoogleMapsGeocodingService>();
 			services.AddScoped<IHomeItemService, HomeItemService>();
@@ -23,6 +24,8 @@ namespace HSP.Service.Extensions
 			services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 			services.AddScoped<IHomeServiceService, HomeServiceService>();
 			services.AddScoped<IServiceRequestService, ServiceRequestService>();
+			services.AddScoped<IWarehouseService, WarehouseService>();
+			services.AddScoped<IEquipmentService, EquipmentService>();
 			return services;
 		}
 	}

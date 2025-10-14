@@ -156,7 +156,24 @@
     "reset_password_title": "Đặt lại mật khẩu mới",
     "reset_password_tagline": "Nhập mật khẩu mới cho tài khoản của bạn",
     "reset_password_button_submit": "Đặt lại mật khẩu",
-    "processing": "Đang xử lý..."
+    "processing": "Đang xử lý...",
+    "search_technicians_title": "Tìm Kiếm Technician Chuyên Nghiệp",
+    "confirm_address_and_range": "Xác nhận địa chỉ và phạm vi",
+    "select_service_needed": "Chọn Địa Chỉ Phục Vụ",
+    "select_service_address": "Chọn địa chỉ đã lưu",
+    "search_radius_label": "Bán Kính Tìm Kiếm (Km)",
+    "search_radius_unit": "Km",
+    "manual_address_label": "Địa Chỉ Thủ Công/Vị trí Bản Đồ",
+    "searching_technicians": "Đang tìm kiếm Technician xung quanh {{address}} trong bán kính {{radius}}km...",
+    "technicians_list_title": "Danh sách Technician Gần Bạn ({{count}} người)",
+    "no_technicians_found": "Rất tiếc, không tìm thấy Technician nào phù hợp trong phạm vi {{radius}}km",
+    "select_technician": "Chọn Technician",
+    "technicians.distance_label": "Cách bạn: {{distance}} km",
+    "searching": "Đang tìm kiếm...",
+    "find_technicians_button": "Tìm Technician Xung Quanh {{radius}} km",
+    "your_service_location": "Vị trí  của bạn",
+    "select_service_label": "Tìm kiếm hoặc Chọn Dịch vụ",
+    "search_service_placeholder": "Tìm kiếm dịch vụ..."
   },
   "form": {
     "label": {
@@ -189,7 +206,8 @@
       "operator_username": "operator001",
       "serial_number": "Mã số duy nhất của thiết bị",
       "notes": "Thông tin thêm về thiết bị (ví dụ: vị trí, ngày mua...)",
-      "new_password": "Nhập mật khẩu mới"
+      "new_password": "Nhập mật khẩu mới",
+      "search_radius": "Chọn bán kính tìm kiếm"
     },
     "usertype": {
       "customer": "Khách hàng",
@@ -236,7 +254,11 @@
     "item_edited": "Cập nhật vật phẩm thành công!",
     "item_deleted": "Xóa vật phẩm thành công!",
     "profile_updated": "Cập nhật thông tin thành công!",
-    "password_changed": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại."
+    "password_changed": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.",
+    "geocode_success" : "Đã xác định vị trí. Nhấn Tìm kiếm để tiếp tục.",
+    "location_updated": "Vị trí được cập nhật từ bản đồ: {{address}}. Nhấn Tìm kiếm.",
+    "technician_found": "Tìm thấy {{count}} Technician gần bạn trong {{radius}}km.",
+    "home_loaded": "Đã tải {{count}} địa chỉ. Địa chỉ mặc định: {{name}}"
   },
   "error": {
     "email_in_use": "Email đã được sử dụng, vui lòng dùng email khác.",
@@ -476,8 +498,17 @@
         "installation": "Lắp đặt thiết bị",
         "maintenance": "Bảo trì máy móc"
       },
-      "certifications": "Chứng chỉ & Bằng cấp",
-      "certifications_placeholder": "Liệt kê các chứng chỉ chuyên môn, bằng cấp có liên quan...",
+      "certifications": "Upload Chứng chỉ & Bằng cấp",
+      "upload_certificates": "Chọn file chứng chỉ để upload", 
+      "upload_certificates_desc": "PDF, DOC, DOCX, JPG, PNG (tối đa 5MB mỗi file)",
+      "uploading": "Đang upload...",
+      "uploaded_files": "Các file đã upload",
+      "remove_file": "Xóa",
+      "file_too_large": "quá lớn (tối đa 5MB)",
+      "file_invalid_format": "không đúng định dạng (chỉ chấp nhận PDF, DOC, DOCX, JPG, PNG)",
+      "upload_success": "Đã upload {{count}} file chứng chỉ thành công!",
+      "upload_failed": "Upload chứng chỉ thất bại",
+      "upload_error": "Có lỗi xảy ra khi upload chứng chỉ",
       "availability": "Thời gian có thể làm việc",
       "availability_options": {
         "monday": "Thứ 2",
@@ -523,5 +554,46 @@
   "toast":{
     "login_success": "Đăng nhập thành công!",
     "logout_success": "Đăng xuất thành công!"
+  },
+  "warehouse": {
+    "title": "Quản lý Kho",
+    "description": "Quản lý thông tin các kho hàng",
+    "add": "Thêm Kho",
+    "edit": "Sửa Kho",
+    "name": "Tên Kho",
+    "address": "Địa chỉ", 
+    "manager": "Quản lý",
+    "equipments": "Thiết bị",
+    "noManager": "Chưa có quản lý",
+    "selectManager": "Chọn quản lý",
+    "noData": "Không tìm thấy kho nào"
+  },
+  "equipment": {
+    "title": "Quản lý Thiết bị",
+    "description": "Quản lý thiết bị và tồn kho",
+    "add": "Thêm Thiết bị",
+    "edit": "Sửa Thiết bị", 
+    "name": "Tên Thiết bị",
+    "equipmentDescription": "Mô tả",
+    "warehouse": "Kho",
+    "quantity": "Số lượng",
+    "allWarehouses": "Tất cả Kho",
+    "selectWarehouse": "Chọn Kho",
+    "noData": "Không tìm thấy thiết bị nào",
+    "updateQuantity": "Cập nhật Số lượng",
+    "currentQuantity": "Số lượng hiện tại",
+    "newQuantity": "Số lượng mới",
+    "notes": "Ghi chú"
+  },
+  "common": {
+    "search": "Tìm kiếm...",
+    "actions": "Thao tác",
+    "loading": "Đang tải...",
+    "cancel": "Hủy",
+    "create": "Tạo",
+    "update": "Cập nhật",
+    "delete": "Xóa",
+    "previous": "Trước",
+    "next": "Tiếp"
   }
 }

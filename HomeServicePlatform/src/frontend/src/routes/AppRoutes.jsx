@@ -7,6 +7,8 @@ import { GoogleCallbackPage } from "../pages/Auth/GoogleCallbackPage";
 import AdminLayout from "../pages/admin/AdminLayout";
 import AccountsPage from "../pages/admin/AccountsPage";
 import TechniciansPage from "../pages/admin/TechniciansPage";
+import WarehousePage from "../pages/admin/WarehousePage";
+import EquipmentPage from "../pages/admin/EquipmentPage";
 import Layout from "../layouts/Layout";
 import { AddPasswordPage } from "../pages/Auth/AddPasswordPage";
 import ResetPasswordPage from "../pages/Auth/ResetPasswordPage";
@@ -145,6 +147,8 @@ export default function AppRoutes({
       >
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="technicians" element={<TechniciansPage />} />
+        <Route path="warehouses" element={<WarehousePage />} />
+        <Route path="equipments" element={<EquipmentPage />} />
       </Route>
     </Routes>
   );

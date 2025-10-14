@@ -28,12 +28,19 @@ namespace HSP.Core.Entities
 		[MaxLength(255)]
 		public string? Address { get; set; }
 
+		// JSON string chứa danh sách đường dẫn certificates
+		[MaxLength(2000)]
+		public string? CertificatePaths { get; set; }
+
 		public DateTime? ApprovedAt { get; set; }
 		public string? ApprovedBy { get; set; }
-		public DateTime DateCreated { get ; set ; }
+		public DateTime DateCreated { get; set; }
 		public DateTime DateModified { get; set; }
-		public bool IsDeleted { get ; set ; }
+		public bool IsDeleted { get; set; }
 
 		public ICollection<Service> Services { get; set; } = new List<Service>();
+
+		// Navigation property để tham chiếu đến các files liên quan
+		public ICollection<FileRelation> CertificateFiles { get; set; } = new List<FileRelation>();
 	}
 }

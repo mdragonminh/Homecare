@@ -4,6 +4,12 @@ import AppRoutes from "./routes/AppRoutes";
 import { authApi } from "./services/authApi";
 import { Toaster, toast } from "sonner";
 import { useTranslation } from "react-i18next";
+
+const I18nLoadingFallback = () => (
+  <div className="flex justify-center items-center h-screen">
+    <Loader2 className="h-10 w-10 animate-spin text-blue-600" /> {/* Hoặc dùng spinner của bạn */}
+  </div>
+);
 export default function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [showLoginToast, setShowLoginToast] = useState(false);
