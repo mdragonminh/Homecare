@@ -10,9 +10,8 @@ namespace HSP.Service.Dtos.AuthenticationDto
 	}
 	public class LoginRequestDto
 	{
-		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "EmailIsRequired")]
-		[EmailAddress(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "InvalidEmailFormat")]
-		public string Email { get; set; } = string.Empty;
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "EmailOrPhoneIsRequired")]
+		public string EmailOrPhone { get; set; } = string.Empty;
 
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordIsRequired")]
 		[StringLength(100, MinimumLength = 8, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordLengthError")]

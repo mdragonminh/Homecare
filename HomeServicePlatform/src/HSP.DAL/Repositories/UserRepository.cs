@@ -53,6 +53,11 @@ namespace HSP.DAL.Repositories
 			return _userManager.FindByEmailAsync(email);
 		}
 
+		public Task<AppUser?> FindByPhoneNumberAsync(string phoneNumber)
+		{
+			return Task.FromResult(_userManager.Users.FirstOrDefault(u => u.PhoneNumber == phoneNumber));
+		}
+
 		public Task<AppUser?> FindByIdAsync(Guid id)
 		{
 			return _userManager.FindByIdAsync(id.ToString());
