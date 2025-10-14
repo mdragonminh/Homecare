@@ -1,9 +1,18 @@
-import { Edit, Home, Key, MapPin, RefreshCw } from "lucide-react";
+import {
+  Edit,
+  Home,
+  Key,
+  MapPin,
+  RefreshCw,
+  Save,
+  X,
+  Check,
+  Mail,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ChangePasswordModal from "../components/ChangePasswordModal";
-import EditProfileModal from "../components/EditProfileModal";
 import { Footer } from "../components/Footer";
 import { profileApi } from "../services/profileApi";
 
@@ -13,11 +22,49 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: "",
+    phoneNumber: "",
+    email: "",
+  });
+  const [emailVerificationPending, setEmailVerificationPending] =
+    useState(false);
 
   useEffect(() => {
     fetchProfile();
+
+    // Xử lý URL parameters từ email confirmation
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailChanged = urlParams.get("emailChanged");
+    const message = urlParams.get("message");
+
+    if (emailChanged !== null && message) {
+      if (emailChanged === "true") {
+        toast.success(decodeURIComponent(message));
+        setEmailVerificationPending(false);
+        // Refresh profile để lấy email mới
+        setTimeout(() => {
+          fetchProfile();
+        }, 1000);
+      } else {
+        toast.error(decodeURIComponent(message));
+      }
+
+      // Xóa parameters khỏi URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
+
+  useEffect(() => {
+    if (profile && !isEditing) {
+      setEditForm({
+        fullName: profile.fullName || "",
+        phoneNumber: profile.phoneNumber || "",
+        email: profile.email || "",
+      });
+    }
+  }, [profile, isEditing]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -73,16 +120,65 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   };
 
   const handleEditProfile = () => {
-    setShowEditProfileModal(true);
+    setIsEditing(true);
   };
 
-  const handleEditProfileSubmit = async (fullName, phoneNumber) => {
-    const result = await profileApi.updateMyProfile(fullName, phoneNumber);
-    if (result.success) {
-      setProfile(result.data);
-      toast.success(t("success.profile_updated"));
-    } else {
-      throw new Error(result.message);
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEmailVerificationPending(false);
+    // Reset form về giá trị ban đầu
+    setEditForm({
+      fullName: profile.fullName || "",
+      phoneNumber: profile.phoneNumber || "",
+      email: profile.email || "",
+    });
+  };
+
+  const handleInputChange = (field, value) => {
+    setEditForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      // Cập nhật fullName và phoneNumber
+      const updateResult = await profileApi.updateMyProfile(
+        editForm.fullName,
+        editForm.phoneNumber
+      );
+
+      if (!updateResult.success) {
+        throw new Error(updateResult.message);
+      }
+
+      // Kiểm tra nếu email thay đổi
+      if (editForm.email !== profile.email) {
+        const emailResult = await profileApi.requestEmailChange(editForm.email);
+        if (emailResult.success) {
+          setEmailVerificationPending(true);
+          // toast.success(t("success.email_verification_sent"));
+        } else {
+          throw new Error(emailResult.message);
+        }
+      }
+
+      // Cập nhật profile với thông tin mới (trừ email nếu đang pending verification)
+      setProfile((prev) => ({
+        ...prev,
+        fullName: editForm.fullName,
+        phoneNumber: editForm.phoneNumber,
+      }));
+
+      if (editForm.email === profile.email) {
+        setIsEditing(false);
+        toast.success(t("success.profile_updated"));
+      } else {
+        toast.success(t("success.profile_updated_email_pending"));
+      }
+    } catch (error) {
+      toast.error(error.message);
     }
   };
 
@@ -114,7 +210,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-
       {/* Main Content */}
       <main className="flex-1 py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -166,33 +261,81 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             {t("ui.full_name")}
                           </label>
-                          <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                            <p className="text-gray-900">
-                              {profile.fullName || t("ui.not_updated")}
-                            </p>
-                          </div>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editForm.fullName}
+                              onChange={(e) =>
+                                handleInputChange("fullName", e.target.value)
+                              }
+                              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder={t("ui.enter_full_name")}
+                            />
+                          ) : (
+                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                              <p className="text-gray-900">
+                                {profile.fullName || t("ui.not_updated")}
+                              </p>
+                            </div>
+                          )}
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             {t("ui.email")}
                           </label>
-                          <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                            <p className="text-gray-900">
-                              {profile.email || t("ui.not_updated")}
-                            </p>
-                          </div>
+                          {isEditing ? (
+                            <div>
+                              <input
+                                type="email"
+                                value={editForm.email}
+                                onChange={(e) =>
+                                  handleInputChange("email", e.target.value)
+                                }
+                                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder={t("ui.enter_email")}
+                              />
+                              {emailVerificationPending && (
+                                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                                  <div className="flex items-center">
+                                    <Mail className="w-4 h-4 mr-2 text-yellow-600" />
+                                    <p className="text-sm text-yellow-700">
+                                      {t("ui.email_verification_pending")}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                              <p className="text-gray-900">
+                                {profile.email || t("ui.not_updated")}
+                              </p>
+                            </div>
+                          )}
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             {t("ui.phone_number")}
                           </label>
-                          <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                            <p className="text-gray-900">
-                              {profile.phoneNumber || t("ui.not_updated")}
-                            </p>
-                          </div>
+                          {isEditing ? (
+                            <input
+                              type="tel"
+                              value={editForm.phoneNumber}
+                              onChange={(e) =>
+                                handleInputChange("phoneNumber", e.target.value)
+                              }
+                              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder={t("ui.enter_phone_number")}
+                            />
+                          ) : (
+                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                              <p className="text-gray-900">
+                                {profile.phoneNumber || t("ui.not_updated")}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -230,37 +373,60 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                     {/* Actions */}
                     <div className="mt-8 pt-6 border-t border-gray-200">
                       <div className="flex flex-wrap gap-4">
-                        <button
-                          onClick={fetchProfile}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          {t("ui.refresh")}
-                        </button>
+                        {isEditing ? (
+                          <>
+                            <button
+                              onClick={handleSaveProfile}
+                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            >
+                              <Save className="w-4 h-4 mr-2" />
+                              {t("ui.save")}
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                              <X className="w-4 h-4 mr-2" />
+                              {t("ui.cancel")}
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={fetchProfile}
+                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              {t("ui.refresh")}
+                            </button>
 
-                        <button
-                          className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                          onClick={handleEditProfile}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          {t("ui.edit_info")}
-                        </button>
+                            <button
+                              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              onClick={handleEditProfile}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              {t("ui.edit_info")}
+                            </button>
 
-                        <button
-                          onClick={() => window.location.href = '/list-home'}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                        >
-                          <MapPin className="w-4 h-4 mr-2" />
-                          {t("ui.manage_addresses")}
-                        </button>
+                            <button
+                              onClick={() =>
+                                (window.location.href = "/list-home")
+                              }
+                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            >
+                              <MapPin className="w-4 h-4 mr-2" />
+                              {t("ui.manage_addresses")}
+                            </button>
 
-                        <button
-                          onClick={handleChangePassword}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                        >
-                          <Key className="w-4 h-4 mr-2" />
-                          {t("ui.change_password")}
-                        </button>
+                            <button
+                              onClick={handleChangePassword}
+                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            >
+                              <Key className="w-4 h-4 mr-2" />
+                              {t("ui.change_password")}
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -276,14 +442,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
         isOpen={showChangePasswordModal}
         onClose={() => setShowChangePasswordModal(false)}
         onSubmit={handleChangePasswordSubmit}
-      />
-
-      {/* Edit Profile Modal */}
-      <EditProfileModal
-        isOpen={showEditProfileModal}
-        onClose={() => setShowEditProfileModal(false)}
-        onSubmit={handleEditProfileSubmit}
-        currentProfile={profile}
       />
     </div>
   );
