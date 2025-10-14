@@ -6,7 +6,7 @@ import HomeManagementPage from "../pages/client/home/HomeManagementPage";
 import HomeItemsPage from "../pages/client/home/HomeItemsPage";
 import Profile from "../pages/Profile";
 import { jwtDecode } from "jwt-decode";
-
+import { FindTechnicianPage } from "../pages/client/service/FindTechnicianPage";
 const ProtectedRoute = ({ element: Element, loggedInUser }) => {
   if (!loggedInUser) {
     return <Navigate to="/login" replace />;
@@ -102,6 +102,15 @@ export default function ClientRoutes({
       <Route
         path="/contact"
         element={<ContactPage loggedInUser={loggedInUser} />}
+      />
+      <Route
+        path="/find-technician"
+        element={
+          <ProtectedRoute
+            loggedInUser={loggedInUser}
+            element={<FindTechnicianPage loggedInUser={loggedInUser} />}
+          />
+        }
       />
     </Routes>
   );

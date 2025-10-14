@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Core.Entities
 {
-	public class Service : BaseEntity<Guid>, IDateTracking, IHasSoftedDelete
+	public class Service : BaseEntity<Guid>, IDateTracking, IHasSoftedDelete, IUserTracking
 	{
 		[Required]
 		[StringLength(100)]
@@ -21,5 +21,8 @@ namespace HSP.Core.Entities
 		public DateTime DateModified { get; set; }
 
 		public ICollection<TechnicianProfile> Technicians { get; set; } = new List<TechnicianProfile>();
+		public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+		public Guid? CreatedBy { get; set; }
+		public Guid? ModifiedBy { get; set; }
 	}
 }

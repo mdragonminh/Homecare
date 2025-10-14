@@ -380,6 +380,9 @@ namespace HSP.Service.Implementations
 					UserId = user.Id,
 					//SkillSet = input.SkillSet,
 					ExperienceYears = input.ExperienceYears,
+					CertificatePaths = input.CertificateFilePaths?.Any() == true
+						? System.Text.Json.JsonSerializer.Serialize(input.CertificateFilePaths)
+						: null,
 					DateCreated = DateTime.UtcNow,
 					DateModified = DateTime.UtcNow,
 					IsDeleted = false

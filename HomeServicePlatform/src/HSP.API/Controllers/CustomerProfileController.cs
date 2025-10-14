@@ -18,6 +18,20 @@ namespace HSP.API.Controllers
 			_customerProfileService = customerProfileService;
 		}
 
+		[HttpGet]
+		public async Task<ActionResult> GetCustomers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null)
+		{
+			try
+			{
+				var customers = await _customerProfileService.GetCustomersAsync(pageNumber, pageSize, searchTerm);
+				return Ok(customers);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, $"Internal server error: {ex.Message}");
+			}
+		}
+
 		[HttpGet("my-profile")]
 		public async Task<ActionResult<CustomerProfileDto>> GetMyProfile()
 		{
@@ -29,7 +43,7 @@ namespace HSP.API.Controllers
 					return Unauthorized("User not authenticated");
 				}
 
-				try 
+				try
 				{
 					var profile = await _customerProfileService.GetCustomerProfileByUserIdAsync(userId);
 					return Ok(profile);

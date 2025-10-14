@@ -51,5 +51,8 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsIsRequired")]
 		[Range(0, 50, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsRange")]
 		public int ExperienceYears { get; set; }
+
+		// Danh sách các file paths của chứng chỉ đã upload
+		public List<string> CertificateFilePaths { get; set; } = new List<string>();
 	}
 }

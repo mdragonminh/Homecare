@@ -155,7 +155,24 @@
     "processing": "Processing...",
     "total_homes": "Total Homes",
     "manage_addresses": "Manage Addresses",
-    "status": "Status"
+    "status": "Status",
+    "search_technicians_title": "Search for Professional Technicians",
+    "confirm_address_and_range": "Confirm Address & Range",
+    "select_service_needed": "Select Service Needed",
+    "select_service_address": "Select Saved Address",
+    "search_radius_label": "Search Radius (Km)",
+    "search_radius_unit": "Km",
+    "manual_address_label": "Manual Address/Map Location",
+    "searching_technicians": "Searching for technicians around {{address}} within {{radius}}km...",
+    "technicians_list_title": "List of Technicians Near You ({{count}} found)",
+    "no_technicians_found": "Sorry, no matching technicians found within {{radius}}km",
+    "select_technician": "Select Technician",
+    "technicians.distance_label": "Distance from you: {{distance}} km",
+    "searching": "Searching...",
+    "find_technicians_button": "Find Technicians Around {{radius}} km",
+    "your_service_location": "Your Service Location",
+    "select_service_label": "Search or Select Service",
+    "search_service_placeholder": "Search for services..."
   },
   "form": {
     "label": {
@@ -190,7 +207,8 @@
       "notes": "Additional device information (e.g., location, purchase date...)",
       "operator_email": "operator@example.com",
       "operator_username": "operator001",
-      "new_password": "Enter new password"
+      "new_password": "Enter new password",
+      "search_radius": "Search radius (Km)"
     },
     "usertype": {
       "customer": "Customer",
@@ -238,7 +256,11 @@
     "item_edited": "Item successfully updated!",
     "item_deleted": "Item successfully deleted!",
     "profile_updated": "Profile updated successfully!",
-    "password_changed": "Password changed successfully! Please log in again."
+    "password_changed": "Password changed successfully! Please log in again.",
+    "geocode_success" : "Location has been determined. Click Search to continue.",
+    "location_updated": "Location updated from map: {{address}}. Click Search.",
+    "technician_found": "Found {{count}} technicians near you within {{radius}}km.",
+    "home_loaded": "Loaded {{count}} addresses. Default address: {{name}}"
   },
   "error": {
     "email_in_use": "Email is already in use, please use another email.",
@@ -479,8 +501,17 @@
         "installation": "Equipment Installation",
         "maintenance": "Machine Maintenance"
       },
-      "certifications": "Certifications & Qualifications",
-      "certifications_placeholder": "List relevant professional certifications and qualifications...",
+      "certifications": "Upload Certifications & Qualifications",
+      "upload_certificates": "Choose certificate files to upload",
+      "upload_certificates_desc": "PDF, DOC, DOCX, JPG, PNG (max 5MB per file)",
+      "uploading": "Uploading...",
+      "uploaded_files": "Uploaded files",
+      "remove_file": "Remove",
+      "file_too_large": "too large (max 5MB)",
+      "file_invalid_format": "invalid format (only PDF, DOC, DOCX, JPG, PNG accepted)",
+      "upload_success": "{{count}} certificate files uploaded successfully!",
+      "upload_failed": "Certificate upload failed",
+      "upload_error": "An error occurred while uploading certificates",
       "availability": "Availability",
       "availability_options": {
         "monday": "Monday",
@@ -723,5 +754,45 @@
       "furniture_repair": "Furniture Repair",
       "other": "Other Services"
     }
+  "warehouse": {
+    "title": "Warehouse Management",
+    "description": "Manage warehouses and their information",
+    "add": "Add Warehouse",
+    "edit": "Edit Warehouse",
+    "name": "Warehouse Name",
+    "address": "Address", 
+    "manager": "Manager",
+    "equipments": "Equipments",
+    "noManager": "No Manager",
+    "selectManager": "Select Manager",
+    "noData": "No warehouses found"
+  },
+  "equipment": {
+    "title": "Equipment Management",
+    "description": "Manage equipments and their inventory",
+    "add": "Add Equipment",
+    "edit": "Edit Equipment", 
+    "name": "Equipment Name",
+    "equipmentDescription": "Description",
+    "warehouse": "Warehouse",
+    "quantity": "Quantity",
+    "allWarehouses": "All Warehouses",
+    "selectWarehouse": "Select Warehouse",
+    "noData": "No equipments found",
+    "updateQuantity": "Update Quantity",
+    "currentQuantity": "Current Quantity",
+    "newQuantity": "New Quantity",
+    "notes": "Notes"
+  },
+  "common": {
+    "search": "Search...",
+    "actions": "Actions",
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "create": "Create",
+    "update": "Update",
+    "delete": "Delete",
+    "previous": "Previous",
+    "next": "Next"
   }
 }

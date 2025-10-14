@@ -52,6 +52,33 @@ export const authApi = {
       return { success: false, message };
     }
   },
+  uploadCertificates: async (certificateFiles) => {
+    try {
+      const formData = new FormData();
+      certificateFiles.forEach((file) => {
+        formData.append("certificates", file);
+      });
+
+      const res = await axiosClient.post(
+        "/Authentication/upload-certificates",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      return { success: true, data: res.data };
+    } catch (error) {
+      console.error("Upload certificates error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Upload chứng chỉ thất bại",
+      };
+    }
+  },
+
   registerTechnician: async ({
     email,
     fullName,
@@ -61,6 +88,7 @@ export const authApi = {
     bio,
     certifications,
     availability = [],
+    certificateFilePaths = [],
   }) => {
     try {
       const expMap = {
@@ -94,6 +122,7 @@ export const authApi = {
         phoneNumber: phone,
         skillSet,
         experienceYears,
+        certificateFilePaths,
       };
 
       const res = await axiosClient.post(

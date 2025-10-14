@@ -19,7 +19,7 @@ namespace HSP.Service.Implementations
 
 		public async Task<Guid> CreateCustomerProfileAsync(Guid userId)
 		{
-			if(userId == Guid.Empty)
+			if (userId == Guid.Empty)
 			{
 				throw new UnauthorizedAccessException("Người dùng chưa được xác thực.");
 			}
@@ -37,7 +37,7 @@ namespace HSP.Service.Implementations
 		{
 			// Debug: Log userId để kiểm tra
 			Console.WriteLine($"[DEBUG] Searching for CustomerProfile with UserId: {userId}");
-			
+
 			var customerProfile = await _customerProfileRepository.GetAll()
 				.Include(x => x.User)
 				.Include(x => x.Homes)
@@ -53,10 +53,10 @@ namespace HSP.Service.Implementations
 					DateModified = x.DateModified,
 					TotalHomes = x.Homes.Count(h => !h.IsDeleted)
 				}).FirstOrDefaultAsync();
-				
+
 			// Debug: Log kết quả
 			Console.WriteLine($"[DEBUG] CustomerProfile found: {customerProfile != null}");
-			
+
 			if (customerProfile == null)
 			{
 				// Debug: Kiểm tra xem có profile nào trong database không
@@ -69,7 +69,7 @@ namespace HSP.Service.Implementations
 				{
 					Console.WriteLine($"[DEBUG] Profile ID: {p.Id}, UserId: {p.UserId}");
 				}
-				
+
 				throw new KeyNotFoundException($"Customer profile not found for user ID: {userId}");
 			}
 			return customerProfile;
@@ -120,6 +120,52 @@ namespace HSP.Service.Implementations
 			return await GetCustomerProfileByUserIdAsync(userId);
 		}
 
+		public async Task<object> GetCustomersAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
+		{
+			var query = _customerProfileRepository.GetAll()
+				.Include(x => x.User)
+				.Include(x => x.Homes)
+				.Where(x => !x.IsDeleted);
+
+			// Apply search filter if provided
+			if (!string.IsNullOrEmpty(searchTerm))
+			{
+				query = query.Where(x =>
+					x.User.FullName.Contains(searchTerm) ||
+					(x.User.Email != null && x.User.Email.Contains(searchTerm)) ||
+					(x.User.PhoneNumber != null && x.User.PhoneNumber.Contains(searchTerm)));
+			}
+
+			// Get total count for pagination
+			var totalCount = await query.CountAsync();
+
+			// Apply pagination
+			var customers = await query
+				.OrderByDescending(x => x.DateCreated)
+				.Skip((pageNumber - 1) * pageSize)
+				.Take(pageSize)
+				.Select(x => new CustomerProfileDto
+				{
+					Id = x.Id,
+					UserId = x.UserId,
+					FullName = x.User.FullName,
+					Email = x.User.Email ?? string.Empty,
+					PhoneNumber = x.User.PhoneNumber ?? string.Empty,
+					DateCreated = x.DateCreated,
+					DateModified = x.DateModified,
+					TotalHomes = x.Homes.Count(h => !h.IsDeleted)
+				}).ToListAsync();
+
+			return new
+			{
+				Data = customers,
+				TotalCount = totalCount,
+				PageNumber = pageNumber,
+				PageSize = pageSize,
+				TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+			};
+		}
+
 		public async Task<object> GetDebugInfoAsync()
 		{
 			try
@@ -127,7 +173,8 @@ namespace HSP.Service.Implementations
 				var profiles = await _customerProfileRepository.GetAll()
 					.Include(x => x.User)
 					.Where(x => !x.IsDeleted)
-					.Select(x => new {
+					.Select(x => new
+					{
 						Id = x.Id,
 						UserId = x.UserId,
 						UserEmail = x.User != null ? x.User.Email : "N/A",
@@ -135,14 +182,16 @@ namespace HSP.Service.Implementations
 						DateCreated = x.DateCreated
 					}).ToListAsync();
 
-				return new {
+				return new
+				{
 					TotalProfiles = profiles.Count,
 					Profiles = profiles
 				};
 			}
 			catch (Exception ex)
 			{
-				return new {
+				return new
+				{
 					Error = ex.Message,
 					TotalProfiles = 0,
 					Profiles = new object[0]
