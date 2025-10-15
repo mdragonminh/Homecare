@@ -85,7 +85,7 @@ namespace HSP.Service.Implementations
 			var user = await _userRepository.FindByEmailAsync(input.Email);
 			if (user == null)
 			{
-				throw new ValidationException(_localizer["InvalidEmailOrPassword"]);
+				throw new ValidationException(_localizer["InvalidEmail"]);
 			}
 			if (!user.EmailConfirmed)
 			{
