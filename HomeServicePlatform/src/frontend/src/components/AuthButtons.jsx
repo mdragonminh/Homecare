@@ -202,6 +202,23 @@ export function AuthButtons({
                     </button>
                   )}
 
+                  {loggedInUser.role === "technician" && (
+                    <button
+                      onClick={() => handleNavigate("/technician")}
+                      className="flex items-center w-full px-3 py-2.5 text-sm text-gray-700 rounded-xl hover:bg-gray-50 hover:text-purple-600 transition-all duration-200 group"
+                    >
+                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-purple-100 transition-colors">
+                        <Wrench className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium">Technician Panel</div>
+                        <div className="text-xs text-gray-500">
+                          Quản lý booking
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleNavigate("/profile")}
                     className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 group"

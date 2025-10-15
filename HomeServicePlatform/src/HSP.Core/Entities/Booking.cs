@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Interfaces.Entity;
+using HSP.Core.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

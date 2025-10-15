@@ -1,5 +1,6 @@
 ﻿using HSP.Core.Interfaces.Entity;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HSP.Core.Entities
 {
@@ -9,6 +10,8 @@ namespace HSP.Core.Entities
 		[StringLength(100)]
 		public string Name { get; set; } = string.Empty;
 
+		public Guid CategoryId { get; set; }
+		[ForeignKey("CategoryId")]
 		public ServiceCategory Category { get; set; } = null!;
 
 		[StringLength(500)]

@@ -20,6 +20,9 @@ import ConfirmEmailChangePage from "../pages/Auth/ConfirmEmailChangePage";
 import EquipmentManagerLayout from "../pages/equipmentmanager/EquipmentManagerLayout";
 import EquipmentManagerEquipmentPage from "../pages/equipmentmanager/EquipmentManagerEquipmentPage";
 import EquipmentManagerWarehousePage from "../pages/equipmentmanager/EquipmentManagerWarehousePage";
+import TechnicianLayout from "../pages/technician/TechnicianLayout";
+import TechnicianBookingsPage from "../pages/technician/TechnicianBookingsPage";
+import BookingDetailPage from "../pages/technician/BookingDetailPage";
 
 export default function AppRoutes({
   loggedInUser,
@@ -180,6 +183,16 @@ export default function AppRoutes({
       >
         <Route index element={<EquipmentManagerWarehousePage />} />
         <Route path="equipments" element={<EquipmentManagerEquipmentPage />} />
+      </Route>
+
+      {/* ---- Technician ---- */}
+      <Route
+        path="/technician"
+        element={<TechnicianLayout loggedInUser={loggedInUser} />}
+      >
+        <Route index element={<Navigate to="bookings" replace />} />
+        <Route path="bookings" element={<TechnicianBookingsPage />} />
+        <Route path="bookings/:id" element={<BookingDetailPage />} />
       </Route>
     </Routes>
   );
