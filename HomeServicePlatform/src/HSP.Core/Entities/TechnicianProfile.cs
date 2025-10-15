@@ -18,10 +18,8 @@ namespace HSP.Core.Entities
 		[Required]
 		public TechnicianApprovalStatus ApprovalStatus { get; set; } = TechnicianApprovalStatus.Pending;
 
-		[Required]
 		[Range(-90, 90)]
 		public double Latitude { get; set; }
-		[Required]
 		[Range(-180, 180)]
 		public double Longitude { get; set; }
 

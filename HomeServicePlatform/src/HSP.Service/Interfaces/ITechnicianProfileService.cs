@@ -11,9 +11,5 @@ namespace HSP.Service.Interfaces
 		Task<bool> RejectTechnicianAsync(Guid technicianProfileId, string rejectedBy);
 		Task<bool> ApproveTechnicianWithNotificationAsync(Guid technicianProfileId, string approvedBy);
 		Task<bool> RejectTechnicianWithNotificationAsync(Guid technicianProfileId, string rejectedBy);
-
-		#region
-		Task UpdateLocationAsync(UpdateLocationDto input, Guid CurrentTechId);
-		#endregion
 	}
 }

@@ -11,11 +11,13 @@ namespace HSP.API.Controllers
 	[ApiController]
 	public class TechnicianLocationController : ControllerBase
 	{
-		private readonly ITechnicianProfileService _technicianProfileService;
-		public TechnicianLocationController(ITechnicianProfileService technicianProfileService)
+		private readonly ITechnicianLocationService _technicianLocationService;
+
+		public TechnicianLocationController(ITechnicianLocationService technicianLocationService)
 		{
-			_technicianProfileService = technicianProfileService;
+			_technicianLocationService = technicianLocationService;
 		}
+
 		[HttpPut("update-location")]
 		[Authorize(Roles = RoleNames.Technician)]
 		public async Task<IActionResult> UpdateLocation([FromBody] UpdateLocationDto input)
@@ -23,8 +25,8 @@ namespace HSP.API.Controllers
 			try
 			{
 				Guid CurrentTechId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("User ID not found"));
-				await _technicianProfileService.UpdateLocationAsync(input, CurrentTechId);
-				return Ok(new { message = "Update location success" });
+				await _technicianLocationService.UpdateLocationAsync(input, CurrentTechId);
+				return Ok(new { message = "Update location success"});
 			}
 			catch (Exception ex)
 			{

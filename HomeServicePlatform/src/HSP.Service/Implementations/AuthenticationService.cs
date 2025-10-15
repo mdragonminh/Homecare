@@ -99,7 +99,7 @@ namespace HSP.Service.Implementations
 
 			if (user == null)
 			{
-				throw new ValidationException(_localizer["InvalidEmailOrPassword"]);
+				throw new ValidationException(_localizer["InvalidEmail"]);
 			}
 			if (!user.EmailConfirmed)
 			{
