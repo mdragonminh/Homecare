@@ -27,6 +27,7 @@ namespace HSP.Service.Extensions
 			services.AddScoped<IServiceRequestService, ServiceRequestService>();
 			services.AddScoped<IWarehouseService, WarehouseService>();
 			services.AddScoped<IEquipmentService, EquipmentService>();
+			services.AddScoped<IBookingService, BookingService>();
 			return services;
 		}
 	}
