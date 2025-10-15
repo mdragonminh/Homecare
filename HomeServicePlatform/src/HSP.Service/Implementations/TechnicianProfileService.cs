@@ -336,26 +336,5 @@ namespace HSP.Service.Implementations
 </body>
 </html>";
 		}
-
-		public async Task UpdateLocationAsync(UpdateLocationDto input, Guid CurrentTechId)
-		{
-			if(input == null)
-			{
-				throw new ArgumentNullException("");
-			}
-			if (input.Latitude < -90 || input.Latitude > 90 || input.Longitude < -180 || input.Longitude > 180)
-			{
-				throw new ArgumentException(_localizer["InvalidCoordinates"]);
-			}
-			var technician =  _technicianProfileRepository.GetAll().FirstOrDefault(x => x.Id == CurrentTechId);
-			if(technician == null) 
-			{ 
-				throw new ArgumentException(_localizer["TechnicianNotFound"]);
-			}
-			technician.Latitude = input.Latitude;
-			technician.Longitude = input.Longitude;
-			technician.DateModified = DateTime.UtcNow;
-			await _unitOfWork.SaveChangesAsync();
-		}
 	}
 }
