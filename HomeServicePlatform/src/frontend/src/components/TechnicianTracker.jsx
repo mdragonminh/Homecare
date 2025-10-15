@@ -36,7 +36,7 @@ export function TechnicianTracker() {
         if (moved || timedOut) {
           try {
             await technicianApi.updateLocation(latitude, longitude);
-            console.log("Cập nhật vị trí:", latitude, longitude);
+            //console.log("Cập nhật vị trí:", latitude, longitude);
             last.current = { lat: latitude, lng: longitude, time: now };
           } catch (err) {
             console.warn("Lỗi cập nhật vị trí:", err.message);
