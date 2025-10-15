@@ -257,15 +257,6 @@ const BookingDetailPage = () => {
           <div className="flex items-center space-x-3">
             {getStatusBadge(booking.status)}
 
-            {canUpdateStatus(booking.status) && (
-              <button
-                onClick={handleUpdateStatus}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Cập nhật trạng thái
-              </button>
-            )}
-
             {canCompleteBooking(booking.status) && (
               <button
                 onClick={handleCompleteBooking}
