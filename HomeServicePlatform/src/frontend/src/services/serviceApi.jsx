@@ -5,12 +5,11 @@ const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
 export const serviceApi = {
   /**
    * Lấy danh sách các dịch vụ cho trang chủ.
-   * Endpoint: GET /api/HomeService/services-homepage <--- ĐÃ SỬA
+   * Endpoint: GET /api/HomeService/services-homepage
    * @returns {Promise<{success: boolean, data?: Array, message?: string}>}
    */
   getServices: async () => {
     try {
-      // ⭐️ ĐÃ SỬA URL API
       const url = "/HomeService/services-homepage";
       const res = await axiosClient.get(url);
       if (ENABLE_DEBUG)
@@ -36,7 +35,6 @@ export const serviceApi = {
    * @returns {Promise<{success: boolean, data?: Array, message?: string}>}
    */
   getNearbyTechnicians: async (address, maxDistanceKm) => {
-    // ⭐️ Đã loại bỏ serviceIds
     try {
       if (!address || address.trim() === "") throw new Error("Thiếu địa chỉ!");
 
@@ -44,7 +42,6 @@ export const serviceApi = {
         Address: address,
         MaxDistanceKm: maxDistanceKm || 10,
       });
-      // ⭐️ Đã loại bỏ: serviceIds.forEach(id => params.append("ServiceIds", id));
 
       const url = `/ServiceRequest/nearby-technicians?${params.toString()}`;
       const res = await axiosClient.get(url);
@@ -62,6 +59,101 @@ export const serviceApi = {
           error.response?.data?.error ||
           error.message ||
           "Lỗi khi tìm kiếm kỹ thuật viên",
+      };
+    }
+  },
+
+  /**
+   * Tạo yêu cầu dịch vụ và khớp nối/tạo booking.
+   * Endpoint: POST /api/ServiceRequest/create-and-match-booking
+   * @param {string} address - Địa chỉ dịch vụ.
+   * @param {string[]} serviceIds - Mảng các ID dịch vụ (UUIDs).
+   * @param {string} customerId - ID của khách hàng tạo yêu cầu.
+   * @param {number} [distanceKm=0] - Khoảng cách/bán kính tìm kiếm (km), mặc định 0.
+   * @returns {Promise<{success: boolean, data?: object, message?: string}>}
+   */
+  createAndMatchBooking: async (address, serviceIds, customerId, distanceKm = 0) => {
+    try {
+      // ✅ Validation đầu vào
+      if (!address || address.trim() === "") {
+        throw new Error("Địa chỉ không được để trống.");
+      }
+      
+      if (!serviceIds || !Array.isArray(serviceIds) || serviceIds.length === 0) {
+        throw new Error("Vui lòng chọn ít nhất một dịch vụ.");
+      }
+      
+      if (!customerId) {
+        throw new Error("Thiếu thông tin khách hàng (customerId).");
+      }
+
+      const url = "/ServiceRequest/create-and-match-booking";
+      
+      // ✅ Payload đúng theo API spec của backend
+      const payload = {
+        address: address.trim(),
+        serviceIds: serviceIds, // ✅ Đúng tên key theo API spec
+        customerId: customerId,
+        distanceKm: Number(distanceKm) || 0,
+      };
+
+      if (ENABLE_DEBUG) {
+        console.log("=== CREATE BOOKING API ===");
+        console.log("URL:", url);
+        console.log("Payload:", JSON.stringify(payload, null, 2));
+      }
+
+      const res = await axiosClient.post(url, payload);
+
+      if (ENABLE_DEBUG) {
+        console.log("Create Booking API: Success");
+        console.log("Response:", res.data);
+      }
+        
+      return { 
+        success: true, 
+        data: res.data,
+        message: "Đã tạo yêu cầu thành công!"
+      };
+
+    } catch (error) {
+      if (ENABLE_DEBUG) {
+        console.error("=== CREATE BOOKING API ERROR ===");
+        console.error("Error:", error);
+        console.error("Response data:", error.response?.data);
+        console.error("Response status:", error.response?.status);
+      }
+      
+      // ✅ Xử lý các loại lỗi cụ thể
+      let errorMessage = "Lỗi khi tạo yêu cầu và đặt lịch";
+      
+      if (error.response) {
+        // Server đã phản hồi với status code ngoài 2xx
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        if (status === 400) {
+          errorMessage = data?.message || data?.error || "Dữ liệu không hợp lệ";
+        } else if (status === 401) {
+          errorMessage = "Bạn cần đăng nhập để thực hiện chức năng này";
+        } else if (status === 404) {
+          errorMessage = "Không tìm thấy dịch vụ hoặc kỹ thuật viên phù hợp";
+        } else if (status === 500) {
+          errorMessage = "Lỗi máy chủ, vui lòng thử lại sau";
+        } else {
+          errorMessage = data?.message || data?.error || errorMessage;
+        }
+      } else if (error.request) {
+        // Request đã được gửi nhưng không nhận được response
+        errorMessage = "Không thể kết nối đến máy chủ";
+      } else {
+        // Lỗi khi setup request
+        errorMessage = error.message || errorMessage;
+      }
+        
+      return {
+        success: false,
+        message: errorMessage,
       };
     }
   },

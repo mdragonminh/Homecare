@@ -48,40 +48,35 @@ export default function HomeItemsInterface() {
 
   const pageSize = 6;
 
-  const fetchHomeItems = useCallback(
-    async (page, search) => {
-      if (!homeId) {
-        setError(t("error.missing_home_id"));
-        setLoading(false);
-        return;
-      }
+const fetchHomeItems = useCallback(
+  async (page, search) => {
+    if (!homeId) {
+      setError("error.missing_home_id"); // Dùng key thay vì t()
+      setLoading(false);
+      return;
+    }
 
-      setLoading(true);
-      try {
-        const res = await homeApi.listHomeItems(
-          homeId,
-          page,
-          pageSize,
-          search || ""
-        );
-        if (res.success) {
-          setItems(res.data.items || []);
-          setCurrentPage(res.data.currentPage || 1);
-          setTotalPages(res.data.totalPages || 1);
-          setTotalCount(res.data.totalCount ?? 0);
-          setError(null);
-        } else {
-          setError(res.message);
-        }
-      } catch (err) {
-        console.error("Error fetching home items:", err);
-        setError(t("error.fetch_items_failed"));
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    try {
+      const res = await homeApi.listHomeItems(homeId, page, pageSize, search || "");
+      if (res.success) {
+        setItems(res.data.items || []);
+        setCurrentPage(res.data.currentPage || 1);
+        setTotalPages(res.data.totalPages || 1);
+        setTotalCount(res.data.totalCount ?? 0);
+        setError(null);
+      } else {
+        setError(res.message || "error.fetch_items_failed"); // Dùng key
       }
-    },
-    [homeId, t, pageSize]
-  );
+    } catch (err) {
+      console.error("Error fetching home items:", err);
+      setError("error.fetch_items_failed"); // Dùng key
+    } finally {
+      setLoading(false);
+    }
+  },
+  [homeId, pageSize] // Xóa t khỏi dependency
+);
 
   useEffect(() => {
     const handler = setTimeout(() => {

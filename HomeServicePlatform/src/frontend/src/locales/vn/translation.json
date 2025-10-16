@@ -8,6 +8,8 @@
     "logging_in": "Đang đăng nhập...",
     "forgot_password": "Quên mật khẩu?",
     "remember_me": "Ghi nhớ đăng nhập",
+    "quick_actions": "Thao tác nhanh",
+    "update_profile_info": "Cập nhật thông tin cá nhân",
     "back_to_home": "Về trang chủ",
     "service_tagline": "Dịch vụ sửa chữa nhà chuyên nghiệp",
     "register_account": "Tạo tài khoản mới",
@@ -228,7 +230,8 @@
       "serial_number": "Mã số duy nhất của thiết bị",
       "notes": "Thông tin thêm về thiết bị (ví dụ: vị trí, ngày mua...)",
       "new_password": "Nhập mật khẩu mới",
-      "search_radius": "Chọn bán kính tìm kiếm"
+      "search_radius": "Chọn bán kính tìm kiếm",
+      "address": " Nhập địa chỉ để tìm trên bản đồ"
     },
     "usertype": {
       "customer": "Khách hàng",
