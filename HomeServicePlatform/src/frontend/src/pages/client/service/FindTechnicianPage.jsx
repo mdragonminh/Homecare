@@ -25,6 +25,7 @@ import {
   Check,
   ChevronDown,
   Wrench,
+  Locate,
 } from "lucide-react";
 
 import MapDisplay, { calculateDistance } from "../../../components/MapDisplay.jsx";
@@ -44,7 +45,7 @@ export function FindTechnicianPage({ loggedInUser }) {
   const [isSearching, setIsSearching] = useState(false);
   const [isAddHomeModalOpen, setIsAddHomeModalOpen] = useState(false);
   const [isEditHomeModalOpen, setIsEditHomeModalOpen] = useState(false);
-  
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [services, setServices] = useState([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState([]); 
   const [isServicesLoading, setIsServicesLoading] = useState(false);
@@ -75,6 +76,55 @@ export function FindTechnicianPage({ loggedInUser }) {
       });
   }, []);
 
+  const handleGetMyLocation = () => {
+    if (!("geolocation" in navigator)) {
+      setStatusMessage(t("error.geolocation_not_supported"));
+      return;
+    }
+    
+    // Chỉ cho phép tìm kiếm theo vị trí hiện tại khi người dùng CHƯA chọn nhà
+    if (loggedInUser && selectedHomeId) {
+        setStatusMessage(t("error.cannot_use_my_location_with_home"));
+        return;
+    }
+    
+    setIsGettingLocation(true);
+    setStatusMessage(t("ui.getting_current_location"));
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setCoords({ latitude, longitude });
+        setTechnicians(null); // Clear previous results
+        
+        // Reverse Geocode để lấy địa chỉ từ tọa độ
+        try {
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+          );
+          const data = await response.json();
+          if (data.results.length > 0) {
+            setAddressInput(data.results[0].formatted_address);
+            setStatusMessage(t("success.my_location_set"));
+          } else {
+            setAddressInput("");
+            setStatusMessage(t("error.geocode_failed_no_address"));
+          }
+        } catch (error) {
+          console.error("Reverse geocode error:", error);
+          setStatusMessage(t("error.geocode_failed"));
+        } finally {
+          setIsGettingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        setStatusMessage(t("error.geolocation_denied_or_failed"));
+        setIsGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
   const handleServiceSearchInputChange = (e) => {
     const value = e.target.value;
     setServiceSearchInput(value);
@@ -583,8 +633,8 @@ export function FindTechnicianPage({ loggedInUser }) {
               </div>
             </div>
             
-            {!loggedInUser || (loggedInUser && !selectedHomeId) ? ( 
-              <div className="relative">
+           {!loggedInUser || (loggedInUser && !selectedHomeId) ? ( 
+              <div className="relative space-y-2">
                 <label className="block text-sm font-semibold text-gray-800 mb-1">
                   {t("ui.manual_address_label")}
                 </label>
@@ -596,8 +646,26 @@ export function FindTechnicianPage({ loggedInUser }) {
                   onChange={(e) => setAddressInput(e.target.value)}
                   onBlur={handleGeocode}
                   className="w-full p-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:border-gray-400"
-                  disabled={isSearching}
+                  disabled={isSearching || isGettingLocation} // <--- Cập nhật: disable khi đang lấy vị trí
                 />
+
+                <button
+                    onClick={handleGetMyLocation}
+                    disabled={isSearching || isGettingLocation}
+                    className="w-full py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm rounded-lg shadow-md hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center active:scale-[0.99] mt-2"
+                >
+                    {isGettingLocation ? (
+                        <>
+                            <Loader2 className="h-4 w-4 text-white mr-1 animate-spin" />
+                            {t("ui.getting_location")}
+                        </>
+                    ) : (
+                        <>
+                            <Locate className="h-4 w-4 mr-1" />
+                            {t("ui.use_my_current_location", { defaultValue: "Sử dụng Vị trí Hiện tại của tôi" })}
+                        </>
+                    )}
+                </button>
               </div>
             ) : null}
             
