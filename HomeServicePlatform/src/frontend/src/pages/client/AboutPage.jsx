@@ -252,7 +252,7 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
 
             <div className="relative">
               <img
-                src="/api/placeholder/600/400"
+                src="https://thumbs.dreamstime.com/b/businessman-misson-flag-running-up-arrow-to-target-challenge-trouble-obstacles-path-goal-business-concept-growth-success-192753902.jpg"
                 alt="Mission Vision"
                 className="rounded-2xl shadow-2xl"
               />
@@ -406,7 +406,10 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
                 </button>
               </>
             ) : (
-              <button className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200">
+              <button
+                onClick={() => (window.location.href = "/find-technician")}
+                className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200"
+              >
                 {t("about.cta.book_service")}
               </button>
             )}
