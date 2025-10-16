@@ -3,11 +3,12 @@ import {
   Home,
   Key,
   MapPin,
-  RefreshCw,
   Save,
   X,
   Check,
   Mail,
+  User,
+  RefreshCw,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,7 +23,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [editingField, setEditingField] = useState(null); // null, 'fullName', 'email', 'phoneNumber'
+  const [editingField, setEditingField] = useState(null);
   const [editForm, setEditForm] = useState({
     fullName: "",
     phoneNumber: "",
@@ -30,11 +31,11 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   });
   const [emailVerificationPending, setEmailVerificationPending] =
     useState(false);
+  const [activeTab, setActiveTab] = useState("info"); // 'info', 'password', 'address'
 
   useEffect(() => {
     fetchProfile();
 
-    // Xử lý URL parameters từ email confirmation
     const urlParams = new URLSearchParams(window.location.search);
     const emailChanged = urlParams.get("emailChanged");
     const message = urlParams.get("message");
@@ -43,7 +44,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
       if (emailChanged === "true") {
         toast.success(decodeURIComponent(message));
         setEmailVerificationPending(false);
-        // Refresh profile để lấy email mới
         setTimeout(() => {
           fetchProfile();
         }, 1000);
@@ -51,7 +51,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
         toast.error(decodeURIComponent(message));
       }
 
-      // Xóa parameters khỏi URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
@@ -126,7 +125,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   const handleCancelEdit = () => {
     setEditingField(null);
     setEmailVerificationPending(false);
-    // Reset form về giá trị ban đầu
     setEditForm({
       fullName: profile.fullName || "",
       phoneNumber: profile.phoneNumber || "",
@@ -146,7 +144,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
       const fieldToUpdate = editingField;
 
       if (fieldToUpdate === "fullName" || fieldToUpdate === "phoneNumber") {
-        // Cập nhật fullName và/hoặc phoneNumber
         const updateResult = await profileApi.updateMyProfile(
           editForm.fullName,
           editForm.phoneNumber
@@ -156,7 +153,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
           throw new Error(updateResult.message);
         }
 
-        // Cập nhật profile với thông tin mới
         setProfile((prev) => ({
           ...prev,
           fullName: editForm.fullName,
@@ -166,7 +162,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
         setEditingField(null);
         toast.success(t("success.profile_updated"));
       } else if (fieldToUpdate === "email") {
-        // Kiểm tra nếu email thay đổi
         if (editForm.email !== profile.email) {
           const emailResult = await profileApi.requestEmailChange(
             editForm.email
@@ -190,8 +185,13 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   const LoadingContent = () => (
     <div className="flex items-center justify-center py-32">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">{t("ui.loading_profile")}</p>
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full blur-lg animate-pulse"></div>
+          <div className="relative animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-600 border-l-blue-600 mx-auto shadow-xl"></div>
+        </div>
+        <p className="mt-6 text-lg font-medium text-gray-600 animate-pulse">
+          {t("ui.loading_profile")}
+        </p>
       </div>
     </div>
   );
@@ -199,14 +199,15 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   const ErrorContent = () => (
     <div className="flex items-center justify-center py-32">
       <div className="text-center">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg max-w-md">
-          <p className="font-bold">{t("ui.error_occurred")}</p>
-          <p>{error}</p>
+        <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 shadow-lg px-8 py-6 rounded-xl max-w-md transform transition-all duration-300 hover:shadow-xl">
+          <p className="font-bold text-xl text-red-700 mb-3">{t("ui.error_occurred")}</p>
+          <p className="text-red-600 text-lg">{error}</p>
         </div>
         <button
           onClick={fetchProfile}
-          className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          className="mt-8 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 mx-auto"
         >
+          <RefreshCw className="w-5 h-5" />
           {t("ui.try_again")}
         </button>
       </div>
@@ -214,249 +215,267 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Main Content */}
-      <main className="flex-1 py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {loading && <LoadingContent />}
-          {error && !loading && <ErrorContent />}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 backdrop-blur-sm bg-white/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            {t("ui.personal_information")}
+          </h1>
+          <p className="text-gray-600 mt-2 text-lg">{t("ui.view_manage_profile")}</p>
+        </div>
+      </div>
 
-          {!loading && !error && (
-            <>
-              {/* Header */}
-              <div className="bg-white rounded-lg shadow-sm mb-6">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {t("ui.personal_information")}
-                  </h1>
-                  <p className="text-gray-600 mt-1">
-                    {t("ui.view_manage_profile")}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {loading && <LoadingContent />}
+        {error && !loading && <ErrorContent />}
+
+        {!loading && !error && profile && (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Sidebar */}
+            <div className="lg:col-span-1">
+              {/* Profile Card */}
+              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div className="flex flex-col items-center">
+                  <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-4">
+                    {profile.fullName
+                      ? profile.fullName.charAt(0).toUpperCase()
+                      : "U"}
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900 text-center">
+                    {profile.fullName}
+                  </h2>
+                  <p className="text-gray-600 text-sm text-center mt-2 break-all">
+                    {profile.email}
                   </p>
+                  <div className="mt-3">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 gap-1">
+                      <Check className="w-3 h-3" />
+                      {t("ui.account_verified")}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Profile Info */}
-              {profile && (
-                <div className="bg-white rounded-lg shadow-sm">
-                  <div className="px-6 py-6">
-                    {/* Avatar Section */}
-                    <div className="flex items-center mb-8">
-                      <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                        {profile.fullName
-                          ? profile.fullName.charAt(0).toUpperCase()
-                          : "U"}
-                      </div>
-                      <div className="ml-6">
-                        <h2 className="text-xl font-semibold text-gray-900">
-                          {profile.fullName}
-                        </h2>
-                        <p className="text-gray-600">{profile.email}</p>
-                        <div className="flex items-center mt-2">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {t("ui.account_verified")}
-                          </span>
-                        </div>
-                      </div>
+              {/* Quick Actions */}
+              <div className="bg-white rounded-xl shadow-lg p-6 transform transition-all duration-300 hover:shadow-xl">
+                <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
+                  {t("ui.quick_actions") || "Tác vụ nhanh"}
+                </h3>
+                <div className="space-y-3">
+                  {/* <button
+                    onClick={() => setActiveTab("info")}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all duration-300 ${
+                      activeTab === "info"
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md"
+                        : "text-gray-700 hover:bg-gray-50 hover:shadow-md"
+                    }`}
+                  >
+                    <User className="w-5 h-5" />
+                    {t("ui.personal_info") || "Thông tin cá nhân"}
+                  </button> */}
+                  <button
+                    onClick={() => (window.location.href = "/list-home")}
+                    className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-left font-medium transition-all duration-300 hover:shadow-lg group hover:bg-gradient-to-r from-emerald-500 to-teal-600 hover:text-white transform hover:-translate-y-0.5"
+                  >
+                    <div className="p-2.5 bg-emerald-50 rounded-lg group-hover:bg-white/10 transition-colors duration-300">
+                      <MapPin className="w-5 h-5 text-emerald-600 group-hover:text-white transition-colors duration-300" />
                     </div>
-
-                    {/* Profile Details Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-6">
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                              {t("ui.full_name")}
-                            </label>
-                            {editingField !== "fullName" && (
-                              <button
-                                onClick={() => handleEditField("fullName")}
-                                className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800"
-                              >
-                                <Edit className="w-3 h-3 mr-1" />
-                                {t("ui.edit")}
-                              </button>
-                            )}
-                          </div>
-                          {editingField === "fullName" ? (
-                            <input
-                              type="text"
-                              value={editForm.fullName}
-                              onChange={(e) =>
-                                handleInputChange("fullName", e.target.value)
-                              }
-                              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              placeholder={t("ui.enter_full_name")}
-                            />
-                          ) : (
-                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                              <p className="text-gray-900">
-                                {profile.fullName || t("ui.not_updated")}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                              {t("ui.email")}
-                            </label>
-                            {editingField !== "email" && (
-                              <button
-                                onClick={() => handleEditField("email")}
-                                className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800"
-                              >
-                                <Edit className="w-3 h-3 mr-1" />
-                                {t("ui.edit")}
-                              </button>
-                            )}
-                          </div>
-                          {editingField === "email" ? (
-                            <div>
-                              <input
-                                type="email"
-                                value={editForm.email}
-                                onChange={(e) =>
-                                  handleInputChange("email", e.target.value)
-                                }
-                                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder={t("ui.enter_email")}
-                              />
-                              {emailVerificationPending && (
-                                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                                  <div className="flex items-center">
-                                    <Mail className="w-4 h-4 mr-2 text-yellow-600" />
-                                    <p className="text-sm text-yellow-700">
-                                      {t("ui.email_verification_pending")}
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                              <p className="text-gray-900">
-                                {profile.email || t("ui.not_updated")}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                              {t("ui.phone_number")}
-                            </label>
-                            {editingField !== "phoneNumber" && (
-                              <button
-                                onClick={() => handleEditField("phoneNumber")}
-                                className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800"
-                              >
-                                <Edit className="w-3 h-3 mr-1" />
-                                {t("ui.edit")}
-                              </button>
-                            )}
-                          </div>
-                          {editingField === "phoneNumber" ? (
-                            <input
-                              type="tel"
-                              value={editForm.phoneNumber}
-                              onChange={(e) =>
-                                handleInputChange("phoneNumber", e.target.value)
-                              }
-                              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              placeholder={t("ui.enter_phone_number")}
-                            />
-                          ) : (
-                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                              <p className="text-gray-900">
-                                {profile.phoneNumber || t("ui.not_updated")}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-6">
-                        {/* Timestamps */}
-                        <div className="mt-8 pt-6 border-t border-gray-200">
-                          <h3 className="text-lg font-medium text-gray-900 mb-4">
-                            {t("ui.system_information")}
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {t("ui.account_created")}
-                              </label>
-                              <p className="text-sm text-gray-600">
-                                {formatDate(profile.dateCreated)}
-                              </p>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {t("ui.total_homes")}
-                              </label>
-                              <div className="flex items-center">
-                                <Home className="w-4 h-4 mr-2 text-gray-500" />
-                                <p className="text-sm text-gray-600">
-                                  {profile.totalHomes || 0} {t("ui.homes")}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                    <span className="font-semibold">{t("ui.manage_addresses")}</span>
+                  </button>
+                  <button
+                    onClick={handleChangePassword}
+                    className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-left font-medium transition-all duration-300 hover:shadow-lg group hover:bg-gradient-to-r from-violet-500 to-purple-600 hover:text-white transform hover:-translate-y-0.5"
+                  >
+                    <div className="p-2.5 bg-violet-50 rounded-lg group-hover:bg-white/10 transition-colors duration-300">
+                      <Key className="w-5 h-5 text-violet-600 group-hover:text-white transition-colors duration-300" />
                     </div>
+                    <span className="font-semibold">{t("ui.change_password")}</span>
+                  </button>
+                </div>
+              </div>
 
-                    {/* Actions */}
-                    <div className="mt-8 pt-6 border-t border-gray-200">
-                      <div className="flex flex-wrap gap-4">
-                        {editingField ? (
-                          <>
-                            <button
-                              onClick={handleSaveProfile}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                            >
-                              <Save className="w-4 h-4 mr-2" />
-                              {t("ui.save")}
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            >
-                              <X className="w-4 h-4 mr-2" />
-                              {t("ui.cancel")}
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() =>
-                                (window.location.href = "/list-home")
-                              }
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                            >
-                              <MapPin className="w-4 h-4 mr-2" />
-                              {t("ui.manage_addresses")}
-                            </button>
-
-                            <button
-                              onClick={handleChangePassword}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            >
-                              <Key className="w-4 h-4 mr-2" />
-                              {t("ui.change_password")}
-                            </button>
-                          </>
-                        )}
-                      </div>
+              {/* System Info */}
+              <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
+                <h3 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wide">
+                  {t("ui.system_information")}
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      {t("ui.account_created")}
+                    </p>
+                    <p className="text-gray-900 font-semibold mt-1">
+                      {formatDate(profile.dateCreated)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      {t("ui.total_homes")}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Home className="w-5 h-5 text-gray-400" />
+                      <p className="text-gray-900 font-semibold">
+                        {profile.totalHomes || 0} {t("ui.homes")}
+                      </p>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              {activeTab === "info" && (
+                <div className="bg-white rounded-lg shadow-sm">
+                  {/* Tabs Navigation */}
+                  <div className="border-b border-gray-200 px-6 py-4">
+                    <div className="flex items-center gap-8">
+                      <button className="text-blue-600 font-semibold pb-4 border-b-2 border-blue-600 flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {t("ui.personal_information")}
+                      </button>
+                      {/* <button className="text-gray-600 font-medium pb-4 hover:text-gray-900 flex items-center gap-2">
+                        <Key className="w-4 h-4" />
+                        {t("ui.change_password")}
+                      </button> */}
+                    </div>
+                  </div>
+
+                  {/* Profile Form */}
+                  <div className="p-6">
+                    <p className="text-gray-600 text-sm mb-6">
+                      {t("ui.update_profile_info") || "Cập nhật thông tin cá nhân của bạn"}
+                      {/* Thông tin cá nhân của bạn */}
+                    </p>
+
+                    <div className="space-y-6">
+                      {/* Full Name */}
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                          <User className="w-4 h-4" /> {t("ui.full_name")}
+                        </label>
+                        {editingField === "fullName" ? (
+                          <input
+                            type="text"
+                            value={editForm.fullName}
+                            onChange={(e) =>
+                              handleInputChange("fullName", e.target.value)
+                            }
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-300 transition-all duration-300"
+                            placeholder={t("ui.enter_full_name")}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                            <p className="text-gray-900">
+                              {profile.fullName || t("ui.not_updated")}
+                            </p>
+                            <button
+                              onClick={() => handleEditField("fullName")}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Email */}
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                          <Mail className="w-4 h-4" /> Email
+                        </label>
+                        {editingField === "email" ? (
+                          <div>
+                            <input
+                              type="email"
+                              value={editForm.email}
+                              onChange={(e) =>
+                                handleInputChange("email", e.target.value)
+                              }
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              placeholder={t("ui.enter_email")}
+                            />
+                            {emailVerificationPending && (
+                              <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-yellow-600" />
+                                <p className="text-sm text-yellow-700 font-medium">
+                                  {t("ui.email_verification_pending")}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                            <p className="text-gray-900">
+                              {profile.email || t("ui.not_updated")}
+                            </p>
+                            <button
+                              onClick={() => handleEditField("email")}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Phone Number */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t("ui.phone_number")}
+                        </label>
+                        {editingField === "phoneNumber" ? (
+                          <input
+                            type="tel"
+                            value={editForm.phoneNumber}
+                            onChange={(e) =>
+                              handleInputChange("phoneNumber", e.target.value)
+                            }
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder={t("ui.enter_phone_number")}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                            <p className="text-gray-900">
+                              {profile.phoneNumber || t("ui.not_updated")}
+                            </p>
+                            <button
+                              onClick={() => handleEditField("phoneNumber")}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    {editingField && (
+                      <div className="flex gap-3 mt-6">
+                        <button
+                          onClick={handleSaveProfile}
+                          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 group"
+                        >
+                          <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          {t("ui.save")}
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="flex items-center justify-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 group"
+                        >
+                          <X className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          {t("ui.cancel")}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Change Password Modal */}
