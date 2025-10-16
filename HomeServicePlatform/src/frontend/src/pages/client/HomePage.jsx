@@ -95,7 +95,6 @@ const testimonials = [
 // --- Main HomePage --- //
 export function HomePage({  onShowRegister, loggedInUser }) {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  
   return (
     // LOẠI BỎ: min-h-screen flex flex-col (đã được bọc bởi Layout)
     <div className="flex-1"> 

@@ -14,12 +14,15 @@ function calcDistance(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export function TechnicianTracker() {
+export function TechnicianTracker({role}) {
   const last = useRef({ lat: null, lng: null, time: 0 });
 
   useEffect(() => {
     if (!("geolocation" in navigator)) return;
-
+    if (role?.toLowerCase() !== "technician") {
+      //console.log("Không phải kỹ thuật viên, dừng theo dõi vị trí");
+      return;
+    }
     const watchId = navigator.geolocation.watchPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;

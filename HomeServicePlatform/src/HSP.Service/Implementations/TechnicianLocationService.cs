@@ -1,5 +1,6 @@
 ﻿using HSP.Core.Dtos.TechnicianProfileDto;
 using HSP.Core.Entities;
+using HSP.Core.Enums;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
 using HSP.Service.Interfaces;
@@ -27,16 +28,16 @@ namespace HSP.Service.Implementations
 				throw new ArgumentException(_localizer["InvalidCoordinates"]);
 			}
 			var technician = await _technicianProfileRepository.GetAll()
-				.FirstOrDefaultAsync(x => x.UserId == CurrentTechId);
+				.FirstOrDefaultAsync(x => x.UserId == CurrentTechId && x.ApprovalStatus == TechnicianApprovalStatus.Approved);
+			if (technician == null)
+			{
+				throw new ArgumentException(_localizer["TechnicianNotFound"]);
+			}
 			double diffLat = Math.Abs(technician.Latitude - input.Latitude);
 			double diffLng = Math.Abs(technician.Longitude - input.Longitude);
 			if (diffLat < 0.0005 && diffLng < 0.0005)
 			{
 				return; 
-			}
-			if (technician == null)
-			{
-				throw new ArgumentException(_localizer["TechnicianNotFound"]);
 			}
 			technician.Latitude = input.Latitude;
 			technician.Longitude = input.Longitude;

@@ -22,7 +22,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [editingField, setEditingField] = useState(null); // null, 'fullName', 'email', 'phoneNumber'
   const [editForm, setEditForm] = useState({
     fullName: "",
     phoneNumber: "",
@@ -57,14 +57,14 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   }, []);
 
   useEffect(() => {
-    if (profile && !isEditing) {
+    if (profile && editingField === null) {
       setEditForm({
         fullName: profile.fullName || "",
         phoneNumber: profile.phoneNumber || "",
         email: profile.email || "",
       });
     }
-  }, [profile, isEditing]);
+  }, [profile, editingField]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -119,12 +119,12 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     }
   };
 
-  const handleEditProfile = () => {
-    setIsEditing(true);
+  const handleEditField = (fieldName) => {
+    setEditingField(fieldName);
   };
 
   const handleCancelEdit = () => {
-    setIsEditing(false);
+    setEditingField(null);
     setEmailVerificationPending(false);
     // Reset form về giá trị ban đầu
     setEditForm({
@@ -143,39 +143,44 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
 
   const handleSaveProfile = async () => {
     try {
-      // Cập nhật fullName và phoneNumber
-      const updateResult = await profileApi.updateMyProfile(
-        editForm.fullName,
-        editForm.phoneNumber
-      );
+      const fieldToUpdate = editingField;
 
-      if (!updateResult.success) {
-        throw new Error(updateResult.message);
-      }
+      if (fieldToUpdate === "fullName" || fieldToUpdate === "phoneNumber") {
+        // Cập nhật fullName và/hoặc phoneNumber
+        const updateResult = await profileApi.updateMyProfile(
+          editForm.fullName,
+          editForm.phoneNumber
+        );
 
-      // Kiểm tra nếu email thay đổi
-      if (editForm.email !== profile.email) {
-        const emailResult = await profileApi.requestEmailChange(editForm.email);
-        if (emailResult.success) {
-          setEmailVerificationPending(true);
-          // toast.success(t("success.email_verification_sent"));
-        } else {
-          throw new Error(emailResult.message);
+        if (!updateResult.success) {
+          throw new Error(updateResult.message);
         }
-      }
 
-      // Cập nhật profile với thông tin mới (trừ email nếu đang pending verification)
-      setProfile((prev) => ({
-        ...prev,
-        fullName: editForm.fullName,
-        phoneNumber: editForm.phoneNumber,
-      }));
+        // Cập nhật profile với thông tin mới
+        setProfile((prev) => ({
+          ...prev,
+          fullName: editForm.fullName,
+          phoneNumber: editForm.phoneNumber,
+        }));
 
-      if (editForm.email === profile.email) {
-        setIsEditing(false);
+        setEditingField(null);
         toast.success(t("success.profile_updated"));
-      } else {
-        toast.success(t("success.profile_updated_email_pending"));
+      } else if (fieldToUpdate === "email") {
+        // Kiểm tra nếu email thay đổi
+        if (editForm.email !== profile.email) {
+          const emailResult = await profileApi.requestEmailChange(
+            editForm.email
+          );
+          if (emailResult.success) {
+            setEmailVerificationPending(true);
+            toast.success(t("success.profile_updated_email_pending"));
+          } else {
+            throw new Error(emailResult.message);
+          }
+        } else {
+          setEditingField(null);
+          toast.success(t("success.profile_updated"));
+        }
       }
     } catch (error) {
       toast.error(error.message);
@@ -258,10 +263,21 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-6">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            {t("ui.full_name")}
-                          </label>
-                          {isEditing ? (
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                              {t("ui.full_name")}
+                            </label>
+                            {editingField !== "fullName" && (
+                              <button
+                                onClick={() => handleEditField("fullName")}
+                                className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800"
+                              >
+                                <Edit className="w-3 h-3 mr-1" />
+                                {t("ui.edit")}
+                              </button>
+                            )}
+                          </div>
+                          {editingField === "fullName" ? (
                             <input
                               type="text"
                               value={editForm.fullName}
@@ -281,10 +297,21 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            {t("ui.email")}
-                          </label>
-                          {isEditing ? (
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                              {t("ui.email")}
+                            </label>
+                            {editingField !== "email" && (
+                              <button
+                                onClick={() => handleEditField("email")}
+                                className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800"
+                              >
+                                <Edit className="w-3 h-3 mr-1" />
+                                {t("ui.edit")}
+                              </button>
+                            )}
+                          </div>
+                          {editingField === "email" ? (
                             <div>
                               <input
                                 type="email"
@@ -316,10 +343,21 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            {t("ui.phone_number")}
-                          </label>
-                          {isEditing ? (
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                              {t("ui.phone_number")}
+                            </label>
+                            {editingField !== "phoneNumber" && (
+                              <button
+                                onClick={() => handleEditField("phoneNumber")}
+                                className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800"
+                              >
+                                <Edit className="w-3 h-3 mr-1" />
+                                {t("ui.edit")}
+                              </button>
+                            )}
+                          </div>
+                          {editingField === "phoneNumber" ? (
                             <input
                               type="tel"
                               value={editForm.phoneNumber}
@@ -373,7 +411,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                     {/* Actions */}
                     <div className="mt-8 pt-6 border-t border-gray-200">
                       <div className="flex flex-wrap gap-4">
-                        {isEditing ? (
+                        {editingField ? (
                           <>
                             <button
                               onClick={handleSaveProfile}
@@ -392,22 +430,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                           </>
                         ) : (
                           <>
-                            <button
-                              onClick={fetchProfile}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            >
-                              <RefreshCw className="w-4 h-4 mr-2" />
-                              {t("ui.refresh")}
-                            </button>
-
-                            <button
-                              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                              onClick={handleEditProfile}
-                            >
-                              <Edit className="w-4 h-4 mr-2" />
-                              {t("ui.edit_info")}
-                            </button>
-
                             <button
                               onClick={() =>
                                 (window.location.href = "/list-home")
