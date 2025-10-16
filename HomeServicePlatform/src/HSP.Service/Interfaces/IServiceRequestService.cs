@@ -6,5 +6,6 @@ namespace HSP.Service.Interfaces
 	public interface IServiceRequestService
 	{
 		Task<IEnumerable<TechnicianResultDto>> SearchNearbyTechniciansAsync(SearchTechnicianInput input);
+		Task<MatchedBookingResultDto> CreateAndMatchBookingAsync(CustomerCreateBookingDto input);
 	}
 }
