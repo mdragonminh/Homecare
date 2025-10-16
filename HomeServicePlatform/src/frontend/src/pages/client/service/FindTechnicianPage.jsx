@@ -51,7 +51,7 @@ export function FindTechnicianPage({ loggedInUser }) {
   const [isServicesLoading, setIsServicesLoading] = useState(false);
   const [serviceSearchInput, setServiceSearchInput] = useState("");
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
-  
+  const [isMatching, setIsMatching] = useState(false);
   const currentHomeData = useMemo(() => {
     return homes.find((home) => home.id === selectedHomeId);
   }, [homes, selectedHomeId]);
@@ -76,6 +76,44 @@ export function FindTechnicianPage({ loggedInUser }) {
       });
   }, []);
 
+  const handleCreateAndMatchBooking = useCallback(async () => {
+    console.log("--- DEBUG BOOKING START ---");
+    console.log("addressInput:", addressInput);
+    console.log("selectedServiceIds:", selectedServiceIds);
+    console.log("selectedServiceIds.length:", selectedServiceIds.length);
+    console.log("loggedInUser.id:", loggedInUser?.id);
+    console.log("--- DEBUG BOOKING END ---");
+
+    if (!addressInput || selectedServiceIds.length === 0 || !loggedInUser?.userId) {
+        setStatusMessage(t("validation.missing_booking_info", { defaultValue: "Vui lòng nhập địa chỉ và chọn dịch vụ." }));
+        // Log lỗi này để xác nhận nếu nó chạy
+        console.error("VALIDATION FAILED: Missing one of address, services, or customerId.");
+        return;
+    }
+
+    setIsMatching(true);
+    setTechnicians(null); // Xóa danh sách kỹ thuật viên cũ
+    setStatusMessage(t("ui.matching_technician_process", { defaultValue: "Đang tạo yêu cầu và tìm kiếm kỹ thuật viên phù hợp..." }));
+
+    const radius = parseFloat(searchRadius);
+
+    const matchResult = await serviceApi.createAndMatchBooking(
+        addressInput,
+        selectedServiceIds,
+        loggedInUser.userId,
+        radius
+    );
+
+    setIsMatching(false);
+
+    if (matchResult.success) {
+        setStatusMessage(t("success.match_booking_success", { defaultValue: "Đã tạo yêu cầu thành công. Chờ kỹ thuật viên chấp nhận." }));
+    } else {
+        setStatusMessage(
+            matchResult.message || t("error.match_booking_failed", { defaultValue: "Lỗi khi tạo yêu cầu và ghép nối." })
+        );
+    }
+}, [addressInput, selectedServiceIds, loggedInUser, searchRadius, t]);
   const handleGetMyLocation = () => {
     if (!("geolocation" in navigator)) {
       setStatusMessage(t("error.geolocation_not_supported"));
@@ -95,9 +133,7 @@ export function FindTechnicianPage({ loggedInUser }) {
       async (position) => {
         const { latitude, longitude } = position.coords;
         setCoords({ latitude, longitude });
-        setTechnicians(null); // Clear previous results
-        
-        // Reverse Geocode để lấy địa chỉ từ tọa độ
+        setTechnicians(null); 
         try {
           const response = await fetch(
             `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
@@ -692,6 +728,30 @@ export function FindTechnicianPage({ loggedInUser }) {
                 </>
               )}
             </button>
+            {loggedInUser && (
+                <button
+                    onClick={handleCreateAndMatchBooking}
+                    disabled={
+                        !coords.latitude ||
+                        isMatching ||
+                        isSearching || // Không cho phép ghép nối khi đang tìm kiếm
+                        selectedServiceIds.length === 0 
+                    }
+                    className="w-full mt-2 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold text-sm rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center active:scale-[0.98]"
+                >
+                    {isMatching ? (
+                        <>
+                            <Loader2 className="h-4 w-4 text-white mr-1 animate-spin" />
+                            {t("ui.matching", { defaultValue: "Đang ghép nối..." })}
+                        </>
+                    ) : (
+                        <>
+                            <Check className="h-4 w-4 mr-1" />
+                            {t("ui.match_technician_button", { defaultValue: "Yêu cầu & Ghép nối Kỹ thuật viên Ngay" })}
+                        </>
+                    )}
+                </button>
+            )}
           </div>
         </div>
 
