@@ -75,8 +75,9 @@ namespace HSP.Service.Implementations
 				TechnicianId = bestTechnician.Technician.Id,
 				Status = BookingStatus.Pending,
 				//ProblemDescription = input.Description,
-				ServiceId = input.ServiceIds.First()
-			};
+				ServiceId = input.ServiceIds.First(),
+				DateCreated = DateTime.UtcNow,
+            };
 
 			await _bookingRepository.AddAsync(newBooking);
 			await _unitOfWork.SaveChangesAsync();

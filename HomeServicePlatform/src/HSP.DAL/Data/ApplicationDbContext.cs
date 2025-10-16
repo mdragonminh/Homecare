@@ -95,7 +95,7 @@ namespace HSP.DAL.Data
 							.OnDelete(DeleteBehavior.Restrict);
 
 				entity.HasOne(b => b.Technician)
-							.WithMany()
+							.WithMany(t=>t.Bookings)
 							.HasForeignKey(b => b.TechnicianId)
 							.OnDelete(DeleteBehavior.Restrict);
 

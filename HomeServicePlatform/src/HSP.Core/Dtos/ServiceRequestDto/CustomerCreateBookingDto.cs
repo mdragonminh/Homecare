@@ -10,7 +10,6 @@ namespace HSP.Core.Dtos.ServiceRequestDto
 		public List<Guid> ServiceIds { get; set; }
 		[Required]
 		public Guid CustomerId { get; set; }
-		//public string Description { get; set; }
 		public double DistanceKm { get; set; } = 50;
 	}
 	public class MatchedBookingResultDto
