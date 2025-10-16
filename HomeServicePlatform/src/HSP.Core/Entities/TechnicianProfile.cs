@@ -37,6 +37,7 @@ namespace HSP.Core.Entities
 		public bool IsDeleted { get; set; }
 
 		public ICollection<Service> Services { get; set; } = new List<Service>();
+		public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
 		// Navigation property để tham chiếu đến các files liên quan
 		public ICollection<FileRelation> CertificateFiles { get; set; } = new List<FileRelation>();
