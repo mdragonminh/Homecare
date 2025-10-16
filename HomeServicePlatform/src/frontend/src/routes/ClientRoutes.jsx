@@ -103,15 +103,11 @@ export default function ClientRoutes({
         path="/contact"
         element={<ContactPage loggedInUser={loggedInUser} />}
       />
-      <Route
-        path="/find-technician"
-        element={
-          <ProtectedRoute
-            loggedInUser={loggedInUser}
-            element={<FindTechnicianPage loggedInUser={loggedInUser} />}
-          />
-        }
-      />
+      
+<Route
+  path="/services"
+  element={<FindTechnicianPage loggedInUser={loggedInUser} />} 
+/>
     </Routes>
   );
 }

@@ -177,7 +177,7 @@
     "adding_item_loading": "Adding new item...", 
     "delete_confirm_message": "Are you sure you want to delete the item \"{{item_name}}\"? This action cannot be undone.",
     "saving": "Saving...",
-    "save_address": "Save Address",
+    "save_address": "SaveAddress",
     "active_status": "Active",
     "set_password_title": "Add Password to Account",
     "set_password_subtitle": "Create a password to secure your account",
@@ -249,7 +249,8 @@
       "operator_email": "operator@example.com",
       "operator_username": "operator001",
       "new_password": "Enter new password",
-      "search_radius": "Search radius (Km)"
+      "search_radius": "Search radius (Km)",
+      "address": " Enter address to search on map"
     },
     "usertype": {
       "customer": "Customer",

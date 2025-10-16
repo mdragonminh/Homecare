@@ -8,10 +8,8 @@ import React, {
 import { useTranslation } from "react-i18next";
 import { homeApi } from "../../../services/homeApi.jsx";
 import { serviceApi } from "../../../services/serviceApi.jsx";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+
 import {
-  Navigation,
   Loader2,
   PlusCircle,
   Edit,
@@ -24,163 +22,17 @@ import {
   AlertTriangle,
   Star,
   Globe,
+  Check,
+  ChevronDown,
+  Wrench,
+  Locate,
 } from "lucide-react";
+
+import MapDisplay, { calculateDistance } from "../../../components/MapDisplay.jsx";
 import AddHomeModal from "../home/AddHome.jsx";
 import EditHomeModal from "../home/EditHomePage.jsx";
 
-// ---------------------------------------------------------------------
-// 1. CONSTANTS AND UTILITY FUNCTIONS
-// ---------------------------------------------------------------------
-
-const customMarkerIcon = new L.Icon({
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const technicianIcon = new L.Icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return (R * c).toFixed(2);
-};
-
-// ---------------------------------------------------------------------
-// 2. MAP DISPLAY COMPONENT
-// ---------------------------------------------------------------------
-
-const MapDisplay = ({ lat, lng, technicians }) => {
-  const { t } = useTranslation();
-  const mapRef = useRef(null);
-  const mapInstance = useRef(null);
-  const markerInstance = useRef(null);
-  const technicianMarkers = useRef([]);
-  const defaultCoords = { lat: 21.0285, lng: 105.8542 };
-
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    const initialLat = lat || defaultCoords.lat;
-    const initialLng = lng || defaultCoords.lng;
-
-    if (!mapInstance.current) {
-      mapInstance.current = L.map(mapRef.current, {
-        center: [initialLat, initialLng],
-        zoom: 13,
-        layers: [
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution:
-              '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-          }),
-        ],
-      });
-
-      markerInstance.current = L.marker([initialLat, initialLng], {
-        icon: customMarkerIcon,
-        draggable: false,
-      }).addTo(mapInstance.current);
-    }
-
-    if (lat && lng) {
-      const newLatlng = L.latLng(lat, lng);
-      const currentCenter = mapInstance.current.getCenter();
-      const distance = L.latLng(currentCenter).distanceTo(newLatlng);
-
-      if (distance > 100) {
-        mapInstance.current.setView(newLatlng, 15);
-      }
-
-      markerInstance.current
-        .setLatLng(newLatlng)
-        .bindPopup(`<b>${t("ui.your_service_location")}</b>`)
-        .openPopup();
-    }
-
-    technicianMarkers.current.forEach((marker) => marker.remove());
-    technicianMarkers.current = [];
-
-    if (technicians && technicians.length > 0) {
-      const bounds = L.latLngBounds(L.latLng(lat, lng));
-
-      const groupedTechs = technicians.reduce((acc, tech) => {
-        const key = `${tech.lat}_${tech.lng}`;
-        if (!acc[key]) {
-          acc[key] = {
-            lat: tech.lat,
-            lng: tech.lng,
-            techs: [],
-          };
-        }
-        acc[key].techs.push(tech);
-        return acc;
-      }, {});
-
-      Object.values(groupedTechs).forEach((group) => {
-        const groupLatLng = L.latLng(group.lat, group.lng);
-        bounds.extend(groupLatLng);
-
-        let popupContent = group.techs
-          .map(
-            (tech) =>
-              `<b>${tech.name}</b><br>${t("ui.technicians.distance_label", {
-                distance: tech.distance,
-              })}`
-          )
-          .join("<br><hr>");
-
-        const marker = L.marker([group.lat, group.lng], {
-          icon: technicianIcon,
-        })
-          .addTo(mapInstance.current)
-          .bindPopup(popupContent);
-        technicianMarkers.current.push(marker);
-      });
-
-      if (technicians.length > 0 && lat && lng) {
-        mapInstance.current.fitBounds(bounds, { padding: [50, 50] });
-      }
-    }
-  }, [lat, lng, technicians, t]);
-
-  return (
-    <div
-      ref={mapRef}
-      className="w-full h-full rounded-xl shadow-lg border-2 border-gray-500 relative z-0 overflow-hidden transition-all duration-300"
-      style={{ minHeight: "400px" }}
-    />
-  );
-};
-
-// ---------------------------------------------------------------------
-// 3. FIND TECHNICIAN PAGE COMPONENT
-// ---------------------------------------------------------------------
-
-export function FindTechnicianPage() {
+export function FindTechnicianPage({ loggedInUser }) {
   const { t } = useTranslation();
   const [homes, setHomes] = useState([]);
   const [selectedHomeId, setSelectedHomeId] = useState(null);
@@ -193,14 +45,13 @@ export function FindTechnicianPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [isAddHomeModalOpen, setIsAddHomeModalOpen] = useState(false);
   const [isEditHomeModalOpen, setIsEditHomeModalOpen] = useState(false);
-  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
-  
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [services, setServices] = useState([]);
-  const [selectedServiceId, setSelectedServiceId] = useState("");
+  const [selectedServiceIds, setSelectedServiceIds] = useState([]); 
   const [isServicesLoading, setIsServicesLoading] = useState(false);
   const [serviceSearchInput, setServiceSearchInput] = useState("");
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
-
+  const [isMatching, setIsMatching] = useState(false);
   const currentHomeData = useMemo(() => {
     return homes.find((home) => home.id === selectedHomeId);
   }, [homes, selectedHomeId]);
@@ -214,7 +65,115 @@ export function FindTechnicianPage() {
         service.name.toLowerCase().includes(lowercasedInput)
     );
   }, [services, serviceSearchInput]);
+  
+  const handleServiceSelection = useCallback((serviceId) => {
+      setSelectedServiceIds(prevIds => {
+          if (prevIds.includes(serviceId)) {
+              return prevIds.filter(id => id !== serviceId);
+          } else {
+              return [...prevIds, serviceId];
+          }
+      });
+  }, []);
 
+  const handleCreateAndMatchBooking = useCallback(async () => {
+    console.log("--- DEBUG BOOKING START ---");
+    console.log("addressInput:", addressInput);
+    console.log("selectedServiceIds:", selectedServiceIds);
+    console.log("selectedServiceIds.length:", selectedServiceIds.length);
+    console.log("loggedInUser.id:", loggedInUser?.id);
+    console.log("--- DEBUG BOOKING END ---");
+
+    if (!addressInput || selectedServiceIds.length === 0 || !loggedInUser?.userId) {
+        setStatusMessage(t("validation.missing_booking_info", { defaultValue: "Vui lòng nhập địa chỉ và chọn dịch vụ." }));
+        // Log lỗi này để xác nhận nếu nó chạy
+        console.error("VALIDATION FAILED: Missing one of address, services, or customerId.");
+        return;
+    }
+
+    setIsMatching(true);
+    setTechnicians(null); // Xóa danh sách kỹ thuật viên cũ
+    setStatusMessage(t("ui.matching_technician_process", { defaultValue: "Đang tạo yêu cầu và tìm kiếm kỹ thuật viên phù hợp..." }));
+
+    const radius = parseFloat(searchRadius);
+
+    const matchResult = await serviceApi.createAndMatchBooking(
+        addressInput,
+        selectedServiceIds,
+        loggedInUser.userId,
+        radius
+    );
+
+    setIsMatching(false);
+
+    if (matchResult.success) {
+        setStatusMessage(t("success.match_booking_success", { defaultValue: "Đã tạo yêu cầu thành công. Chờ kỹ thuật viên chấp nhận." }));
+    } else {
+        setStatusMessage(
+            matchResult.message || t("error.match_booking_failed", { defaultValue: "Lỗi khi tạo yêu cầu và ghép nối." })
+        );
+    }
+}, [addressInput, selectedServiceIds, loggedInUser, searchRadius, t]);
+  const handleGetMyLocation = () => {
+    if (!("geolocation" in navigator)) {
+      setStatusMessage(t("error.geolocation_not_supported"));
+      return;
+    }
+    
+    // Chỉ cho phép tìm kiếm theo vị trí hiện tại khi người dùng CHƯA chọn nhà
+    if (loggedInUser && selectedHomeId) {
+        setStatusMessage(t("error.cannot_use_my_location_with_home"));
+        return;
+    }
+    
+    setIsGettingLocation(true);
+    setStatusMessage(t("ui.getting_current_location"));
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setCoords({ latitude, longitude });
+        setTechnicians(null); 
+        try {
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+          );
+          const data = await response.json();
+          if (data.results.length > 0) {
+            setAddressInput(data.results[0].formatted_address);
+            setStatusMessage(t("success.my_location_set"));
+          } else {
+            setAddressInput("");
+            setStatusMessage(t("error.geocode_failed_no_address"));
+          }
+        } catch (error) {
+          console.error("Reverse geocode error:", error);
+          setStatusMessage(t("error.geocode_failed"));
+        } finally {
+          setIsGettingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        setStatusMessage(t("error.geolocation_denied_or_failed"));
+        setIsGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+  const handleServiceSearchInputChange = (e) => {
+    const value = e.target.value;
+    setServiceSearchInput(value);
+    setIsServiceDropdownOpen(true);
+  };
+
+  const selectedServiceNames = useMemo(() => {
+    return selectedServiceIds.map(id => 
+        services.find(s => s.id === id)?.name
+    ).filter(Boolean); 
+  }, [selectedServiceIds, services]);
+
+  const autocompleteRef = useRef(null);
 
   const loadServices = useCallback(async () => {
     setIsServicesLoading(true);
@@ -228,6 +187,11 @@ export function FindTechnicianPage() {
   }, []);
 
   const loadUserHomes = useCallback(async () => {
+    if (!loggedInUser) { 
+        setIsLoading(false);
+        return { allHomes: [], defaultHomeName: null };
+    }
+
     setIsLoading(true);
 
     const result = await homeApi.getHomesOfCurrentUser(1, 100);
@@ -235,42 +199,34 @@ export function FindTechnicianPage() {
     let initialLat = null;
     let initialLng = null;
     let initialAddress = "";
-    let message = "";
     let initialHomeId = null;
+    let allHomes = [];
 
     if (result.success && result.data?.items && result.data.items.length > 0) {
-      const allHomes = result.data.items;
+      allHomes = result.data.items;
       setHomes(allHomes);
 
       const defaultHome = allHomes.find((h) => h.isDefault) || allHomes[0];
 
-      if (
-        defaultHome.address &&
-        defaultHome.latitude &&
-        defaultHome.longitude
-      ) {
+      if (defaultHome.address && defaultHome.latitude && defaultHome.longitude) {
         initialHomeId = defaultHome.id;
         initialAddress = defaultHome.address;
         initialLat = defaultHome.latitude;
         initialLng = defaultHome.longitude;
-        message = t("success.home_loaded", { count: allHomes.length, name: defaultHome.name });
       } else {
         initialHomeId = allHomes[0].id;
-        message = t("error.address_invalid");
       }
     } else {
       setHomes([]);
-      message = t("ui.no_properties_found");
     }
 
     setAddressInput(initialAddress);
     setCoords({ latitude: initialLat, longitude: initialLng });
     setSelectedHomeId(initialHomeId);
-    setStatusMessage(message);
     setIsLoading(false);
 
-    setTimeout(() => setIsInitialLoadComplete(true), 100);
-  }, [t]);
+    return { allHomes, defaultHomeName: allHomes.find(h => h.id === initialHomeId)?.name };
+  }, [loggedInUser]); 
 
   const handleAddressSelection = (e) => {
     const newHomeId = e.target.value;
@@ -278,7 +234,7 @@ export function FindTechnicianPage() {
 
     setSelectedHomeId(newHomeId);
     setTechnicians(null);
-    setSelectedServiceId("");
+    setSelectedServiceIds([]); 
     setServiceSearchInput("");
 
     if (newHome && newHome.latitude && newHome.longitude) {
@@ -305,16 +261,17 @@ export function FindTechnicianPage() {
     }
 
     setIsSearching(true);
-    // FIX: Reset về mảng rỗng để tránh nháy màn hình
     setTechnicians([]); 
     setStatusMessage(
       t("ui.searching_technicians", { address: addressInput, radius })
     );
     
+    const serviceIdsQuery = selectedServiceIds.length > 0 ? selectedServiceIds.join(',') : null;
+
     const searchResult = await serviceApi.getNearbyTechnicians(
       addressInput,
       radius,
-      selectedServiceId
+      serviceIdsQuery 
     );
 
     setIsSearching(false);
@@ -354,7 +311,7 @@ export function FindTechnicianPage() {
         searchResult.message || t("ui.no_technicians_found")
       );
     }
-  }, [addressInput, coords.latitude, coords.longitude, searchRadius, selectedServiceId, t]);
+  }, [addressInput, coords.latitude, coords.longitude, searchRadius, selectedServiceIds, t]);
 
   const reloadHomeData = () => {
     setIsAddHomeModalOpen(false);
@@ -362,6 +319,27 @@ export function FindTechnicianPage() {
     setTechnicians(null); 
     loadUserHomes();
   };
+  
+  const handleMarkerDrag = useCallback(async (newLat, newLng) => {
+    setCoords({ latitude: newLat, longitude: newLng });
+    setStatusMessage(t("ui.updating_address"));
+
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${newLat},${newLng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await response.json();
+      if (data.results.length > 0) {
+        setAddressInput(data.results[0].formatted_address);
+        setStatusMessage(t("success.geocode_success"));
+      } else {
+        setStatusMessage(t("error.address_invalid"));
+      }
+    } catch (error) {
+      console.error("Reverse geocode error:", error);
+      setStatusMessage(t("error.geocode_failed"));
+    }
+  }, [t]);
 
   useEffect(() => {
     loadUserHomes();
@@ -370,23 +348,58 @@ export function FindTechnicianPage() {
 
   useEffect(() => {
     if (
-      isInitialLoadComplete &&
       coords.latitude &&
       coords.longitude &&
       technicians === null
     ) {
-      handleFindTechnician();
+      // handleFindTechnician();
     }
   }, [
-    isInitialLoadComplete,
     coords.latitude,
     coords.longitude,
     technicians,
     handleFindTechnician,
   ]);
+  
+  useEffect(() => {
+    if (!window.google || !window.google.maps) {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+
+      script.onload = () => initAutocomplete();
+      return () => document.head.removeChild(script);
+    } else {
+      initAutocomplete();
+    }
+
+    function initAutocomplete() {
+      const input = document.getElementById("address-input");
+      if (input) {
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(input, {
+          types: ["address"],
+          componentRestrictions: { country: "VN" },
+        });
+
+        autocompleteRef.current.addListener("place_changed", () => {
+          const place = autocompleteRef.current.getPlace();
+          if (place.geometry) {
+            setAddressInput(place.formatted_address);
+            setCoords({
+              latitude: place.geometry.location.lat(),
+              longitude: place.geometry.location.lng(),
+            });
+            setStatusMessage(t("success.geocode_success"));
+          }
+        });
+      }
+    }
+  }, []);
 
   const handleGeocode = async () => {
-    if (selectedHomeId) return;
+    if (loggedInUser && selectedHomeId) return; 
 
     if (!addressInput) {
       setCoords({ latitude: null, longitude: null });
@@ -415,9 +428,9 @@ export function FindTechnicianPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 max-w-7xl mx-auto text-center pt-32">
-        <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
-        <p className="text-xl font-medium text-gray-700">
+      <div className="p-6 max-w-7xl mx-auto text-center pt-24">
+        <Loader2 className="h-10 w-10 text-blue-600 animate-spin mx-auto mb-3" />
+        <p className="text-lg font-medium text-gray-700">
           {t("ui.loading_data")}
         </p>
       </div>
@@ -432,22 +445,22 @@ export function FindTechnicianPage() {
     const searchingKey = t("ui.searching_technicians").substring(0, 10);
 
     if (message.startsWith(t("success.home_added").substring(0, 10)) || message.startsWith(t("success.home_edited").substring(0, 10)) || message.startsWith(successKey)) {
-      icon = <CheckCircle className="h-5 w-5 mr-2" />;
-      colorClass = "text-green-700 bg-green-100 border-green-300";
+      icon = <CheckCircle className="h-4 w-4 mr-1 flex-shrink-0" />;
+      colorClass = "text-green-700 bg-green-50 border-green-200";
     } else if (message.startsWith(errorKey) || message.startsWith(t("error.address_invalid").substring(0, 10))) {
-      icon = <AlertTriangle className="h-5 w-5 mr-2" />;
-      colorClass = "text-amber-700 bg-amber-100 border-amber-300";
+      icon = <AlertTriangle className="h-4 w-4 mr-1 flex-shrink-0" />;
+      colorClass = "text-amber-700 bg-amber-50 border-amber-200";
     } else if (message.startsWith(searchingKey) || message.startsWith(t("ui.searching_technicians").substring(0, 10))) {
-      icon = <Loader2 className="h-5 w-5 mr-2 animate-spin" />;
-      colorClass = "text-blue-700 bg-blue-100 border-blue-300";
+      icon = <Loader2 className="h-4 w-4 mr-1 animate-spin flex-shrink-0" />;
+      colorClass = "text-blue-700 bg-blue-50 border-blue-200";
     } else {
-      icon = <MapPin className="h-5 w-5 mr-2" />;
-      colorClass = "text-gray-600 bg-gray-100 border-gray-300";
+      icon = <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />;
+      colorClass = "text-gray-600 bg-gray-50 border-gray-200";
     }
 
     return (
       <div
-        className={`flex items-center p-3 mt-4 text-sm border rounded-lg transition-colors shadow-sm ${colorClass}`}
+        className={`flex items-center p-2 mt-3 text-sm border rounded-lg transition-colors shadow-sm ${colorClass}`}
       >
         {icon}
         <span className="font-medium">{message}</span> 
@@ -456,15 +469,16 @@ export function FindTechnicianPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto pt-16 min-h-screen bg-gray-50">
-      {isAddHomeModalOpen && (
+    <div className="p-3 md:p-6 max-w-7xl mx-auto pt-12 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Modals */}
+      {loggedInUser && isAddHomeModalOpen && (
         <AddHomeModal
           onClose={() => setIsAddHomeModalOpen(false)}
           onSuccess={reloadHomeData}
         />
       )}
 
-      {isEditHomeModalOpen && currentHomeData && (
+      {loggedInUser && isEditHomeModalOpen && currentHomeData && (
         <EditHomeModal
           homeData={currentHomeData}
           onClose={() => setIsEditHomeModalOpen(false)}
@@ -472,37 +486,37 @@ export function FindTechnicianPage() {
         />
       )}
 
-      <h1 className="text-3xl md:text-4xl font-extrabold mb-8 text-gray-900 border-b pb-4">
-        <Search className="inline-block h-7 w-7 text-blue-600 mr-2" />
+      <h1 className="text-2xl md:text-3xl font-extrabold mb-6 text-gray-900 border-b-2 border-blue-600 pb-3">
+        <Search className="inline-block h-6 w-6 text-blue-600 mr-2" />
         {t("ui.search_technicians_title")}
       </h1>
 
-      <div className="flex flex-col lg:flex-row gap-6 mb-6 lg:items-stretch">
+      <div className="flex flex-col lg:flex-row gap-4 mb-4 lg:items-stretch">
         <div className="lg:w-1/2 flex flex-col">
-          <div className="p-6 border rounded-xl shadow-md bg-white space-y-3 flex-1 flex flex-col">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center border-b pb-3 mb-2">
-              <MapPin className="h-5 w-5 text-blue-600 mr-2" />
+          <div className="p-4 border border-gray-200 rounded-xl shadow-md bg-white space-y-2 flex-1 flex flex-col">
+            <h2 className="text-base font-bold text-gray-900 flex items-center border-b-2 border-blue-100 pb-2">
+              <MapPin className="h-4 w-4 text-blue-600 mr-1" />
               {t("ui.confirm_address_and_range")}
             </h2>
             
-            {homes.length > 0 ? (
-              <div className="space-y-3">
+            {loggedInUser && homes.length > 0 ? (
+              <div className="space-y-2">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-800 mb-1">
                     {t("ui.select_service_address")}
                   </label>
-                  <div className="flex flex-wrap gap-2 items-stretch">
+                  <div className="flex flex-wrap gap-1 items-stretch">
                     <select
                       value={selectedHomeId || ""}
                       onChange={handleAddressSelection}
-                      className="flex-grow min-w-[180px] h-10 p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 hover:border-blue-500 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer shadow-sm"
+                      className="flex-grow min-w-[160px] h-10 px-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer shadow-sm font-medium"
                     >
                       <option value="" disabled>
                         {t("ui.select_service_needed")}
                       </option>
                       {homes.map((home) => (
                         <option key={home.id} value={home.id}>
-                          {home.name} ({home.address.substring(0, 30)}...)
+                          {home.name} ({home.address.substring(0, 25)}...)
                         </option>
                       ))}
                     </select>
@@ -510,7 +524,7 @@ export function FindTechnicianPage() {
                     {currentHomeData && (
                       <button
                         onClick={() => setIsEditHomeModalOpen(true)}
-                        className="w-10 h-10 bg-amber-500 text-white rounded-lg shadow-sm hover:bg-amber-600 transition-colors flex items-center justify-center flex-shrink-0"
+                        className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 text-white rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all active:scale-95 flex items-center justify-center flex-shrink-0 font-semibold"
                         title={t("ui.edit_address")}
                       >
                         <Edit className="h-4 w-4" />
@@ -518,7 +532,7 @@ export function FindTechnicianPage() {
                     )}
                     <button
                       onClick={() => setIsAddHomeModalOpen(true)}
-                      className="w-10 h-10 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 transition-colors flex items-center justify-center flex-shrink-0"
+                      className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 text-white rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all active:scale-95 flex items-center justify-center flex-shrink-0 font-semibold"
                       title={t("ui.add_new")}
                     >
                       <PlusCircle className="h-4 w-4" />
@@ -526,121 +540,116 @@ export function FindTechnicianPage() {
                   </div>
 
                   {currentHomeData && (
-                    <p className="mt-2 text-sm text-gray-700 flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner">
-                      <Home className="h-5 w-5 flex-shrink-0 text-blue-600" />
-                      <span className="font-bold">{currentHomeData.name}:</span>{" "}
-                      {currentHomeData.address}
+                    <p className="mt-2 text-sm text-blue-900 flex items-start gap-1 p-2 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-lg shadow-sm">
+                      <Home className="h-4 w-4 flex-shrink-0 text-blue-600 mt-0.5" />
+                      <span><span className="font-bold">{currentHomeData.name}:</span> {currentHomeData.address}</span>
                     </p>
                   )}
                 </div>
               </div>
-            ) : (
-              <div className="text-center p-5 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
-                <p className="text-gray-600 font-medium mb-4 text-base">
+            ) : loggedInUser ? (
+              <div className="text-center p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                <p className="text-gray-600 font-medium mb-3 text-sm">
                   {statusMessage || t("ui.no_properties_found")}
                 </p>
                 <button
                   onClick={() => setIsAddHomeModalOpen(true)}
-                  className="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center mx-auto"
+                  className="px-5 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all active:scale-95 shadow-md flex items-center justify-center mx-auto"
                 >
-                  <PlusCircle className="h-5 w-5 mr-2" />
+                  <PlusCircle className="h-4 w-4 mr-1" />
                   {t("ui.add_new")}
                 </button>
               </div>
+            ) : (
+                 <div className="text-center p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                    <p className="text-gray-600 font-medium mb-3 text-sm">
+                        {t("ui.enter_address_to_search", { defaultValue: "Vui lòng nhập địa chỉ để tìm kiếm dịch vụ." })}
+                    </p>
+               </div>
             )}
             
             <div className="relative">
                 <label
                     htmlFor="service-search-input"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
+                    className="block text-sm font-semibold text-gray-800 mb-1 flex items-center"
                 >
+                    <Wrench className="h-4 w-4 text-blue-600 mr-1" />
                     {t("ui.select_service_label", { defaultValue: "Tìm kiếm hoặc Chọn Dịch vụ" })}
                 </label>
-                <input
-                    id="service-search-input"
-                    type="text"
-                    placeholder={t("ui.search_service_placeholder", { defaultValue: "Gõ tên dịch vụ..." })}
-                    value={serviceSearchInput}
-                    onChange={(e) => {
-                        setServiceSearchInput(e.target.value);
-                        setIsServiceDropdownOpen(true);
-                        setSelectedServiceId(""); 
-                    }}
-                    onFocus={() => setIsServiceDropdownOpen(true)}
-                    onBlur={() => setTimeout(() => setIsServiceDropdownOpen(false), 200)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-all text-base font-medium pr-12 shadow-sm"
-                    disabled={isSearching || isServicesLoading}
-                />
+                <div className="relative">
+                  <input
+                      id="service-search-input"
+                      type="text"
+                      placeholder={t("ui.search_service_placeholder", { defaultValue: "Gõ tên dịch vụ..." })}
+                      value={serviceSearchInput}
+                      onChange={handleServiceSearchInputChange}
+                      onFocus={() => setIsServiceDropdownOpen(true)}
+                      onBlur={() => setTimeout(() => setIsServiceDropdownOpen(false), 200)} 
+                      className="w-full p-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium pr-10 shadow-sm hover:border-gray-400"
+                      disabled={isSearching || isServicesLoading}
+                  />
+                  
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                      {isServicesLoading ? (
+                          <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+                      ) : (
+                          <ChevronDown className="h-4 w-4" />
+                      )}
+                  </div>
+                </div>
                 
-                {selectedServiceId && (
-                    <div className="mt-2 p-2 bg-blue-100 border border-blue-300 text-blue-800 rounded-lg flex items-center justify-between">
-                        <span>
-                            {t("ui.selected_service_label", { defaultValue: "Đã chọn" })}: 
-                            <strong className="ml-1">
-                                {services.find(s => s.id === selectedServiceId)?.name}
-                            </strong>
-                        </span>
-                        <button 
-                            onClick={() => {
-                                setSelectedServiceId("");
-                                setServiceSearchInput("");
-                            }}
-                            title={t("ui.clear_selection", { defaultValue: "Xóa lựa chọn" })}
-                            className="text-blue-600 hover:text-blue-800 ml-3"
-                        >
-                            <XCircle className="h-5 w-5" />
-                        </button>
+                {selectedServiceIds.length > 0 && (
+                    <div className="mt-2 p-2 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 text-blue-900 rounded-lg shadow-sm">
+                        <div className="flex flex-wrap gap-1.5">
+                            {selectedServiceNames.map((name, index) => (
+                                <span key={index} className="flex items-center text-sm px-2.5 py-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full shadow-sm hover:shadow-md transition-all">
+                                    {name}
+                                    <button 
+                                        onClick={() => handleServiceSelection(selectedServiceIds[index])} 
+                                        className="ml-1.5 hover:text-blue-100 transition-colors"
+                                        title={t("ui.clear_selection", { defaultValue: "Xóa lựa chọn" })}
+                                    >
+                                        <XCircle className="h-3.5 w-3.5" />
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
                     </div>
                 )}
-
+                
                 {(isServiceDropdownOpen && !isServicesLoading) && (
-                    <ul className="absolute z-10 w-full bg-white border border-gray-300 mt-1 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                        <li 
-                            key="all-services" 
-                            onClick={() => {
-                                setSelectedServiceId("");
-                                setServiceSearchInput(t("ui.all_services", { defaultValue: "Tất cả Dịch vụ" }));
-                                setIsServiceDropdownOpen(false);
-                            }}
-                            className={`p-3 cursor-pointer hover:bg-gray-100 font-bold ${!selectedServiceId ? 'bg-blue-50 text-blue-600' : 'text-gray-900'}`}
-                        >
-                            {t("ui.all_services", { defaultValue: "Tất cả Dịch vụ" })}
-                        </li>
-                        {filteredServices.map((service) => (
-                            <li
-                                key={service.id}
-                                onClick={() => {
-                                    setSelectedServiceId(service.id);
-                                    setServiceSearchInput(service.name);
-                                    setIsServiceDropdownOpen(false);
-                                }}
-                                className={`p-3 cursor-pointer hover:bg-gray-100 ${service.id === selectedServiceId ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-800'}`}
-                            >
-                                {service.name}
-                            </li>
-                        ))}
+                    <ul className="absolute z-20 w-full bg-white border-2 border-gray-300 mt-1 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        {filteredServices.map((service) => {
+                            const isSelected = selectedServiceIds.includes(service.id);
+                            return (
+                                <li
+                                    key={service.id}
+                                    onMouseDown={(e) => {
+                                        e.preventDefault(); 
+                                        handleServiceSelection(service.id);
+                                    }}
+                                    className={`p-2.5 cursor-pointer hover:bg-blue-50 flex items-center justify-between transition-colors ${isSelected ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-800'}`}
+                                >
+                                    {service.name}
+                                    {isSelected && <Check className="h-4 w-4 text-blue-600" />}
+                                </li>
+                            );
+                        })}
                         {filteredServices.length === 0 && serviceSearchInput && (
-                             <li className="p-3 text-gray-500 text-sm">
+                             <li className="p-2.5 text-gray-500 text-sm text-center">
                                  {t("ui.no_results_found", { defaultValue: "Không tìm thấy kết quả" })}
-                            </li>
+                             </li>
                         )}
                     </ul>
                 )}
-
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none mt-4">
-                    {isServicesLoading ? (
-                        <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
-                    ) : (
-                        <ChevronsDown className="h-5 w-5" />
-                    )}
-                </div>
             </div>
 
-            <div className="mt-1">
+            <div>
               <label
                 htmlFor="search-radius"
-                className="block text-sm font-semibold text-gray-700 mb-2"
+                className="block text-sm font-semibold text-gray-800 mb-1 flex items-center"
               >
+                <Globe className="h-4 w-4 text-blue-600 mr-1" />
                 {t("ui.search_radius_label")}
               </label>
               <div className="relative">
@@ -650,35 +659,51 @@ export function FindTechnicianPage() {
                   min="1"
                   value={searchRadius}
                   onChange={(e) => setSearchRadius(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-all text-base font-medium pr-12 shadow-sm"
+                  className="w-full p-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm font-medium pr-14 shadow-sm hover:border-gray-400"
                   placeholder={t("form.placeholder.search_radius")}
                   disabled={isSearching}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium flex items-center">
-                  <Globe className="h-4 w-4 mr-1" /> {t("ui.search_radius_unit")}
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm flex items-center">
+                  {t("ui.search_radius_unit")}
                 </span>
               </div>
             </div>
             
-            {!selectedHomeId && (
-              <div className="relative mt-1">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+           {!loggedInUser || (loggedInUser && !selectedHomeId) ? ( 
+              <div className="relative space-y-2">
+                <label className="block text-sm font-semibold text-gray-800 mb-1">
                   {t("ui.manual_address_label")}
                 </label>
                 <input
+                  id="address-input"
                   type="text"
                   placeholder={t("form.placeholder.address")}
                   value={addressInput}
                   onChange={(e) => setAddressInput(e.target.value)}
                   onBlur={handleGeocode}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-all pr-10 shadow-sm"
-                  disabled={isSearching}
+                  className="w-full p-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:border-gray-400"
+                  disabled={isSearching || isGettingLocation} // <--- Cập nhật: disable khi đang lấy vị trí
                 />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center mt-7">
-                  <Navigation className="h-5 w-5 text-gray-400" />
-                </div>
+
+                <button
+                    onClick={handleGetMyLocation}
+                    disabled={isSearching || isGettingLocation}
+                    className="w-full py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm rounded-lg shadow-md hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center active:scale-[0.99] mt-2"
+                >
+                    {isGettingLocation ? (
+                        <>
+                            <Loader2 className="h-4 w-4 text-white mr-1 animate-spin" />
+                            {t("ui.getting_location")}
+                        </>
+                    ) : (
+                        <>
+                            <Locate className="h-4 w-4 mr-1" />
+                            {t("ui.use_my_current_location", { defaultValue: "Sử dụng Vị trí Hiện tại của tôi" })}
+                        </>
+                    )}
+                </button>
               </div>
-            )}
+            ) : null}
             
             {renderStatusMessage(statusMessage)}
             
@@ -689,93 +714,121 @@ export function FindTechnicianPage() {
                 isSearching ||
                 parseFloat(searchRadius) <= 0
               }
-              className="w-full mt-4 py-3 bg-blue-600 text-white font-bold text-base rounded-lg shadow-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transform hover:scale-[1.005] active:scale-[0.995]"
+              className="w-full mt-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold text-sm rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center active:scale-[0.98]"
             >
               {isSearching ? (
                 <>
-                  <Loader2 className="h-5 w-5 text-white mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 text-white mr-1 animate-spin" />
                   {t("ui.searching")}
                 </>
               ) : (
                 <>
-                  <Search className="h-5 w-5 mr-2" />
+                  <Search className="h-4 w-4 mr-1" />
                   {t("ui.find_technicians_button", { radius: searchRadius })}
                 </>
               )}
             </button>
+            {loggedInUser && (
+                <button
+                    onClick={handleCreateAndMatchBooking}
+                    disabled={
+                        !coords.latitude ||
+                        isMatching ||
+                        isSearching || // Không cho phép ghép nối khi đang tìm kiếm
+                        selectedServiceIds.length === 0 
+                    }
+                    className="w-full mt-2 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold text-sm rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center active:scale-[0.98]"
+                >
+                    {isMatching ? (
+                        <>
+                            <Loader2 className="h-4 w-4 text-white mr-1 animate-spin" />
+                            {t("ui.matching", { defaultValue: "Đang ghép nối..." })}
+                        </>
+                    ) : (
+                        <>
+                            <Check className="h-4 w-4 mr-1" />
+                            {t("ui.match_technician_button", { defaultValue: "Yêu cầu & Ghép nối Kỹ thuật viên Ngay" })}
+                        </>
+                    )}
+                </button>
+            )}
           </div>
         </div>
 
-       <div className="lg:w-1/2 flex"> 
+        <div className="lg:w-1/2 flex"> 
           <MapDisplay
             lat={coords.latitude}
             lng={coords.longitude}
             technicians={technicians}
+            isDraggable={!loggedInUser || (loggedInUser && !selectedHomeId)} 
+            onMarkerDrag={handleMarkerDrag}
           />
         </div>
       </div>
 
-      <div className="p-6 border rounded-xl bg-white shadow-xl max-h-[500px] overflow-y-auto">
-        <h3 className="font-bold text-xl md:text-2xl mb-4 text-gray-800 flex items-center border-b pb-3">
-          <ChevronsDown className="h-6 w-6 text-red-600 mr-2" />
+      <div className="p-4 border-2 border-gray-200 rounded-xl bg-white shadow-md max-h-[450px] overflow-y-auto">
+        <h3 className="font-bold text-lg md:text-xl mb-4 text-gray-900 flex items-center border-b-2 border-red-200 pb-3">
+          <ChevronsDown className="h-5 w-5 text-red-600 mr-1" />
           {t("ui.technicians_list_title", {
             count: technicians ? technicians.length : 0,
           })}
         </h3>
 
         {isSearching && (
-          <p className="text-center text-blue-600 flex items-center justify-center p-4">
-            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+          <p className="text-center text-blue-600 flex items-center justify-center p-3 font-medium">
+            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
             {t("ui.loading_data")}
           </p>
         )}
 
         {technicians && technicians.length === 0 && !isSearching && (
-          <div className="text-center p-6 border border-red-300 rounded-lg bg-red-50">
-            <XCircle className="h-8 w-8 text-red-600 mx-auto mb-3" />
-            <p className="text-gray-700 font-medium">
+          <div className="text-center p-6 border-2 border-dashed border-red-300 rounded-lg bg-red-50">
+            <XCircle className="h-10 w-10 text-red-600 mx-auto mb-2" />
+            <p className="text-gray-700 font-semibold text-base">
               {t("ui.no_technicians_found", { radius: searchRadius })}
             </p>
           </div>
         )}
 
         {technicians && technicians.length > 0 && (
-          <ul className="space-y-4">
+          <ul className="space-y-3">
             {technicians.map((tech, index) => (
               <li
                 key={tech.id}
-                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-blue-50 transition duration-150 cursor-pointer shadow-sm"
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border-2 border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 hover:shadow-md transition-all duration-200 cursor-pointer"
               >
-                <div className="flex items-center mb-3 sm:mb-0">
+                <div className="flex items-center mb-3 sm:mb-0 w-full sm:w-auto">
                   <span
-                    className={`text-lg font-bold mr-4 ${
-                      index < 3 ? "text-red-600" : "text-gray-500"
+                    className={`text-xl font-bold mr-2 w-7 text-center ${
+                      index < 3 ? "text-red-600" : "text-gray-400"
                     }`}
                   >
-                    {index + 1}.
+                    {index + 1}
                   </span>
-                  <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3 border border-red-300">
+                  <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-red-100 to-red-50 rounded-full flex items-center justify-center mr-2 border-2 border-red-300 shadow-sm">
                     <MapPin className="h-5 w-5 text-red-600" />
                   </div>
-                  <div>
-                    <p className="font-bold text-gray-900 text-base">
+                  <div className="flex-grow">
+                    <p className="font-bold text-gray-900 text-sm">
                       {tech.name}
                     </p>
-                    <div className="flex items-center text-sm text-gray-600 mt-0.5">
-                      <Star
-                        className="h-4 w-4 text-yellow-500 mr-1"
-                        fill="currentColor"
-                      />
-                      <span className="font-semibold mr-3">
-                        {tech.rating || t("ui.not_updated")}
-                      </span>
-                      <span className="text-red-600 font-extrabold">
+                    <div className="flex items-center text-sm text-gray-600 mt-1 gap-1.5">
+                      <div className="flex items-center">
+                        <Star
+                          className="h-3.5 w-3.5 text-yellow-500 mr-1"
+                          fill="currentColor"
+                        />
+                        <span className="font-semibold">
+                          {tech.rating || t("ui.not_updated")}
+                        </span>
+                      </div>
+                      <span className="text-red-600 font-bold">
                         • {tech.distance} {t("ui.search_radius_unit")}
                       </span>
                     </div>
                   </div>
                 </div>
-                <button className="text-sm px-5 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-md w-full sm:w-auto mt-2 sm:mt-0">
+                <button className="text-sm px-5 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all active:scale-95 shadow-md w-full sm:w-auto mt-2 sm:mt-0">
                   {t("ui.select_technician")}
                 </button>
               </li>

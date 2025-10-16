@@ -155,35 +155,34 @@ export default function HomeManagementPage() {
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     const fetchHomes = useCallback(async (
-        page = 1,
-        search = debouncedSearchTerm,
-        type = filterType
-    ) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await homeApi.getHomesOfCurrentUser(page, 6, search, type);
-            if (res.success) {
-                const mappedHomes = res.data.items.map((item) => ({
-                    ...item,
-                    ownerName: item.customerProfileName || t("ui.no_name"),
-                    type: item.type ? item.type.toLowerCase() : "house",
-                }));
-                setHomes(mappedHomes);
-                setCurrentPage(res.data.currentPage);
-                setTotalPages(res.data.totalPages);
-                setTotalCount(res.data.totalCount);
-            } else {
-                setError(res.message);
-            }
-        } catch (error) {
-            console.error("Error fetching homes:", error);
-            setError(t("error.fetch_failed"));
-        } finally {
-            setLoading(false);
+    page = 1,
+    search = debouncedSearchTerm,
+    type = filterType
+) => {
+    setLoading(true);
+    setError(null);
+    try {
+        const res = await homeApi.getHomesOfCurrentUser(page, 6, search, type);
+        if (res.success) {
+            const mappedHomes = res.data.items.map((item) => ({
+                ...item,
+                ownerName: item.customerProfileName || "ui.no_name",  // Dùng key thay vì t()
+                type: item.type ? item.type.toLowerCase() : "house",
+            }));
+            setHomes(mappedHomes);
+            setCurrentPage(res.data.currentPage);
+            setTotalPages(res.data.totalPages);
+            setTotalCount(res.data.totalCount);
+        } else {
+            setError(res.message || "error.fetch_failed");  // Dùng key thay vì t()
         }
-    }, [debouncedSearchTerm, filterType, t]);
-
+    } catch (error) {
+        console.error("Error fetching homes:", error);
+        setError("error.fetch_failed");  // Dùng key
+    } finally {
+        setLoading(false);
+    }
+}, [debouncedSearchTerm, filterType]);  // Xóa t khỏi dependency
     const handleCloseAddModal = () => {
         setShowAddModal(false);
     };
