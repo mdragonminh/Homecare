@@ -9,6 +9,7 @@ import {
   Input,
   Select,
   Modal,
+  message,
 } from "antd";
 import {
   ToolOutlined,
@@ -24,6 +25,7 @@ import {
   TechnicianApprovalStatusColors,
   TechnicianApprovalStatusLabels,
 } from "../../constants/enums";
+import { technicianApi } from "../../services/technicianApi";
 
 const { Search } = Input;
 const { Option } = Select;
@@ -38,8 +40,54 @@ export default function OperatorTechniciansPage() {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [technicianDetail, setTechnicianDetail] = useState(null);
 
-  // Mock data - sẽ thay bằng API call thực tế
-  useEffect(() => {
+  // Tải dữ liệu technicians từ API
+  const loadTechnicians = async () => {
+    setLoading(true);
+    try {
+      const response = await technicianApi.getTechnicians();
+      if (response.success) {
+        // Map dữ liệu từ API để phù hợp với component
+        const mappedData =
+          response.data.items?.map((tech, index) => ({
+            key: tech.id || index,
+            id: tech.id,
+            name: tech.fullName || tech.name,
+            email: tech.email,
+            phone: tech.phoneNumber || tech.phone,
+            skills: tech.specialties || tech.skills || [],
+            experience: tech.yearsOfExperience
+              ? `${tech.yearsOfExperience} năm`
+              : tech.experience || "Chưa xác định",
+            approvalStatus: tech.approvalStatus,
+            rating: tech.averageRating || tech.rating || 0,
+            completedJobs: tech.completedJobsCount || tech.completedJobs || 0,
+            joinDate: tech.createdAt
+              ? new Date(tech.createdAt).toLocaleDateString("vi-VN")
+              : tech.joinDate,
+            address: tech.address || "Chưa cập nhật",
+          })) || [];
+
+        setTechnicians(mappedData);
+        setFilteredTechnicians(mappedData);
+      } else {
+        message.error(
+          response.message || "Không thể tải danh sách kỹ thuật viên"
+        );
+        // Fallback to mock data if API fails
+        loadMockData();
+      }
+    } catch (error) {
+      console.error("Error loading technicians:", error);
+      message.error("Đã có lỗi xảy ra khi tải danh sách kỹ thuật viên");
+      // Fallback to mock data if API fails
+      loadMockData();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mock data fallback
+  const loadMockData = () => {
     const mockData = [
       {
         key: "1",
@@ -86,6 +134,10 @@ export default function OperatorTechniciansPage() {
     ];
     setTechnicians(mockData);
     setFilteredTechnicians(mockData);
+  };
+
+  useEffect(() => {
+    loadTechnicians();
   }, []);
 
   useEffect(() => {
@@ -112,19 +164,60 @@ export default function OperatorTechniciansPage() {
     setFilteredTechnicians(filtered);
   }, [searchTerm, statusFilter, technicians]);
 
-  const handleViewDetails = (technician) => {
-    setTechnicianDetail(technician);
+  const handleViewDetails = async (technician) => {
+    // Nếu cần thông tin chi tiết hơn, gọi API getTechnicianById
+    try {
+      const response = await technicianApi.getTechnicianById(technician.id);
+      if (response.success) {
+        // Merge dữ liệu từ API với dữ liệu hiện tại
+        const detailedTechnician = {
+          ...technician,
+          ...response.data,
+          name: response.data.fullName || technician.name,
+          phone: response.data.phoneNumber || technician.phone,
+          skills: response.data.specialties || technician.skills,
+        };
+        setTechnicianDetail(detailedTechnician);
+      } else {
+        setTechnicianDetail(technician);
+      }
+    } catch (error) {
+      console.error("Error getting technician details:", error);
+      setTechnicianDetail(technician);
+    }
     setDetailModalVisible(true);
   };
 
-  const handleApprove = (technicianId) => {
-    // API call để approve technician
-    console.log("Approve technician:", technicianId);
+  const handleApprove = async (technicianId) => {
+    try {
+      const response = await technicianApi.approveTechnician(technicianId);
+      if (response.success) {
+        message.success("Đã duyệt thành công kỹ thuật viên");
+        // Reload dữ liệu để cập nhật trạng thái
+        loadTechnicians();
+      } else {
+        message.error(response.message || "Không thể duyệt kỹ thuật viên");
+      }
+    } catch (error) {
+      console.error("Error approving technician:", error);
+      message.error("Đã có lỗi xảy ra khi duyệt kỹ thuật viên");
+    }
   };
 
-  const handleReject = (technicianId) => {
-    // API call để reject technician
-    console.log("Reject technician:", technicianId);
+  const handleReject = async (technicianId) => {
+    try {
+      const response = await technicianApi.rejectTechnician(technicianId);
+      if (response.success) {
+        message.success("Đã từ chối thành công kỹ thuật viên");
+        // Reload dữ liệu để cập nhật trạng thái
+        loadTechnicians();
+      } else {
+        message.error(response.message || "Không thể từ chối kỹ thuật viên");
+      }
+    } catch (error) {
+      console.error("Error rejecting technician:", error);
+      message.error("Đã có lỗi xảy ra khi từ chối kỹ thuật viên");
+    }
   };
 
   const columns = [
@@ -140,12 +233,6 @@ export default function OperatorTechniciansPage() {
       ),
     },
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: 80,
-    },
-    {
       title: "Tên kỹ thuật viên",
       dataIndex: "name",
       key: "name",
@@ -155,34 +242,6 @@ export default function OperatorTechniciansPage() {
       title: "Email",
       dataIndex: "email",
       key: "email",
-    },
-    {
-      title: "Kỹ năng",
-      dataIndex: "skills",
-      key: "skills",
-      render: (skills) => (
-        <div>
-          {skills.slice(0, 2).map((skill) => (
-            <Tag key={skill} color="blue" style={{ marginBottom: 2 }}>
-              {skill}
-            </Tag>
-          ))}
-          {skills.length > 2 && <Tag color="default">+{skills.length - 2}</Tag>}
-        </div>
-      ),
-    },
-    {
-      title: "Kinh nghiệm",
-      dataIndex: "experience",
-      key: "experience",
-    },
-    {
-      title: "Đánh giá",
-      dataIndex: "rating",
-      key: "rating",
-      render: (rating) => (
-        <span>{rating > 0 ? `⭐ ${rating}/5` : "Chưa có"}</span>
-      ),
     },
     {
       title: "Trạng thái",
@@ -223,9 +282,6 @@ export default function OperatorTechniciansPage() {
                 onClick={() => handleReject(record.id)}
               />
             </>
-          )}
-          {record.approvalStatus === TechnicianApprovalStatus.Approved && (
-            <Button type="text" icon={<EditOutlined />} size="small" />
           )}
         </Space>
       ),
@@ -347,11 +403,10 @@ export default function OperatorTechniciansPage() {
             <div style={{ marginBottom: 16 }}>
               <strong>Số điện thoại:</strong> {technicianDetail.phone}
             </div>
+
             <div style={{ marginBottom: 16 }}>
-              <strong>Địa chỉ:</strong> {technicianDetail.address}
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <strong>Kinh nghiệm:</strong> {technicianDetail.experience}
+              <strong>Kinh nghiệm:</strong> {technicianDetail.experienceYears}{" "}
+              năm
             </div>
             <div style={{ marginBottom: 16 }}>
               <strong>Kỹ năng:</strong>
@@ -379,21 +434,6 @@ export default function OperatorTechniciansPage() {
                 }
               </Tag>
             </div>
-            {technicianDetail.approvalStatus ===
-              TechnicianApprovalStatus.Approved && (
-              <>
-                <div style={{ marginBottom: 16 }}>
-                  <strong>Đánh giá:</strong>{" "}
-                  {technicianDetail.rating > 0
-                    ? `⭐ ${technicianDetail.rating}/5`
-                    : "Chưa có"}
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                  <strong>Công việc đã hoàn thành:</strong>{" "}
-                  {technicianDetail.completedJobs}
-                </div>
-              </>
-            )}
           </div>
         )}
       </Modal>
