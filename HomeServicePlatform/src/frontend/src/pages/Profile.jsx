@@ -276,46 +276,50 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                   </button> */}
                   <button
                     onClick={() => (window.location.href = "/list-home")}
-                    className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-left font-medium transition-all duration-300 hover:shadow-lg group hover:bg-gradient-to-r from-emerald-500 to-teal-600 hover:text-white transform hover:-translate-y-0.5"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-blue-100 bg-blue-50 text-blue-700 transition-all duration-200 group hover:bg-blue-100"
                   >
-                    <div className="p-2.5 bg-emerald-50 rounded-lg group-hover:bg-white/10 transition-colors duration-300">
-                      <MapPin className="w-5 h-5 text-emerald-600 group-hover:text-white transition-colors duration-300" />
+                    <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors duration-200">
+                      <MapPin className="w-5 h-5 text-blue-600" />
                     </div>
-                    <span className="font-semibold">{t("ui.manage_addresses")}</span>
+                    <div className="flex flex-col">
+                      <span className="font-semibold">{t("ui.manage_addresses")}</span>
+                    </div>
                   </button>
                   <button
                     onClick={handleChangePassword}
-                    className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-left font-medium transition-all duration-300 hover:shadow-lg group hover:bg-gradient-to-r from-violet-500 to-purple-600 hover:text-white transform hover:-translate-y-0.5"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-rose-100 bg-rose-50 text-rose-700 transition-all duration-200 group hover:bg-rose-100"
                   >
-                    <div className="p-2.5 bg-violet-50 rounded-lg group-hover:bg-white/10 transition-colors duration-300">
-                      <Key className="w-5 h-5 text-violet-600 group-hover:text-white transition-colors duration-300" />
+                    <div className="p-2 bg-rose-100 rounded-lg group-hover:bg-rose-200 transition-colors duration-200">
+                      <Key className="w-5 h-5 text-rose-600" />
                     </div>
-                    <span className="font-semibold">{t("ui.change_password")}</span>
+                    <div className="flex flex-col">
+                      <span className="font-semibold">{t("ui.change_password")}</span>
+                    </div>
                   </button>
                 </div>
               </div>
 
               {/* System Info */}
               <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
-                <h3 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wide">
+                <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
                   {t("ui.system_information")}
                 </h3>
                 <div className="space-y-4">
-                  <div>
+                  {/* <div>
                     <p className="text-xs text-gray-600 font-medium">
                       {t("ui.account_created")}
                     </p>
                     <p className="text-gray-900 font-semibold mt-1">
                       {formatDate(profile.dateCreated)}
                     </p>
-                  </div>
+                  </div> */}
                   <div>
                     <p className="text-xs text-gray-600 font-medium">
                       {t("ui.total_homes")}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <Home className="w-5 h-5 text-gray-400" />
-                      <p className="text-gray-900 font-semibold">
+                      <p className="text-black-900 font-semibold">
                         {profile.totalHomes || 0} {t("ui.homes")}
                       </p>
                     </div>
@@ -331,10 +335,10 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                   {/* Tabs Navigation */}
                   <div className="border-b border-gray-200 px-6 py-4">
                     <div className="flex items-center gap-8">
-                      <button className="text-blue-600 font-semibold pb-4 border-b-2 border-blue-600 flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        {t("ui.personal_information")}
-                      </button>
+                     <button className="text-blue-600 font-semibold pb-4 flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          {t("ui.personal_information")}
+                    </button>
                       {/* <button className="text-gray-600 font-medium pb-4 hover:text-gray-900 flex items-center gap-2">
                         <Key className="w-4 h-4" />
                         {t("ui.change_password")}
@@ -345,8 +349,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                   {/* Profile Form */}
                   <div className="p-6">
                     <p className="text-gray-600 text-sm mb-6">
-                      {t("ui.update_profile_info") || "Cập nhật thông tin cá nhân của bạn"}
-                      {/* Thông tin cá nhân của bạn */}
+                      {/* {t("ui.update_profile_info") || "Cập nhật thông tin cá nhân của bạn"} */}
                     </p>
 
                     <div className="space-y-6">
@@ -456,7 +459,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                       <div className="flex gap-3 mt-6">
                         <button
                           onClick={handleSaveProfile}
-                          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 group"
+                          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-600 transition-all duration-200 group"
                         >
                           <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           {t("ui.save")}
