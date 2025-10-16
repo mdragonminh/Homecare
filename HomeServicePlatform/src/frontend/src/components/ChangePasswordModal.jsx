@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Eye, EyeOff, Key } from "lucide-react";
 
 const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -41,23 +43,23 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
     const newErrors = {};
     
     if (!formData.currentPassword.trim()) {
-      newErrors.currentPassword = "Vui lòng nhập mật khẩu hiện tại";
+  newErrors.currentPassword = t("ui.change_password_modal.error_current_required");
     }
     
     if (!formData.newPassword.trim()) {
-      newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
+  newErrors.newPassword = t("ui.change_password_modal.error_new_required");
     } else if (formData.newPassword.length < 6) {
-      newErrors.newPassword = "Mật khẩu mới phải có ít nhất 6 ký tự";
+  newErrors.newPassword = t("ui.change_password_modal.error_new_length");
     }
     
     if (!formData.confirmPassword.trim()) {
-      newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu mới";
+  newErrors.confirmPassword = t("ui.change_password_modal.error_confirm_required");
     } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
+  newErrors.confirmPassword = t("ui.change_password_modal.error_confirm_mismatch");
     }
 
     if (formData.currentPassword === formData.newPassword) {
-      newErrors.newPassword = "Mật khẩu mới phải khác mật khẩu hiện tại";
+  newErrors.newPassword = t("ui.change_password_modal.error_new_same");
     }
 
     setErrors(newErrors);
@@ -85,7 +87,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
       onClose();
     } catch (error) {
       setErrors({
-        general: error.message || "Có lỗi xảy ra khi đổi mật khẩu",
+        general: error.message || t("ui.change_password_modal.error_general"),
       });
     } finally {
       setIsLoading(false);
@@ -118,7 +120,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center">
             <Key className="w-5 h-5 text-red-600 mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">Đổi mật khẩu</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("ui.change_password_modal.title")}</h2>
           </div>
           <button
             onClick={handleClose}
@@ -141,7 +143,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
             {/* Current Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mật khẩu hiện tại *
+                {t("ui.change_password_modal.current_password")} *
               </label>
               <div className="relative">
                 <input
@@ -153,7 +155,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
                   className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed ${
                     errors.currentPassword ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Nhập mật khẩu hiện tại"
+                  placeholder={t("ui.change_password_modal.current_password_placeholder")}
                 />
                 <button
                   type="button"
@@ -172,7 +174,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
             {/* New Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mật khẩu mới *
+                {t("ui.change_password_modal.new_password")} *
               </label>
               <div className="relative">
                 <input
@@ -184,7 +186,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
                   className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed ${
                     errors.newPassword ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Nhập mật khẩu mới"
+                  placeholder={t("ui.change_password_modal.new_password_placeholder")}
                 />
                 <button
                   type="button"
@@ -203,7 +205,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
             {/* Confirm Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Xác nhận mật khẩu mới *
+                {t("ui.change_password_modal.confirm_password")} *
               </label>
               <div className="relative">
                 <input
@@ -215,7 +217,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
                   className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed ${
                     errors.confirmPassword ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Nhập lại mật khẩu mới"
+                  placeholder={t("ui.change_password_modal.confirm_password_placeholder")}
                 />
                 <button
                   type="button"
@@ -235,7 +237,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
           {/* Security Note */}
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
             <p className="text-sm text-yellow-800">
-              <strong>Lưu ý:</strong> Sau khi đổi mật khẩu, bạn sẽ cần đăng nhập lại với mật khẩu mới.
+              <strong>{t("ui.change_password_modal.note_title") || "Lưu ý:"}</strong> {t("ui.change_password_modal.note")}
             </p>
           </div>
 
@@ -247,7 +249,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
               disabled={isLoading}
               className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Hủy
+              {t("ui.change_password_modal.cancel")}
             </button>
             <button
               type="submit"
@@ -257,10 +259,10 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Đang xử lý...
+                  {t("ui.change_password_modal.processing")}
                 </>
               ) : (
-                "Đổi mật khẩu"
+                t("ui.change_password_modal.submit")
               )}
             </button>
           </div>

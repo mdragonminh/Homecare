@@ -256,7 +256,7 @@ export const ContactPage = ({ loggedInUser }) => {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số điện thoại
+                      {t("contact.contact_form.phone")}
                     </label>
                     <input
                       type="tel"
@@ -264,12 +264,12 @@ export const ContactPage = ({ loggedInUser }) => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Nhập số điện thoại"
+                      placeholder={t("contact.contact_form.phone_placeholder")}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Loại dịch vụ
+                      {t("contact.contact_form.service_type")}
                     </label>
                     <select
                       name="serviceType"
@@ -277,7 +277,7 @@ export const ContactPage = ({ loggedInUser }) => {
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="">Chọn loại dịch vụ</option>
+                      <option value="">{t("contact.contact_form.service_type_placeholder")}</option>
                       {serviceTypes.map((type, index) => (
                         <option key={index} value={type}>
                           {type}
@@ -289,7 +289,7 @@ export const ContactPage = ({ loggedInUser }) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tiêu đề *
+                    {t("contact.contact_form.subject")} {t("contact.contact_form.required")}
                   </label>
                   <input
                     type="text"
@@ -298,13 +298,13 @@ export const ContactPage = ({ loggedInUser }) => {
                     onChange={handleInputChange}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Tiêu đề tin nhắn"
+                    placeholder={t("contact.contact_form.subject_placeholder")}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nội dung tin nhắn *
+                    {t("contact.contact_form.message")} {t("contact.contact_form.required")}
                   </label>
                   <textarea
                     name="message"
@@ -313,7 +313,7 @@ export const ContactPage = ({ loggedInUser }) => {
                     required
                     rows={6}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    placeholder="Mô tả chi tiết yêu cầu của bạn..."
+                    placeholder={t("contact.contact_form.message_placeholder")}
                   ></textarea>
                 </div>
 
@@ -325,12 +325,12 @@ export const ContactPage = ({ loggedInUser }) => {
                   {isSubmitting ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Đang gửi...
+                      {t("contact.contact_form.sending")}
                     </>
                   ) : (
                     <>
                       <Send className="w-5 h-5" />
-                      Gửi tin nhắn
+                      {t("contact.contact_form.send_message")}
                     </>
                   )}
                 </button>
@@ -343,7 +343,7 @@ export const ContactPage = ({ loggedInUser }) => {
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                 <div className="aspect-w-16 aspect-h-12">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.4326021840547!2d106.70013731533493!3d10.776530561957106!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f4b3330bfa9%3A0x8ced41d0053bae81!2zTmd1eeG7hW4gSHXhur9lLCBCZW4gTmdow6osIFF1YW4gMSwgVGjDoG5oIHBo4buRIEjhu5MgQ2jDrSBNaW5oLCBWaeG7h3QgTmFt!5e0!3m2!1svi!2s!4v1628580000000!5m2!1svi!2s"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1103.2844775938834!2d105.5242946196174!3d21.012894450710675!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc60e7d3f19%3A0x2be9d7d0b5abcbf4!2sFPT%20University!5e1!3m2!1sen!2s!4v1760629547276!5m2!1sen!2s"
                     className="w-full h-96"
                     style={{ border: 0 }}
                     allowFullScreen=""
@@ -353,15 +353,15 @@ export const ContactPage = ({ loggedInUser }) => {
                 </div>
                 <div className="p-6">
                   <h4 className="text-xl font-semibold text-gray-900 mb-2">
-                    Văn phòng chính
+                    {t("contact.map.main_office")}
                   </h4>
                   <p className="text-gray-600 mb-4">
-                    123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh
+                    {t("contact.map.main_office_address")}
                   </p>
                   <div className="flex items-center gap-4 text-sm text-gray-500">
                     <div className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
-                      <span>8:00 - 22:00 hàng ngày</span>
+                      <span>{t("contact.map.office_hours")}</span>
                     </div>
                   </div>
                 </div>
@@ -370,7 +370,7 @@ export const ContactPage = ({ loggedInUser }) => {
               {/* Social Media */}
               <div className="bg-white p-6 rounded-2xl shadow-xl">
                 <h4 className="text-xl font-semibold text-gray-900 mb-4">
-                  Theo dõi chúng tôi
+                  {t("contact.social.title")}
                 </h4>
                 <div className="flex gap-4">
                   <a

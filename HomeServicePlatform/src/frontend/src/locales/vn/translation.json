@@ -3,6 +3,27 @@
     "name": "HomeServicePlatform"
   },
   "ui": {
+    "change_password_modal": {
+      "title": "Đổi mật khẩu",
+      "current_password": "Mật khẩu hiện tại",
+      "current_password_placeholder": "Nhập mật khẩu hiện tại",
+      "new_password": "Mật khẩu mới",
+      "new_password_placeholder": "Nhập mật khẩu mới",
+      "confirm_password": "Xác nhận mật khẩu mới",
+      "confirm_password_placeholder": "Nhập lại mật khẩu mới",
+      "cancel": "Hủy",
+      "submit": "Đổi mật khẩu",
+      "processing": "Đang xử lý...",
+      "note_title": "Lưu ý:",
+      "note": "Sau khi đổi mật khẩu, bạn sẽ cần đăng nhập lại với mật khẩu mới.",
+      "error_current_required": "Vui lòng nhập mật khẩu hiện tại",
+      "error_new_required": "Vui lòng nhập mật khẩu mới",
+      "error_new_length": "Mật khẩu mới phải có ít nhất 6 ký tự",
+      "error_confirm_required": "Vui lòng xác nhận mật khẩu mới",
+      "error_confirm_mismatch": "Mật khẩu xác nhận không khớp",
+      "error_new_same": "Mật khẩu mới phải khác mật khẩu hiện tại",
+      "error_general": "Có lỗi xảy ra khi đổi mật khẩu"
+    },
     "welcome_back": "Chào mừng trở lại!",
     "login_button": "Đăng nhập",
     "logging_in": "Đang đăng nhập...",
@@ -712,7 +733,7 @@
       },
       "address": {
         "title": "Địa chỉ văn phòng",
-        "content": "123 Nguyễn Huệ, Q.1, TP.HCM",
+        "content": "Đại học FPT, Thạch Thất, Hà Nội",
         "description": "Thứ 2 - Chủ nhật: 8:00 - 22:00"
       },
       "chat": {
@@ -742,6 +763,7 @@
     },
     "map": {
       "main_office": "Văn phòng chính",
+      "main_office_address": "Đại học FPT, Thạch Thất, Hà Nội",
       "office_hours": "8:00 - 22:00 hàng ngày"
     },
     "social": {

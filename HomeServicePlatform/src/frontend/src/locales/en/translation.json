@@ -3,6 +3,27 @@
     "name": "HomeServicePlatform"
   },
   "ui": {
+    "change_password_modal": {
+      "title": "Change Password",
+      "current_password": "Current Password",
+      "current_password_placeholder": "Enter current password",
+      "new_password": "New Password",
+      "new_password_placeholder": "Enter new password",
+      "confirm_password": "Confirm New Password",
+      "confirm_password_placeholder": "Re-enter new password",
+      "cancel": "Cancel",
+      "submit": "Change Password",
+      "processing": "Processing...",
+      "note_title": "Note:",
+      "note": "After changing your password, you will need to log in again with the new password.",
+      "error_current_required": "Please enter your current password",
+      "error_new_required": "Please enter a new password",
+      "error_new_length": "New password must be at least 6 characters",
+      "error_confirm_required": "Please confirm your new password",
+      "error_confirm_mismatch": "Confirmation password does not match",
+      "error_new_same": "New password must be different from current password",
+      "error_general": "An error occurred while changing password"
+    },
     "welcome_back": "Welcome back!",
     "login_button": "Log in",
     "logging_in": "Logging in...",
@@ -709,7 +730,7 @@
       },
       "address": {
         "title": "Office Address",
-        "content": "123 Nguyen Hue, District 1, Ho Chi Minh City",
+        "content": "FPT University, Thach That, Ha Noi",
         "description": "Monday - Sunday: 8:00 - 22:00"
       },
       "chat": {
@@ -739,6 +760,7 @@
     },
     "map": {
       "main_office": "Main Office",
+      "main_office_address": "FPT University, Thach That, Ha Noi",
       "office_hours": "8:00 - 22:00 daily"
     },
     "social": {
