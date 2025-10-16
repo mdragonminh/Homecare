@@ -228,7 +228,8 @@
       "serial_number": "Mã số duy nhất của thiết bị",
       "notes": "Thông tin thêm về thiết bị (ví dụ: vị trí, ngày mua...)",
       "new_password": "Nhập mật khẩu mới",
-      "search_radius": "Chọn bán kính tìm kiếm"
+      "search_radius": "Chọn bán kính tìm kiếm",
+      "address": " Nhập địa chỉ để tìm trên bản đồ"
     },
     "usertype": {
       "customer": "Khách hàng",
