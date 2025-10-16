@@ -1,6 +1,6 @@
 import axiosClient from "../config/axiosClient";
 
-const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
+//const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
 
 export const technicianApi = {
   updateLocation: async (latitude, longitude) => {
@@ -20,12 +20,12 @@ export const technicianApi = {
         }
       );
 
-      if (ENABLE_DEBUG)
-        console.log("Cập nhật vị trí kỹ thuật viên thành công:", response.data);
+      // if (ENABLE_DEBUG)
+      //   console.log("Cập nhật vị trí kỹ thuật viên thành công:", response.data);
 
       return { success: true, data: response.data };
     } catch (error) {
-      if (ENABLE_DEBUG) console.error("Cập nhật vị trí lỗi:", error);
+      //if (ENABLE_DEBUG) console.error("Cập nhật vị trí lỗi:", error);
       return {
         success: false,
         message:
