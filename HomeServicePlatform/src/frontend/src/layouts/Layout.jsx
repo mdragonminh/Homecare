@@ -13,7 +13,7 @@ export default function Layout({ loggedInUser, onLogout, onShowLogin, onShowRegi
         onShowLogin={onShowLogin}
         onShowRegister={onShowRegister}
       />
-      {loggedInUser?.role?.toLowerCase() === "technician" && <TechnicianTracker enabled={true} />}
+      <TechnicianTracker role={loggedInUser?.role} />
 
       <main className="flex-1">
         {/* Outlet sẽ render nội dung của các route con (ClientRoutes) */}

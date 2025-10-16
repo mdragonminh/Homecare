@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.BookingDto;
 using HSP.Core.Dtos.MapDto;
 using HSP.Core.Dtos.ServiceRequestDto;
 using HSP.Core.Entities;
@@ -17,27 +18,24 @@ namespace HSP.Service.Implementations
 	{
 		private readonly IGeocodingService _geocodingService;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
+		private readonly IRepository<Booking, Guid> _bookingRepository;
 		public ServiceRequestService(IGeocodingService geocodingService,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
+			IRepository<Booking, Guid> bookingRepository,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_geocodingService = geocodingService;
 			_technicianRepository = technicianRepository;
+			_bookingRepository = bookingRepository;
 		}
 
 		public async Task<IEnumerable<TechnicianResultDto>> SearchNearbyTechniciansAsync(SearchTechnicianInput input)
 		{
-			CoordinatesDto coordinates;
+			CoordinatesDto coordinates = !string.IsNullOrEmpty(input.Address)
+			? await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
+					?? throw new Exception(_localizer["CannotFoundcoordinates."])
+			: throw new ArgumentException(_localizer["MustHaveAddress"]);
 
-			if (!string.IsNullOrEmpty(input.Address))
-			{
-				coordinates = await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
-						?? throw new Exception(_localizer["CannotFoundcoordinates."]);
-			}
-			else
-			{
-				throw new ArgumentException(_localizer["MustHaveAddress"]);
-			}
 			var allTechnicians = await _technicianRepository.GetAll()
 				.Include(x => x.User)
 				.Where(x => x.ApprovalStatus == TechnicianApprovalStatus.Approved)
@@ -64,6 +62,7 @@ namespace HSP.Service.Implementations
 
 			return filtered;
 		}
+
 		private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
 		{
 			var dLat = (lat2 - lat1) * GeoConstants.DegreeToRadian;
@@ -76,5 +75,6 @@ namespace HSP.Service.Implementations
 			var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
 			return GeoConstants.EarthRadiusKm * c;
 		}
+
 	}
 }
