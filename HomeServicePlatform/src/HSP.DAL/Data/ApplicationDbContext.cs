@@ -103,6 +103,9 @@ namespace HSP.DAL.Data
 							.WithMany(s => s.Bookings)
 							.HasForeignKey(b => b.ServiceId)
 							.OnDelete(DeleteBehavior.Restrict);
+				entity.Property(b => b.DateModified)
+				 .HasColumnType("datetime2")
+				 .HasDefaultValueSql("GETUTCDATE()");
 			});
 			builder.Entity<BookingFeedback>()
 			.HasKey(f => f.BookingId);

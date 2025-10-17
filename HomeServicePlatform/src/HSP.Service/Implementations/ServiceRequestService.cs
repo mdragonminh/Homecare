@@ -20,14 +20,17 @@ namespace HSP.Service.Implementations
 		private readonly IGeocodingService _geocodingService;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		private readonly IRepository<Booking, Guid> _bookingRepository;
+		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		public ServiceRequestService(IGeocodingService geocodingService,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			IRepository<Booking, Guid> bookingRepository,
+			IRepository<CustomerProfile, Guid> customerProfileRepository,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_geocodingService = geocodingService;
 			_technicianRepository = technicianRepository;
 			_bookingRepository = bookingRepository;
+			_customerProfileRepository = customerProfileRepository;
 		}
 
 		public async Task<MatchedBookingResultDto> CreateAndMatchBookingAsync(CustomerCreateBookingDto input)
@@ -36,6 +39,11 @@ namespace HSP.Service.Implementations
 					? await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
 							?? throw new Exception(_localizer["CannotFoundcoordinates."])
 					: throw new ArgumentException(_localizer["MustHaveAddress"]);
+			var customer = await _customerProfileRepository.GetAll().FirstOrDefaultAsync(x => x.UserId == Guid.Parse(input.CustomerId));
+			if (customer == null)
+			{
+				throw new Exception("customer is null");
+			}
 
 			var (minLat, maxLat, minLon, maxLon) = GetBoundingBox(coordinates.Latitude, coordinates.Longitude, input.DistanceKm);
 
@@ -46,21 +54,27 @@ namespace HSP.Service.Implementations
 					.Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
 					.Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
 					.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
-					.Where(t => !t.Bookings.Any(b => 
-					b.Status == BookingStatus.InProgress 
-					|| b.Status == BookingStatus.Pending 
-					|| b.Status == BookingStatus.TechnicianOnTheWay 
+					.Where(t => !t.Bookings.Any(b =>
+					b.Status == BookingStatus.InProgress
+					|| b.Status == BookingStatus.Pending
+					|| b.Status == BookingStatus.TechnicianOnTheWay
 					|| b.Status == BookingStatus.Confirmed));
 
 			var potentialTechnicians = await potentialTechniciansQuery.ToListAsync();
 
+			if (potentialTechnicians == null && potentialTechnicians.Any())
+			{
+				throw new Exception("dont have technician match your search");
+			}
+
 			var bestTechnician = potentialTechnicians
-					.Select(t => new {
+					.Select(t => new
+					{
 						Technician = t,
 						Distance = CalculateDistance(coordinates.Latitude, coordinates.Longitude, t.Latitude, t.Longitude)
 					})
-					.Where(t => t.Distance <= input.DistanceKm) 
-					.OrderBy(t => t.Distance) 
+					.Where(t => t.Distance <= input.DistanceKm)
+					.OrderBy(t => t.Distance)
 					// .ThenByDescending(t => t.Technician.Rating) 
 					.FirstOrDefault();
 
@@ -71,13 +85,13 @@ namespace HSP.Service.Implementations
 
 			var newBooking = new Booking
 			{
-				CustomerProfileId = input.CustomerId,
+				CustomerProfileId = customer.Id,
 				TechnicianId = bestTechnician.Technician.Id,
 				Status = BookingStatus.Pending,
 				//ProblemDescription = input.Description,
 				ServiceId = input.ServiceIds.First(),
 				DateCreated = DateTime.UtcNow,
-            };
+			};
 
 			await _bookingRepository.AddAsync(newBooking);
 			await _unitOfWork.SaveChangesAsync();
