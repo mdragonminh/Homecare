@@ -98,11 +98,6 @@ export function HomePage({  onShowRegister, loggedInUser }) {
   return (
     // LOẠI BỎ: min-h-screen flex flex-col (đã được bọc bởi Layout)
     <div className="flex-1"> 
-      {/* LOẠI BỎ: Header component */}
-      {/* <Header onShowLogin={onShowLogin} onShowRegister={onShowRegister}  loggedInUser={loggedInUser}
-        onLogout={onLogout}/> */}
-
-      {/* LOẠI BỎ: main component wrapper vì đã có trong Layout.jsx */}
       <div className="flex-1"> 
         {/* Hero Section */}
         <section className="bg-gradient-to-br from-gray-50 to-gray-100 py-20">
@@ -127,7 +122,7 @@ export function HomePage({  onShowRegister, loggedInUser }) {
 
             {/* Image */}
             <div className="relative">
-              <img src="https://images.unsplash.com/photo-1723847165390-f45ef02f6b86" alt="Thợ sửa chữa" className="rounded-2xl shadow-lg" />
+              <img src="https://luxurydecor.vn/wp-content/uploads/2019/12/thiet-ke-noi-that-chung-cu-2-phong-ngu-6.jpg" alt="Thợ sửa chữa" className="rounded-2xl shadow-lg" />
               <div className="absolute -top-4 -left-4 bg-white p-3 shadow rounded">
                 <p className="text-green-600 font-medium">✓ Yêu cầu hoàn thành</p>
                 <p className="text-sm text-gray-500">Sửa điều hòa - A101</p>

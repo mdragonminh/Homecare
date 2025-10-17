@@ -332,9 +332,6 @@ export default function HomeManagementPage() {
                         <ChevronLeft size={20} />
                     </button>
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3 ml-4">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <Home size={24} className="text-white" />
-                        </div>
                         {t("ui.home_management")}
                     </h1>
                 </div>

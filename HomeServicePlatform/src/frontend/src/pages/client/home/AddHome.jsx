@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Check,
   Compass,
+  Locate,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -16,7 +17,7 @@ import { homeApi } from "../../../services/homeApi";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Khởi tạo icon marker tùy chỉnh (Giữ nguyên)
+// Khởi tạo icon marker tùy chỉnh
 const customMarkerIcon = new L.Icon({
   iconUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
@@ -39,6 +40,7 @@ export default function AddAddressPage({ onClose, onSuccess }) {
   const markerInstance = useRef(null);
   const addressInputRef = useRef(null);
   const [isMapInit, setIsMapInit] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -91,23 +93,26 @@ export default function AddAddressPage({ onClose, onSuccess }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // --- Initialize Map (Không thay đổi) ---
+  // --- Initialize Map ---
   useEffect(() => {
     if (!mapRef.current || isMapInit) return;
 
     mapInstance.current = L.map(mapRef.current, {
       zoomControl: true,
       scrollWheelZoom: true,
+      zIndex: 1,
     }).setView([formData.latitude, formData.longitude], 16);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
       className: "map-tiles",
+      zIndex: 1,
     }).addTo(mapInstance.current);
 
     markerInstance.current = L.marker([formData.latitude, formData.longitude], {
       draggable: true,
       icon: customMarkerIcon,
+      zIndexOffset: 100,
     }).addTo(mapInstance.current);
 
     markerInstance.current.on("dragend", async (e) => {
@@ -129,6 +134,11 @@ export default function AddAddressPage({ onClose, onSuccess }) {
     });
 
     setIsMapInit(true);
+
+    // Force re-render nút sau khi bản đồ khởi tạo
+    setTimeout(() => {
+      mapRef.current?.dispatchEvent(new Event("resize"));
+    }, 100);
 
     return () => {
       mapInstance.current?.remove();
@@ -167,7 +177,7 @@ export default function AddAddressPage({ onClose, onSuccess }) {
       markerInstance.current.setLatLng([newLat, newLng]);
       mapInstance.current.setView([newLat, newLng], 16);
     });
-  }, [isMapInit, t]); // Thêm 't' vào dependency array
+  }, [isMapInit, t]);
 
   useEffect(() => {
     if (mapInstance.current && markerInstance.current && isMapInit) {
@@ -175,10 +185,61 @@ export default function AddAddressPage({ onClose, onSuccess }) {
     }
   }, [formData.latitude, formData.longitude, isMapInit]);
 
+  // --- Handle Get Current Location ---
+  const handleGetMyLocation = () => {
+    if (isGettingLocation) return;
+
+    setIsGettingLocation(true);
+    console.log("Getting current location...");
+    toast.info(t("ui.getting_current_location"));
+
+    if (!navigator.geolocation) {
+      toast.error(t("address.error.geolocation_not_supported"));
+      setIsGettingLocation(false);
+      console.log("Geolocation not supported");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log("Location obtained:", latitude, longitude);
+        updateForm("latitude", latitude);
+        updateForm("longitude", longitude);
+
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await res.json();
+          if (data?.display_name) {
+            updateForm("address", data.display_name);
+            markerInstance.current.setLatLng([latitude, longitude]);
+            mapInstance.current.setView([latitude, longitude], 16);
+            toast.success(t("success.geocode_success"));
+          } else {
+            toast.error(t("address.error.geocode_failed"));
+          }
+        } catch (error) {
+          console.error("Reverse geocoding error:", error);
+          toast.error(t("address.error.geocode_failed"));
+        } finally {
+          setIsGettingLocation(false);
+          console.log("Location fetch completed");
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        toast.error(t("address.error.geolocation_failed"));
+        setIsGettingLocation(false);
+        console.log("Geolocation failed");
+      }
+    );
+  };
+
   // --- Handle Save ---
   const handleSave = async () => {
     if (!validateForm()) {
-      // ✅ Dịch thông báo lỗi
       toast.error(t("address.error.validation_failed"));
       return;
     }
@@ -196,12 +257,19 @@ export default function AddAddressPage({ onClose, onSuccess }) {
       }
     } catch (error) {
       console.error("Error creating home:", error);
-
       toast.error(t("address.error.unexpected"));
     } finally {
       setIsSaving(false);
     }
   };
+
+  // Debug map and button rendering
+  useEffect(() => {
+    console.log("Map container rendered, checking button visibility...");
+    if (mapRef.current) {
+      console.log("Map container found:", mapRef.current);
+    }
+  }, [isMapInit]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -353,7 +421,7 @@ export default function AddAddressPage({ onClose, onSuccess }) {
             </div>
 
             {/* Right Panel - Map */}
-            <div className="xl:col-span-3 space-y-4">
+            <div className="xl:col-span-3 space-y-4 relative" style={{ position: "relative", minHeight: "500px", zIndex: 0 }}>
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-semibold text-slate-700">
                   {t("address.map.location_label")}
@@ -368,8 +436,25 @@ export default function AddAddressPage({ onClose, onSuccess }) {
                 <div
                   ref={mapRef}
                   className="h-[500px] w-full rounded-2xl border-2 border-slate-200 overflow-hidden shadow-xl bg-slate-100"
-                  style={{ minHeight: "500px" }}
+                  style={{ minHeight: "500px", zIndex: 1 }}
                 />
+                <button
+                  onClick={handleGetMyLocation}
+                  disabled={isGettingLocation}
+                  className={`absolute bottom-4 right-4 z-[1000] w-12 h-12 rounded-full shadow-2xl transition-all flex items-center justify-center ${
+                    isGettingLocation
+                      ? "bg-blue-500 animate-pulse disabled:opacity-100"
+                      : "bg-red-500 hover:bg-red-600 hover:scale-105 active:scale-95"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  title={t("ui.use_my_current_location")}
+                  onMouseEnter={() => console.log("Button is visible and interactable")}
+                >
+                  {isGettingLocation ? (
+                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                  ) : (
+                    <Locate className="h-6 w-6 text-white" />
+                  )}
+                </button>
               </div>
               {errors.map && (
                 <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">

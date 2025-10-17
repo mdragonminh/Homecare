@@ -213,7 +213,8 @@
     "find_technicians_button": "Find Technicians Around {{radius}} km",
     "your_service_location": "Your Service Location",
     "select_service_label": "Search or Select Service",
-    "search_service_placeholder": "Search for services..."
+    "search_service_placeholder": "Search for services...",
+    "getting_current_location": "Getting current location..."
   },
   "form": {
     "label": {
@@ -287,7 +288,8 @@
     "full_name_length": "Full name must be 1-100 characters",
     "phone_length": "Phone number must be 10-11 digits",
     "password_strong": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character",
-    "new_password_required": "Please enter new password"
+    "new_password_required": "Please enter new password",
+    "address_required": "Please enter address"
   },
   "success": {
     "registration": "You have registered successfully. Please check your email to verify and log in.",
@@ -304,7 +306,8 @@
     "geocode_success" : "Location has been determined. Click Search to continue.",
     "location_updated": "Location updated from map: {{address}}. Click Search.",
     "technician_found": "Found {{count}} technicians near you within {{radius}}km.",
-    "home_loaded": "Loaded {{count}} addresses. Default address: {{name}}"
+    "home_loaded": "Loaded {{count}} addresses. Default address: {{name}}",
+    "my_location_set": "Your current location has been set. Click Search to continue."
   },
   "error": {
     "email_in_use": "Email is already in use, please use another email.",
