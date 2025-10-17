@@ -9,16 +9,7 @@ import { useTranslation } from "react-i18next";
 import { homeApi } from "../../../services/homeApi.jsx";
 import { serviceApi } from "../../../services/serviceApi.jsx";
 
-import {
-  Loader2,
-  PlusCircle,
-  Edit,
-  MapPin,
-  Search,
-  Home,
-  ChevronsDown,
-  XCircle,
-  CheckCircle,
+import { Loader2, PlusCircle, Edit,MapPin,Search,Home,ChevronsDown, XCircle,CheckCircle,
   AlertTriangle,
   Star,
   Globe,
@@ -77,12 +68,6 @@ export function FindTechnicianPage({ loggedInUser }) {
   }, []);
 
   const handleCreateAndMatchBooking = useCallback(async () => {
-    console.log("--- DEBUG BOOKING START ---");
-    console.log("addressInput:", addressInput);
-    console.log("selectedServiceIds:", selectedServiceIds);
-    console.log("selectedServiceIds.length:", selectedServiceIds.length);
-    console.log("loggedInUser.id:", loggedInUser?.id);
-    console.log("--- DEBUG BOOKING END ---");
 
     if (!addressInput || selectedServiceIds.length === 0 || !loggedInUser?.userId) {
         setStatusMessage(t("validation.missing_booking_info", { defaultValue: "Vui lòng nhập địa chỉ và chọn dịch vụ." }));
