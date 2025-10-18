@@ -214,7 +214,10 @@
     "your_service_location": "Vị trí  của bạn",
     "select_service_label": "Tìm kiếm hoặc Chọn Dịch vụ",
     "search_service_placeholder": "Tìm kiếm dịch vụ...",
-    "getting_current_location": "Đang lấy vị trí hiện tại..."
+    "getting_current_location": "Đang lấy vị trí hiện tại...",
+    "preferred_time_label": "Giờ Yêu Cầu",
+    "preferred_date_label": "Ngày Yêu Cầu",
+    "match_technician_button": "Yêu cầu & Ghép nối Ngay"
   },
   "form": {
     "label": {
@@ -293,7 +296,8 @@
     "phone_length": "Số điện thoại phải từ 10-11 chữ số",
     "password_strong": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
     "new_password_required": "Vui lòng nhập mật khẩu mới",
-    "address_required": "Vui lòng nhập địa chỉ"
+    "address_required": "Vui lòng nhập địa chỉ",
+    "missing_booking_info_datetime": "Vui lòng nhập địa chỉ, chọn dịch vụ, bán kính, ngày và giờ."
   },
   "success": {
     "registration": "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để xác minh và đăng nhập.",
@@ -311,7 +315,8 @@
     "location_updated": "Vị trí được cập nhật từ bản đồ: {{address}}. Nhấn Tìm kiếm.",
     "technician_found": "Tìm thấy {{count}} Technician gần bạn trong {{radius}}km.",
     "home_loaded": "Đã tải {{count}} địa chỉ. Địa chỉ mặc định: {{name}}",
-    "my_location_set": "Vị trí hiện tại của bạn đã được thiết lập. Nhấn Tìm kiếm để tiếp tục."
+    "my_location_set": "Vị trí hiện tại của bạn đã được thiết lập. Nhấn Tìm kiếm để tiếp tục.",
+    "match_booking_success": "Yêu cầu đặt lịch thành công! Một kỹ thuật viên sẽ liên hệ với bạn sớm."
   },
   "error": {
     "email_in_use": "Email đã được sử dụng, vui lòng dùng email khác.",

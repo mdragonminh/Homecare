@@ -214,7 +214,11 @@
     "your_service_location": "Your Service Location",
     "select_service_label": "Search or Select Service",
     "search_service_placeholder": "Search for services...",
-    "getting_current_location": "Getting current location..."
+    "getting_current_location": "Getting current location...",
+    "preferred_time_label": "Preferred Time",
+    "preferred_date_label": "Preferred Date",
+    "match_technician_button": "Request & Match Now"
+    
   },
   "form": {
     "label": {
@@ -289,7 +293,8 @@
     "phone_length": "Phone number must be 10-11 digits",
     "password_strong": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character",
     "new_password_required": "Please enter new password",
-    "address_required": "Please enter address"
+    "address_required": "Please enter address",
+    "missing_booking_info_datetime": "Please enter address, select service, radius, date and time."
   },
   "success": {
     "registration": "You have registered successfully. Please check your email to verify and log in.",
@@ -307,7 +312,8 @@
     "location_updated": "Location updated from map: {{address}}. Click Search.",
     "technician_found": "Found {{count}} technicians near you within {{radius}}km.",
     "home_loaded": "Loaded {{count}} addresses. Default address: {{name}}",
-    "my_location_set": "Your current location has been set. Click Search to continue."
+    "my_location_set": "Your current location has been set. Click Search to continue.",
+    "match_booking_success": "Booking request submitted successfully! A technician will contact you soon."
   },
   "error": {
     "email_in_use": "Email is already in use, please use another email.",

@@ -1,14 +1,9 @@
-// src/components/MapDisplay.jsx
 
 import React, { useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// ---------------------------------------------------------------------
-// 1. CONSTANTS AND UTILITY FUNCTIONS
-// (Di chuyển từ FindTechnicianPage.jsx)
-// ---------------------------------------------------------------------
 
 const customMarkerIcon = new L.Icon({
   iconUrl:
@@ -64,7 +59,6 @@ const MapDisplay = ({ lat, lng, technicians, isDraggable, onMarkerDrag }) => {
   const popupContent = useMemo(() => {
     if (!technicians || technicians.length === 0) return null;
     const groupedTechs = technicians.reduce((acc, tech) => {
-      // Group technicians at the same location
       const key = `${tech.lat}_${tech.lng}`;
       if (!acc[key]) {
         acc[key] = { lat: tech.lat, lng: tech.lng, techs: [] };

@@ -116,7 +116,7 @@ export function LoginPage({
         });
       } else {
         // Lỗi từ authApi (thường là lỗi 400 hoặc 401 đã được xử lý trong authApi.js)
-        setError(res.message || t("error.try_again"));
+        setError(res.message || t("error.invalid_email_or_password"));
       }
     } catch (err) {
       console.error("Lỗi đăng nhập:", err);

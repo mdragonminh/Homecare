@@ -1,12 +1,6 @@
 // src/hooks/useFindTechnician.jsx (Tên file đề xuất)
 
-import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-} from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { homeApi } from "../services/homeApi.jsx";
 import { serviceApi } from "../services/serviceApi.jsx";
@@ -36,7 +30,8 @@ export function useFindTechnician(loggedInUser) {
   const [serviceSearchInput, setServiceSearchInput] = useState("");
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [isMatching, setIsMatching] = useState(false);
-  
+  const [preferredDate, setPreferredDate] = useState(""); // Định dạng 'YYYY-MM-DD'
+  const [preferredTime, setPreferredTime] = useState("");
   const autocompleteRef = useRef(null);
 
   const currentHomeData = useMemo(() => {
@@ -54,9 +49,9 @@ export function useFindTechnician(loggedInUser) {
   }, [services, serviceSearchInput]);
 
   const selectedServiceNames = useMemo(() => {
-    return selectedServiceIds.map(id => 
-        services.find(s => s.id === id)?.name
-    ).filter(Boolean); 
+    return selectedServiceIds
+      .map((id) => services.find((s) => s.id === id)?.name)
+      .filter(Boolean);
   }, [selectedServiceIds, services]);
 
   const handleServiceSelection = useCallback((serviceId) => {
@@ -70,49 +65,93 @@ export function useFindTechnician(loggedInUser) {
   }, []);
 
   const handleCreateAndMatchBooking = useCallback(async () => {
-    if (!addressInput || selectedServiceIds.length === 0 || !loggedInUser?.userId) {
-      setStatusMessage(t("validation.missing_booking_info", { defaultValue: "Vui lòng nhập địa chỉ và chọn dịch vụ." }));
-      console.error("VALIDATION FAILED: Missing one of address, services, or customerId.");
+    if (
+      !addressInput ||
+      selectedServiceIds.length === 0 ||
+      !loggedInUser?.userId ||
+      !preferredDate ||
+      !preferredTime
+    ) {
+      setStatusMessage({
+        text: t("validation.missing_booking_info_datetime", {
+          defaultValue: "Vui lòng nhập địa chỉ, chọn dịch vụ, NGÀY VÀ GIỜ.",
+        }),
+        type: "error",
+      });
       return;
     }
 
+    const preferredDateTime = `${preferredDate} ${preferredTime}:00`;
     setIsMatching(true);
-    setTechnicians(null); 
-    setStatusMessage(t("ui.matching_technician_process", { defaultValue: "Đang tạo yêu cầu và tìm kiếm kỹ thuật viên phù hợp..." }));
+    setTechnicians(null);
+    setStatusMessage({
+      text: t("ui.matching_technician_process", {
+        defaultValue: "Đang tạo yêu cầu và tìm kiếm kỹ thuật viên phù hợp...",
+      }),
+      type: "searching",
+    });
 
     const radius = parseFloat(searchRadius);
-
     const matchResult = await serviceApi.createAndMatchBooking(
       addressInput,
       selectedServiceIds,
       loggedInUser.userId,
-      radius
+      radius,
+      preferredDateTime
     );
 
     setIsMatching(false);
 
     if (matchResult.success) {
-      setStatusMessage(t("success.match_booking_success", { defaultValue: "Đã tạo yêu cầu thành công. Chờ kỹ thuật viên chấp nhận." }));
+      setStatusMessage({
+        text: t("success.match_booking_success", {
+          defaultValue:
+            "Đã tạo yêu cầu thành công. Chờ kỹ thuật viên chấp nhận.",
+        }),
+        type: "success",
+      });
     } else {
-      setStatusMessage(
-        matchResult.message || t("error.match_booking_failed", { defaultValue: "Lỗi khi tạo yêu cầu và ghép nối." })
-      );
+      setStatusMessage({
+        text:
+          matchResult.message ||
+          t("error.match_booking_failed", {
+            defaultValue: "Lỗi khi tạo yêu cầu và ghép nối.",
+          }),
+        type: "error",
+      });
     }
-  }, [addressInput, selectedServiceIds, loggedInUser, searchRadius, t]);
-  
+  }, [
+    addressInput,
+    selectedServiceIds,
+    loggedInUser,
+    searchRadius,
+    preferredDate,
+    preferredTime,
+    t,
+  ]);
+
   const handleGetMyLocation = () => {
     if (!("geolocation" in navigator)) {
-      setStatusMessage(t("error.geolocation_not_supported"));
+      setStatusMessage({
+        text: t("error.geolocation_not_supported"),
+        type: "error",
+      });
       return;
     }
 
     if (loggedInUser && selectedHomeId) {
-      setStatusMessage(t("error.cannot_use_my_location_with_home"));
+      setStatusMessage({
+        text: t("error.cannot_use_my_location_with_home"),
+        type: "error",
+      });
       return;
     }
 
     setIsGettingLocation(true);
-    setStatusMessage(t("ui.getting_current_location"));
+    setStatusMessage({
+      text: t("ui.getting_current_location"),
+      type: "searching",
+    });
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -121,32 +160,46 @@ export function useFindTechnician(loggedInUser) {
         setTechnicians(null);
         try {
           const response = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${
+              import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+            }`
           );
           const data = await response.json();
           if (data.results.length > 0) {
             setAddressInput(data.results[0].formatted_address);
-            setStatusMessage(t("success.my_location_set"));
+            setStatusMessage({
+              text: t("success.my_location_set"),
+              type: "success",
+            });
           } else {
             setAddressInput("");
-            setStatusMessage(t("error.geocode_failed_no_address"));
+            setStatusMessage({
+              text: t("error.geocode_failed_no_address"),
+              type: "error",
+            });
           }
         } catch (error) {
           console.error("Reverse geocode error:", error);
-          setStatusMessage(t("error.geocode_failed"));
+          setStatusMessage({
+            text: t("error.geocode_failed"),
+            type: "error",
+          });
         } finally {
           setIsGettingLocation(false);
         }
       },
       (error) => {
         console.error("Geolocation error:", error);
-        setStatusMessage(t("error.geolocation_denied_or_failed"));
+        setStatusMessage({
+          text: t("error.geolocation_denied_or_failed"),
+          type: "error",
+        });
         setIsGettingLocation(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
-  
+
   const handleServiceSearchInputChange = (e) => {
     const value = e.target.value;
     setServiceSearchInput(value);
@@ -186,7 +239,11 @@ export function useFindTechnician(loggedInUser) {
 
       const defaultHome = allHomes.find((h) => h.isDefault) || allHomes[0];
 
-      if (defaultHome.address && defaultHome.latitude && defaultHome.longitude) {
+      if (
+        defaultHome.address &&
+        defaultHome.latitude &&
+        defaultHome.longitude
+      ) {
         initialHomeId = defaultHome.id;
         initialAddress = defaultHome.address;
         initialLat = defaultHome.latitude;
@@ -203,7 +260,10 @@ export function useFindTechnician(loggedInUser) {
     setSelectedHomeId(initialHomeId);
     setIsLoading(false);
 
-    return { allHomes, defaultHomeName: allHomes.find(h => h.id === initialHomeId)?.name };
+    return {
+      allHomes,
+      defaultHomeName: allHomes.find((h) => h.id === initialHomeId)?.name,
+    };
   }, [loggedInUser]);
 
   const handleAddressSelection = (e) => {
@@ -218,34 +278,47 @@ export function useFindTechnician(loggedInUser) {
     if (newHome && newHome.latitude && newHome.longitude) {
       setAddressInput(newHome.address);
       setCoords({ latitude: newHome.latitude, longitude: newHome.longitude });
-      setStatusMessage(t("success.home_edited", { name: newHome.name }));
+      setStatusMessage({
+        text: t("success.home_edited", { name: newHome.name }),
+        type: "success",
+      });
     } else {
       setAddressInput(newHome?.address || "");
       setCoords({ latitude: null, longitude: null });
-      setStatusMessage(t("error.address_invalid"));
+      setStatusMessage({
+        text: t("error.address_invalid"),
+        type: "error",
+      });
     }
   };
 
   const handleFindTechnician = useCallback(async () => {
     if (!coords.latitude || !coords.longitude) {
-      setStatusMessage(t("validation.address_required"));
+      setStatusMessage({
+        text: t("validation.address_required"),
+        type: "error",
+      });
       return;
     }
 
     const radius = parseFloat(searchRadius);
     if (isNaN(radius) || radius <= 0) {
-      setStatusMessage(t("validation.required_fields_missing"));
+      setStatusMessage({
+        text: t("validation.required_fields_missing"),
+        type: "error",
+      });
       return;
     }
 
     setIsSearching(true);
     setTechnicians([]);
-    setStatusMessage(
-      t("ui.searching_technicians", { address: addressInput, radius })
-    );
+    setStatusMessage({
+      text: t("ui.searching_technicians", { address: addressInput, radius }),
+      type: "searching",
+    });
 
-    const serviceIdsQuery = selectedServiceIds.length > 0 ? selectedServiceIds.join(',') : null;
-
+    const serviceIdsQuery =
+      selectedServiceIds.length > 0 ? selectedServiceIds.join(",") : null;
     const searchResult = await serviceApi.getNearbyTechnicians(
       addressInput,
       radius,
@@ -280,16 +353,28 @@ export function useFindTechnician(loggedInUser) {
         .filter((tech) => parseFloat(tech.distance) <= radius);
 
       setTechnicians(filteredTechnicians);
-      setStatusMessage(
-        t("success.technician_found", { count: filteredTechnicians.length, radius })
-      );
+      setStatusMessage({
+        text: t("success.technician_found", {
+          count: filteredTechnicians.length,
+          radius,
+        }),
+        type: "success",
+      });
     } else {
       setTechnicians([]);
-      setStatusMessage(
-        searchResult.message || t("ui.no_technicians_found")
-      );
+      setStatusMessage({
+        text: searchResult.message || t("ui.no_technicians_found"),
+        type: "error",
+      });
     }
-  }, [addressInput, coords.latitude, coords.longitude, searchRadius, selectedServiceIds, t]);
+  }, [
+    addressInput,
+    coords.latitude,
+    coords.longitude,
+    searchRadius,
+    selectedServiceIds,
+    t,
+  ]);
 
   const reloadHomeData = () => {
     setIsAddHomeModalOpen(false);
@@ -298,38 +383,61 @@ export function useFindTechnician(loggedInUser) {
     loadUserHomes();
   };
 
-  const handleMarkerDrag = useCallback(async (newLat, newLng) => {
-    setCoords({ latitude: newLat, longitude: newLng });
-    setStatusMessage(t("ui.updating_address"));
+  const handleMarkerDrag = useCallback(
+    async (newLat, newLng) => {
+      setCoords({ latitude: newLat, longitude: newLng });
+      setStatusMessage({
+        text: t("ui.updating_address"),
+        type: "searching",
+      });
 
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${newLat},${newLng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
-      );
-      const data = await response.json();
-      if (data.results.length > 0) {
-        setAddressInput(data.results[0].formatted_address);
-        setStatusMessage(t("success.geocode_success"));
-      } else {
-        setStatusMessage(t("error.address_invalid"));
+      try {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${newLat},${newLng}&key=${
+            import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+          }`
+        );
+        const data = await response.json();
+        if (data.results.length > 0) {
+          setAddressInput(data.results[0].formatted_address);
+          setStatusMessage({
+            text: t("success.geocode_success"),
+            type: "success",
+          });
+        } else {
+          setStatusMessage({
+            text: t("error.address_invalid"),
+            type: "error",
+          });
+        }
+      } catch (error) {
+        console.error("Reverse geocode error:", error);
+        setStatusMessage({
+          text: t("error.geocode_failed"),
+          type: "error",
+        });
       }
-    } catch (error) {
-      console.error("Reverse geocode error:", error);
-      setStatusMessage(t("error.geocode_failed"));
-    }
-  }, [t]);
+    },
+    [t]
+  );
 
   const handleGeocode = async () => {
     if (loggedInUser && selectedHomeId) return;
 
     if (!addressInput) {
       setCoords({ latitude: null, longitude: null });
-      setStatusMessage(t("validation.address_required"));
+      setStatusMessage({
+        text: t("validation.address_required"),
+        type: "error",
+      });
       return;
     }
 
     setTechnicians(null);
-    setStatusMessage(t("ui.loading_data"));
+    setStatusMessage({
+      text: t("ui.loading_data"),
+      type: "searching",
+    });
 
     const geocodeResult = await homeApi.geocodeAddress(addressInput);
 
@@ -338,15 +446,19 @@ export function useFindTechnician(loggedInUser) {
         latitude: geocodeResult.latitude,
         longitude: geocodeResult.longitude,
       });
-      setStatusMessage(t("success.geocode_success"));
+      setStatusMessage({
+        text: t("success.geocode_success"),
+        type: "success",
+      });
     } else {
       setCoords({ latitude: null, longitude: null });
-      setStatusMessage(
-        geocodeResult.message || t("error.address_invalid")
-      );
+      setStatusMessage({
+        text: geocodeResult.message || t("error.address_invalid"),
+        type: "error",
+      });
     }
   };
-  
+
   // ---------------------------------------------------------------------
   // EFFECTS
   // ---------------------------------------------------------------------
@@ -360,7 +472,9 @@ export function useFindTechnician(loggedInUser) {
     // Logic for Google Autocomplete initialization
     if (!window.google || !window.google.maps) {
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${
+        import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+      }&libraries=places`;
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
@@ -374,10 +488,13 @@ export function useFindTechnician(loggedInUser) {
     function initAutocomplete() {
       const input = document.getElementById("address-input");
       if (input) {
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(input, {
-          types: ["address"],
-          componentRestrictions: { country: "VN" },
-        });
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(
+          input,
+          {
+            types: ["address"],
+            componentRestrictions: { country: "VN" },
+          }
+        );
 
         autocompleteRef.current.addListener("place_changed", () => {
           const place = autocompleteRef.current.getPlace();
@@ -393,7 +510,7 @@ export function useFindTechnician(loggedInUser) {
       }
     }
   }, [t]);
-  
+
   // ---------------------------------------------------------------------
   // RETURN VALUES
   // ---------------------------------------------------------------------
@@ -417,7 +534,8 @@ export function useFindTechnician(loggedInUser) {
     isServiceDropdownOpen,
     isMatching,
     serviceSearchInput,
-
+    preferredDate, // THÊM
+    preferredTime,
     // Memoized Values
     currentHomeData,
     filteredServices,
@@ -431,7 +549,8 @@ export function useFindTechnician(loggedInUser) {
     setIsEditHomeModalOpen,
     setIsServiceDropdownOpen,
     setServiceSearchInput,
-    
+    setPreferredDate, // THÊM
+    setPreferredTime,
     // Handlers
     handleAddressSelection,
     handleFindTechnician,

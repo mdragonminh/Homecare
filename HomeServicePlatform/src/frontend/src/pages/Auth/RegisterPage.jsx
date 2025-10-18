@@ -43,7 +43,8 @@ export default function RegisterPage({
 
   // Regex cơ bản để kiểm tra định dạng email và số điện thoại
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^[+]?[\s\d\-\(\)]*$/; // Cho phép số, dấu +, dấu cách, dấu gạch ngang và dấu ngoặc
+  // 
+  const phoneRegex = /^[+]?[\s\d\-\(\)]*$/; 
 
   useEffect(() => {
     if (loggedInUser) {
