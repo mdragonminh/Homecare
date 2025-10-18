@@ -24,6 +24,7 @@ namespace HSP.Service.Implementations
 		private readonly IRepository<Booking, Guid> _bookingRepository;
 		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly IEmailService _emailService;
+		private readonly IEmailQueueService _emailQueue;
 		private readonly IEmailTemplateService _emailTemplateService;
 		private static readonly ConcurrentDictionary<string, Guid> _acceptedRequests = new();
 		public ServiceRequestService(IGeocodingService geocodingService,
@@ -31,6 +32,7 @@ namespace HSP.Service.Implementations
 			IRepository<Booking, Guid> bookingRepository,
 			IRepository<CustomerProfile, Guid> customerProfileRepository,
 			IEmailService emailService,
+			IEmailQueueService emailQueue,
 			IEmailTemplateService emailTemplateService,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
@@ -39,6 +41,7 @@ namespace HSP.Service.Implementations
 			_bookingRepository = bookingRepository;
 			_customerProfileRepository = customerProfileRepository;
 			_emailService = emailService;
+			_emailQueue = emailQueue;
 			_emailTemplateService = emailTemplateService;
 		}
 		public static void AcceptBookingResponse(string token, Guid technicianId)
@@ -50,7 +53,7 @@ namespace HSP.Service.Implementations
 		{
 			if (_acceptedRequests.TryGetValue(token, out var techId))
 			{
-				_acceptedRequests.TryRemove(token, out _); 
+				_acceptedRequests.TryRemove(token, out _);
 				return techId;
 			}
 			return null;
@@ -58,12 +61,15 @@ namespace HSP.Service.Implementations
 
 		public async Task<MatchedBookingResultDto> CreateAndMatchBookingAsync(CustomerCreateBookingDto input)
 		{
+			if (input == null)
+				throw new ArgumentNullException(nameof(input));
+
 			var coordinates = !string.IsNullOrEmpty(input.Address)
 					? await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
 							?? throw new Exception(_localizer["CannotFoundcoordinates."])
 					: throw new ArgumentException(_localizer["MustHaveAddress"]);
 			var customer = await _customerProfileRepository.GetAll()
-				.Include(x=>x.User)
+				.Include(x => x.User)
 				.FirstOrDefaultAsync(x => x.UserId == Guid.Parse(input.CustomerId));
 			if (customer == null)
 			{
@@ -100,10 +106,10 @@ namespace HSP.Service.Implementations
 			{
 				throw new Exception(_localizer["NoAvailableTechniciansFound"]);
 			}
-
+			_acceptedRequests.Clear();
 			foreach (var tech in sorted)
 			{
-				string token = Guid.NewGuid().ToString("N"); 
+				string token = Guid.NewGuid().ToString("N");
 				string acceptUrl = $"https://localhost:7190/api/booking/accept?customerId={customer.Id}&technicianId={tech.Technician.Id}&token={token}&serviceId={input.ServiceIds.First()}&desiredDate={input.DesireDateTime:o}";
 				string declineUrl = $"https://localhost:7190/api/booking/cancel?technicianId={tech.Technician.Id}&token={token}";
 
@@ -122,13 +128,11 @@ namespace HSP.Service.Implementations
 
 				var email = new EmailDto
 				{
-					ToEmail = tech.Technician?.User?.Email,
+					ToEmail = tech.Technician.User.Email,
 					Subject = "Yêu cầu dịch vụ mới gần bạn",
 					HtmlBody = htmlBody
 				};
-				Console.WriteLine($"📧 Sending email to: {email.ToEmail} | Subject: {email.Subject}");
 				await _emailService.SendEmailAsync(email);
-				Console.WriteLine($"✅ Email send attempt finished for {email.ToEmail}");
 				var stopwatch = Stopwatch.StartNew();
 				while (stopwatch.Elapsed < TimeSpan.FromSeconds(10))
 				{

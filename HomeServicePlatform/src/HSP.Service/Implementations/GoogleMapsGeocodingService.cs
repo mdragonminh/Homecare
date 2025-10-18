@@ -28,7 +28,6 @@ namespace HSP.Service.Implementations
 
 			var client = _httpClientFactory.CreateClient("GoogleMaps");
 			var requestUrl = $"geocode/json?address={Uri.EscapeDataString(address)}&key={apiKey}";
-
 			var response = await client.GetAsync(requestUrl);
 
 			if (!response.IsSuccessStatusCode) return null;
