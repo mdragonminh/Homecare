@@ -3,6 +3,26 @@
     "name": "HomeServicePlatform"
   },
   "ui": {
+    "validation": {
+      "fullname": {
+        "required": "Vui lòng nhập họ và tên",
+        "min_length": "Họ và tên phải có ít nhất 2 ký tự",
+        "max_length": "Họ và tên không được vượt quá 100 ký tự",
+        "no_consecutive_spaces": "Không được có khoảng trắng liên tiếp",
+        "invalid_chars": "Họ và tên chỉ chứa chữ, số và khoảng trắng"
+      },
+      "email": {
+        "required": "Vui lòng nhập email",
+        "invalid_format": "Email không đúng định dạng (vd: user@example.com)",
+        "no_spaces": "Email không được chứa khoảng trắng",
+        "max_length": "Email không được vượt quá 100 ký tự"
+      },
+      "phone": {
+        "required": "Vui lòng nhập số điện thoại",
+        "invalid_format": "Số điện thoại không hợp lệ",
+        "no_spaces": "Số điện thoại không được chứa khoảng trắng"
+      }
+    },
     "change_password_modal": {
       "title": "Đổi mật khẩu",
       "current_password": "Mật khẩu hiện tại",

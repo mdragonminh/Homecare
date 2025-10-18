@@ -11,7 +11,7 @@ import {
   RefreshCw,
   AlertCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ChangePasswordModal from "../components/ChangePasswordModal";
@@ -40,57 +40,68 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   });
 
   // Hàm validate Full Name
-  const validateFullName = (value) => {
+  const validateFullName = useCallback((value) => {
     if (!value || value.trim() === "") {
-      return "Vui lòng nhập họ và tên";
+      return t("ui.validation.fullname.required");
     }
     if (value.trim().length < 2) {
-      return "Họ và tên phải có ít nhất 2 ký tự";
+      return t("ui.validation.fullname.min_length");
     }
     if (value.trim().length > 100) {
-      return "Họ và tên không được vượt quá 100 ký tự";
+      return t("ui.validation.fullname.max_length");
     }
     if (/\s{2,}/.test(value)) {
-      return "Không được có khoảng trắng liên tiếp";
+      return t("ui.validation.fullname.no_consecutive_spaces");
     }
-    if (!/^[a-zA-ZÀ-ỿ0-9\s]+$/.test(value)) {
-      return "Họ và tên chỉ chứa chữ, số và khoảng trắng";
+    if (!/^[a-zA-ZÀ-ỿ0-9\s]+$/.test(value.trim())) {
+      return t("ui.validation.fullname.invalid_chars");
     }
     return "";
-  };
+  }, [t]);
 
   // Hàm validate Email
-  const validateEmail = (value) => {
+  const validateEmail = useCallback((value) => {
     if (!value || value.trim() === "") {
-      return "Vui lòng nhập email";
+      return t("ui.validation.email.required");
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(value)) {
-      return "Email không đúng định dạng (vd: user@example.com)";
+    
+    // Kiểm tra định dạng email với regex chặt chẽ hơn
+    // ^ : bắt đầu chuỗi
+    // [a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+ : phần tên email
+    // @ : ký tự @
+    // [a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])? : tên miền phụ (nếu có)
+    // (?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+ : tên miền chính và đuôi
+    // $ : kết thúc chuỗi
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+    
+    // Kiểm tra xem giá trị đầu vào có khớp chính xác với định dạng không
+    // Nếu độ dài của value khác với độ dài của value.trim() 
+    // hoặc email không khớp với regex thì báo lỗi
+    if (value.length !== value.trim().length || !emailRegex.test(value)) {
+      return t("ui.validation.email.invalid_format");
     }
-    if (value.includes(" ")) {
-      return "Email không được chứa khoảng trắng";
-    }
+    
     if (value.length > 100) {
-      return "Email không được vượt quá 100 ký tự";
+      return t("ui.validation.email.max_length");
     }
     return "";
-  };
+  }, [t]);
 
   // Hàm validate Phone Number
-  const validatePhoneNumber = (value) => {
+  const validatePhoneNumber = useCallback((value) => {
     if (!value || value.trim() === "") {
-      return "Vui lòng nhập số điện thoại";
+      return t("ui.validation.phone.required");
+    }
+    // Kiểm tra khoảng trắng trước khi kiểm tra định dạng
+    if (value !== value.trim()) {
+      return t("ui.validation.phone.no_spaces");
     }
     const phoneRegex = /^0\d{9,10}$/;
     if (!phoneRegex.test(value)) {
-      return "Số điện thoại không hợp lệ (vd: 0912345678)";
-    }
-    if (value.includes(" ")) {
-      return "Số điện thoại không được chứa khoảng trắng";
+      return t("ui.validation.phone.invalid_format");
     }
     return "";
-  };
+  }, [t]);
 
   useEffect(() => {
     fetchProfile();
@@ -128,6 +139,19 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
       });
     }
   }, [profile, editingField]);
+
+  // Cập nhật lại các lỗi validate khi ngôn ngữ thay đổi
+  useEffect(() => {
+    if (editingField && editForm) {
+      // Chỉ validate lại khi đang trong chế độ chỉnh sửa
+      const newErrors = {
+        fullName: editingField === "fullName" ? validateFullName(editForm.fullName) : "",
+        email: editingField === "email" ? validateEmail(editForm.email) : "",
+        phoneNumber: editingField === "phoneNumber" ? validatePhoneNumber(editForm.phoneNumber) : "",
+      };
+      setErrors(newErrors);
+    }
+  }, [t, editingField, editForm, validateFullName, validateEmail, validatePhoneNumber]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -572,7 +596,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                       <div className="flex gap-3 mt-6">
                         <button
                           onClick={handleSaveProfile}
-                          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-600 transition-all duration-200 group"
+                          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-600 transition-all duration-200 group"
                         >
                           <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           {t("ui.save")}
