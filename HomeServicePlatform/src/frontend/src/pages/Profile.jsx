@@ -9,6 +9,7 @@ import {
   Mail,
   User,
   RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,7 +32,65 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
   });
   const [emailVerificationPending, setEmailVerificationPending] =
     useState(false);
-  const [activeTab, setActiveTab] = useState("info"); // 'info', 'password', 'address'
+  const [activeTab, setActiveTab] = useState("info");
+  const [errors, setErrors] = useState({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+  });
+
+  // Hàm validate Full Name
+  const validateFullName = (value) => {
+    if (!value || value.trim() === "") {
+      return "Vui lòng nhập họ và tên";
+    }
+    if (value.trim().length < 2) {
+      return "Họ và tên phải có ít nhất 2 ký tự";
+    }
+    if (value.trim().length > 100) {
+      return "Họ và tên không được vượt quá 100 ký tự";
+    }
+    if (/\s{2,}/.test(value)) {
+      return "Không được có khoảng trắng liên tiếp";
+    }
+    if (!/^[a-zA-ZÀ-ỿ0-9\s]+$/.test(value)) {
+      return "Họ và tên chỉ chứa chữ, số và khoảng trắng";
+    }
+    return "";
+  };
+
+  // Hàm validate Email
+  const validateEmail = (value) => {
+    if (!value || value.trim() === "") {
+      return "Vui lòng nhập email";
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      return "Email không đúng định dạng (vd: user@example.com)";
+    }
+    if (value.includes(" ")) {
+      return "Email không được chứa khoảng trắng";
+    }
+    if (value.length > 100) {
+      return "Email không được vượt quá 100 ký tự";
+    }
+    return "";
+  };
+
+  // Hàm validate Phone Number
+  const validatePhoneNumber = (value) => {
+    if (!value || value.trim() === "") {
+      return "Vui lòng nhập số điện thoại";
+    }
+    const phoneRegex = /^0\d{9,10}$/;
+    if (!phoneRegex.test(value)) {
+      return "Số điện thoại không hợp lệ (vd: 0912345678)";
+    }
+    if (value.includes(" ")) {
+      return "Số điện thoại không được chứa khoảng trắng";
+    }
+    return "";
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -61,6 +120,11 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
         fullName: profile.fullName || "",
         phoneNumber: profile.phoneNumber || "",
         email: profile.email || "",
+      });
+      setErrors({
+        fullName: "",
+        email: "",
+        phoneNumber: "",
       });
     }
   }, [profile, editingField]);
@@ -130,6 +194,11 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
       phoneNumber: profile.phoneNumber || "",
       email: profile.email || "",
     });
+    setErrors({
+      fullName: "",
+      email: "",
+      phoneNumber: "",
+    });
   };
 
   const handleInputChange = (field, value) => {
@@ -137,10 +206,41 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
       ...prev,
       [field]: value,
     }));
+
+    // Validate ngay khi nhập
+    let error = "";
+    if (field === "fullName") {
+      error = validateFullName(value);
+    } else if (field === "email") {
+      error = validateEmail(value);
+    } else if (field === "phoneNumber") {
+      error = validatePhoneNumber(value);
+    }
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: error,
+    }));
   };
 
   const handleSaveProfile = async () => {
     try {
+      // Validate tất cả trường trước khi lưu
+      const fullNameError = validateFullName(editForm.fullName);
+      const emailError = validateEmail(editForm.email);
+      const phoneError = validatePhoneNumber(editForm.phoneNumber);
+
+      setErrors({
+        fullName: fullNameError,
+        email: emailError,
+        phoneNumber: phoneError,
+      });
+
+      // Nếu có lỗi, dừng lại
+      if (fullNameError || emailError || phoneError) {
+        return;
+      }
+
       const fieldToUpdate = editingField;
 
       if (fieldToUpdate === "fullName" || fieldToUpdate === "phoneNumber") {
@@ -316,19 +416,15 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                   {/* Tabs Navigation */}
                   <div className="border-b border-gray-200 px-6 py-4">
                     <div className="flex items-center gap-8">
-                     <button className="text-blue-600 font-semibold pb-4 flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          {t("ui.personal_information")}
-                    </button>
+                      <button className="text-blue-600 font-semibold pb-4 flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {t("ui.personal_information")}
+                      </button>
                     </div>
                   </div>
 
                   {/* Profile Form */}
                   <div className="p-6">
-                    <p className="text-gray-600 text-sm mb-6">
-                      {/* {t("ui.update_profile_info") || "Cập nhật thông tin cá nhân của bạn"} */}
-                    </p>
-
                     <div className="space-y-6">
                       {/* Full Name */}
                       <div>
@@ -336,15 +432,29 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                           <User className="w-4 h-4" /> {t("ui.full_name")}
                         </label>
                         {editingField === "fullName" ? (
-                          <input
-                            type="text"
-                            value={editForm.fullName}
-                            onChange={(e) =>
-                              handleInputChange("fullName", e.target.value)
-                            }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:border-blue-300 transition-all duration-300"
-                            placeholder={t("ui.enter_full_name")}
-                          />
+                          <div>
+                            <input
+                              type="text"
+                              value={editForm.fullName}
+                              onChange={(e) =>
+                                handleInputChange("fullName", e.target.value)
+                              }
+                              className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent shadow-sm hover:border-blue-300 transition-all duration-300 ${
+                                errors.fullName
+                                  ? "border-red-500 focus:ring-red-500"
+                                  : "border-gray-300 focus:ring-blue-500"
+                              }`}
+                              placeholder={t("ui.enter_full_name")}
+                            />
+                            {errors.fullName && (
+                              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                <p className="text-sm text-red-700 font-medium">
+                                  {errors.fullName}
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
                             <p className="text-gray-900">
@@ -373,9 +483,21 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                               onChange={(e) =>
                                 handleInputChange("email", e.target.value)
                               }
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
+                                errors.email
+                                  ? "border-red-500 focus:ring-red-500"
+                                  : "border-gray-300 focus:ring-blue-500"
+                              }`}
                               placeholder={t("ui.enter_email")}
                             />
+                            {errors.email && (
+                              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                <p className="text-sm text-red-700 font-medium">
+                                  {errors.email}
+                                </p>
+                              </div>
+                            )}
                             {emailVerificationPending && (
                               <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2">
                                 <Mail className="w-4 h-4 text-yellow-600" />
@@ -406,15 +528,29 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                           {t("ui.phone_number")}
                         </label>
                         {editingField === "phoneNumber" ? (
-                          <input
-                            type="tel"
-                            value={editForm.phoneNumber}
-                            onChange={(e) =>
-                              handleInputChange("phoneNumber", e.target.value)
-                            }
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder={t("ui.enter_phone_number")}
-                          />
+                          <div>
+                            <input
+                              type="tel"
+                              value={editForm.phoneNumber}
+                              onChange={(e) =>
+                                handleInputChange("phoneNumber", e.target.value)
+                              }
+                              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
+                                errors.phoneNumber
+                                  ? "border-red-500 focus:ring-red-500"
+                                  : "border-gray-300 focus:ring-blue-500"
+                              }`}
+                              placeholder={t("ui.enter_phone_number")}
+                            />
+                            {errors.phoneNumber && (
+                              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                <p className="text-sm text-red-700 font-medium">
+                                  {errors.phoneNumber}
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
                             <p className="text-gray-900">
