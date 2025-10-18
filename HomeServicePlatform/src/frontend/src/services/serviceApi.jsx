@@ -72,7 +72,7 @@ export const serviceApi = {
    * @param {number} [distanceKm=0] - Khoảng cách/bán kính tìm kiếm (km), mặc định 0.
    * @returns {Promise<{success: boolean, data?: object, message?: string}>}
    */
-  createAndMatchBooking: async (address, serviceIds, customerId, distanceKm = 0) => {
+  createAndMatchBooking: async (address, serviceIds, customerId, distanceKm = 0,desiredDateTime) => {
     try {
       // ✅ Validation đầu vào
       if (!address || address.trim() === "") {
@@ -86,7 +86,9 @@ export const serviceApi = {
       if (!customerId) {
         throw new Error("Thiếu thông tin khách hàng (customerId).");
       }
-
+      if (!desiredDateTime) {
+          throw new Error("Thiếu thông tin ngày giờ yêu cầu (desiredDateTime).");
+      }
       const url = "/ServiceRequest/create-and-match-booking";
       
       // ✅ Payload đúng theo API spec của backend
@@ -95,6 +97,7 @@ export const serviceApi = {
         serviceIds: serviceIds, // ✅ Đúng tên key theo API spec
         customerId: customerId,
         distanceKm: Number(distanceKm) || 0,
+        desiredDateTime: desiredDateTime
       };
 
       if (ENABLE_DEBUG) {

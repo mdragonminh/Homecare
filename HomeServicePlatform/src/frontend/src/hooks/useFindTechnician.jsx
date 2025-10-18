@@ -81,9 +81,9 @@ export function useFindTechnician(loggedInUser) {
       return;
     }
 
-    const preferredDateTime = `${preferredDate} ${preferredTime}:00`;
+    const preferredDateTime = `${preferredDate}T${preferredTime}:00Z`;
     setIsMatching(true);
-    setTechnicians(null);
+    // setTechnicians(null);
     setStatusMessage({
       text: t("ui.matching_technician_process", {
         defaultValue: "Đang tạo yêu cầu và tìm kiếm kỹ thuật viên phù hợp...",
