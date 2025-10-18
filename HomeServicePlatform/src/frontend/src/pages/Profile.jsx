@@ -263,17 +263,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                   {t("ui.quick_actions") || "Tác vụ nhanh"}
                 </h3>
                 <div className="space-y-3">
-                  {/* <button
-                    onClick={() => setActiveTab("info")}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all duration-300 ${
-                      activeTab === "info"
-                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md"
-                        : "text-gray-700 hover:bg-gray-50 hover:shadow-md"
-                    }`}
-                  >
-                    <User className="w-5 h-5" />
-                    {t("ui.personal_info") || "Thông tin cá nhân"}
-                  </button> */}
                   <button
                     onClick={() => (window.location.href = "/list-home")}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-blue-100 bg-blue-50 text-blue-700 transition-all duration-200 group hover:bg-blue-100"
@@ -305,14 +294,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                   {t("ui.system_information")}
                 </h3>
                 <div className="space-y-4">
-                  {/* <div>
-                    <p className="text-xs text-gray-600 font-medium">
-                      {t("ui.account_created")}
-                    </p>
-                    <p className="text-gray-900 font-semibold mt-1">
-                      {formatDate(profile.dateCreated)}
-                    </p>
-                  </div> */}
                   <div>
                     <p className="text-xs text-gray-600 font-medium">
                       {t("ui.total_homes")}
@@ -339,10 +320,6 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                           <User className="w-4 h-4" />
                           {t("ui.personal_information")}
                     </button>
-                      {/* <button className="text-gray-600 font-medium pb-4 hover:text-gray-900 flex items-center gap-2">
-                        <Key className="w-4 h-4" />
-                        {t("ui.change_password")}
-                      </button> */}
                     </div>
                   </div>
 
