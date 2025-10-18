@@ -92,7 +92,7 @@ export function useFindTechnician(loggedInUser) {
     });
 
     const radius = parseFloat(searchRadius);
-    const matchResult = await serviceApi.createAndMatchBooking(
+const matchResult = await serviceApi.createAndMatchBooking(
       addressInput,
       selectedServiceIds,
       loggedInUser.userId,
@@ -103,14 +103,39 @@ export function useFindTechnician(loggedInUser) {
     setIsMatching(false);
 
     if (matchResult.success) {
-      setStatusMessage({
-        text: t("success.match_booking_success", {
-          defaultValue:
-            "Đã tạo yêu cầu thành công. Chờ kỹ thuật viên chấp nhận.",
-        }),
-        type: "success",
-      });
+      // ✅ BẮT ĐẦU ĐIỀU CHỈNH LOGIC KIỂM TRA PHẢN HỒI
+      const responseData = matchResult.data;
+      
+      // Trường hợp 1: Ghép nối THÀNH CÔNG (Nếu API trả về isMatched: true)
+      if (responseData && responseData.isMatched === true) {
+           setStatusMessage({
+               text: t("success.match_booking_success", {
+                   defaultValue: "Đã tạo yêu cầu thành công và ghép nối với kỹ thuật viên.",
+               }),
+               type: "success",
+           });
+      } 
+      // Trường hợp 2: Tạo yêu cầu thành công nhưng KHÔNG CÓ KỸ THUẬT VIÊN chấp nhận (isMatched: false)
+      else if (responseData && responseData.isMatched === false) {
+           setStatusMessage({
+               text: t("error.no_technician_accepted_match", {
+                   defaultValue: "Yêu cầu đã được tạo, NHƯNG không có kỹ thuật viên nào chấp nhận yêu cầu của bạn. Vui lòng thử lại sau.",
+               }),
+               type: "error", // Hiển thị màu đỏ (error)
+           });
+      }
+      // Trường hợp 3: Mặc định (nếu backend không gửi trường isMatched)
+      else {
+           setStatusMessage({
+               text: t("success.request_created_pending_match", {
+                   defaultValue: "Đã tạo yêu cầu thành công. Chờ kỹ thuật viên chấp nhận/xác nhận.",
+               }),
+               type: "success",
+           });
+      }
+
     } else {
+      // Xử lý lỗi từ API (ví dụ: status 400, 500, hoặc lỗi logic được bắt ở serviceApi.jsx)
       setStatusMessage({
         text:
           matchResult.message ||
