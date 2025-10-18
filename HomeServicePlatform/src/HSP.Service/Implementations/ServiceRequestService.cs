@@ -1,5 +1,4 @@
 ﻿using HSP.Core.Constans;
-using HSP.Core.Dtos.BookingDto;
 using HSP.Core.Dtos.MapDto;
 using HSP.Core.Dtos.ServiceRequestDto;
 using HSP.Core.Entities;
@@ -8,10 +7,13 @@ using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
 using HSP.DAL.Extensions;
-using HSP.DAL.UnitOfWorks;
+using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Globalization;
 
 namespace HSP.Service.Implementations
 {
@@ -21,16 +23,37 @@ namespace HSP.Service.Implementations
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		private readonly IRepository<Booking, Guid> _bookingRepository;
 		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
+		private readonly IEmailService _emailService;
+		private readonly IEmailTemplateService _emailTemplateService;
+		private static readonly ConcurrentDictionary<string, Guid> _acceptedRequests = new();
 		public ServiceRequestService(IGeocodingService geocodingService,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			IRepository<Booking, Guid> bookingRepository,
 			IRepository<CustomerProfile, Guid> customerProfileRepository,
+			IEmailService emailService,
+			IEmailTemplateService emailTemplateService,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_geocodingService = geocodingService;
 			_technicianRepository = technicianRepository;
 			_bookingRepository = bookingRepository;
 			_customerProfileRepository = customerProfileRepository;
+			_emailService = emailService;
+			_emailTemplateService = emailTemplateService;
+		}
+		public static void AcceptBookingResponse(string token, Guid technicianId)
+		{
+			_acceptedRequests[token] = technicianId;
+		}
+
+		private static Guid? GetAcceptedTechnician(string token)
+		{
+			if (_acceptedRequests.TryGetValue(token, out var techId))
+			{
+				_acceptedRequests.TryRemove(token, out _); 
+				return techId;
+			}
+			return null;
 		}
 
 		public async Task<MatchedBookingResultDto> CreateAndMatchBookingAsync(CustomerCreateBookingDto input)
@@ -39,7 +62,9 @@ namespace HSP.Service.Implementations
 					? await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
 							?? throw new Exception(_localizer["CannotFoundcoordinates."])
 					: throw new ArgumentException(_localizer["MustHaveAddress"]);
-			var customer = await _customerProfileRepository.GetAll().FirstOrDefaultAsync(x => x.UserId == Guid.Parse(input.CustomerId));
+			var customer = await _customerProfileRepository.GetAll()
+				.Include(x=>x.User)
+				.FirstOrDefaultAsync(x => x.UserId == Guid.Parse(input.CustomerId));
 			if (customer == null)
 			{
 				throw new Exception("customer is null");
@@ -47,7 +72,7 @@ namespace HSP.Service.Implementations
 
 			var (minLat, maxLat, minLon, maxLon) = GetBoundingBox(coordinates.Latitude, coordinates.Longitude, input.DistanceKm);
 
-			var potentialTechniciansQuery = _technicianRepository.GetAll()
+			var potentialTechnicians = await _technicianRepository.GetAll()
 					.Include(t => t.User)
 					.Include(t => t.Services)
 						.ThenInclude(s => s.Bookings)
@@ -58,58 +83,92 @@ namespace HSP.Service.Implementations
 					b.Status == BookingStatus.InProgress
 					|| b.Status == BookingStatus.Pending
 					|| b.Status == BookingStatus.TechnicianOnTheWay
-					|| b.Status == BookingStatus.Confirmed));
+					|| b.Status == BookingStatus.Confirmed))
+					.ToListAsync();
 
-			var potentialTechnicians = await potentialTechniciansQuery.ToListAsync();
+			var sorted = potentialTechnicians
+				.Select(t => new
+				{
+					Technician = t,
+					Distance = CalculateDistance(coordinates.Latitude, coordinates.Longitude, t.Latitude, t.Longitude)
+				})
+				.Where(t => t.Distance <= input.DistanceKm)
+				.OrderBy(t => t.Distance)
+				.ToList();
 
-			if (potentialTechnicians == null && potentialTechnicians.Any())
+			if (!sorted.Any())
 			{
-				throw new Exception("dont have technician match your search");
+				throw new Exception(_localizer["NoAvailableTechniciansFound"]);
 			}
 
-			var bestTechnician = potentialTechnicians
-					.Select(t => new
+			foreach (var tech in sorted)
+			{
+				string token = Guid.NewGuid().ToString("N"); 
+				string acceptUrl = $"https://localhost:7190/api/booking/accept?customerId={customer.Id}&technicianId={tech.Technician.Id}&token={token}&serviceId={input.ServiceIds.First()}&desiredDate={input.DesireDateTime:o}";
+				string declineUrl = $"https://localhost:7190/api/booking/cancel?technicianId={tech.Technician.Id}&token={token}";
+
+				var emailModel = new TechnicianInvitationDto
+				{
+					TechnicianName = tech.Technician.User.FullName,
+					CustomerName = customer.User.FullName,
+					ServiceName = "Dịch vụ yêu cầu",
+					DistanceKm = Math.Round(tech.Distance, 2),
+					AcceptUrl = acceptUrl,
+					DeclineUrl = declineUrl,
+					DesiredDate = input.DesireDateTime
+				};
+
+				string htmlBody = await _emailTemplateService.RenderAsync("/Views/Emails/TechnicianInvitation.cshtml", emailModel);
+
+				var email = new EmailDto
+				{
+					ToEmail = tech.Technician?.User?.Email,
+					Subject = "Yêu cầu dịch vụ mới gần bạn",
+					HtmlBody = htmlBody
+				};
+				Console.WriteLine($"📧 Sending email to: {email.ToEmail} | Subject: {email.Subject}");
+				await _emailService.SendEmailAsync(email);
+				Console.WriteLine($"✅ Email send attempt finished for {email.ToEmail}");
+				var stopwatch = Stopwatch.StartNew();
+				while (stopwatch.Elapsed < TimeSpan.FromSeconds(10))
+				{
+					var acceptedTechId = GetAcceptedTechnician(token);
+					if (acceptedTechId.HasValue)
 					{
-						Technician = t,
-						Distance = CalculateDistance(coordinates.Latitude, coordinates.Longitude, t.Latitude, t.Longitude)
-					})
-					.Where(t => t.Distance <= input.DistanceKm)
-					.OrderBy(t => t.Distance)
-					// .ThenByDescending(t => t.Technician.Rating) 
-					.FirstOrDefault();
+						var newBooking = new Booking
+						{
+							CustomerProfileId = customer.Id,
+							TechnicianId = acceptedTechId.Value,
+							Status = BookingStatus.Confirmed,
+							ServiceId = input.ServiceIds.First(),
+							DateCreated = DateTime.UtcNow,
+							DesiredDate = input.DesireDateTime
+						};
+						await _bookingRepository.AddAsync(newBooking);
+						await _unitOfWork.SaveChangesAsync();
 
-			if (bestTechnician == null)
-			{
-				return new MatchedBookingResultDto { IsMatched = false, Message = _localizer["NoAvailableTechniciansFound"] };
+						return new MatchedBookingResultDto
+						{
+							IsMatched = true,
+							BookingId = newBooking.Id,
+							Message = _localizer["SuccessfullyMatchedTechnician"],
+							TechnicianInfo = new TechnicianResultDto
+							{
+								Id = tech.Technician.Id,
+								Name = tech.Technician.User.FullName,
+								DistanceKm = Math.Round(tech.Distance, 2),
+								Latitude = tech.Technician.Latitude,
+								Longitude = tech.Technician.Longitude
+							}
+						};
+					}
+					await Task.Delay(1000);
+				}
 			}
-
-			var newBooking = new Booking
-			{
-				CustomerProfileId = customer.Id,
-				TechnicianId = bestTechnician.Technician.Id,
-				Status = BookingStatus.Pending,
-				//ProblemDescription = input.Description,
-				ServiceId = input.ServiceIds.First(),
-				DateCreated = DateTime.UtcNow,
-			};
-
-			await _bookingRepository.AddAsync(newBooking);
-			await _unitOfWork.SaveChangesAsync();
-
 			return new MatchedBookingResultDto
 			{
-				IsMatched = true,
-				BookingId = newBooking.Id,
-				Message = _localizer["SuccessfullyMatchedTechnician"],
-				TechnicianInfo = new TechnicianResultDto
-				{
-					Id = bestTechnician.Technician.Id,
-					Name = bestTechnician.Technician.User.FullName,
-					DistanceKm = Math.Round(bestTechnician.Distance, 2),
-					Latitude = bestTechnician.Technician.Latitude,
-					Longitude = bestTechnician.Technician.Longitude,
-					// Rating = bestTechnician.Technician.Rating
-				}
+				IsMatched = false,
+				Message = _localizer["NoTechnicianAcceptedRequest"]
 			};
 		}
 

@@ -25,4 +25,14 @@
 		public string FullName { get; set; } = string.Empty;
 		public string ResetUrl { get; set; } = string.Empty;
 	}
+	public class TechnicianInvitationDto
+	{
+		public string TechnicianName { get; set; } = string.Empty;
+		public string CustomerName { get; set; } = string.Empty;
+		public string ServiceName { get; set; } = string.Empty;
+		public double DistanceKm { get; set; }
+		public DateTime DesiredDate { get; set; }
+		public string AcceptUrl { get; set; } = string.Empty;
+		public string DeclineUrl { get; set; } = string.Empty;
+	}
 }

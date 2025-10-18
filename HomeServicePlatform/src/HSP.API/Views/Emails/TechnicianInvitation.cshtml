@@ -1,0 +1,22 @@
+﻿@using HSP.Service.Dtos.EmailDto
+@model TechnicianInvitationDto
+@{
+  Layout = "/Views/Emails/_EmailLayout.cshtml";
+}
+
+<h2>Yêu cầu dịch vụ mới</h2>
+
+<p>Chào @Model.TechnicianName,</p>
+
+<p>
+  Khách hàng <strong>@Model.CustomerName</strong> đang cần dịch vụ <strong>@Model.ServiceName</strong> gần bạn (~@Model.DistanceKm km).<br />
+  Thời gian mong muốn: <strong>@Model.DesiredDate.ToString("dd/MM/yyyy HH:mm")</strong>
+</p>
+
+<p>
+  <a href="@Model.AcceptUrl" style="background-color:#28a745;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Chấp nhận</a>
+  &nbsp;&nbsp;
+  <a href="@Model.DeclineUrl" style="background-color:#dc3545;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Từ chối</a>
+</p>
+
+<p>Liên kết sẽ hết hạn sau 2 phút.</p>
