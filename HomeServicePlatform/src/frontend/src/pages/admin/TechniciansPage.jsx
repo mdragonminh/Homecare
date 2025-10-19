@@ -2,7 +2,7 @@ import {
   CheckOutlined,
   CloseOutlined,
   EyeOutlined,
-  SearchOutlined
+  SearchOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -13,15 +13,15 @@ import {
   Space,
   Table,
   Tag,
-  Tooltip
+  Tooltip,
 } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import {
   TechnicianApprovalStatus,
   TechnicianApprovalStatusColors,
-  TechnicianApprovalStatusLabels
+  TechnicianApprovalStatusLabels,
 } from "../../constants/enums";
 import { adminApi } from "../../services/adminApi";
 
@@ -47,20 +47,29 @@ export default function TechniciansPage() {
   // Approval status options
   const approvalStatusOptions = [
     { value: undefined, label: t("technicians.all_statuses") },
-    { value: TechnicianApprovalStatus.Pending, label: TechnicianApprovalStatusLabels[TechnicianApprovalStatus.Pending] },
-    { value: TechnicianApprovalStatus.Approved, label: TechnicianApprovalStatusLabels[TechnicianApprovalStatus.Approved] },
-    { value: TechnicianApprovalStatus.Rejected, label: TechnicianApprovalStatusLabels[TechnicianApprovalStatus.Rejected] },
+    {
+      value: TechnicianApprovalStatus.Pending,
+      label: TechnicianApprovalStatusLabels[TechnicianApprovalStatus.Pending],
+    },
+    {
+      value: TechnicianApprovalStatus.Approved,
+      label: TechnicianApprovalStatusLabels[TechnicianApprovalStatus.Approved],
+    },
+    {
+      value: TechnicianApprovalStatus.Rejected,
+      label: TechnicianApprovalStatusLabels[TechnicianApprovalStatus.Rejected],
+    },
   ];
 
   // Get approval status tag
   const getApprovalStatusTag = (status) => {
     const label = TechnicianApprovalStatusLabels[status];
     const color = TechnicianApprovalStatusColors[status];
-    
+
     if (label && color) {
       return <Tag color={color}>{label}</Tag>;
     }
-    
+
     return <Tag>{t("technicians.unknown_status")}</Tag>;
   };
 
@@ -72,7 +81,9 @@ export default function TechniciansPage() {
         pageNumber: params.current || pagination.current,
         pageSize: params.pageSize || pagination.pageSize,
         searchTerm: filters.searchTerm,
-        ...(filters.approvalStatus && { approvalStatus: filters.approvalStatus }),
+        ...(filters.approvalStatus && {
+          approvalStatus: filters.approvalStatus,
+        }),
       });
 
       if (response.success) {
@@ -91,15 +102,14 @@ export default function TechniciansPage() {
     setLoading(false);
   };
 
-
   // Handle search
   const handleSearch = () => {
-    setPagination(prev => ({ ...prev, current: 1 }));
+    setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
   // Handle filter change
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       [key]: value,
     }));
@@ -176,11 +186,19 @@ export default function TechniciansPage() {
         try {
           const skillData = JSON.parse(text);
           const specializations = skillData.specializations || [];
-          
+
           if (specializations.length === 0) {
             return (
               <Tooltip title={text}>
-                <span style={{ maxWidth: 200, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span
+                  style={{
+                    maxWidth: 200,
+                    display: "block",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {text}
                 </span>
               </Tooltip>
@@ -189,16 +207,28 @@ export default function TechniciansPage() {
 
           const displayText = specializations.slice(0, 2).join(", ");
           const remainingCount = specializations.length - 2;
-          
+
           return (
-            <Tooltip title={`${t("technicians.specialization")}: ${specializations.join(", ")}\n${skillData.bio ? `${t("technicians.description")}: ${skillData.bio}` : ''}`}>
+            <Tooltip
+              title={`${t(
+                "technicians.specialization"
+              )}: ${specializations.join(", ")}\n${
+                skillData.bio
+                  ? `${t("technicians.description")}: ${skillData.bio}`
+                  : ""
+              }`}
+            >
               <div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                   {specializations.slice(0, 2).map((spec, index) => (
-                    <Tag key={index} size="small" color="blue">{spec}</Tag>
+                    <Tag key={index} size="small" color="blue">
+                      {spec}
+                    </Tag>
                   ))}
                   {remainingCount > 0 && (
-                    <Tag size="small" color="default">+{remainingCount}</Tag>
+                    <Tag size="small" color="default">
+                      +{remainingCount}
+                    </Tag>
                   )}
                 </div>
               </div>
@@ -207,7 +237,15 @@ export default function TechniciansPage() {
         } catch (error) {
           return (
             <Tooltip title={text}>
-              <span style={{ maxWidth: 200, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span
+                style={{
+                  maxWidth: 200,
+                  display: "block",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {text}
               </span>
             </Tooltip>
@@ -250,12 +288,10 @@ export default function TechniciansPage() {
               onClick={() => handleViewDetails(record.id)}
             />
           </Tooltip>
-        
         </Space>
       ),
     },
   ];
-
 
   useEffect(() => {
     fetchTechnicians();
@@ -264,7 +300,9 @@ export default function TechniciansPage() {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0, color: "#262626" }}>
+        <h1
+          style={{ fontSize: 24, fontWeight: 600, margin: 0, color: "#262626" }}
+        >
           🔧 {t("technicians.page_title")}
         </h1>
         <p style={{ color: "#8c8c8c", margin: "8px 0 0 0" }}>
@@ -274,7 +312,15 @@ export default function TechniciansPage() {
 
       <Card style={{ borderRadius: 12 }}>
         {/* Filters */}
-        <div style={{ marginBottom: 16, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <div
+          style={{
+            marginBottom: 16,
+            display: "flex",
+            gap: 16,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
           <Input.Search
             placeholder={t("technicians.search_placeholder")}
             style={{ width: 300 }}
@@ -283,7 +329,7 @@ export default function TechniciansPage() {
             onSearch={handleSearch}
             enterButton={<SearchOutlined />}
           />
-          
+
           <Select
             placeholder={t("technicians.approval_status_placeholder")}
             style={{ width: 180 }}
@@ -298,117 +344,159 @@ export default function TechniciansPage() {
               </Option>
             ))}
           </Select>
-
         </div>
 
         {/* Statistics */}
-        <div style={{ marginBottom: 16, display: "flex", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ 
-            padding: "12px 20px", 
-            background: "linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%)", 
-            borderRadius: 8,
-            border: "1px solid #ffd591",
+        <div
+          style={{
+            marginBottom: 16,
             display: "flex",
-            alignItems: "center",
-            gap: 8,
-            minWidth: 120
-          }}>
-            <div style={{ 
-              width: 24, 
-              height: 24, 
-              borderRadius: "50%", 
-              backgroundColor: "#fa8c16",
-              color: "white",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div
+            style={{
+              padding: "12px 20px",
+              background: "linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%)",
+              borderRadius: 8,
+              border: "1px solid #ffd591",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              fontSize: 12,
-              fontWeight: "bold"
-            }}>
-              {technicians.filter(t => t.approvalStatus === TechnicianApprovalStatus.Pending).length}
+              gap: 8,
+              minWidth: 120,
+            }}
+          >
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                backgroundColor: "#fa8c16",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                fontWeight: "bold",
+              }}
+            >
+              {
+                technicians.filter(
+                  (t) => t.approvalStatus === TechnicianApprovalStatus.Pending
+                ).length
+              }
             </div>
-            <span style={{ fontSize: 14, fontWeight: 500, color: "#d4680a" }}>{t("technicians.stats.pending")}</span>
+            <span style={{ fontSize: 14, fontWeight: 500, color: "#d4680a" }}>
+              {t("technicians.stats.pending")}
+            </span>
           </div>
 
-          <div style={{ 
-            padding: "12px 20px", 
-            background: "linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%)", 
-            borderRadius: 8,
-            border: "1px solid #b7eb8f",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            minWidth: 120
-          }}>
-            <div style={{ 
-              width: 24, 
-              height: 24, 
-              borderRadius: "50%", 
-              backgroundColor: "#52c41a",
-              color: "white",
+          <div
+            style={{
+              padding: "12px 20px",
+              background: "linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%)",
+              borderRadius: 8,
+              border: "1px solid #b7eb8f",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              fontSize: 12,
-              fontWeight: "bold"
-            }}>
-              {technicians.filter(t => t.approvalStatus === TechnicianApprovalStatus.Approved).length}
+              gap: 8,
+              minWidth: 120,
+            }}
+          >
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                backgroundColor: "#52c41a",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                fontWeight: "bold",
+              }}
+            >
+              {
+                technicians.filter(
+                  (t) => t.approvalStatus === TechnicianApprovalStatus.Approved
+                ).length
+              }
             </div>
-            <span style={{ fontSize: 14, fontWeight: 500, color: "#389e0d" }}>{t("technicians.stats.approved")}</span>
+            <span style={{ fontSize: 14, fontWeight: 500, color: "#389e0d" }}>
+              {t("technicians.stats.approved")}
+            </span>
           </div>
 
-          <div style={{ 
-            padding: "12px 20px", 
-            background: "linear-gradient(135deg, #fff2f0 0%, #ffccc7 100%)", 
-            borderRadius: 8,
-            border: "1px solid #ffa39e",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            minWidth: 120
-          }}>
-            <div style={{ 
-              width: 24, 
-              height: 24, 
-              borderRadius: "50%", 
-              backgroundColor: "#ff4d4f",
-              color: "white",
+          <div
+            style={{
+              padding: "12px 20px",
+              background: "linear-gradient(135deg, #fff2f0 0%, #ffccc7 100%)",
+              borderRadius: 8,
+              border: "1px solid #ffa39e",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              fontSize: 12,
-              fontWeight: "bold"
-            }}>
-              {technicians.filter(t => t.approvalStatus === TechnicianApprovalStatus.Rejected).length}
+              gap: 8,
+              minWidth: 120,
+            }}
+          >
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                backgroundColor: "#ff4d4f",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                fontWeight: "bold",
+              }}
+            >
+              {
+                technicians.filter(
+                  (t) => t.approvalStatus === TechnicianApprovalStatus.Rejected
+                ).length
+              }
             </div>
-            <span style={{ fontSize: 14, fontWeight: 500, color: "#cf1322" }}>{t("technicians.stats.rejected")}</span>
+            <span style={{ fontSize: 14, fontWeight: 500, color: "#cf1322" }}>
+              {t("technicians.stats.rejected")}
+            </span>
           </div>
 
-          <div style={{ 
-            padding: "12px 20px", 
-            background: "linear-gradient(135deg, #f0f0f0 0%, #d9d9d9 100%)", 
-            borderRadius: 8,
-            border: "1px solid #bfbfbf",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            minWidth: 120
-          }}>
-            <div style={{ 
-              width: 24, 
-              height: 24, 
-              borderRadius: "50%", 
-              backgroundColor: "#595959",
-              color: "white",
+          <div
+            style={{
+              padding: "12px 20px",
+              background: "linear-gradient(135deg, #f0f0f0 0%, #d9d9d9 100%)",
+              borderRadius: 8,
+              border: "1px solid #bfbfbf",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              fontSize: 12,
-              fontWeight: "bold"
-            }}>
+              gap: 8,
+              minWidth: 120,
+            }}
+          >
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                backgroundColor: "#595959",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                fontWeight: "bold",
+              }}
+            >
               {technicians.length}
             </div>
-            <span style={{ fontSize: 14, fontWeight: 500, color: "#434343" }}>{t("technicians.stats.total")}</span>
+            <span style={{ fontSize: 14, fontWeight: 500, color: "#434343" }}>
+              {t("technicians.stats.total")}
+            </span>
           </div>
         </div>
 
@@ -424,9 +512,13 @@ export default function TechniciansPage() {
             total: pagination.total,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => 
-              t("technicians.pagination_total", { start: range[0], end: range[1], total }),
-            pageSizeOptions: ['5', '10', '20', '50'],
+            showTotal: (total, range) =>
+              t("technicians.pagination_total", {
+                start: range[0],
+                end: range[1],
+                total,
+              }),
+            pageSizeOptions: ["5", "10", "20", "50"],
           }}
           scroll={{ x: 1000 }}
           locale={{
@@ -437,12 +529,12 @@ export default function TechniciansPage() {
                   {t("technicians.no_technicians")}
                 </div>
                 <div style={{ fontSize: 14, color: "#999" }}>
-                  {filters.searchTerm || filters.approvalStatus !== undefined 
+                  {filters.searchTerm || filters.approvalStatus !== undefined
                     ? t("technicians.no_results_with_filters")
                     : t("technicians.no_registrations")}
                 </div>
               </div>
-            )
+            ),
           }}
         />
       </Card>
@@ -459,55 +551,62 @@ export default function TechniciansPage() {
           <Button key="close" onClick={() => setDetailModalVisible(false)}>
             {t("ui.close")}
           </Button>,
-          ...(technicianDetail?.approvalStatus === TechnicianApprovalStatus.Pending ? [
-            <Button 
-              key="reject" 
-              danger 
-              icon={<CloseOutlined />}
-              onClick={() => {
-                handleReject(technicianDetail.id);
-                setDetailModalVisible(false);
-              }}
-            >
-              {t("technicians.reject")}
-            </Button>,
-            <Button 
-              key="approve" 
-              type="primary" 
-              icon={<CheckOutlined />}
-              onClick={() => {
-                handleApprove(technicianDetail.id);
-                setDetailModalVisible(false);
-              }}
-            >
-              {t("technicians.approve")}
-            </Button>,
-          ] : []),
+          ...(technicianDetail?.approvalStatus ===
+          TechnicianApprovalStatus.Pending
+            ? [
+                <Button
+                  key="reject"
+                  danger
+                  icon={<CloseOutlined />}
+                  onClick={() => {
+                    handleReject(technicianDetail.id);
+                    setDetailModalVisible(false);
+                  }}
+                >
+                  {t("technicians.reject")}
+                </Button>,
+                <Button
+                  key="approve"
+                  type="primary"
+                  icon={<CheckOutlined />}
+                  onClick={() => {
+                    handleApprove(technicianDetail.id);
+                    setDetailModalVisible(false);
+                  }}
+                >
+                  {t("technicians.approve")}
+                </Button>,
+              ]
+            : []),
         ]}
         width={700}
       >
         {technicianDetail && (
           <div>
             {/* Header */}
-            <div style={{ 
-              marginBottom: 24, 
-              textAlign: "center", 
-              borderBottom: "1px solid #f0f0f0",
-              paddingBottom: 16 
-            }}>
-              <div style={{ 
-                width: 80, 
-                height: 80, 
-                borderRadius: "50%", 
-                backgroundColor: "#1890ff",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 32,
-                fontWeight: "bold",
-                margin: "0 auto 12px auto"
-              }}>
+            <div
+              style={{
+                marginBottom: 24,
+                textAlign: "center",
+                borderBottom: "1px solid #f0f0f0",
+                paddingBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: "50%",
+                  backgroundColor: "#1890ff",
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 32,
+                  fontWeight: "bold",
+                  margin: "0 auto 12px auto",
+                }}
+              >
                 {technicianDetail.fullName?.charAt(0).toUpperCase()}
               </div>
               <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>
@@ -519,98 +618,301 @@ export default function TechniciansPage() {
             </div>
 
             {/* Content */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 20,
+              }}
+            >
               {/* Basic Info */}
-              <Card size="small" title={`🔍 ${t("technicians.modal.basic_info")}`} style={{ height: "fit-content" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ minWidth: 80, color: "#666", fontSize: 13 }}>{t("technicians.modal.username")}:</span>
-                    <span style={{ fontWeight: 500 }}>{technicianDetail.userName}</span>
+              <Card
+                size="small"
+                title={`🔍 ${t("technicians.modal.basic_info")}`}
+                style={{ height: "fit-content" }}
+              >
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
+                >
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <span style={{ minWidth: 80, color: "#666", fontSize: 13 }}>
+                      {t("technicians.modal.username")}:
+                    </span>
+                    <span style={{ fontWeight: 500 }}>
+                      {technicianDetail.userName}
+                    </span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ minWidth: 80, color: "#666", fontSize: 13 }}>{t("technicians.modal.email")}:</span>
-                    <span style={{ fontWeight: 500, color: "#1890ff" }}>{technicianDetail.email}</span>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <span style={{ minWidth: 80, color: "#666", fontSize: 13 }}>
+                      {t("technicians.modal.email")}:
+                    </span>
+                    <span style={{ fontWeight: 500, color: "#1890ff" }}>
+                      {technicianDetail.email}
+                    </span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ minWidth: 80, color: "#666", fontSize: 13 }}>{t("technicians.modal.phone")}:</span>
-                    <span style={{ fontWeight: 500 }}>{technicianDetail.phoneNumber || t("technicians.modal.not_updated")}</span>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <span style={{ minWidth: 80, color: "#666", fontSize: 13 }}>
+                      {t("technicians.modal.phone")}:
+                    </span>
+                    <span style={{ fontWeight: 500 }}>
+                      {technicianDetail.phoneNumber ||
+                        t("technicians.modal.not_updated")}
+                    </span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ minWidth: 80, color: "#666", fontSize: 13 }}>{t("technicians.modal.experience")}:</span>
-                    <Tag color="blue">{t("technicians.years_experience", { years: technicianDetail.experienceYears })}</Tag>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <span style={{ minWidth: 80, color: "#666", fontSize: 13 }}>
+                      {t("technicians.modal.experience")}:
+                    </span>
+                    <Tag color="blue">
+                      {t("technicians.years_experience", {
+                        years: technicianDetail.experienceYears,
+                      })}
+                    </Tag>
                   </div>
                 </div>
               </Card>
 
               {/* Skills */}
-              <Card size="small" title={`🛠️ ${t("technicians.modal.skills_specialization")}`} style={{ height: "fit-content" }}>
+              <Card
+                size="small"
+                title={`🛠️ ${t("technicians.modal.skills_specialization")}`}
+                style={{ height: "fit-content" }}
+              >
                 <div>
                   {(() => {
                     try {
                       const skillData = JSON.parse(technicianDetail.skillSet);
                       return (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 16,
+                          }}
+                        >
                           {/* Specializations */}
-                          {skillData.specializations && skillData.specializations.length > 0 && (
-                            <div>
-                              <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{t("technicians.modal.specialization")}:</div>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                                {skillData.specializations.map((spec, index) => (
-                                  <Tag key={index} color="green">{spec}</Tag>
-                                ))}
+                          {skillData.specializations &&
+                            skillData.specializations.length > 0 && (
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: 13,
+                                    color: "#666",
+                                    marginBottom: 8,
+                                  }}
+                                >
+                                  {t("technicians.modal.specialization")}:
+                                </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 6,
+                                  }}
+                                >
+                                  {skillData.specializations.map(
+                                    (spec, index) => (
+                                      <Tag key={index} color="green">
+                                        {spec}
+                                      </Tag>
+                                    )
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
 
-                          {/* Certifications */}
-                          {skillData.certifications && (
-                            <div>
-                              <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{t("technicians.modal.certifications")}:</div>
-                              <Tag color="orange">{skillData.certifications}</Tag>
-                            </div>
-                          )}
+                          {/* Certificates */}
+                          {skillData.certificates &&
+                            skillData.certificates.length > 0 && (
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: 13,
+                                    color: "#666",
+                                    marginBottom: 8,
+                                  }}
+                                >
+                                  {t("technicians.modal.certificates")}:
+                                </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 6,
+                                  }}
+                                >
+                                  {skillData.certificates.map((cert, index) => (
+                                    <Tag key={index} color="orange">
+                                      {cert}
+                                    </Tag>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                          {/* Certificate Files */}
+                          {technicianDetail.certificatePaths &&
+                            technicianDetail.certificatePaths.length > 0 && (
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: 13,
+                                    color: "#666",
+                                    marginBottom: 8,
+                                  }}
+                                >
+                                  {t("technicians.modal.certificate_files")}:
+                                </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 8,
+                                  }}
+                                >
+                                  {technicianDetail.certificatePaths.map(
+                                    (certPath, index) => {
+                                      const fileName =
+                                        certPath.split("/").pop() ||
+                                        `Certificate ${index + 1}`;
+                                      return (
+                                        <div
+                                          key={index}
+                                          style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                            padding: "8px 12px",
+                                            border: "1px solid #d9d9d9",
+                                            borderRadius: 6,
+                                            backgroundColor: "#fafafa",
+                                          }}
+                                        >
+                                          <span
+                                            style={{
+                                              flex: 1,
+                                              fontSize: 13,
+                                              color: "#333",
+                                            }}
+                                          >
+                                            📄 {fileName}
+                                          </span>
+                                          <Button
+                                            size="small"
+                                            type="link"
+                                            onClick={() => {
+                                              const previewUrl =
+                                                adminApi.previewFile(certPath);
+                                              window.open(previewUrl, "_blank");
+                                            }}
+                                            style={{ padding: "4px 8px" }}
+                                          >
+                                            {t("technicians.modal.preview")}
+                                          </Button>
+                                          <Button
+                                            size="small"
+                                            type="primary"
+                                            onClick={() =>
+                                              adminApi.downloadFile(certPath)
+                                            }
+                                            style={{ padding: "4px 8px" }}
+                                          >
+                                            {t("technicians.modal.download")}
+                                          </Button>
+                                        </div>
+                                      );
+                                    }
+                                  )}
+                                </div>
+                              </div>
+                            )}
 
                           {/* Bio */}
                           {skillData.bio && (
                             <div>
-                              <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{t("technicians.modal.introduction")}:</div>
-                              <div style={{ 
-                                background: "#f9f9f9", 
-                                padding: 12, 
-                                borderRadius: 6, 
-                                fontSize: 14,
-                                lineHeight: 1.5
-                              }}>
+                              <div
+                                style={{
+                                  fontSize: 13,
+                                  color: "#666",
+                                  marginBottom: 8,
+                                }}
+                              >
+                                {t("technicians.modal.introduction")}:
+                              </div>
+                              <div
+                                style={{
+                                  background: "#f9f9f9",
+                                  padding: 12,
+                                  borderRadius: 6,
+                                  fontSize: 14,
+                                  lineHeight: 1.5,
+                                }}
+                              >
                                 {skillData.bio}
                               </div>
                             </div>
                           )}
 
                           {/* Availability */}
-                          {skillData.availability && skillData.availability.length > 0 && (
-                            <div>
-                              <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{t("technicians.modal.work_schedule")}:</div>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                                {skillData.availability.map((day, index) => (
-                                  <Tag key={index} color="purple">{day}</Tag>
-                                ))}
+                          {skillData.availability &&
+                            skillData.availability.length > 0 && (
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: 13,
+                                    color: "#666",
+                                    marginBottom: 8,
+                                  }}
+                                >
+                                  {t("technicians.modal.work_schedule")}:
+                                </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 4,
+                                  }}
+                                >
+                                  {skillData.availability.map((day, index) => (
+                                    <Tag key={index} color="purple">
+                                      {day}
+                                    </Tag>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
                         </div>
                       );
                     } catch (error) {
                       // Fallback for non-JSON skillset
                       return (
                         <div>
-                          <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{t("technicians.modal.skill_description")}:</div>
-                          <div style={{ 
-                            background: "#f9f9f9", 
-                            padding: 12, 
-                            borderRadius: 6, 
-                            fontSize: 14,
-                            lineHeight: 1.5
-                          }}>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              color: "#666",
+                              marginBottom: 8,
+                            }}
+                          >
+                            {t("technicians.modal.skill_description")}:
+                          </div>
+                          <div
+                            style={{
+                              background: "#f9f9f9",
+                              padding: 12,
+                              borderRadius: 6,
+                              fontSize: 14,
+                              lineHeight: 1.5,
+                            }}
+                          >
                             {technicianDetail.skillSet}
                           </div>
                         </div>
@@ -622,45 +924,71 @@ export default function TechniciansPage() {
             </div>
 
             {/* Timeline */}
-            <Card 
-              size="small" 
+            <Card
+              size="small"
               title={`📅 ${t("technicians.modal.timeline")}`}
               style={{ marginTop: 16 }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 13, color: "#666" }}>{t("technicians.modal.registration_date")}</div>
+                  <div style={{ fontSize: 13, color: "#666" }}>
+                    {t("technicians.modal.registration_date")}
+                  </div>
                   <div style={{ fontWeight: 500, marginTop: 4 }}>
-                    {new Date(technicianDetail.dateCreated).toLocaleDateString("vi-VN")}
+                    {new Date(technicianDetail.dateCreated).toLocaleDateString(
+                      "vi-VN"
+                    )}
                   </div>
                   <div style={{ fontSize: 12, color: "#999" }}>
-                    {new Date(technicianDetail.dateCreated).toLocaleTimeString("vi-VN")}
+                    {new Date(technicianDetail.dateCreated).toLocaleTimeString(
+                      "vi-VN"
+                    )}
                   </div>
                 </div>
 
                 {technicianDetail.approvedAt && (
                   <>
-                    <div style={{ 
-                      width: 60, 
-                      height: 2, 
-                      backgroundColor: technicianDetail.approvalStatus === TechnicianApprovalStatus.Approved ? "#52c41a" : "#ff4d4f",
-                      margin: "0 16px"
-                    }} />
+                    <div
+                      style={{
+                        width: 60,
+                        height: 2,
+                        backgroundColor:
+                          technicianDetail.approvalStatus ===
+                          TechnicianApprovalStatus.Approved
+                            ? "#52c41a"
+                            : "#ff4d4f",
+                        margin: "0 16px",
+                      }}
+                    />
                     <div style={{ textAlign: "center" }}>
                       <div style={{ fontSize: 13, color: "#666" }}>
-                        {technicianDetail.approvalStatus === TechnicianApprovalStatus.Approved ? 
-                          t("technicians.modal.approval_date") : 
-                          t("technicians.modal.rejection_date")}
+                        {technicianDetail.approvalStatus ===
+                        TechnicianApprovalStatus.Approved
+                          ? t("technicians.modal.approval_date")
+                          : t("technicians.modal.rejection_date")}
                       </div>
                       <div style={{ fontWeight: 500, marginTop: 4 }}>
-                        {new Date(technicianDetail.approvedAt).toLocaleDateString("vi-VN")}
+                        {new Date(
+                          technicianDetail.approvedAt
+                        ).toLocaleDateString("vi-VN")}
                       </div>
                       <div style={{ fontSize: 12, color: "#999" }}>
-                        {new Date(technicianDetail.approvedAt).toLocaleTimeString("vi-VN")}
+                        {new Date(
+                          technicianDetail.approvedAt
+                        ).toLocaleTimeString("vi-VN")}
                       </div>
                       {technicianDetail.approvedBy && (
-                        <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-                          {t("technicians.modal.by")}: {technicianDetail.approvedBy}
+                        <div
+                          style={{ fontSize: 12, color: "#666", marginTop: 4 }}
+                        >
+                          {t("technicians.modal.by")}:{" "}
+                          {technicianDetail.approvedBy}
                         </div>
                       )}
                     </div>

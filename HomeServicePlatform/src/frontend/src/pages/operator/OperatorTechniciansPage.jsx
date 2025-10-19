@@ -27,6 +27,7 @@ import {
   TechnicianApprovalStatusLabels,
 } from "../../constants/enums";
 import { technicianApi } from "../../services/technicianApi";
+import { adminApi } from "../../services/adminApi";
 
 const { Search } = Input;
 const { Option } = Select;
@@ -409,6 +410,71 @@ export default function OperatorTechniciansPage() {
             <div style={{ marginBottom: 16 }}>
               <strong>Ngày tham gia:</strong> {technicianDetail.dateCreated}
             </div>
+
+            {/* Certificate Files */}
+            {technicianDetail.certificatePaths &&
+              technicianDetail.certificatePaths.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <strong>Chứng chỉ:</strong>
+                  <div
+                    style={{
+                      marginTop: 8,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    {technicianDetail.certificatePaths.map(
+                      (certPath, index) => {
+                        const fileName =
+                          certPath.split("/").pop() ||
+                          `Certificate ${index + 1}`;
+                        return (
+                          <div
+                            key={index}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              padding: "8px 12px",
+                              border: "1px solid #d9d9d9",
+                              borderRadius: 6,
+                              backgroundColor: "#fafafa",
+                            }}
+                          >
+                            <span
+                              style={{ flex: 1, fontSize: 13, color: "#333" }}
+                            >
+                              📄 {fileName}
+                            </span>
+                            <Button
+                              size="small"
+                              type="link"
+                              onClick={() => {
+                                const previewUrl =
+                                  adminApi.previewFile(certPath);
+                                window.open(previewUrl, "_blank");
+                              }}
+                              style={{ padding: "4px 8px" }}
+                            >
+                              Xem trước
+                            </Button>
+                            <Button
+                              size="small"
+                              type="primary"
+                              onClick={() => adminApi.downloadFile(certPath)}
+                              style={{ padding: "4px 8px" }}
+                            >
+                              Tải xuống
+                            </Button>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+              )}
+
             <div style={{ marginBottom: 16 }}>
               <strong>Trạng thái:</strong>
               <Tag
