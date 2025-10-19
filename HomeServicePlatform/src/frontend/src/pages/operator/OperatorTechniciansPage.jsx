@@ -21,6 +21,7 @@ import {
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
   TechnicianApprovalStatus,
   TechnicianApprovalStatusColors,
@@ -414,14 +415,25 @@ export default function OperatorTechniciansPage() {
             {/* Certificate Files */}
             {technicianDetail.certificatePaths &&
               technicianDetail.certificatePaths.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <strong>Chứng chỉ:</strong>
+                <div style={{ marginBottom: 20 }}>
                   <div
                     style={{
-                      marginTop: 8,
+                      fontSize: 14,
+                      color: "#1890ff",
+                      marginBottom: 12,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    🏆 Chứng chỉ
+                  </div>
+                  <div
+                    style={{
                       display: "flex",
                       flexDirection: "column",
-                      gap: 8,
+                      gap: 10,
                     }}
                   >
                     {technicianDetail.certificatePaths.map(
@@ -435,38 +447,122 @@ export default function OperatorTechniciansPage() {
                             style={{
                               display: "flex",
                               alignItems: "center",
-                              gap: 8,
-                              padding: "8px 12px",
-                              border: "1px solid #d9d9d9",
-                              borderRadius: 6,
-                              backgroundColor: "#fafafa",
+                              gap: 12,
+                              padding: "12px 16px",
+                              border: "1px solid #e8f4fd",
+                              borderRadius: 8,
+                              backgroundColor: "#f9fcff",
+                              transition: "all 0.3s ease",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "#e8f4fd";
+                              e.currentTarget.style.borderColor = "#1890ff";
+                              e.currentTarget.style.boxShadow =
+                                "0 2px 8px rgba(24,144,255,0.15)";
+                              e.currentTarget.style.transform =
+                                "translateY(-1px)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "#f9fcff";
+                              e.currentTarget.style.borderColor = "#e8f4fd";
+                              e.currentTarget.style.boxShadow =
+                                "0 1px 3px rgba(0,0,0,0.05)";
+                              e.currentTarget.style.transform = "translateY(0)";
                             }}
                           >
-                            <span
-                              style={{ flex: 1, fontSize: 13, color: "#333" }}
-                            >
-                              📄 {fileName}
-                            </span>
-                            <Button
-                              size="small"
-                              type="link"
-                              onClick={() => {
-                                const previewUrl =
-                                  adminApi.previewFile(certPath);
-                                window.open(previewUrl, "_blank");
+                            <div
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 8,
+                                background:
+                                  "linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 16,
+                                boxShadow: "0 2px 4px rgba(24,144,255,0.3)",
                               }}
-                              style={{ padding: "4px 8px" }}
                             >
-                              Xem trước
-                            </Button>
-                            <Button
-                              size="small"
-                              type="primary"
-                              onClick={() => adminApi.downloadFile(certPath)}
-                              style={{ padding: "4px 8px" }}
-                            >
-                              Tải xuống
-                            </Button>
+                              📜
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div
+                                style={{
+                                  fontSize: 14,
+                                  color: "#333",
+                                  fontWeight: 500,
+                                  marginBottom: 2,
+                                }}
+                              >
+                                {fileName}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  color: "#999",
+                                }}
+                              >
+                                Chứng chỉ #{index + 1}
+                              </div>
+                            </div>
+                            <Space size={8}>
+                              <Button
+                                size="small"
+                                type="text"
+                                icon={<span style={{ fontSize: 14 }}>👁️</span>}
+                                onClick={() => {
+                                  const previewUrl =
+                                    adminApi.previewFile(certPath);
+                                  window.open(previewUrl, "_blank");
+                                }}
+                                style={{
+                                  padding: "6px 12px",
+                                  height: "auto",
+                                  color: "#1890ff",
+                                  fontWeight: 500,
+                                  borderRadius: 6,
+                                  border: "1px solid #d9d9d9",
+                                }}
+                              >
+                                Xem
+                              </Button>
+                              <Button
+                                size="small"
+                                type="primary"
+                                icon={<span style={{ fontSize: 12 }}>⬇️</span>}
+                                onClick={async () => {
+                                  try {
+                                    const result = await adminApi.downloadFile(
+                                      certPath
+                                    );
+                                    if (result.success) {
+                                      toast.success("Tải xuống thành công!");
+                                    } else {
+                                      toast.error(
+                                        result.message || "Tải xuống thất bại!"
+                                      );
+                                    }
+                                  } catch (error) {
+                                    toast.error("Có lỗi xảy ra khi tải xuống!");
+                                  }
+                                }}
+                                style={{
+                                  padding: "6px 12px",
+                                  height: "auto",
+                                  fontSize: 12,
+                                  fontWeight: 500,
+                                  borderRadius: 6,
+                                  background:
+                                    "linear-gradient(135deg, #52c41a 0%, #73d13d 100%)",
+                                  border: "none",
+                                  boxShadow: "0 2px 4px rgba(82,196,26,0.3)",
+                                }}
+                              >
+                                Tải xuống
+                              </Button>
+                            </Space>
                           </div>
                         );
                       }
@@ -476,7 +572,7 @@ export default function OperatorTechniciansPage() {
               )}
 
             <div style={{ marginBottom: 16 }}>
-              <strong>Trạng thái:</strong>
+              <strong>Trạng thái: </strong>
               <Tag
                 color={
                   TechnicianApprovalStatusColors[

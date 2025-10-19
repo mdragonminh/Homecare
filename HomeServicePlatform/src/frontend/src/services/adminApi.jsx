@@ -146,8 +146,12 @@ export const adminApi = {
         responseType: "blob", // Important for file downloads
       });
 
-      // Create blob URL for download
-      const blob = new Blob([response.data]);
+      // Get MIME type from response headers
+      const contentType =
+        response.headers["content-type"] || "application/octet-stream";
+
+      // Create blob with correct MIME type
+      const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
 
       // Extract filename from response headers or use default
@@ -158,6 +162,10 @@ export const adminApi = {
         if (filenameMatch) {
           filename = filenameMatch[1];
         }
+      } else {
+        // If no content disposition, try to extract from filePath
+        const pathParts = filePath.split("/");
+        filename = pathParts[pathParts.length - 1] || "download";
       }
 
       // Create download link and trigger download
@@ -180,7 +188,6 @@ export const adminApi = {
       };
     }
   },
-
   previewFile: (filePath) => {
     // Return URL for file preview (opens in new tab)
     const baseURL = axiosClient.defaults.baseURL || "";
