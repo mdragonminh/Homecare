@@ -18,6 +18,7 @@ import {
   CheckOutlined,
   CloseOutlined,
   SearchOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import {
@@ -39,6 +40,9 @@ export default function OperatorTechniciansPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [technicianDetail, setTechnicianDetail] = useState(null);
+  const [approveModalVisible, setApproveModalVisible] = useState(false);
+  const [rejectModalVisible, setRejectModalVisible] = useState(false);
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState(null);
 
   // Tải dữ liệu technicians từ API
   const loadTechnicians = async () => {
@@ -131,58 +135,65 @@ export default function OperatorTechniciansPage() {
       console.error("Error getting technician details:", error);
       setTechnicianDetail(technician);
     }
-    setDetailModalVisible(true);
+    // Force re-render by setting to false first then true
+    setDetailModalVisible(false);
+    setTimeout(() => setDetailModalVisible(true), 10);
   };
 
-  const handleApprove = async (technicianId) => {
-    Modal.confirm({
-      title: "Xác nhận duyệt kỹ thuật viên",
-      content: "Bạn có chắc chắn muốn duyệt kỹ thuật viên này?",
-      okText: "Duyệt",
-      cancelText: "Hủy",
-      onOk: async () => {
-        try {
-          const response = await technicianApi.approveTechnician(technicianId);
-          if (response.success) {
-            message.success("Đã duyệt thành công kỹ thuật viên");
-            // Reload dữ liệu để cập nhật trạng thái
-            loadTechnicians();
-          } else {
-            message.error(response.message || "Không thể duyệt kỹ thuật viên");
-          }
-        } catch (error) {
-          console.error("Error approving technician:", error);
-          message.error("Đã có lỗi xảy ra khi duyệt kỹ thuật viên");
-        }
-      },
-    });
+  const handleApprove = (technicianId) => {
+    setSelectedTechnicianId(technicianId);
+    setApproveModalVisible(true);
   };
 
-  const handleReject = async (technicianId) => {
-    Modal.confirm({
-      title: "Xác nhận từ chối kỹ thuật viên",
-      content: "Bạn có chắc chắn muốn từ chối kỹ thuật viên này?",
-      okText: "Từ chối",
-      cancelText: "Hủy",
-      okType: "danger",
-      onOk: async () => {
-        try {
-          const response = await technicianApi.rejectTechnician(technicianId);
-          if (response.success) {
-            message.success("Đã từ chối thành công kỹ thuật viên");
-            // Reload dữ liệu để cập nhật trạng thái
-            loadTechnicians();
-          } else {
-            message.error(
-              response.message || "Không thể từ chối kỹ thuật viên"
-            );
-          }
-        } catch (error) {
-          console.error("Error rejecting technician:", error);
-          message.error("Đã có lỗi xảy ra khi từ chối kỹ thuật viên");
-        }
-      },
-    });
+  const confirmApprove = async () => {
+    try {
+      setLoading(true);
+      const response = await technicianApi.approveTechnician(
+        selectedTechnicianId
+      );
+      if (response.success) {
+        message.success("Đã duyệt thành công kỹ thuật viên");
+        setApproveModalVisible(false);
+        setSelectedTechnicianId(null);
+        // Reload dữ liệu để cập nhật trạng thái
+        loadTechnicians();
+      } else {
+        message.error(response.message || "Không thể duyệt kỹ thuật viên");
+      }
+    } catch (error) {
+      console.error("Error approving technician:", error);
+      message.error("Đã có lỗi xảy ra khi duyệt kỹ thuật viên");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReject = (technicianId) => {
+    setSelectedTechnicianId(technicianId);
+    setRejectModalVisible(true);
+  };
+
+  const confirmReject = async () => {
+    try {
+      setLoading(true);
+      const response = await technicianApi.rejectTechnician(
+        selectedTechnicianId
+      );
+      if (response.success) {
+        message.success("Đã từ chối thành công kỹ thuật viên");
+        setRejectModalVisible(false);
+        setSelectedTechnicianId(null);
+        // Reload dữ liệu để cập nhật trạng thái
+        loadTechnicians();
+      } else {
+        message.error(response.message || "Không thể từ chối kỹ thuật viên");
+      }
+    } catch (error) {
+      console.error("Error rejecting technician:", error);
+      message.error("Đã có lỗi xảy ra khi từ chối kỹ thuật viên");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const columns = [
@@ -373,11 +384,14 @@ export default function OperatorTechniciansPage() {
 
       {/* Detail Modal */}
       <Modal
+        key={technicianDetail?.id || "modal"}
         title="Chi tiết kỹ thuật viên"
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={null}
         width={600}
+        destroyOnClose={true}
+        centered
       >
         {technicianDetail && (
           <div>
@@ -434,6 +448,60 @@ export default function OperatorTechniciansPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Approve Modal */}
+      <Modal
+        title={
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <CheckOutlined style={{ color: "#52c41a" }} />
+            <span>Xác nhận duyệt kỹ thuật viên</span>
+          </div>
+        }
+        open={approveModalVisible}
+        onOk={confirmApprove}
+        onCancel={() => {
+          setApproveModalVisible(false);
+          setSelectedTechnicianId(null);
+        }}
+        okText="Duyệt"
+        cancelText="Hủy"
+        confirmLoading={loading}
+        okButtonProps={{ style: { backgroundColor: "#52c41a" } }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <ExclamationCircleOutlined
+            style={{ color: "#faad14", fontSize: 22 }}
+          />
+          <span>Bạn có chắc chắn muốn duyệt kỹ thuật viên này?</span>
+        </div>
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal
+        title={
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <CloseOutlined style={{ color: "#ff4d4f" }} />
+            <span>Xác nhận từ chối kỹ thuật viên</span>
+          </div>
+        }
+        open={rejectModalVisible}
+        onOk={confirmReject}
+        onCancel={() => {
+          setRejectModalVisible(false);
+          setSelectedTechnicianId(null);
+        }}
+        okText="Từ chối"
+        cancelText="Hủy"
+        confirmLoading={loading}
+        okType="danger"
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <ExclamationCircleOutlined
+            style={{ color: "#faad14", fontSize: 22 }}
+          />
+          <span>Bạn có chắc chắn muốn từ chối kỹ thuật viên này?</span>
+        </div>
       </Modal>
     </div>
   );
