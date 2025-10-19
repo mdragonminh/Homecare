@@ -1,6 +1,6 @@
 import axiosClient from "../config/axiosClient";
 
-//const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
+const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
 
 export const technicianApi = {
   updateLocation: async (latitude, longitude) => {
