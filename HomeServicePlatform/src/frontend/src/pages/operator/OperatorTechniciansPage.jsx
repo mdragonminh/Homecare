@@ -73,67 +73,13 @@ export default function OperatorTechniciansPage() {
         message.error(
           response.message || "Không thể tải danh sách kỹ thuật viên"
         );
-        // Fallback to mock data if API fails
-        loadMockData();
       }
     } catch (error) {
       console.error("Error loading technicians:", error);
       message.error("Đã có lỗi xảy ra khi tải danh sách kỹ thuật viên");
-      // Fallback to mock data if API fails
-      loadMockData();
     } finally {
       setLoading(false);
     }
-  };
-
-  // Mock data fallback
-  const loadMockData = () => {
-    const mockData = [
-      {
-        key: "1",
-        id: "T001",
-        name: "Lê Văn C",
-        email: "levanc@gmail.com",
-        phone: "0912345678",
-        skills: ["Điện", "Nước", "Điều hòa"],
-        experience: "5 năm",
-        approvalStatus: TechnicianApprovalStatus.Approved,
-        rating: 4.8,
-        completedJobs: 45,
-        joinDate: "2024-01-10",
-        address: "123 Điện Biên Phủ, Q.Bình Thạnh, TP.HCM",
-      },
-      {
-        key: "2",
-        id: "T002",
-        name: "Nguyễn Minh D",
-        email: "nguyenminhd@gmail.com",
-        phone: "0908765432",
-        skills: ["Điện tử", "Máy giặt"],
-        experience: "3 năm",
-        approvalStatus: TechnicianApprovalStatus.Pending,
-        rating: 0,
-        completedJobs: 0,
-        joinDate: "2024-03-15",
-        address: "456 Cộng Hòa, Q.Tân Bình, TP.HCM",
-      },
-      {
-        key: "3",
-        id: "T003",
-        name: "Trần Văn E",
-        email: "tranvane@gmail.com",
-        phone: "0919876543",
-        skills: ["Nước", "Gas"],
-        experience: "7 năm",
-        approvalStatus: TechnicianApprovalStatus.Rejected,
-        rating: 0,
-        completedJobs: 0,
-        joinDate: "2024-02-20",
-        address: "789 Nguyễn Văn Cừ, Q.5, TP.HCM",
-      },
-    ];
-    setTechnicians(mockData);
-    setFilteredTechnicians(mockData);
   };
 
   useEffect(() => {
@@ -189,35 +135,54 @@ export default function OperatorTechniciansPage() {
   };
 
   const handleApprove = async (technicianId) => {
-    try {
-      const response = await technicianApi.approveTechnician(technicianId);
-      if (response.success) {
-        message.success("Đã duyệt thành công kỹ thuật viên");
-        // Reload dữ liệu để cập nhật trạng thái
-        loadTechnicians();
-      } else {
-        message.error(response.message || "Không thể duyệt kỹ thuật viên");
-      }
-    } catch (error) {
-      console.error("Error approving technician:", error);
-      message.error("Đã có lỗi xảy ra khi duyệt kỹ thuật viên");
-    }
+    Modal.confirm({
+      title: "Xác nhận duyệt kỹ thuật viên",
+      content: "Bạn có chắc chắn muốn duyệt kỹ thuật viên này?",
+      okText: "Duyệt",
+      cancelText: "Hủy",
+      onOk: async () => {
+        try {
+          const response = await technicianApi.approveTechnician(technicianId);
+          if (response.success) {
+            message.success("Đã duyệt thành công kỹ thuật viên");
+            // Reload dữ liệu để cập nhật trạng thái
+            loadTechnicians();
+          } else {
+            message.error(response.message || "Không thể duyệt kỹ thuật viên");
+          }
+        } catch (error) {
+          console.error("Error approving technician:", error);
+          message.error("Đã có lỗi xảy ra khi duyệt kỹ thuật viên");
+        }
+      },
+    });
   };
 
   const handleReject = async (technicianId) => {
-    try {
-      const response = await technicianApi.rejectTechnician(technicianId);
-      if (response.success) {
-        message.success("Đã từ chối thành công kỹ thuật viên");
-        // Reload dữ liệu để cập nhật trạng thái
-        loadTechnicians();
-      } else {
-        message.error(response.message || "Không thể từ chối kỹ thuật viên");
-      }
-    } catch (error) {
-      console.error("Error rejecting technician:", error);
-      message.error("Đã có lỗi xảy ra khi từ chối kỹ thuật viên");
-    }
+    Modal.confirm({
+      title: "Xác nhận từ chối kỹ thuật viên",
+      content: "Bạn có chắc chắn muốn từ chối kỹ thuật viên này?",
+      okText: "Từ chối",
+      cancelText: "Hủy",
+      okType: "danger",
+      onOk: async () => {
+        try {
+          const response = await technicianApi.rejectTechnician(technicianId);
+          if (response.success) {
+            message.success("Đã từ chối thành công kỹ thuật viên");
+            // Reload dữ liệu để cập nhật trạng thái
+            loadTechnicians();
+          } else {
+            message.error(
+              response.message || "Không thể từ chối kỹ thuật viên"
+            );
+          }
+        } catch (error) {
+          console.error("Error rejecting technician:", error);
+          message.error("Đã có lỗi xảy ra khi từ chối kỹ thuật viên");
+        }
+      },
+    });
   };
 
   const columns = [
@@ -228,7 +193,7 @@ export default function OperatorTechniciansPage() {
       width: 60,
       render: (name) => (
         <Avatar icon={<ToolOutlined />} style={{ backgroundColor: "#1890ff" }}>
-          {name.charAt(0)}
+          {name?.charAt(0)}
         </Avatar>
       ),
     },
@@ -242,6 +207,28 @@ export default function OperatorTechniciansPage() {
       title: "Email",
       dataIndex: "email",
       key: "email",
+    },
+    {
+      title: "Số điện thoại",
+      dataIndex: "phone",
+      key: "phone",
+    },
+    {
+      title: "Kỹ năng",
+      dataIndex: "skills",
+      key: "skills",
+      render: (skills) => (
+        <div>
+          {skills?.slice(0, 2).map((skill, index) => (
+            <Tag key={index} color="blue" style={{ marginBottom: 4 }}>
+              {skill}
+            </Tag>
+          ))}
+          {skills?.length > 2 && (
+            <Tag color="default">+{skills.length - 2}</Tag>
+          )}
+        </div>
+      ),
     },
     {
       title: "Trạng thái",
@@ -403,20 +390,31 @@ export default function OperatorTechniciansPage() {
             <div style={{ marginBottom: 16 }}>
               <strong>Số điện thoại:</strong> {technicianDetail.phone}
             </div>
-
             <div style={{ marginBottom: 16 }}>
-              <strong>Kinh nghiệm:</strong> {technicianDetail.experienceYears}{" "}
-              năm
+              <strong>Địa chỉ:</strong> {technicianDetail.address}
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <strong>Kinh nghiệm:</strong> {technicianDetail.experience}
             </div>
             <div style={{ marginBottom: 16 }}>
               <strong>Kỹ năng:</strong>
               <div style={{ marginTop: 8 }}>
-                {technicianDetail.skills.map((skill) => (
-                  <Tag key={skill} color="blue">
+                {technicianDetail.skills?.map((skill, index) => (
+                  <Tag key={index} color="blue">
                     {skill}
                   </Tag>
                 ))}
               </div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <strong>Đánh giá:</strong> {technicianDetail.rating}/5
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <strong>Công việc hoàn thành:</strong>{" "}
+              {technicianDetail.completedJobs}
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <strong>Ngày tham gia:</strong> {technicianDetail.joinDate}
             </div>
             <div style={{ marginBottom: 16 }}>
               <strong>Trạng thái:</strong>
