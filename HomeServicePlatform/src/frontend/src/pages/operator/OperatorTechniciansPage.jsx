@@ -401,34 +401,13 @@ export default function OperatorTechniciansPage() {
             <div style={{ marginBottom: 16 }}>
               <strong>Email:</strong> {technicianDetail.email}
             </div>
+
             <div style={{ marginBottom: 16 }}>
-              <strong>Số điện thoại:</strong> {technicianDetail.phone}
+              <strong>Kinh nghiệm:</strong> {technicianDetail.experienceYears}
             </div>
+
             <div style={{ marginBottom: 16 }}>
-              <strong>Địa chỉ:</strong> {technicianDetail.address}
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <strong>Kinh nghiệm:</strong> {technicianDetail.experience}
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <strong>Kỹ năng:</strong>
-              <div style={{ marginTop: 8 }}>
-                {technicianDetail.skills?.map((skill, index) => (
-                  <Tag key={index} color="blue">
-                    {skill}
-                  </Tag>
-                ))}
-              </div>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <strong>Đánh giá:</strong> {technicianDetail.rating}/5
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <strong>Công việc hoàn thành:</strong>{" "}
-              {technicianDetail.completedJobs}
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <strong>Ngày tham gia:</strong> {technicianDetail.joinDate}
+              <strong>Ngày tham gia:</strong> {technicianDetail.dateCreated}
             </div>
             <div style={{ marginBottom: 16 }}>
               <strong>Trạng thái:</strong>
