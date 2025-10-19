@@ -29,6 +29,7 @@ import {
 } from "../../constants/enums";
 import { technicianApi } from "../../services/technicianApi";
 import { adminApi } from "../../services/adminApi";
+import dayjs from "dayjs";
 
 const { Search } = Input;
 const { Option } = Select;
@@ -409,7 +410,8 @@ export default function OperatorTechniciansPage() {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <strong>Ngày tham gia:</strong> {technicianDetail.dateCreated}
+              <strong>Ngày tham gia:</strong>{" "}
+              {dayjs(technicianDetail.dateCreated).format("DD/MM/YYYY")}
             </div>
 
             {/* Certificate Files */}
