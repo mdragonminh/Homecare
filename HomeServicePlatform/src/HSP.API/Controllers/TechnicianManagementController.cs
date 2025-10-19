@@ -59,7 +59,7 @@ namespace HSP.API.Controllers
             {
                 var approvedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
                 var result = await _technicianProfileService.ApproveTechnicianWithNotificationAsync(id, approvedBy);
-                
+
                 if (!result)
                 {
                     return NotFound(new { message = "Không tìm thấy technician hoặc không thể duyệt" });
@@ -80,7 +80,7 @@ namespace HSP.API.Controllers
             {
                 var rejectedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
                 var result = await _technicianProfileService.RejectTechnicianWithNotificationAsync(id, rejectedBy);
-                
+
                 if (!result)
                 {
                     return NotFound(new { message = "Không tìm thấy technician hoặc không thể từ chối" });
@@ -101,15 +101,16 @@ namespace HSP.API.Controllers
             {
                 var approvedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
                 var successCount = 0;
-                
+
                 foreach (var id in technicianIds)
                 {
                     var result = await _technicianProfileService.ApproveTechnicianWithNotificationAsync(id, approvedBy);
                     if (result) successCount++;
                 }
 
-                return Ok(new { 
-                    message = $"Đã duyệt thành công {successCount}/{technicianIds.Count} technician và gửi email thông báo", 
+                return Ok(new
+                {
+                    message = $"Đã duyệt thành công {successCount}/{technicianIds.Count} technician và gửi email thông báo",
                     successCount = successCount,
                     totalCount = technicianIds.Count
                 });
@@ -127,15 +128,16 @@ namespace HSP.API.Controllers
             {
                 var rejectedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
                 var successCount = 0;
-                
+
                 foreach (var id in technicianIds)
                 {
                     var result = await _technicianProfileService.RejectTechnicianWithNotificationAsync(id, rejectedBy);
                     if (result) successCount++;
                 }
 
-                return Ok(new { 
-                    message = $"Đã từ chối thành công {successCount}/{technicianIds.Count} technician và gửi email thông báo", 
+                return Ok(new
+                {
+                    message = $"Đã từ chối thành công {successCount}/{technicianIds.Count} technician và gửi email thông báo",
                     successCount = successCount,
                     totalCount = technicianIds.Count
                 });
