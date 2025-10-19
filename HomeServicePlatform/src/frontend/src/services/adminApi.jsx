@@ -4,10 +4,11 @@ import axiosClient from "../config/axiosClient";
 export const adminApi = {
   createOperator: async ({ email, username, password }) => {
     try {
-      const res = await axiosClient.post(
-        `/Authentication/create-operator`,
-        { email, username, password }
-      );
+      const res = await axiosClient.post(`/Authentication/create-operator`, {
+        email,
+        username,
+        password,
+      });
       return { success: true, data: res.data };
     } catch (error) {
       console.error("Create operator error:", error);
@@ -123,8 +124,7 @@ export const adminApi = {
     try {
       const res = await axiosClient.post(
         `/TechnicianManagement/technicians/batch-reject`,
-        technicianIds,
-       
+        technicianIds
       );
       return { success: true, data: res.data };
     } catch (error) {
@@ -136,5 +136,61 @@ export const adminApi = {
           "Từ chối hàng loạt kỹ thuật viên thất bại",
       };
     }
+  },
+
+  // File Management APIs
+  downloadFile: async (filePath) => {
+    try {
+      const response = await axiosClient.get(`/File/download`, {
+        params: { filePath },
+        responseType: "blob", // Important for file downloads
+      });
+
+      // Get MIME type from response headers
+      const contentType =
+        response.headers["content-type"] || "application/octet-stream";
+
+      // Create blob with correct MIME type
+      const blob = new Blob([response.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+
+      // Extract filename from response headers or use default
+      const contentDisposition = response.headers["content-disposition"];
+      let filename = "download";
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      } else {
+        // If no content disposition, try to extract from filePath
+        const pathParts = filePath.split("/");
+        filename = pathParts[pathParts.length - 1] || "download";
+      }
+
+      // Create download link and trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up
+      window.URL.revokeObjectURL(url);
+
+      return { success: true };
+    } catch (error) {
+      console.error("Download file error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Download file thất bại",
+      };
+    }
+  },
+  previewFile: (filePath) => {
+    // Return URL for file preview (opens in new tab)
+    const baseURL = axiosClient.defaults.baseURL || "";
+    return `${baseURL}/File/preview?filePath=${encodeURIComponent(filePath)}`;
   },
 };

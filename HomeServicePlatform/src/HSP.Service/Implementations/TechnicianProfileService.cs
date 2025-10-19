@@ -49,7 +49,8 @@ namespace HSP.Service.Implementations
 					.WhereIf(filterParams.CreatedTo.HasValue,
 							x => x.DateCreated <= filterParams.CreatedTo!.Value);
 
-			var technicianDtos = query.Select(x => new TechnicianProfileResponseDto
+			// Transform to DTOs with certificate paths parsing and use the extension for pagination
+			var technicianDtosQuery = query.Select(x => new TechnicianProfileResponseDto
 			{
 				Id = x.Id,
 				UserId = x.UserId,
@@ -63,10 +64,33 @@ namespace HSP.Service.Implementations
 				ApprovedAt = x.ApprovedAt,
 				ApprovedBy = x.ApprovedBy,
 				DateCreated = x.DateCreated,
-				DateModified = x.DateModified
+				DateModified = x.DateModified,
+				// Note: CertificatePaths will be parsed after pagination due to JSON deserialization limitation in LINQ to SQL
+				CertificatePaths = null
 			});
 
-			var pagedTechnicians = await technicianDtos.ToPagedListAsync(filterParams);
+			var pagedTechnicians = await technicianDtosQuery.ToPagedListAsync(filterParams);
+
+			// Parse certificate paths after pagination (in memory)
+			foreach (var technician in pagedTechnicians.Items)
+			{
+				var technicianEntity = await _technicianProfileRepository.GetAll()
+					.FirstOrDefaultAsync(x => x.Id == technician.Id);
+
+				if (technicianEntity != null && !string.IsNullOrEmpty(technicianEntity.CertificatePaths))
+				{
+					try
+					{
+						technician.CertificatePaths = System.Text.Json.JsonSerializer.Deserialize<List<string>>(technicianEntity.CertificatePaths);
+					}
+					catch
+					{
+						// If parsing fails, leave as null
+						technician.CertificatePaths = null;
+					}
+				}
+			}
+
 			return pagedTechnicians;
 		}
 
@@ -78,6 +102,21 @@ namespace HSP.Service.Implementations
 
 			if (technician == null)
 				return null;
+
+			// Parse certificate paths from JSON string
+			List<string>? certificatePaths = null;
+			if (!string.IsNullOrEmpty(technician.CertificatePaths))
+			{
+				try
+				{
+					certificatePaths = System.Text.Json.JsonSerializer.Deserialize<List<string>>(technician.CertificatePaths);
+				}
+				catch
+				{
+					// If parsing fails, leave as null
+					certificatePaths = null;
+				}
+			}
 
 			return new TechnicianProfileResponseDto
 			{
@@ -93,7 +132,8 @@ namespace HSP.Service.Implementations
 				ApprovedAt = technician.ApprovedAt,
 				ApprovedBy = technician.ApprovedBy,
 				DateCreated = technician.DateCreated,
-				DateModified = technician.DateModified
+				DateModified = technician.DateModified,
+				CertificatePaths = certificatePaths
 			};
 		}
 

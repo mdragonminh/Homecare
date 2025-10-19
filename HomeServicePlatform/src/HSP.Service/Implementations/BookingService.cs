@@ -7,6 +7,7 @@ using HSP.Core.Resources;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using HSP.DAL.Extensions;
 
 namespace HSP.Service.Implementations
 {
@@ -68,62 +69,61 @@ namespace HSP.Service.Implementations
                 query = query.Where(b => b.DesiredDate <= input.ToDate.Value);
             }
 
-            // Order by created date descending
-            query = query.OrderByDescending(b => b.DateCreated);
-
-            var totalCount = await query.CountAsync();
-            var items = await query
-                .Skip((input.PageNumber - 1) * input.PageSize)
-                .Take(input.PageSize)
-                .Select(b => new BookingDto
+            var projectedQuery = query.Select(b => new BookingDto
+            {
+                Id = b.Id,
+                CustomerProfileId = b.CustomerProfileId,
+                TechnicianId = b.TechnicianId,
+                ServiceId = b.ServiceId,
+                DesiredDate = b.DesiredDate.Value,
+                ProblemDescription = b.ProblemDescription,
+                Status = b.Status,
+                DateCompleted = b.DateCompleted,
+                DateCreated = b.DateCreated,
+                DateModified = b.DateModified,
+                Customer = b.Customer != null ? new HSP.Core.Dtos.CustomerProfileDto.CustomerProfileDto
                 {
-                    Id = b.Id,
-                    CustomerProfileId = b.CustomerProfileId,
-                    TechnicianId = b.TechnicianId,
-                    ServiceId = b.ServiceId,
-                    DesiredDate = b.DesiredDate.Value,
-                    ProblemDescription = b.ProblemDescription,
-                    Status = b.Status,
-                    DateCompleted = b.DateCompleted,
-                    DateCreated = b.DateCreated,
-                    DateModified = b.DateModified,
-                    Customer = b.Customer != null ? new HSP.Core.Dtos.CustomerProfileDto.CustomerProfileDto
-                    {
-                        Id = b.Customer.Id,
-                        UserId = b.Customer.UserId,
-                        Email = b.Customer.User != null ? b.Customer.User.Email : null,
-                        PhoneNumber = b.Customer.User != null ? b.Customer.User.PhoneNumber : null
-                    } : null,
-                    Technician = b.Technician != null ? new HSP.Core.Dtos.TechnicianProfileDto.TechnicianProfileResponseDto
-                    {
-                        Id = b.Technician.Id,
-                        UserId = b.Technician.UserId,
-                        Email = b.Technician.User != null ? b.Technician.User.Email : null,
-                        PhoneNumber = b.Technician.User != null ? b.Technician.User.PhoneNumber : null
-                    } : null,
-                    Service = new HSP.Core.Dtos.ServiceDto.HomeServiceDto
-                    {
-                        Id = b.Service.Id,
-                        Name = b.Service.Name,
-                        BasePrice = b.Service.BasePrice
-                    },
-                    Feedback = b.Feedback != null ? new BookingFeedbackResponseDto
-                    {
-                        BookingId = b.Feedback.BookingId,
-                        Rating = b.Feedback.Rating,
-                        Comment = b.Feedback.Comment
-                    } : null,
-                    Cancellation = b.Cancellation != null ? new BookingCancellationResponseDto
-                    {
-                        BookingId = b.Cancellation.BookingId,
-                        Reason = b.Cancellation.Reason,
-                        CancelledBy = b.Cancellation.CancelledBy,
-                        CancelledAt = b.Cancellation.CancelledAt
-                    } : null
-                })
-                .ToListAsync();
+                    Id = b.Customer.Id,
+                    UserId = b.Customer.UserId,
+                    Email = b.Customer.User != null ? b.Customer.User.Email : null,
+                    PhoneNumber = b.Customer.User != null ? b.Customer.User.PhoneNumber : null
+                } : null,
+                Technician = b.Technician != null ? new HSP.Core.Dtos.TechnicianProfileDto.TechnicianProfileResponseDto
+                {
+                    Id = b.Technician.Id,
+                    UserId = b.Technician.UserId,
+                    Email = b.Technician.User != null ? b.Technician.User.Email : null,
+                    PhoneNumber = b.Technician.User != null ? b.Technician.User.PhoneNumber : null
+                } : null,
+                Service = new HSP.Core.Dtos.ServiceDto.HomeServiceDto
+                {
+                    Id = b.Service.Id,
+                    Name = b.Service.Name,
+                    BasePrice = b.Service.BasePrice
+                },
+                Feedback = b.Feedback != null ? new BookingFeedbackResponseDto
+                {
+                    BookingId = b.Feedback.BookingId,
+                    Rating = b.Feedback.Rating,
+                    Comment = b.Feedback.Comment
+                } : null,
+                Cancellation = b.Cancellation != null ? new BookingCancellationResponseDto
+                {
+                    BookingId = b.Cancellation.BookingId,
+                    Reason = b.Cancellation.Reason,
+                    CancelledBy = b.Cancellation.CancelledBy,
+                    CancelledAt = b.Cancellation.CancelledAt
+                } : null
+            });
 
-            return new PagedList<BookingDto>(items, totalCount, input.PageNumber, input.PageSize);
+            var paginationParams = new PaginationParams
+            {
+                PageNumber = input.PageNumber,
+                PageSize = input.PageSize,
+                OrderBy = "DateCreated desc"
+            };
+
+            return await projectedQuery.ToPagedListAsync(paginationParams);
         }
 
         public async Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId)

@@ -17,5 +17,6 @@ namespace HSP.Core.Dtos.TechnicianProfileDto
         public string? ApprovedBy { get; set; }
         public DateTime DateCreated { get; set; }
         public DateTime DateModified { get; set; }
+        public List<string>? CertificatePaths { get; set; }
     }
 }
