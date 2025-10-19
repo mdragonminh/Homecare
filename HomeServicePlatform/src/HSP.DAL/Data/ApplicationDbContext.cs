@@ -24,13 +24,12 @@ namespace HSP.DAL.Data
 		public DbSet<ObjectType> ObjectTypes { get; set; }
 		public DbSet<FileRelation> FileRelations { get; set; }
 		public DbSet<Core.Entities.Service> Services { get; set; }
-		public DbSet<ServiceCategory> ServiceCategories { get; set; }
 		public DbSet<Booking> Bookings { get; set; }
 		public DbSet<BookingFeedback> BookingFeedbacks { get; set; }
 		public DbSet<BookingCancellation> BookingCancellations { get; set; }
 		public DbSet<Warehouse> Warehouses { get; set; }
 		public DbSet<Equipment> Equipments { get; set; }
-		public DbSet<CustomerSupporter> CustomerSupporters { get; set; }
+		//public DbSet<CustomerSupporter> CustomerSupporters { get; set; }
 		public DbSet<Ticket> Tickets { get; set; }
 		public DbSet<SystemSetting> SystemSettings { get; set; }
 		public DbSet<AuditLog> AuditLogs { get; set; }
@@ -103,9 +102,6 @@ namespace HSP.DAL.Data
 							.WithMany(s => s.Bookings)
 							.HasForeignKey(b => b.ServiceId)
 							.OnDelete(DeleteBehavior.Restrict);
-				//entity.Property(b => b.DateModified)
-				// .HasColumnType("datetime2")
-				// .HasDefaultValueSql("GETUTCDATE()");
 			});
 			builder.Entity<BookingFeedback>()
 			.HasKey(f => f.BookingId);
@@ -174,11 +170,10 @@ namespace HSP.DAL.Data
 			builder.Entity<TechnicianProfile>().HasQueryFilter(tp => !tp.IsDeleted);
 			builder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
 			builder.Entity<Core.Entities.Service>().HasQueryFilter(s => !s.IsDeleted);
-			builder.Entity<ServiceCategory>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<Booking>().HasQueryFilter(b => !b.IsDeleted);
 			builder.Entity<Warehouse>().HasQueryFilter(w => !w.IsDeleted);
 			builder.Entity<Equipment>().HasQueryFilter(e => !e.IsDeleted);
-			builder.Entity<CustomerSupporter>().HasQueryFilter(s => !s.IsDeleted);
+			//builder.Entity<CustomerSupporter>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<Ticket>().HasQueryFilter(t => !t.IsDeleted);
 			builder.Entity<SystemSetting>().HasQueryFilter(s => !s.IsDeleted);
 		}
