@@ -553,7 +553,10 @@ const TechnicianBookingsPage = () => {
 
       {/* Reject Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+        <div
+          style={{ background: "rgba(0, 0, 0, 0.5)" }}
+          className="fixed inset-0  bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4"
+        >
           <div className="relative mx-auto border w-full max-w-md shadow-2xl rounded-2xl bg-white transform transition-all">
             <div className="p-6">
               {/* Header */}
