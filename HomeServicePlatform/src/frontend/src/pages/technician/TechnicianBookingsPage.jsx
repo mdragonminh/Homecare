@@ -146,7 +146,9 @@ const TechnicianBookingsPage = () => {
       try {
         await bookingApi.completeBooking(bookingId);
         toast.success("Đã hoàn thành booking thành công");
-        fetchBookings();
+
+        // Refresh both lists to ensure data is updated
+        await Promise.all([fetchBookings(), fetchPendingBookings()]);
       } catch (error) {
         console.error("Error completing booking:", error);
         toast.error("Không thể hoàn thành booking");
@@ -162,8 +164,9 @@ const TechnicianBookingsPage = () => {
           BookingStatus.Confirmed
         );
         toast.success("Đã xác nhận booking thành công");
-        fetchBookings();
-        fetchPendingBookings();
+
+        // Refresh both lists to ensure data is updated
+        await Promise.all([fetchBookings(), fetchPendingBookings()]);
       } catch (error) {
         console.error("Error accepting booking:", error);
         toast.error("Không thể xác nhận booking");
@@ -179,8 +182,9 @@ const TechnicianBookingsPage = () => {
           BookingStatus.TechnicianOnTheWay
         );
         toast.success("Đã bắt đầu công việc thành công");
-        fetchBookings();
-        fetchPendingBookings();
+
+        // Refresh both lists to ensure data is updated
+        await Promise.all([fetchBookings(), fetchPendingBookings()]);
       } catch (error) {
         console.error("Error starting work:", error);
         toast.error("Không thể bắt đầu công việc");
@@ -202,11 +206,14 @@ const TechnicianBookingsPage = () => {
     try {
       await bookingApi.cancelBooking(selectedBookingId, rejectReason);
       toast.success("Đã từ chối booking thành công");
+
+      // Close modal first
       setShowRejectModal(false);
       setRejectReason("");
       setSelectedBookingId(null);
-      fetchBookings();
-      fetchPendingBookings();
+
+      // Refresh both lists to ensure data is updated
+      await Promise.all([fetchBookings(), fetchPendingBookings()]);
     } catch (error) {
       console.error("Error rejecting booking:", error);
       toast.error("Không thể từ chối booking");
