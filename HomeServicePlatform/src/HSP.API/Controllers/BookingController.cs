@@ -1,7 +1,9 @@
 using HSP.Core.Dtos.BookingDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.DAL.UnitOfWorks;
 using HSP.Service.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -159,6 +161,30 @@ namespace HSP.API.Controllers
 					return Ok(new { message = "Booking status updated successfully" });
 
 				return BadRequest(new { message = "Unable to update booking status. Please check if the booking is assigned to you." });
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+		}
+
+		[HttpGet("accept")]
+		public async Task<IActionResult> AcceptBookingEmail(
+						[FromQuery] Guid customerId,
+						[FromQuery] Guid technicianId,
+						[FromQuery] string token,
+						[FromQuery] Guid serviceId,
+						[FromQuery] DateTime desiredDate)
+		{
+			try
+			{
+				Console.WriteLine("Received token: " + token);
+				var result = await _bookingService.AcceptBookingEmailAsync(customerId, technicianId, serviceId, token, desiredDate);
+
+				if (!result)
+					return BadRequest("Không thể chấp nhận booking.");
+
+				return Ok("Booking accepted successfully!");
 			}
 			catch (Exception ex)
 			{

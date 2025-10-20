@@ -16,7 +16,6 @@ namespace HSP.Core.Dtos.ServiceRequestDto
 	public class MatchedBookingResultDto
 	{
 		public bool IsMatched { get; set; }
-		public Guid? BookingId { get; set; }
 		public TechnicianResultDto TechnicianInfo { get; set; }
 		public string Message { get; set; }
 	}

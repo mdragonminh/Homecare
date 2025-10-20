@@ -35,10 +35,6 @@ namespace HSP.DAL.Extensions
 			{
 				opt.TokenLifespan = TimeSpan.FromMinutes(10);
 			});
-			services.Configure<BookingTokenProviderOptions>(opt =>
-			{
-				opt.TokenLifespan = TimeSpan.FromSeconds(10);
-			});
 
 			services.AddScoped<IUserRepository, UserRepository>();
 			services.AddScoped<IRepository<TechnicianProfile, Guid>, Repository<TechnicianProfile, Guid>>();

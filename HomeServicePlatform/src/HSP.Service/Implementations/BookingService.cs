@@ -5,10 +5,11 @@ using HSP.Core.Entities;
 using HSP.Core.Enums;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
+using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using HSP.DAL.Extensions;
+using System.Net;
 
 namespace HSP.Service.Implementations
 {
@@ -253,7 +254,7 @@ namespace HSP.Service.Implementations
 			return true;
 		}
 
-		public async Task<bool> AcceptBookingAsync(Guid customerId, Guid technicianId, Guid serviceId, string token, DateTime desiredDate)
+		public async Task<bool> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, Guid serviceId, string token, DateTime desiredDate)
 		{
 			var technician = await _technicianRepository.GetAll()
 				.Include(t => t.User)
@@ -261,7 +262,6 @@ namespace HSP.Service.Implementations
 
 			if (technician?.User == null)
 				throw new Exception("Technician not found or invalid.");
-
 			var isValid = await _userRepository.VerifyUserTokenAsync(technician.User,
 				IdentityTokenPurposes.Booking,
 				IdentityTokenPurposes.AcceptBooking,

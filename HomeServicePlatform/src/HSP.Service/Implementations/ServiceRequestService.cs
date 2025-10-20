@@ -15,7 +15,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Globalization;
+using System.Net;
 
 namespace HSP.Service.Implementations
 {
@@ -24,7 +24,6 @@ namespace HSP.Service.Implementations
 		private readonly IGeocodingService _geocodingService;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		private readonly IRepository<Booking, Guid> _bookingRepository;
-		//private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly IEmailService _emailService;
 		private readonly IEmailTemplateService _emailTemplateService;
 		private readonly IUserRepository _userRepository;
@@ -33,7 +32,6 @@ namespace HSP.Service.Implementations
 		public ServiceRequestService(IGeocodingService geocodingService,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			IRepository<Booking, Guid> bookingRepository,
-			//IRepository<CustomerProfile, Guid> customerProfileRepository,
 			IEmailService emailService,
 			IEmailTemplateService emailTemplateService,
 			IUserRepository userRepository,
@@ -43,7 +41,6 @@ namespace HSP.Service.Implementations
 			_geocodingService = geocodingService;
 			_technicianRepository = technicianRepository;
 			_bookingRepository = bookingRepository;
-			//_customerProfileRepository = customerProfileRepository;
 			_emailService = emailService;
 			_emailTemplateService = emailTemplateService;
 			_userRepository = userRepository;
@@ -73,9 +70,6 @@ namespace HSP.Service.Implementations
 					? await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
 							?? throw new Exception(_localizer["CannotFoundcoordinates."])
 					: throw new ArgumentException(_localizer["MustHaveAddress"]);
-			//var customer = await _customerProfileRepository.GetAll()
-			//	.Include(x => x.User)
-			//	.FirstOrDefaultAsync(x => x.UserId == Guid.Parse(input.CustomerId));
 			var customer = await _userRepository.FindByIdAsync(Guid.Parse(input.CustomerId));
 			if (customer == null)
 			{
@@ -115,12 +109,16 @@ namespace HSP.Service.Implementations
 			_acceptedRequests.Clear();
 			foreach (var tech in sorted)
 			{
+				//var token = Guid.NewGuid().ToString("N");
 				var token = await _userRepository.GenerateUserTokenAsync(tech.Technician.User, IdentityTokenPurposes.Booking, IdentityTokenPurposes.AcceptBooking);
+				Console.WriteLine("Raw token: " + token);
+				Console.WriteLine("Encoded token: " + WebUtility.UrlEncode(token));
+				string encodedToken = WebUtility.UrlEncode(token);
 				string baseUrl = _urlSettings.BaseUrl;
 				string acceptUrl = $"{baseUrl}/api/booking/accept" +
 									 $"?customerId={customer.Id}" +
 									 $"&technicianId={tech.Technician.Id}" +
-									 $"&token={token}" +
+									 $"&token={encodedToken}" +
 									 $"&serviceId={input.ServiceIds.First()}" +
 									 $"&desiredDate={input.DesireDateTime:o}";
 
@@ -153,22 +151,9 @@ namespace HSP.Service.Implementations
 					var acceptedTechId = GetAcceptedTechnician(token);
 					if (acceptedTechId.HasValue)
 					{
-						var newBooking = new Booking
-						{
-							CustomerId = customer.Id,
-							TechnicianId = acceptedTechId.Value,
-							Status = BookingStatus.Confirmed,
-							ServiceId = input.ServiceIds.First(),
-							DateCreated = DateTime.UtcNow,
-							DesiredDate = input.DesireDateTime
-						};
-						await _bookingRepository.AddAsync(newBooking);
-						await _unitOfWork.SaveChangesAsync();
-
 						return new MatchedBookingResultDto
 						{
 							IsMatched = true,
-							BookingId = newBooking.Id,
 							Message = _localizer["SuccessfullyMatchedTechnician"],
 							TechnicianInfo = new TechnicianResultDto
 							{
