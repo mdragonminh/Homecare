@@ -191,7 +191,7 @@
   </data>
   <data name="EmailAlreadyExists" xml:space="preserve">
     <value>Email đã tồn tại</value>
-	</data>
+  </data>
   <data name="EmailNotConfirmed" xml:space="preserve">
     <value>Email chưa được xác thực</value>
   </data>
@@ -209,5 +209,8 @@
   </data>
   <data name="EmailOrPhoneIsRequired" xml:space="preserve">
     <value>Trường Email hoặc Số điện thoại là bắt buộc</value>
+  </data>
+  <data name="NoAvailableTechniciansFound" xml:space="preserve">
+    <value>Không tìm thấy kỹ thuật viên phù hợp</value>
   </data>
 </root>
