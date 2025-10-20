@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Dtos.MapDto;
 using HSP.Core.Dtos.ServiceRequestDto;
 using HSP.Core.Entities;
@@ -11,6 +12,7 @@ using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
@@ -22,24 +24,30 @@ namespace HSP.Service.Implementations
 		private readonly IGeocodingService _geocodingService;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		private readonly IRepository<Booking, Guid> _bookingRepository;
-		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
+		//private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly IEmailService _emailService;
 		private readonly IEmailTemplateService _emailTemplateService;
+		private readonly IUserRepository _userRepository;
+		private readonly UrlSettingsDto _urlSettings;
 		private static readonly ConcurrentDictionary<string, Guid> _acceptedRequests = new();
 		public ServiceRequestService(IGeocodingService geocodingService,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			IRepository<Booking, Guid> bookingRepository,
-			IRepository<CustomerProfile, Guid> customerProfileRepository,
+			//IRepository<CustomerProfile, Guid> customerProfileRepository,
 			IEmailService emailService,
 			IEmailTemplateService emailTemplateService,
+			IUserRepository userRepository,
+			IOptions<UrlSettingsDto> options,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_geocodingService = geocodingService;
 			_technicianRepository = technicianRepository;
 			_bookingRepository = bookingRepository;
-			_customerProfileRepository = customerProfileRepository;
+			//_customerProfileRepository = customerProfileRepository;
 			_emailService = emailService;
 			_emailTemplateService = emailTemplateService;
+			_userRepository = userRepository;
+			_urlSettings = options.Value;
 		}
 		public static void AcceptBookingResponse(string token, Guid technicianId)
 		{
@@ -65,9 +73,10 @@ namespace HSP.Service.Implementations
 					? await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
 							?? throw new Exception(_localizer["CannotFoundcoordinates."])
 					: throw new ArgumentException(_localizer["MustHaveAddress"]);
-			var customer = await _customerProfileRepository.GetAll()
-				.Include(x => x.User)
-				.FirstOrDefaultAsync(x => x.UserId == Guid.Parse(input.CustomerId));
+			//var customer = await _customerProfileRepository.GetAll()
+			//	.Include(x => x.User)
+			//	.FirstOrDefaultAsync(x => x.UserId == Guid.Parse(input.CustomerId));
+			var customer = await _userRepository.FindByIdAsync(Guid.Parse(input.CustomerId));
 			if (customer == null)
 			{
 				throw new Exception("customer is null");
@@ -81,7 +90,7 @@ namespace HSP.Service.Implementations
 						.ThenInclude(s => s.Bookings)
 					.Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
 					.Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
-					.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
+					//.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
 					.Where(t => !t.Bookings.Any(b =>
 					b.Status == BookingStatus.InProgress
 					|| b.Status == BookingStatus.Pending
@@ -106,14 +115,22 @@ namespace HSP.Service.Implementations
 			_acceptedRequests.Clear();
 			foreach (var tech in sorted)
 			{
-				string token = Guid.NewGuid().ToString("N");
-				string acceptUrl = $"https://localhost:7190/api/booking/accept?customerId={customer.Id}&technicianId={tech.Technician.Id}&token={token}&serviceId={input.ServiceIds.First()}&desiredDate={input.DesireDateTime:o}";
-				string declineUrl = $"https://localhost:7190/api/booking/cancel?technicianId={tech.Technician.Id}&token={token}";
+				var token = await _userRepository.GenerateUserTokenAsync(tech.Technician.User, IdentityTokenPurposes.Booking, IdentityTokenPurposes.AcceptBooking);
+				string baseUrl = _urlSettings.BaseUrl;
+				string acceptUrl = $"{baseUrl}/api/booking/accept" +
+									 $"?customerId={customer.Id}" +
+									 $"&technicianId={tech.Technician.Id}" +
+									 $"&token={token}" +
+									 $"&serviceId={input.ServiceIds.First()}" +
+									 $"&desiredDate={input.DesireDateTime:o}";
+
+				string declineUrl = $"{baseUrl}/api/booking/cancel" +
+														$"?technicianId={tech.Technician.Id}&token={token}";
 
 				var emailModel = new TechnicianInvitationDto
 				{
 					TechnicianName = tech.Technician.User.FullName,
-					CustomerName = customer.User.FullName,
+					CustomerName = customer.FullName,
 					ServiceName = "Dịch vụ yêu cầu",
 					DistanceKm = Math.Round(tech.Distance, 2),
 					AcceptUrl = acceptUrl,
@@ -138,7 +155,7 @@ namespace HSP.Service.Implementations
 					{
 						var newBooking = new Booking
 						{
-							CustomerProfileId = customer.Id,
+							CustomerId = customer.Id,
 							TechnicianId = acceptedTechId.Value,
 							Status = BookingStatus.Confirmed,
 							ServiceId = input.ServiceIds.First(),

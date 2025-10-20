@@ -27,8 +27,8 @@ namespace HSP.Core.Entities
 		public string? Address { get; set; }
 
 		// JSON string chứa danh sách đường dẫn certificates
-		[MaxLength(2000)]
-		public string? CertificatePaths { get; set; }
+		//[MaxLength(2000)]
+		//public string? CertificatePaths { get; set; }
 
 		public DateTime? ApprovedAt { get; set; }
 		public string? ApprovedBy { get; set; }
@@ -40,6 +40,6 @@ namespace HSP.Core.Entities
 		public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
 		// Navigation property để tham chiếu đến các files liên quan
-		public ICollection<FileRelation> CertificateFiles { get; set; } = new List<FileRelation>();
+		//public ICollection<FileRelation> CertificateFiles { get; set; } = new List<FileRelation>();
 	}
 }

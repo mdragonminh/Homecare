@@ -1,10 +1,12 @@
 ﻿using HSP.API.Extensions;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Entities;
 using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.DAL.Interfaces;
 using HSP.Service.Extensions;
+using Microsoft.Extensions.Configuration;
 
 namespace HSP.API
 {
@@ -57,7 +59,7 @@ namespace HSP.API
 			builder.Services.Configure<GoogleMapConfigurationDto>(builder.Configuration.GetSection("GoogleMaps"));
 			builder.Services.Configure<LocalizationSettingsDto>(builder.Configuration.GetSection("LocalizationSettings"));
 			builder.Services.Configure<UrlSettingsDto>(builder.Configuration.GetSection("UrlSettings"));
-
+			builder.Services.Configure<IdentityTokenSettings>(builder.Configuration.GetSection("IdentityTokens"));
 			builder.Services.AddRazorTemplating();
 
 			builder.Services.AddDALServices(builder.Configuration);

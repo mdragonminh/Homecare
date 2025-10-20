@@ -21,9 +21,9 @@ namespace HSP.Core.Entities
 		[Range(-180, 180)]
 		public double Longitude { get; set; }
 
-		public Guid CustomerProfileId { get; set; }
-		[ForeignKey("CustomerProfileId")]
-		public CustomerProfile CustomerProfile { get; set; } = null!;
+		public Guid CustomerId { get; set; }
+		[ForeignKey("CustomerId")]
+		public AppUser CustomerProfile { get; set; } = null!;
 		public ICollection<HomeItem> HomeItems { get; set; } = new List<HomeItem>();
 		public bool IsDeleted { get ; set; }
 		public DateTime DateCreated { get; set; }

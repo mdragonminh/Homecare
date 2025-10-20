@@ -16,7 +16,7 @@ namespace HSP.DAL.Data
 		{
 		}
 
-		public DbSet<CustomerProfile> CustomerProfiles { get; set; }
+		//public DbSet<CustomerProfile> CustomerProfiles { get; set; }
 		public DbSet<TechnicianProfile> TechnicianProfiles { get; set; }
 		public DbSet<Home> Homes { get; set; }
 		public DbSet<HomeItem> HomeItems { get; set; }
@@ -50,11 +50,11 @@ namespace HSP.DAL.Data
 			builder.Entity<AppUser>()
 					.HasIndex(u => u.NormalizedEmail);
 
-			builder.Entity<CustomerProfile>()
-			.HasOne(p => p.User)
-			.WithOne(u => u.CustomerProfile)
-			.HasForeignKey<CustomerProfile>(p => p.UserId)
-			.OnDelete(DeleteBehavior.Cascade);
+			//builder.Entity<CustomerProfile>()
+			//.HasOne(p => p.User)
+			//.WithOne(u => u.CustomerProfile)
+			//.HasForeignKey<CustomerProfile>(p => p.UserId)
+			//.OnDelete(DeleteBehavior.Cascade);
 			builder.Entity<TechnicianProfile>()
 			.HasOne(p => p.User)
 			.WithOne(u => u.TechnicianProfile)
@@ -63,7 +63,7 @@ namespace HSP.DAL.Data
 			builder.Entity<Home>()
 			.HasOne(h => h.CustomerProfile)
 			.WithMany(cp => cp.Homes)
-			.HasForeignKey(h => h.CustomerProfileId)
+			.HasForeignKey(h => h.CustomerId)
 			.OnDelete(DeleteBehavior.Cascade);
 			builder.Entity<Home>()
 				.HasMany(h => h.HomeItems)
@@ -90,7 +90,7 @@ namespace HSP.DAL.Data
 			{
 				entity.HasOne(b => b.Customer)
 							.WithMany()
-							.HasForeignKey(b => b.CustomerProfileId)
+							.HasForeignKey(b => b.CustomerId)
 							.OnDelete(DeleteBehavior.Restrict);
 
 				entity.HasOne(b => b.Technician)
@@ -166,7 +166,7 @@ namespace HSP.DAL.Data
 
 			builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
 			builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
-			builder.Entity<CustomerProfile>().HasQueryFilter(cp => !cp.IsDeleted);
+			//builder.Entity<CustomerProfile>().HasQueryFilter(cp => !cp.IsDeleted);
 			builder.Entity<TechnicianProfile>().HasQueryFilter(tp => !tp.IsDeleted);
 			builder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
 			builder.Entity<Core.Entities.Service>().HasQueryFilter(s => !s.IsDeleted);

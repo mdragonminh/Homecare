@@ -25,7 +25,7 @@ namespace HSP.Service.Implementations
 	{
 		private readonly IUserRepository _userRepository;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
-		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
+		//private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly SignInManager<AppUser> _signInManager;
 		private readonly JwtSettingsDto _jwtSettings;
 		private readonly UrlSettingsDto _urlSettings;
@@ -35,7 +35,7 @@ namespace HSP.Service.Implementations
 		public AuthenticationService(IUserRepository userRepository, IOptions<JwtSettingsDto> jwtOptions,
 			IOptions<UrlSettingsDto> urlOptions,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
-			IRepository<CustomerProfile, Guid> customerProfileRepository,
+			//IRepository<CustomerProfile, Guid> customerProfileRepository,
 			SignInManager<AppUser> signInManager,
 			IEmailService emailService,
 			IEmailTemplateService emailTemplateService,
@@ -46,7 +46,7 @@ namespace HSP.Service.Implementations
 			_urlSettings = urlOptions.Value;
 			_technicianRepository = technicianRepository;
 			_signInManager = signInManager;
-			_customerProfileRepository = customerProfileRepository;
+			//_customerProfileRepository = customerProfileRepository;
 			_emailService = emailService;
 			_emailTemplateService = emailTemplateService;
 		}
@@ -176,39 +176,20 @@ namespace HSP.Service.Implementations
 				EmailConfirmed = true
 			};
 
-			using (var transaction = await _unitOfWork.BeginTransactionAsync())
+
+			var createResult = await _userRepository.CreateAsync(user);
+			if (!createResult.Succeeded)
 			{
-				try
-				{
-					var createResult = await _userRepository.CreateAsync(user);
-					if (!createResult.Succeeded)
-					{
-						throw new Exception(_localizer["UserCreationFailed"]);
-					}
-
-					var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
-					if (!roleResult.Succeeded)
-					{
-						throw new Exception(_localizer["AddToRoleFailed"]);
-					}
-
-					var customerProfile = new CustomerProfile
-					{
-						UserId = user.Id,
-						DateCreated = DateTime.UtcNow
-					};
-					await _customerProfileRepository.AddAsync(customerProfile);
-					await _unitOfWork.SaveChangesAsync();
-
-					await transaction.CommitAsync();
-					return user;
-				}
-				catch (Exception)
-				{
-					await transaction.RollbackAsync();
-					throw;
-				}
+				throw new Exception(_localizer["UserCreationFailed"]);
 			}
+
+			var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
+			if (!roleResult.Succeeded)
+			{
+				throw new Exception(_localizer["AddToRoleFailed"]);
+			}
+
+			return user;
 		}
 
 		private static bool IsValidEmail(string input)
@@ -291,40 +272,20 @@ namespace HSP.Service.Implementations
 			{
 				return await HandleExistingUserAsync(userExisting);
 			}
+			var user = await CreateCustomerAsync(input);
+			await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
+			var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
+			await SendConfirmationEmailAsync(user, token);
 
-			using (var transaction = await _unitOfWork.BeginTransactionAsync())
+			return new RegisterResponseDto
 			{
-				try
-				{
-					var user = await CreateCustomerAsync(input);
-					await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
-					await _unitOfWork.SaveChangesAsync();
-					var customerProfile = new CustomerProfile
-					{
-						UserId = user.Id,
-						DateCreated = DateTime.UtcNow,
-					};
-					await _customerProfileRepository.AddAsync(customerProfile);
-					await _unitOfWork.SaveChangesAsync();
-					var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
-					await SendConfirmationEmailAsync(user, token);
-
-					await _unitOfWork.CommitTransactionAsync();
-
-					return new RegisterResponseDto
-					{
-						UserId = user.Id,
-						Email = user.Email,
-						EmailConfirmToken = token
-					};
-				}
-				catch
-				{
-					await transaction.RollbackAsync();
-					throw;
-				}
-			}
+				UserId = user.Id,
+				Email = user.Email,
+				EmailConfirmToken = token
+			};
 		}
+
+
 		private async Task<AppUser> CreateCustomerAsync(RegisterRequestDto input)
 		{
 			var user = new AppUser
@@ -408,9 +369,9 @@ namespace HSP.Service.Implementations
 					UserId = user.Id,
 					//SkillSet = input.SkillSet,
 					ExperienceYears = input.ExperienceYears,
-					CertificatePaths = input.CertificateFilePaths?.Any() == true
-						? System.Text.Json.JsonSerializer.Serialize(input.CertificateFilePaths)
-						: null,
+					//CertificatePaths = input.CertificateFilePaths?.Any() == true
+					//	? System.Text.Json.JsonSerializer.Serialize(input.CertificateFilePaths)
+					//	: null,
 					DateCreated = DateTime.UtcNow,
 					DateModified = DateTime.UtcNow,
 					IsDeleted = false

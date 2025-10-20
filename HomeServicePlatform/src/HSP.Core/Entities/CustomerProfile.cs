@@ -1,19 +1,19 @@
-﻿using HSP.Core.Interfaces.Entity;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿//using HSP.Core.Interfaces.Entity;
+//using System.ComponentModel.DataAnnotations.Schema;
 
-namespace HSP.Core.Entities
-{
-	public class CustomerProfile : BaseEntity<Guid>, IDateTracking, IHasSoftedDelete
-	{
-		public Guid UserId { get; set; }
-		[ForeignKey("UserId")]
-		public AppUser User { get; set; } = null!;
+//namespace HSP.Core.Entities
+//{
+//	public class CustomerProfile : BaseEntity<Guid>, IDateTracking, IHasSoftedDelete
+//	{
+//		public Guid UserId { get; set; }
+//		[ForeignKey("UserId")]
+//		public AppUser User { get; set; } = null!;
 
-		public DateTime DateCreated { get; set; }
-		public DateTime DateModified { get; set; }
-		public bool IsDeleted { get; set; }
+//		public DateTime DateCreated { get; set; }
+//		public DateTime DateModified { get; set; }
+//		public bool IsDeleted { get; set; }
 
-		public ICollection<Home> Homes { get; set; } = new List<Home>();
+//		public ICollection<Home> Homes { get; set; } = new List<Home>();
 
-	}
-}
+//	}
+//}
