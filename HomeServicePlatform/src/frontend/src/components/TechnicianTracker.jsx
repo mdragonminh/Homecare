@@ -25,26 +25,17 @@ export function TechnicianTracker({role}) {
     }
     const watchId = navigator.geolocation.watchPosition(
       async (pos) => {
-        const { latitude, longitude, accuracy } = pos.coords;
+        const { latitude, longitude } = pos.coords;
         const now = Date.now();
-        if (accuracy > 150) {
-          console.warn(
-            `Độ chính xác thấp (${accuracy.toFixed(0)} m) — bỏ qua update`
-          );
-          return;
-        }
+
         const dist = calcDistance(
           last.current.lat,
           last.current.lng,
           latitude,
           longitude
         );
-        const moved = dist > 0.1;
-        const timedOut = now - last.current.time > 60000; 
-        if (dist > 5) {
-          console.warn(`Sai lệch lớn (${dist.toFixed(2)} km) — bỏ qua`);
-          return;
-        }
+        const moved = dist > 0.05; 
+        const timedOut = now - last.current.time > 30000; 
         if (moved || timedOut) {
           try {
             await technicianApi.updateLocation(latitude, longitude);

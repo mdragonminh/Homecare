@@ -67,6 +67,11 @@
       background: #fafafa;
       border-top: 1px solid #eee;
     }
+
+    a {
+      color: #2563eb;
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
@@ -86,9 +91,7 @@
         </p>
 
         <p>
-          <a href="@Model.AcceptUrl" style="background-color:#28a745;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Chấp nhận</a>
-          &nbsp;&nbsp;
-          <a href="@Model.DeclineUrl" style="background-color:#dc3545;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Từ chối</a>
+          <a href="@Model.AcceptUrl" class="btn">Chấp nhận</a>
         </p>
 
         <p>Liên kết sẽ hết hạn sau 10 giây.</p>
