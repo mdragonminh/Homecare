@@ -338,7 +338,7 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
       </section>
 
       {/* Timeline */}
-      <section className="py-24 bg-white relative">
+      {/* <section className="py-24 bg-white relative">
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-100/20 rounded-full blur-3xl -z-10"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -382,10 +382,10 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Team */}
-      <section className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
+      {/* <section className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <h2 className="text-5xl font-bold text-gray-900 mb-6">
@@ -427,7 +427,7 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* CTA Section */}
       <section className="relative py-24 overflow-hidden">
