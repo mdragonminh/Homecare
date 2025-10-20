@@ -6,6 +6,8 @@ using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Razor.Templating.Core;
 using System.Security.Claims;
 
 namespace HSP.API.Controllers
@@ -183,8 +185,8 @@ namespace HSP.API.Controllers
 
 				if (!result)
 					return BadRequest("Không thể chấp nhận booking.");
-
-				return Ok("Booking accepted successfully!");
+				var html = await RazorTemplateEngine.RenderAsync("/Views/Bookings/BookingAccepted.cshtml");
+				return new ContentResult { Content = html, ContentType = "text/html" };
 			}
 			catch (Exception ex)
 			{

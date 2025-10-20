@@ -22,7 +22,7 @@ namespace HSP.DAL.Identity
 		public BookingTokenProviderOptions()
 		{
 			Name = IdentityTokenPurposes.Booking;
-			TokenLifespan = TimeSpan.FromSeconds(10);
+			TokenLifespan = TimeSpan.FromSeconds(15);
 		}
 	}
 }
