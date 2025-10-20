@@ -1,16 +1,15 @@
 ﻿using HSP.Core.Constans;
-using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.DAL.Data;
-using HSP.DAL.Identity;
 using HSP.DAL.Interfaces;
 using HSP.DAL.Repositories;
 using HSP.DAL.UnitOfWorks;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Identity;
+using HSP.DAL.Identity;
 
 namespace HSP.DAL.Extensions
 {
@@ -30,16 +29,16 @@ namespace HSP.DAL.Extensions
 				o.Password.RequireDigit = true;
 				o.SignIn.RequireConfirmedEmail = true;
 			}).AddEntityFrameworkStores<ApplicationDbContext>()
-				.AddDefaultTokenProviders();
-				//.AddTokenProvider<BookingTokenProvider<AppUser>>("BookingTokenProvider");
+				.AddDefaultTokenProviders()
+				.AddTokenProvider<BookingTokenProvider<AppUser>>(IdentityTokenPurposes.Booking);
 			services.Configure<DataProtectionTokenProviderOptions>(opt =>
 			{
 				opt.TokenLifespan = TimeSpan.FromMinutes(10);
 			});
-			//services.Configure<BookingTokenProviderOptions>(opt =>
-			//{
-			//	opt.TokenLifespan = TimeSpan.FromSeconds(10);
-			//});
+			services.Configure<BookingTokenProviderOptions>(opt =>
+			{
+				opt.TokenLifespan = TimeSpan.FromSeconds(10);
+			});
 
 			services.AddScoped<IUserRepository, UserRepository>();
 			services.AddScoped<IRepository<TechnicianProfile, Guid>, Repository<TechnicianProfile, Guid>>();

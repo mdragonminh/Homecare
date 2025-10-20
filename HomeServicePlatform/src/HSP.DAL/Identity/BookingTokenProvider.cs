@@ -1,17 +1,18 @@
 ﻿using HSP.Core.Constans;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.DataProtection;
 namespace HSP.DAL.Identity
 {
 	public class BookingTokenProvider<TUser> : DataProtectorTokenProvider<TUser>
-				where TUser : class
+			where TUser : class
 	{
 		public BookingTokenProvider(
 				IDataProtectionProvider dataProtectionProvider,
-				IOptions<BookingTokenProviderOptions> options)
-				: base(dataProtectionProvider, options)
+				IOptions<BookingTokenProviderOptions> options,
+				ILogger<DataProtectorTokenProvider<TUser>> logger)
+				: base(dataProtectionProvider, options, logger)
 		{
 		}
 	}
