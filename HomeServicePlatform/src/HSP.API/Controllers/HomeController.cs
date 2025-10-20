@@ -15,11 +15,11 @@ namespace HSP.API.Controllers
 	public class HomeController : ControllerBase
 	{
 		private readonly IHomeService _homeService;
-		private readonly ICustomerProfileService _customerProfileService;
-		public HomeController(IHomeService homeService, ICustomerProfileService customerProfileService)
+		//private readonly ICustomerProfileService _customerProfileService;
+		public HomeController(IHomeService homeService/*, ICustomerProfileService customerProfileService*/)
 		{
 			_homeService = homeService;
-			_customerProfileService = customerProfileService;
+			//_customerProfileService = customerProfileService;
 		}
 		[HttpPost("create-home")]
 		public async Task<IActionResult> CreateHome([FromBody] CreateHomeDto input)
@@ -31,8 +31,8 @@ namespace HSP.API.Controllers
 					return BadRequest(ModelState);
 				}
 				var userIdString = GetUserId();
-				var customerProfile = await _customerProfileService.GetCustomerProfileByUserIdAsync(userIdString);
-				var homeId = await _homeService.CreateHomeAsync(input, customerProfile.Id);
+				//var customerProfile = await _customerProfileService.GetCustomerProfileByUserIdAsync(userIdString);
+				var homeId = await _homeService.CreateHomeAsync(input, Guid.Parse(userIdString));
 				return Ok(new { HomeId = homeId });
 			}
 			catch (ArgumentException ex)

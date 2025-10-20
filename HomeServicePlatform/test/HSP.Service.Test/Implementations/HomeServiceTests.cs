@@ -96,7 +96,7 @@ namespace HSP.Service.Test.Implementations
 					new Home
 					{
 							Id = homeId,
-							CustomerProfile = new CustomerProfile { UserId = userId }
+							CustomerProfile = new AppUser { Id = userId }
 					}
 			};
 			var mockQueryable = homes.BuildMock();
@@ -136,7 +136,7 @@ namespace HSP.Service.Test.Implementations
 					new Home
 					{
 							Id = homeId,
-							CustomerProfile = new CustomerProfile { UserId = userId }
+							CustomerProfile = new AppUser { Id = userId }
 					}
 			};
 			var mockQueryable = homes.BuildMock();
@@ -161,7 +161,7 @@ namespace HSP.Service.Test.Implementations
 				Id = homeId,
 				Name = "Old Home",
 				Address = "123 old street",
-				CustomerProfile = new CustomerProfile { UserId = userId }
+				CustomerProfile = new AppUser { Id = userId }
 			};
 			var homes = new List<Home>{ homeToUpdate };
 			var mockQueryable = homes.BuildMock();
@@ -212,7 +212,7 @@ namespace HSP.Service.Test.Implementations
 							Address = "123 old street",
 							Latitude = 10.0,
 							Longitude = 20.0,
-							CustomerProfile = new CustomerProfile { UserId = userId }
+							CustomerProfile = new AppUser { Id = userId }
 					}
 			};
 			var mockQueryable = homes.BuildMock();
@@ -242,7 +242,7 @@ namespace HSP.Service.Test.Implementations
 							Address = "123 old street",
 							Latitude = 10.0,
 							Longitude = 20.0,
-							CustomerProfile = new CustomerProfile { UserId = userId }
+							CustomerProfile = new AppUser { Id = userId }
 					}
 			};
 			var mockQueryable = homes.BuildMock();
@@ -271,8 +271,8 @@ namespace HSP.Service.Test.Implementations
 							Address = "123 street",
 							Latitude = 10.0,
 							Longitude = 20.0,
-							CustomerProfileId = Guid.NewGuid(),
-							CustomerProfile = new CustomerProfile { UserId = userId }
+							CustomerId = Guid.NewGuid(),
+							CustomerProfile = new AppUser { Id = userId }
 					}
 			};
 			var mockQueryable = homes.BuildMock();
@@ -308,8 +308,8 @@ namespace HSP.Service.Test.Implementations
 			var input = new HomeInput { Search = "home" };
 			var homes = new List<Home>
 			{
-					new Home { Name = "home sweet", CustomerProfile = new CustomerProfile { UserId = userId } },
-					new Home { Name = "villa", CustomerProfile = new CustomerProfile { UserId = userId } }
+					new Home { Name = "home sweet", CustomerProfile = new AppUser { Id = userId } },
+					new Home { Name = "villa", CustomerProfile = new AppUser { Id = userId } }
 			};
 			var mockQueryable = homes.BuildMock();
 

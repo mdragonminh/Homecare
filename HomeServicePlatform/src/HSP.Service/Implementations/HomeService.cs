@@ -42,7 +42,7 @@ namespace HSP.Service.Implementations
 				Name = input.Name,
 				Latitude = coordinates.Latitude,
 				Longitude = coordinates.Longitude,
-				CustomerProfileId = customerProfileId,
+				CustomerId = customerProfileId,
 				DateCreated = DateTime.UtcNow
 			};
 			await _homeRepository.AddAsync(newHome);
@@ -54,7 +54,7 @@ namespace HSP.Service.Implementations
 		{
 			var home = await _homeRepository.GetAll()
 				.Include(x => x.CustomerProfile)
-				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.UserId.ToString().Equals(userId));
+				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.Id.ToString().Equals(userId));
 			if (home == null)
 			{
 				throw new ValidationException("Home not found or you do not have permission to delete this home.");
@@ -69,7 +69,7 @@ namespace HSP.Service.Implementations
 			var query = _homeRepository.GetAll()
 				.Include(x => x.CustomerProfile)
 			.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
-			.Where(x=>x.CustomerProfile.UserId.ToString().Equals(userId));
+			.Where(x=>x.CustomerProfile.Id.ToString().Equals(userId));
 			var homeDtos = query.Select(x => new HomeDto
 			{
 				Id = x.Id,
@@ -77,7 +77,7 @@ namespace HSP.Service.Implementations
 				Address = x.Address,
 				Latitude = x.Latitude,
 				Longitude = x.Longitude,
-				CustomerProfileId = x.CustomerProfileId,
+				CustomerProfileId = x.CustomerId,
 			});
 			var pagedHomes = await homeDtos.ToPagedListAsync(input);
 			return pagedHomes;
@@ -87,7 +87,7 @@ namespace HSP.Service.Implementations
 		{
 			var query = await _homeRepository.GetAll()
 				.Include(x => x.CustomerProfile)
-				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.UserId.ToString().Equals(userId));
+				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.Id.ToString().Equals(userId));
 			if (query == null)
 			{
 				throw new ValidationException("Home not found or you do not have permission to view this home.");
@@ -99,7 +99,7 @@ namespace HSP.Service.Implementations
 				Address = query.Address,
 				Latitude = query.Latitude,
 				Longitude = query.Longitude,
-				CustomerProfileId = query.CustomerProfileId,
+				CustomerProfileId = query.CustomerId,
 			};
 			return homeDto;
 		}
@@ -112,7 +112,7 @@ namespace HSP.Service.Implementations
 			}
 			var homeToUpdate = await _homeRepository.GetAll()
 				.Include(x=>x.CustomerProfile)
-				.FirstOrDefaultAsync(x=> x.Id.Equals(homeId) && x.CustomerProfile.UserId.ToString().Equals(userId));
+				.FirstOrDefaultAsync(x=> x.Id.Equals(homeId) && x.CustomerProfile.Id.ToString().Equals(userId));
 			if (homeToUpdate == null)
 			{
 				throw new ValidationException("Home not found or you do not have permission to delete this home.");
