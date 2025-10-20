@@ -1,7 +1,6 @@
 ﻿using HSP.Core.Dtos.HomeDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
-using HSP.Core.Interfaces;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
@@ -69,7 +68,7 @@ namespace HSP.Service.Implementations
 			var query = _homeRepository.GetAll()
 				.Include(x => x.CustomerProfile)
 			.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
-			.Where(x=>x.CustomerProfile.Id.ToString().Equals(userId));
+			.Where(x => x.CustomerProfile.Id.ToString().Equals(userId));
 			var homeDtos = query.Select(x => new HomeDto
 			{
 				Id = x.Id,
@@ -111,14 +110,14 @@ namespace HSP.Service.Implementations
 				throw new ArgumentException("input parameter can not be null");
 			}
 			var homeToUpdate = await _homeRepository.GetAll()
-				.Include(x=>x.CustomerProfile)
-				.FirstOrDefaultAsync(x=> x.Id.Equals(homeId) && x.CustomerProfile.Id.ToString().Equals(userId));
+				.Include(x => x.CustomerProfile)
+				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.Id.ToString().Equals(userId));
 			if (homeToUpdate == null)
 			{
 				throw new ValidationException("Home not found or you do not have permission to delete this home.");
 			}
 			homeToUpdate.Name = input.Name;
-			if(homeToUpdate.Address != input.Address)
+			if (homeToUpdate.Address != input.Address)
 			{
 				var coordinates = await _geocodingService.GetCoordinatesForAddressAsync(input.Address);
 				if (coordinates == null)

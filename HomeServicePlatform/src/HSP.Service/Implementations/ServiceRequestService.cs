@@ -100,6 +100,7 @@ namespace HSP.Service.Implementations
 				throw new Exception(_localizer["NoAvailableTechniciansFound"]);
 			}
 			_acceptedRequests.Clear();
+
 			var matchResult = await NotifyTechniciansAndAwaitResponseAsync(sorted, customer, input);
 			return matchResult;
 		}
