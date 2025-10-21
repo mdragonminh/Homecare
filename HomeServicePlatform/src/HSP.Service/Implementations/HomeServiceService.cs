@@ -1,8 +1,6 @@
 ﻿using HSP.Core.Dtos.ServiceDto;
-using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
-using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;

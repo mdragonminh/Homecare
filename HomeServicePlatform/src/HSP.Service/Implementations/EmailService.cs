@@ -1,7 +1,6 @@
 ﻿using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Interfaces.External;
 using HSP.Service.Dtos.EmailDto;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using System.Net.Mail;
 
@@ -10,17 +9,9 @@ namespace HSP.Service.Implementations
 	public class EmailService : IEmailService
 	{
 		private readonly SmtpConfigurationDto _smtpConfig;
-		//private readonly SmtpClient _smtpClient;
 		public EmailService(IOptions<SmtpConfigurationDto> smtpOptions)
 		{
 			_smtpConfig = smtpOptions.Value;
-
-			//_smtpClient = new SmtpClient(_smtpConfig.Host)
-			//{
-			//	Port = _smtpConfig.Port,
-			//	Credentials = new System.Net.NetworkCredential(_smtpConfig.UserName, _smtpConfig.Password),
-			//	EnableSsl = _smtpConfig.UseSsl,
-			//};
 		}
 
 		public async Task SendEmailAsync(EmailDto input)

@@ -57,11 +57,11 @@ namespace HSP.Service.Implementations
 			}
 			return null;
 		}
+
 		public async Task<MatchedBookingResultDto> CreateAndMatchBookingAsync(CustomerCreateBookingDto input)
 		{
 			if (input == null)
 				throw new ArgumentNullException(nameof(input));
-
 			var coordinates = !string.IsNullOrEmpty(input.Address)
 					? await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
 							?? throw new Exception(_localizer["CannotFoundcoordinates."])
@@ -71,13 +71,11 @@ namespace HSP.Service.Implementations
 			{
 				throw new Exception("customer is null");
 			}
-
 			var (minLat, maxLat, minLon, maxLon) = GetBoundingBox(coordinates.Latitude, coordinates.Longitude, input.DistanceKm);
-
 			var potentialTechnicians = await _technicianRepository.GetAll()
 					.Include(t => t.User)
 					.Include(t => t.Services)
-						.ThenInclude(s => s.Bookings)
+					.Include(t => t.Bookings)
 					.Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
 					.Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
 					//.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
@@ -89,58 +87,32 @@ namespace HSP.Service.Implementations
 					.ToListAsync();
 
 			var sorted = potentialTechnicians
-				.Select(t => new
-				{
-					Technician = t,
-					Distance = CalculateDistance(coordinates.Latitude, coordinates.Longitude, t.Latitude, t.Longitude)
-				})
+				.Select(t => (
+
+					Technician: t,
+					Distance: CalculateDistance(coordinates.Latitude, coordinates.Longitude, t.Latitude, t.Longitude)
+				))
 				.Where(t => t.Distance <= input.DistanceKm)
 				.OrderBy(t => t.Distance)
 				.ToList();
-
 			if (!sorted.Any())
 			{
 				throw new Exception(_localizer["NoAvailableTechniciansFound"]);
 			}
 			_acceptedRequests.Clear();
-			foreach (var tech in sorted)
+
+			var matchResult = await NotifyTechniciansAndAwaitResponseAsync(sorted, customer, input);
+			return matchResult;
+		}
+
+		private async Task<MatchedBookingResultDto> NotifyTechniciansAndAwaitResponseAsync(
+			List<(TechnicianProfile Technician, double Distance)> sortedTechnicians,
+			AppUser customer,
+			CustomerCreateBookingDto input)
+		{
+			foreach (var tech in sortedTechnicians)
 			{
-				//var token = Guid.NewGuid().ToString("N");
-				var token = await _userRepository.GenerateUserTokenAsync(tech.Technician.User, IdentityTokenPurposes.Booking, IdentityTokenPurposes.AcceptBooking);
-				string encodedToken = WebUtility.UrlEncode(token);
-				string baseUrl = _urlSettings.BaseUrl;
-				string acceptUrl = $"{baseUrl}/api/booking/accept" +
-									 $"?customerId={customer.Id}" +
-									 $"&technicianId={tech.Technician.Id}" +
-									 $"&token={encodedToken}" +
-									 $"&serviceId={input.ServiceIds.First()}" +
-									 $"&desiredDate={input.DesireDateTime:o}";
-
-				string declineUrl = $"{baseUrl}/api/booking/cancel" +
-														$"?technicianId={tech.Technician.Id}&token={token}";
-
-				var emailModel = new TechnicianInvitationDto
-				{
-					TechnicianName = tech.Technician.User.FullName,
-					CustomerName = customer.FullName,
-					ServiceName = "Dịch vụ yêu cầu",
-					DistanceKm = Math.Round(tech.Distance, 2),
-					AcceptUrl = acceptUrl,
-					DeclineUrl = declineUrl,
-					DesiredDate = input.DesireDateTime
-				};
-
-				string htmlBody = await _emailTemplateService.RenderAsync("/Views/Emails/TechnicianInvitation.cshtml", emailModel);
-
-				var email = new EmailDto
-				{
-					ToEmail = tech.Technician.User.Email,
-					Subject = $"Yêu cầu dịch vụ mới gần bạn {DateTime.Now:HH:mm:ss}",
-					HtmlBody = htmlBody
-				};
-				Console.WriteLine("Send: "+ email.ToEmail);
-				await _emailService.SendEmailAsync(email);
-				Console.WriteLine("Sended: ");
+				var token = await SendInvitationEmailAsync(tech, customer, input);
 				var stopwatch = Stopwatch.StartNew();
 				while (stopwatch.Elapsed < TimeSpan.FromSeconds(10))
 				{
@@ -170,127 +142,43 @@ namespace HSP.Service.Implementations
 				Message = _localizer["NoTechnicianAcceptedRequest"]
 			};
 		}
-		//public async Task<MatchedBookingResultDto> CreateAndMatchBookingAsync(CustomerCreateBookingDto input)
-		//{
-		//	if (input == null)
-		//		throw new ArgumentNullException(nameof(input));
-		//	var coordinates = !string.IsNullOrEmpty(input.Address)
-		//			? await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
-		//					?? throw new Exception(_localizer["CannotFoundcoordinates."])
-		//			: throw new ArgumentException(_localizer["MustHaveAddress"]);
-		//	var customer = await _userRepository.FindByIdAsync(Guid.Parse(input.CustomerId));
-		//	if (customer == null)
-		//	{
-		//		throw new Exception("customer is null");
-		//	}
-		//	var (minLat, maxLat, minLon, maxLon) = GetBoundingBox(coordinates.Latitude, coordinates.Longitude, input.DistanceKm);
-		//	var potentialTechnicians = await _technicianRepository.GetAll()
-		//			.Include(t => t.User)
-		//			.Include(t => t.Services)
-		//				.ThenInclude(s => s.Bookings)
-		//			.Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
-		//			.Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
-		//			//.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
-		//			.Where(t => !t.Bookings.Any(b =>
-		//			b.Status == BookingStatus.InProgress
-		//			|| b.Status == BookingStatus.Pending
-		//			|| b.Status == BookingStatus.TechnicianOnTheWay
-		//			|| b.Status == BookingStatus.Confirmed))
-		//			.ToListAsync();
 
-		//	var sorted = potentialTechnicians
-		//		.Select(t => (
-
-		//			Technician: t,
-		//			Distance: CalculateDistance(coordinates.Latitude, coordinates.Longitude, t.Latitude, t.Longitude)
-		//		))
-		//		.Where(t => t.Distance <= input.DistanceKm)
-		//		.OrderBy(t => t.Distance)
-		//		.ToList();
-		//	if (!sorted.Any())
-		//	{
-		//		throw new Exception(_localizer["NoAvailableTechniciansFound"]);
-		//	}
-		//	_acceptedRequests.Clear();
-
-		//	var matchResult = await NotifyTechniciansAndAwaitResponseAsync(sorted, customer, input);
-		//	return matchResult;
-		//}
-
-		//private async Task<MatchedBookingResultDto> NotifyTechniciansAndAwaitResponseAsync(
-		//	List<(TechnicianProfile Technician, double Distance)> sortedTechnicians,
-		//	AppUser customer,
-		//	CustomerCreateBookingDto input)
-		//{
-		//	foreach (var tech in sortedTechnicians)
-		//	{
-		//		var token = await SendInvitationEmailAsync(tech, customer, input);
-		//		var stopwatch = Stopwatch.StartNew();
-		//		while (stopwatch.Elapsed < TimeSpan.FromSeconds(10))
-		//		{
-		//			var acceptedTechId = GetAcceptedTechnician(token);
-		//			if (acceptedTechId.HasValue)
-		//			{
-		//				return new MatchedBookingResultDto
-		//				{
-		//					IsMatched = true,
-		//					Message = _localizer["SuccessfullyMatchedTechnician"],
-		//					TechnicianInfo = new TechnicianResultDto
-		//					{
-		//						Id = tech.Technician.Id,
-		//						Name = tech.Technician.User.FullName,
-		//						DistanceKm = Math.Round(tech.Distance, 2),
-		//						Latitude = tech.Technician.Latitude,
-		//						Longitude = tech.Technician.Longitude
-		//					}
-		//				};
-		//			}
-		//			await Task.Delay(1000);
-		//		}
-		//	}
-		//	return new MatchedBookingResultDto
-		//	{
-		//		IsMatched = false,
-		//		Message = _localizer["NoTechnicianAcceptedRequest"]
-		//	};
-		//}
-
-		//private async Task<string> SendInvitationEmailAsync(
-		//	(TechnicianProfile Technician, double Distance) tech,
-		//	AppUser customer,
-		//	CustomerCreateBookingDto input)
-		//{
-		//	var token = await _userRepository.GenerateUserTokenAsync(tech.Technician.User, IdentityTokenPurposes.Booking, IdentityTokenPurposes.AcceptBooking);
-		//	string encodedToken = WebUtility.UrlEncode(token);
-		//	string baseUrl = _urlSettings.BaseUrl;
-		//	string acceptUrl = $"{baseUrl}/api/booking/accept" +
-		//											 $"?customerId={customer.Id}" +
-		//											 $"&technicianId={tech.Technician.Id}" +
-		//											 $"&token={encodedToken}" +
-		//											 $"&serviceId={input.ServiceIds.First()}" +
-		//											 $"&desiredDate={input.DesireDateTime:o}";
-		//	string declineUrl = $"{baseUrl}/api/booking/cancel" +
-		//													$"?technicianId={tech.Technician.Id}&token={token}";
-		//	var emailModel = new TechnicianInvitationDto
-		//	{
-		//		TechnicianName = tech.Technician.User.FullName,
-		//		CustomerName = customer.FullName,
-		//		ServiceName = "Dịch vụ yêu cầu",
-		//		DistanceKm = Math.Round(tech.Distance, 2),
-		//		AcceptUrl = acceptUrl,
-		//		DeclineUrl = declineUrl,
-		//		DesiredDate = input.DesireDateTime
-		//	};
-		//	string htmlBody = await _emailTemplateService.RenderAsync("/Views/Emails/TechnicianInvitation.cshtml", emailModel);
-		//	var email = new EmailDto
-		//	{
-		//		ToEmail = tech.Technician.User.Email,
-		//		Subject = "Yêu cầu dịch vụ mới gần bạn",
-		//		HtmlBody = htmlBody
-		//	};
-		//	await _emailService.SendEmailAsync(email);
-		//	return token;
-		//}
+		private async Task<string> SendInvitationEmailAsync(
+			(TechnicianProfile Technician, double Distance) tech,
+			AppUser customer,
+			CustomerCreateBookingDto input)
+		{
+			var token = await _userRepository.GenerateUserTokenAsync(tech.Technician.User, IdentityTokenPurposes.Booking, IdentityTokenPurposes.AcceptBooking);
+			string encodedToken = WebUtility.UrlEncode(token);
+			string baseUrl = _urlSettings.BaseUrl;
+			string acceptUrl = $"{baseUrl}/api/booking/accept" +
+													 $"?customerId={customer.Id}" +
+													 $"&technicianId={tech.Technician.Id}" +
+													 $"&token={encodedToken}" +
+													 $"&serviceId={input.ServiceIds.First()}" +
+													 $"&desiredDate={input.DesireDateTime:o}";
+			string declineUrl = $"{baseUrl}/api/booking/cancel" +
+															$"?technicianId={tech.Technician.Id}&token={token}";
+			var emailModel = new TechnicianInvitationDto
+			{
+				TechnicianName = tech.Technician.User.FullName,
+				CustomerName = customer.FullName,
+				ServiceName = "Dịch vụ yêu cầu",
+				DistanceKm = Math.Round(tech.Distance, 2),
+				AcceptUrl = acceptUrl,
+				DeclineUrl = declineUrl,
+				DesiredDate = input.DesireDateTime
+			};
+			string htmlBody = await _emailTemplateService.RenderAsync("/Views/Emails/TechnicianInvitation.cshtml", emailModel);
+			var email = new EmailDto
+			{
+				ToEmail = tech.Technician.User.Email,
+				Subject = $"Yêu cầu dịch vụ mới gần bạn {DateTime.Now:HH:mm:ss}",
+				HtmlBody = htmlBody
+			};
+			await _emailService.SendEmailAsync(email);
+			return token;
+		}
 
 		private (double minLat, double maxLat, double minLon, double maxLon) GetBoundingBox(double lat, double lon, double distanceKm)
 		{
@@ -312,8 +200,14 @@ namespace HSP.Service.Implementations
 
 			var allTechnicians = await _technicianRepository.GetAll()
 				.Include(x => x.User)
+				.Include(x=>x.Bookings)
 				.Where(x => x.ApprovalStatus == TechnicianApprovalStatus.Approved)
 				.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), x => x.Services.Any(s => input.ServiceIds.Contains(s.Id)))
+				.Where(x => !x.Bookings.Any(b =>
+					b.Status == BookingStatus.InProgress
+					|| b.Status == BookingStatus.Pending
+					|| b.Status == BookingStatus.TechnicianOnTheWay
+					|| b.Status == BookingStatus.Confirmed))
 				.ToListAsync();
 			var filtered = allTechnicians
 							 .Select(t => new
