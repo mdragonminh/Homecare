@@ -84,38 +84,40 @@ export function FindTechnicianPage({ loggedInUser }) {
   // 2. RENDER UTILITY FUNCTIONS (Giao diện)
   // ---------------------------------------------------------------------
 
-// Thay thế hàm renderStatusMessage cũ bằng hàm này:
+  // Thay thế hàm renderStatusMessage cũ bằng hàm này:
 
-const renderStatusMessage = (messageObj) => {
-  // Hỗ trợ cả string (cũ) và object (mới)
-  const message = typeof messageObj === 'string' ? messageObj : messageObj?.text || '';
-  const type = typeof messageObj === 'string' ? null : messageObj?.type || null;
+  const renderStatusMessage = (messageObj) => {
+    // Hỗ trợ cả string (cũ) và object (mới)
+    const message =
+      typeof messageObj === "string" ? messageObj : messageObj?.text || "";
+    const type =
+      typeof messageObj === "string" ? null : messageObj?.type || null;
 
-  let icon, colorClass;
+    let icon, colorClass;
 
-  if (type === "success") {
-    icon = <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0" />;
-    colorClass = "text-green-800 bg-green-100 border-green-300";
-  } else if (type === "error") {
-    icon = <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0" />;
-    colorClass = "text-red-700 bg-red-100 border-red-300";
-  } else if (type === "searching") {
-    icon = <Loader2 className="h-5 w-5 mr-2 animate-spin flex-shrink-0" />;
-    colorClass = "text-blue-700 bg-blue-100 border-blue-300";
-  } else {
-    icon = <MapPin className="h-5 w-5 mr-2 flex-shrink-0" />;
-    colorClass = "text-gray-700 bg-gray-100 border-gray-300";
-  }
+    if (type === "success") {
+      icon = <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0" />;
+      colorClass = "text-green-800 bg-green-100 border-green-300";
+    } else if (type === "error") {
+      icon = <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0" />;
+      colorClass = "text-red-700 bg-red-100 border-red-300";
+    } else if (type === "searching") {
+      icon = <Loader2 className="h-5 w-5 mr-2 animate-spin flex-shrink-0" />;
+      colorClass = "text-blue-700 bg-blue-100 border-blue-300";
+    } else {
+      icon = <MapPin className="h-5 w-5 mr-2 flex-shrink-0" />;
+      colorClass = "text-gray-700 bg-gray-100 border-gray-300";
+    }
 
-  return (
-    <div
-      className={`flex items-center p-3 mt-4 text-base border rounded-xl transition-colors shadow-sm ${colorClass}`}
-    >
-      {icon}
-      <span className="font-medium">{message}</span>
-    </div>
-  );
-};
+    return (
+      <div
+        className={`flex items-center p-3 mt-4 text-base border rounded-xl transition-colors shadow-sm ${colorClass}`}
+      >
+        {icon}
+        <span className="font-medium">{message}</span>
+      </div>
+    );
+  };
 
   // ---------------------------------------------------------------------
   // 3. MAIN RENDER
@@ -157,7 +159,7 @@ const renderStatusMessage = (messageObj) => {
 
       <div className="flex flex-col lg:flex-row gap-6 mb-6 lg:items-stretch">
         {/* Cột Trái: Form nhập liệu */}
-        <div className="lg:w-1/2 flex flex-col">
+        <div className="lg:w-3/5 flex flex-col">
           <div className="p-6 border border-gray-200 rounded-2xl shadow-xl bg-white space-y-5 flex-1 flex flex-col">
             <h2 className="text-xl font-bold text-gray-900 flex items-center border-b-2 border-blue-200 pb-3">
               <MapPin className="h-5 w-5 text-blue-600 mr-2" />
@@ -176,6 +178,7 @@ const renderStatusMessage = (messageObj) => {
                       value={selectedHomeId || ""}
                       onChange={handleAddressSelection}
                       className="flex-grow min-w-[200px] h-11 px-4 border-2 border-gray-300 rounded-xl bg-white text-gray-900 hover:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer shadow-sm font-medium text-base"
+                      disabled={isMatching}
                     >
                       <option value="" disabled>
                         {t("ui.select_service_needed")}
@@ -268,7 +271,7 @@ const renderStatusMessage = (messageObj) => {
                     setTimeout(() => setIsServiceDropdownOpen(false), 200)
                   }
                   className="w-full h-11 p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base font-medium pr-10 shadow-sm hover:border-gray-400"
-                  disabled={isSearching || isServicesLoading}
+                  disabled={isSearching || isServicesLoading || isMatching}
                 />
 
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
@@ -342,62 +345,66 @@ const renderStatusMessage = (messageObj) => {
             </div>
 
             {/* Phần Chọn Bán Kính */}
-            <div>
-              <label
-                htmlFor="search-radius"
-                className="block text-base font-semibold text-gray-800 mb-1 flex items-center"
-              >
-                <Globe className="h-5 w-5 text-blue-600 mr-2" />
-                {t("ui.search_radius_label")}
-              </label>
-              <div className="relative">
-                <input
-                  id="search-radius"
-                  type="number"
-                  min="1"
-                  value={searchRadius}
-                  onChange={(e) => setSearchRadius(e.target.value)}
-                  className="w-full h-11 p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base font-medium pr-14 shadow-sm hover:border-gray-400"
-                  placeholder={t("form.placeholder.search_radius")}
-                  disabled={isSearching}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm flex items-center">
-                  {t("ui.search_radius_unit")}
-                </span>
+            <div
+              className={`grid gap-4 mt-5 ${
+                loggedInUser ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1"
+              }`}
+            >
+              {/* 1. BÁN KÍNH – LUÔN HIỆN */}
+              <div>
+                <label
+                  htmlFor="search-radius"
+                  className="block text-base font-semibold text-gray-800 mb-1 flex items-center"
+                >
+                  <Globe className="h-5 w-5 text-blue-600 mr-2" />
+                  {t("ui.search_radius_label")}
+                </label>
+                <div className="relative">
+                  <input
+                    id="search-radius"
+                    type="number"
+                    min="1"
+                    value={searchRadius}
+                    onChange={(e) => setSearchRadius(e.target.value)}
+                    className="w-full h-11 p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base font-medium pr-14 shadow-sm hover:border-gray-400"
+                    placeholder={t("form.placeholder.search_radius")}
+                    disabled={isSearching || isMatching}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">
+                    {t("ui.search_radius_unit")}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* Phần Chọn Ngày/Giờ */}
-{loggedInUser ? (
-              <div className="flex gap-4">
-                <div className="flex-1">
+              {/* 2. NGÀY – CHỈ HIỆN KHI LOGIN */}
+              {loggedInUser && (
+                <div>
                   <label
                     htmlFor="preferred-date"
                     className="block text-base font-semibold text-gray-800 mb-1 flex items-center"
                   >
-                    {t("ui.preferred_date_label", {
-                      defaultValue: "Ngày Yêu Cầu",
-                    })}
+                    {t("ui.preferred_date_label")}
                   </label>
                   <input
                     id="preferred-date"
                     type="date"
                     value={preferredDate}
                     onChange={(e) => setPreferredDate(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]} // Chỉ cho phép chọn từ ngày hiện tại trở đi
+                    min={new Date().toISOString().split("T")[0]}
                     className="w-full h-11 p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base font-medium pr-3 shadow-sm hover:border-gray-400"
                     disabled={isSearching || isMatching}
                   />
                 </div>
+              )}
 
-                <div className="flex-1">
+              {/* 3. GIỜ – CHỈ HIỆN KHI LOGIN */}
+              {loggedInUser && (
+                <div>
                   <label
                     htmlFor="preferred-time"
                     className="block text-base font-semibold text-gray-800 mb-1 flex items-center"
                   >
-                    {t("ui.preferred_time_label", {
-                      defaultValue: "Giờ Yêu Cầu",
-                    })}
+                    {t("ui.preferred_time_label")}
                   </label>
                   <input
                     id="preferred-time"
@@ -408,8 +415,8 @@ const renderStatusMessage = (messageObj) => {
                     disabled={isSearching || isMatching}
                   />
                 </div>
-              </div>
-            ) : null}
+              )}
+            </div>
 
             {/* Phần Nhập Vị Trí Thủ Công (Chỉ hiện khi chưa chọn nhà) */}
             {!loggedInUser || (loggedInUser && !selectedHomeId) ? (
@@ -425,7 +432,7 @@ const renderStatusMessage = (messageObj) => {
                   onChange={(e) => setAddressInput(e.target.value)}
                   onBlur={handleGeocode}
                   className="w-full h-11 p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:border-gray-400 text-base"
-                  disabled={isSearching || isGettingLocation}
+                  disabled={isSearching || isGettingLocation || isMatching}
                 />
               </div>
             ) : null}
@@ -437,7 +444,7 @@ const renderStatusMessage = (messageObj) => {
               {/* Nút Tìm Kiếm Kỹ Thuật Viên */}
               <button
                 onClick={handleFindTechnician}
-                disabled={isSearching}
+                disabled={isSearching || isMatching}
                 className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold text-base rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center active:scale-[0.99]"
               >
                 {isSearching ? (
@@ -481,7 +488,7 @@ const renderStatusMessage = (messageObj) => {
         </div>
 
         {/* Cột Phải: Bản Đồ (Map) */}
-        <div className="lg:w-1/2 flex relative min-h-[450px]">
+        <div className="lg:w-2/5 flex relative min-h-[450px]">
           <MapDisplay
             lat={coords.latitude}
             lng={coords.longitude}
@@ -494,7 +501,7 @@ const renderStatusMessage = (messageObj) => {
           {!loggedInUser || (loggedInUser && !selectedHomeId) ? (
             <button
               onClick={handleGetMyLocation}
-              disabled={isSearching || isGettingLocation}
+              disabled={isSearching || isGettingLocation || isMatching}
               className={`absolute bottom-4 right-4 z-10 w-12 h-12 rounded-full shadow-2xl transition-all flex items-center justify-center ${
                 isGettingLocation
                   ? "bg-blue-500 animate-pulse disabled:opacity-100"
@@ -585,6 +592,23 @@ const renderStatusMessage = (messageObj) => {
           </ul>
         )}
       </div>
+      {/* Overlay: CHỈ LÀM MỜ + SPINNER NHẸ – KHÔNG CHE GÌ HẾT */}
+      {isMatching && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+          {/* Chỉ blur nền, không có màu nền */}
+          <div className="absolute inset-0 backdrop-blur-sm"></div>
+
+          {/* Spinner + thông báo nổi nhẹ ở giữa */}
+          <div className="relative bg-white bg-opacity-80 px-8 py-6 rounded-2xl shadow-xl border border-gray-200 flex flex-col items-center space-y-3 animate-pulse">
+            <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
+            <p className="text-lg font-semibold text-gray-800 whitespace-nowrap">
+              {t("ui.matching_technician_process", {
+                defaultValue: "Đang ghép nối kỹ thuật viên...",
+              })}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
