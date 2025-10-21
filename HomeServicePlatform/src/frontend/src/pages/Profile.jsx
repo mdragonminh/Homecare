@@ -10,11 +10,15 @@ import {
   User,
   RefreshCw,
   AlertCircle,
+  Camera,
+  Upload,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ChangePasswordModal from "../components/ChangePasswordModal";
+import DeleteAvatarModal from "../components/DeleteAvatarModal";
 import { Footer } from "../components/Footer";
 import { profileApi } from "../services/profileApi";
 
@@ -38,70 +42,84 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     email: "",
     phoneNumber: "",
   });
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showDeleteAvatarModal, setShowDeleteAvatarModal] = useState(false);
 
   // Hàm validate Full Name
-  const validateFullName = useCallback((value) => {
-    if (!value || value.trim() === "") {
-      return t("ui.validation.fullname.required");
-    }
-    if (value.trim().length < 2) {
-      return t("ui.validation.fullname.min_length");
-    }
-    if (value.trim().length > 100) {
-      return t("ui.validation.fullname.max_length");
-    }
-    if (/\s{2,}/.test(value)) {
-      return t("ui.validation.fullname.no_consecutive_spaces");
-    }
-    if (!/^[a-zA-ZÀ-ỿ0-9\s]+$/.test(value.trim())) {
-      return t("ui.validation.fullname.invalid_chars");
-    }
-    return "";
-  }, [t]);
+  const validateFullName = useCallback(
+    (value) => {
+      if (!value || value.trim() === "") {
+        return t("ui.validation.fullname.required");
+      }
+      if (value.trim().length < 2) {
+        return t("ui.validation.fullname.min_length");
+      }
+      if (value.trim().length > 100) {
+        return t("ui.validation.fullname.max_length");
+      }
+      if (/\s{2,}/.test(value)) {
+        return t("ui.validation.fullname.no_consecutive_spaces");
+      }
+      if (!/^[a-zA-ZÀ-ỿ0-9\s]+$/.test(value.trim())) {
+        return t("ui.validation.fullname.invalid_chars");
+      }
+      return "";
+    },
+    [t]
+  );
 
   // Hàm validate Email
-  const validateEmail = useCallback((value) => {
-    if (!value || value.trim() === "") {
-      return t("ui.validation.email.required");
-    }
-    
-    // Kiểm tra định dạng email với regex chặt chẽ hơn
-    // ^ : bắt đầu chuỗi
-    // [a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+ : phần tên email
-    // @ : ký tự @
-    // [a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])? : tên miền phụ (nếu có)
-    // (?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+ : tên miền chính và đuôi
-    // $ : kết thúc chuỗi
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
-    
-    // Kiểm tra xem giá trị đầu vào có khớp chính xác với định dạng không
-    // Nếu độ dài của value khác với độ dài của value.trim() 
-    // hoặc email không khớp với regex thì báo lỗi
-    if (value.length !== value.trim().length || !emailRegex.test(value)) {
-      return t("ui.validation.email.invalid_format");
-    }
-    
-    if (value.length > 100) {
-      return t("ui.validation.email.max_length");
-    }
-    return "";
-  }, [t]);
+  const validateEmail = useCallback(
+    (value) => {
+      if (!value || value.trim() === "") {
+        return t("ui.validation.email.required");
+      }
+
+      // Kiểm tra định dạng email với regex chặt chẽ hơn
+      // ^ : bắt đầu chuỗi
+      // [a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+ : phần tên email
+      // @ : ký tự @
+      // [a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])? : tên miền phụ (nếu có)
+      // (?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+ : tên miền chính và đuôi
+      // $ : kết thúc chuỗi
+      const emailRegex =
+        /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+
+      // Kiểm tra xem giá trị đầu vào có khớp chính xác với định dạng không
+      // Nếu độ dài của value khác với độ dài của value.trim()
+      // hoặc email không khớp với regex thì báo lỗi
+      if (value.length !== value.trim().length || !emailRegex.test(value)) {
+        return t("ui.validation.email.invalid_format");
+      }
+
+      if (value.length > 100) {
+        return t("ui.validation.email.max_length");
+      }
+      return "";
+    },
+    [t]
+  );
 
   // Hàm validate Phone Number
-  const validatePhoneNumber = useCallback((value) => {
-    if (!value || value.trim() === "") {
-      return t("ui.validation.phone.required");
-    }
-    // Kiểm tra khoảng trắng trước khi kiểm tra định dạng
-    if (value !== value.trim()) {
-      return t("ui.validation.phone.no_spaces");
-    }
-    const phoneRegex = /^0\d{9,10}$/;
-    if (!phoneRegex.test(value)) {
-      return t("ui.validation.phone.invalid_format");
-    }
-    return "";
-  }, [t]);
+  const validatePhoneNumber = useCallback(
+    (value) => {
+      if (!value || value.trim() === "") {
+        return t("ui.validation.phone.required");
+      }
+      // Kiểm tra khoảng trắng trước khi kiểm tra định dạng
+      if (value !== value.trim()) {
+        return t("ui.validation.phone.no_spaces");
+      }
+      const phoneRegex = /^0\d{9,10}$/;
+      if (!phoneRegex.test(value)) {
+        return t("ui.validation.phone.invalid_format");
+      }
+      return "";
+    },
+    [t]
+  );
 
   useEffect(() => {
     fetchProfile();
@@ -145,13 +163,26 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     if (editingField && editForm) {
       // Chỉ validate lại khi đang trong chế độ chỉnh sửa
       const newErrors = {
-        fullName: editingField === "fullName" ? validateFullName(editForm.fullName) : "",
+        fullName:
+          editingField === "fullName"
+            ? validateFullName(editForm.fullName)
+            : "",
         email: editingField === "email" ? validateEmail(editForm.email) : "",
-        phoneNumber: editingField === "phoneNumber" ? validatePhoneNumber(editForm.phoneNumber) : "",
+        phoneNumber:
+          editingField === "phoneNumber"
+            ? validatePhoneNumber(editForm.phoneNumber)
+            : "",
       };
       setErrors(newErrors);
     }
-  }, [t, editingField, editForm, validateFullName, validateEmail, validatePhoneNumber]);
+  }, [
+    t,
+    editingField,
+    editForm,
+    validateFullName,
+    validateEmail,
+    validatePhoneNumber,
+  ]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -306,6 +337,124 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     }
   };
 
+  // Xử lý upload avatar
+  const handleAvatarUpload = async (file) => {
+    if (!file) return;
+
+    // Kiểm tra loại file (khớp với controller)
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error(t("ui.avatar_invalid_format"));
+      return;
+    }
+
+    // Kiểm tra kích thước file (max 5MB - khớp với controller)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error(t("ui.avatar_too_large"));
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const result = await profileApi.uploadAvatar(file);
+      if (result.success) {
+        toast.success(result.message);
+        // Cập nhật profile với avatar mới
+        await fetchProfile();
+        setAvatarFile(null);
+        setAvatarPreview(null);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  // Xử lý xóa avatar
+  const handleDeleteAvatar = async () => {
+    setUploadingAvatar(true);
+    try {
+      const result = await profileApi.deleteAvatar();
+      if (result.success) {
+        toast.success(result.message);
+        await fetchProfile();
+        setShowDeleteAvatarModal(false);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  // Hiển thị modal xác nhận xóa avatar
+  const handleShowDeleteAvatarModal = () => {
+    setShowDeleteAvatarModal(true);
+  };
+
+  // Xử lý chọn file avatar
+  const handleAvatarFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Kiểm tra validation trước khi set file
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(t("ui.avatar_invalid_format"));
+        event.target.value = ""; // Reset input
+        return;
+      }
+
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast.error(t("ui.avatar_too_large"));
+        event.target.value = ""; // Reset input
+        return;
+      }
+
+      setAvatarFile(file);
+
+      // Tạo preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Hủy chọn avatar
+  const handleCancelAvatarUpload = () => {
+    setAvatarFile(null);
+    setAvatarPreview(null);
+  };
+
+  // Helper function để tạo full URL cho avatar
+  const getAvatarUrl = (avatarUrl) => {
+    if (!avatarUrl) return null;
+
+    // Nếu đã là URL đầy đủ thì return luôn
+    if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
+      return avatarUrl;
+    }
+
+    // Nếu là đường dẫn tương đối từ API thì tạo full URL
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    // Remove '/api' from API_URL nếu có vì avatar path không có api prefix
+    const baseUrl = API_URL.replace("/api", "");
+    return `${baseUrl}${avatarUrl}`;
+  };
+
   const LoadingContent = () => (
     <div className="flex items-center justify-center py-32">
       <div className="text-center">
@@ -324,7 +473,9 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     <div className="flex items-center justify-center py-32">
       <div className="text-center">
         <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 shadow-lg px-8 py-6 rounded-xl max-w-md transform transition-all duration-300 hover:shadow-xl">
-          <p className="font-bold text-xl text-red-700 mb-3">{t("ui.error_occurred")}</p>
+          <p className="font-bold text-xl text-red-700 mb-3">
+            {t("ui.error_occurred")}
+          </p>
           <p className="text-red-600 text-lg">{error}</p>
         </div>
         <button
@@ -346,7 +497,9 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             {t("ui.personal_information")}
           </h1>
-          <p className="text-gray-600 mt-2 text-lg">{t("ui.view_manage_profile")}</p>
+          <p className="text-gray-600 mt-2 text-lg">
+            {t("ui.view_manage_profile")}
+          </p>
         </div>
       </div>
 
@@ -361,11 +514,109 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
               {/* Profile Card */}
               <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                 <div className="flex flex-col items-center">
-                  <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-4">
-                    {profile.fullName
-                      ? profile.fullName.charAt(0).toUpperCase()
-                      : "U"}
+                  {/* Avatar Section */}
+                  <div className="relative group mb-4">
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center text-white text-3xl font-bold">
+                      {avatarPreview ? (
+                        <img
+                          src={avatarPreview}
+                          alt="Avatar Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : profile.avatarUrl ? (
+                        <img
+                          src={getAvatarUrl(profile.avatarUrl)}
+                          alt="Avatar"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback nếu không load được ảnh
+                            e.target.style.display = "none";
+                            e.target.nextSibling.style.display = "flex";
+                          }}
+                        />
+                      ) : profile.fullName ? (
+                        profile.fullName.charAt(0).toUpperCase()
+                      ) : (
+                        "U"
+                      )}
+                      {/* Fallback text khi ảnh lỗi */}
+                      {profile.avatarUrl && (
+                        <div
+                          className="w-full h-full flex items-center justify-center text-white text-3xl font-bold bg-gray-300"
+                          style={{ display: "none" }}
+                        >
+                          {profile.fullName
+                            ? profile.fullName.charAt(0).toUpperCase()
+                            : "U"}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Avatar Upload Controls */}
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <div className="flex gap-2">
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/gif"
+                            onChange={handleAvatarFileChange}
+                            className="hidden"
+                            disabled={uploadingAvatar}
+                          />
+                          <Camera className="w-5 h-5 text-white hover:text-blue-300 transition-colors duration-200" />
+                        </label>
+                        {(profile.avatarUrl || avatarPreview) && (
+                          <button
+                            onClick={handleShowDeleteAvatarModal}
+                            disabled={uploadingAvatar}
+                            className="text-white hover:text-red-300 transition-colors duration-200"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Loading overlay */}
+                    {uploadingAvatar && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Avatar Upload Preview Actions */}
+                  {avatarFile && (
+                    <div className="w-full mb-4">
+                      {/* File info */}
+                      <div className="text-center mb-2">
+                        <p className="text-xs text-gray-600">
+                          {avatarFile.name} (
+                          {(avatarFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </p>
+                      </div>
+                      {/* Action buttons */}
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          onClick={() => handleAvatarUpload(avatarFile)}
+                          disabled={uploadingAvatar}
+                          className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
+                        >
+                          <Upload className="w-4 h-4" />
+                          {t("ui.upload")}
+                        </button>
+                        <button
+                          onClick={handleCancelAvatarUpload}
+                          disabled={uploadingAvatar}
+                          className="flex items-center gap-1 px-3 py-1 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50"
+                        >
+                          <X className="w-4 h-4" />
+                          {t("ui.change_password_modal.cancel")}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <h2 className="text-xl font-bold text-gray-900 text-center">
                     {profile.fullName}
                   </h2>
@@ -395,7 +646,9 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                       <MapPin className="w-5 h-5 text-blue-600" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-semibold">{t("ui.manage_addresses")}</span>
+                      <span className="font-semibold">
+                        {t("ui.manage_addresses")}
+                      </span>
                     </div>
                   </button>
                   <button
@@ -406,7 +659,9 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                       <Key className="w-5 h-5 text-rose-600" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-semibold">{t("ui.change_password")}</span>
+                      <span className="font-semibold">
+                        {t("ui.change_password")}
+                      </span>
                     </div>
                   </button>
                 </div>
@@ -623,6 +878,14 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
         isOpen={showChangePasswordModal}
         onClose={() => setShowChangePasswordModal(false)}
         onSubmit={handleChangePasswordSubmit}
+      />
+
+      {/* Delete Avatar Modal */}
+      <DeleteAvatarModal
+        isOpen={showDeleteAvatarModal}
+        onClose={() => setShowDeleteAvatarModal(false)}
+        onConfirm={handleDeleteAvatar}
+        loading={uploadingAvatar}
       />
     </div>
   );
