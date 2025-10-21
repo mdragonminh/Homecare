@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.AccountDto;
 using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
@@ -27,25 +28,29 @@ namespace HSP.Service.Implementations
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		//private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly SignInManager<AppUser> _signInManager;
-		private readonly JwtSettingsDto _jwtSettings;
+		//private readonly JwtSettingsDto _jwtSettings;
 		private readonly UrlSettingsDto _urlSettings;
+		private readonly IJwtService _jwtService;
 		private readonly IEmailService _emailService;
 		private readonly IEmailTemplateService _emailTemplateService;
 
-		public AuthenticationService(IUserRepository userRepository, IOptions<JwtSettingsDto> jwtOptions,
+		public AuthenticationService(IUserRepository userRepository,
+			//IOptions<JwtSettingsDto> jwtOptions,
 			IOptions<UrlSettingsDto> urlOptions,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			//IRepository<CustomerProfile, Guid> customerProfileRepository,
 			SignInManager<AppUser> signInManager,
+			IJwtService jwtService,
 			IEmailService emailService,
 			IEmailTemplateService emailTemplateService,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_userRepository = userRepository;
-			_jwtSettings = jwtOptions.Value;
+			//_jwtSettings = jwtOptions.Value;
 			_urlSettings = urlOptions.Value;
 			_technicianRepository = technicianRepository;
 			_signInManager = signInManager;
+			_jwtService = jwtService;
 			//_customerProfileRepository = customerProfileRepository;
 			_emailService = emailService;
 			_emailTemplateService = emailTemplateService;
@@ -110,7 +115,12 @@ namespace HSP.Service.Implementations
 			{
 				throw new UnauthorizedAccessException(_localizer["InvalidPassword"]);
 			}
-			var token = await GenerateJwtToken(user);
+			var token = await _jwtService.GenerateJwtToken(new UserDto
+			{
+				Id = user.Id,
+				Email = user.Email ?? string.Empty,
+				FullName = user.FullName ?? string.Empty
+			});
 			return new LoginResponseDto
 			{
 				JwtToken = token,
@@ -131,7 +141,12 @@ namespace HSP.Service.Implementations
 				throw new Exception(_localizer["CannotFindOrCreateUser"]);
 			}
 
-			var token = await GenerateJwtToken(user);
+			var token = await _jwtService.GenerateJwtToken(new Core.Dtos.AccountDto.UserDto
+			{
+				Id = user.Id,
+				Email = user.Email ?? string.Empty,
+				FullName = user.FullName ?? string.Empty
+			});
 			return new LoginResponseDto
 			{
 				JwtToken = token,
@@ -203,33 +218,6 @@ namespace HSP.Service.Implementations
 			{
 				return false;
 			}
-		}
-
-		private async Task<string> GenerateJwtToken(AppUser user)
-		{
-			var roles = await _userRepository.GetRolesAsync(user);
-			var claims = new List<Claim>
-			{
-						new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-						new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-						new Claim(ClaimTypes.Name, user.FullName ?? string.Empty),
-				};
-			foreach (var role in roles)
-			{
-				claims.Add(new Claim(ClaimTypes.Role, role));
-			}
-			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
-			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-			var token = new JwtSecurityToken(
-					issuer: _jwtSettings.Issuer,
-					audience: _jwtSettings.Audience,
-					claims: claims,
-					expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
-					signingCredentials: creds
-			);
-
-			return new JwtSecurityTokenHandler().WriteToken(token);
 		}
 
 		public async Task<ChangePasswordResponseDto> ChangePassword(Guid userId, ChangePasswordRequestDto input)

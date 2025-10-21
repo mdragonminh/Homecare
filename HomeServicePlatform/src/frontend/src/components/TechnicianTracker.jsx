@@ -27,10 +27,10 @@ export function TechnicianTracker({role}) {
       async (pos) => {
          const { latitude, longitude, accuracy } = pos.coords;
         const now = Date.now();
-        if (accuracy > 1000) {
-          console.warn(`Độ chính xác thấp: ${accuracy}m, bỏ qua vị trí này`);
-          return;
-        }
+        // if (accuracy > 1000) {
+        //   console.warn(`Độ chính xác thấp: ${accuracy}m, bỏ qua vị trí này`);
+        //   return;
+        // }
         const dist = calcDistance(
           last.current.lat,
           last.current.lng,
