@@ -27,13 +27,13 @@ export const homeApi = {
     }
   },
 
-  // Hàm tạo Home, tự động lấy lat/lng nếu chưa cung cấp
+  
   createHome: async ({ name, address, latitude, longitude, customerProfileId }) => {
     try {
       let lat = latitude;
       let lng = longitude;
 
-      // Xử lý Geocoding nếu thiếu lat/lng
+      
       if (!lat || !lng) {
         const geocodeResult = await homeApi.geocodeAddress(address);
         if (!geocodeResult.success) throw new Error(geocodeResult.message);
@@ -41,8 +41,7 @@ export const homeApi = {
         lng = geocodeResult.longitude;
       }
 
-      // ⭐️ Sử dụng axiosClient.post.
-      // ⭐️ axiosClient đã tự động thêm Bearer Token và Content-Type: application/json
+     
       const res = await axiosClient.post(
         "/Home/create-home", // Dùng relative path
         {
@@ -78,8 +77,7 @@ export const homeApi = {
     type = "all"
   ) => {
     try {
-      // ⭐️ Không cần kiểm tra token thủ công nữa, Interceptor sẽ lo
-      // if (!jwtToken) { throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại."); }
+      
 
       const queryParams = new URLSearchParams({
         pageNumber: page,
@@ -88,9 +86,9 @@ export const homeApi = {
         ...(type !== "all" && { type }),
       }).toString();
 
-      const url = `/Home/list-home?${queryParams}`; // Dùng relative path
+      const url = `/Home/list-home?${queryParams}`; 
 
-      // ⭐️ Sử dụng axiosClient.get. Bearer Token tự động được thêm
+     
       const res = await axiosClient.get(url);
 
       if (ENABLE_DEBUG) console.log("Get homes success:", res.data);
@@ -109,13 +107,12 @@ export const homeApi = {
   // CÁC API HOME BỔ SUNG (DELETE, PUT, GET BY ID)
   // =================================================================================
 
-  // Hàm lấy chi tiết Home bằng ID (GET /api/Home/{homeId})
   getHomeById: async (homeId) => {
     try {
-      // ⭐️ Không cần kiểm tra token thủ công
+     
       const url = `/Home/${homeId}`; // Dùng relative path
 
-      // ⭐️ Sử dụng axiosClient.get
+     
       const res = await axiosClient.get(url);
 
       if (ENABLE_DEBUG) console.log(`Get home ${homeId} success:`, res.data);
@@ -133,8 +130,7 @@ export const homeApi = {
   // Hàm cập nhật Home (PUT /api/Home/{homeId})
   updateHome: async (homeId, { name, address, latitude, longitude }) => {
     try {
-      // ⭐️ Không cần kiểm tra token thủ công
-      // ⭐️ Sử dụng axiosClient.put
+      
       const res = await axiosClient.put(
         `/Home/${homeId}`, // Dùng relative path
         {
@@ -142,9 +138,9 @@ export const homeApi = {
           address,
           latitude,
           longitude,
-          // Có thể cần thêm các trường khác nếu API yêu cầu
+         
         }
-        // ⭐️ Không cần truyền headers nữa
+      
       );
 
       if (ENABLE_DEBUG) console.log(`Update home ${homeId} success:`, res.data);
@@ -165,8 +161,7 @@ export const homeApi = {
   // Hàm xóa Home (DELETE /api/Home/{homeId})
   deleteHome: async (homeId) => {
     try {
-      // ⭐️ Không cần kiểm tra token thủ công
-      // ⭐️ Sử dụng axiosClient.delete
+     
       const res = await axiosClient.delete(`/Home/${homeId}`); // Dùng relative path
 
       if (ENABLE_DEBUG) console.log(`Delete home ${homeId} success:`, res.data);
@@ -184,7 +179,6 @@ export const homeApi = {
   // CÁC API HOME ITEM ĐÃ CÓ
   // =================================================================================
 
-  // Hàm thêm vật phẩm vào Home
   addHomeItem: async ({
     name,
     brand,
@@ -195,10 +189,8 @@ export const homeApi = {
     homeId,
   }) => {
     try {
-      // ⭐️ Không cần kiểm tra token thủ công
-      // ⭐️ Sử dụng axiosClient.post
       const res = await axiosClient.post(
-        "/HomeItem/add-home-item", // Dùng relative path
+        "/HomeItem/add-home-item", 
         {
           name,
           brand,
@@ -208,7 +200,7 @@ export const homeApi = {
           notes,
           homeId,
         }
-        // ⭐️ Không cần truyền headers nữa
+       
       );
 
       if (ENABLE_DEBUG) console.log("Add home item success:", res.data);
@@ -223,7 +215,7 @@ export const homeApi = {
     }
   },
 
-  // Hàm lấy danh sách vật phẩm của Home
+ 
   listHomeItems: async (homeId, page = 1, pageSize = 10, searchTerm = "") => {
     try {
      

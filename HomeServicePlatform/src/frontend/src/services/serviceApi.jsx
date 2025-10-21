@@ -74,7 +74,7 @@ export const serviceApi = {
    */
   createAndMatchBooking: async (address, serviceIds, customerId, distanceKm = 0,desiredDateTime) => {
     try {
-      // ✅ Validation đầu vào
+    
       if (!address || address.trim() === "") {
         throw new Error("Địa chỉ không được để trống.");
       }
@@ -91,10 +91,10 @@ export const serviceApi = {
       }
       const url = "/ServiceRequest/create-and-match-booking";
       
-      // ✅ Payload đúng theo API spec của backend
+      
       const payload = {
         address: address.trim(),
-        serviceIds: serviceIds, // ✅ Đúng tên key theo API spec
+        serviceIds: serviceIds, 
         customerId: customerId,
         distanceKm: Number(distanceKm) || 0,
         desiredDateTime: desiredDateTime
@@ -127,11 +127,11 @@ export const serviceApi = {
         console.error("Response status:", error.response?.status);
       }
       
-      // ✅ Xử lý các loại lỗi cụ thể
+     
       let errorMessage = "Lỗi khi tạo yêu cầu và đặt lịch";
       
       if (error.response) {
-        // Server đã phản hồi với status code ngoài 2xx
+        
         const status = error.response.status;
         const data = error.response.data;
         
