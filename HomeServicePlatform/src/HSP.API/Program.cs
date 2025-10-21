@@ -1,12 +1,10 @@
 ﻿using HSP.API.Extensions;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.ConfigurationDto;
-using HSP.Core.Entities;
 using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.DAL.Interfaces;
 using HSP.Service.Extensions;
-using Microsoft.Extensions.Configuration;
 
 namespace HSP.API
 {

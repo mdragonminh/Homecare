@@ -1,5 +1,4 @@
-﻿using HSP.Core.Dtos.BookingDto;
-using HSP.Core.Dtos.ServiceRequestDto;
+﻿using HSP.Core.Dtos.ServiceRequestDto;
 
 namespace HSP.Service.Interfaces
 {
