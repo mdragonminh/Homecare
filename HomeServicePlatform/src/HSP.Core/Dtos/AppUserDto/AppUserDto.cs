@@ -11,5 +11,6 @@ namespace HSP.Core.Dtos.AppUserDto
         public int TotalHomes { get; set; }
         public bool IsActive { get; set; }
         public DateTime? LastLoginAt { get; set; }
+        public string? AvatarUrl { get; set; }
     }
 }
