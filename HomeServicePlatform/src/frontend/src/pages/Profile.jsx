@@ -77,20 +77,21 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
         return t("ui.validation.email.required");
       }
 
-      // Kiểm tra định dạng email với regex chặt chẽ hơn
+      // Kiểm tra có bất kỳ khoảng trắng nào không
+      if (/\s/.test(value)) {
+        return t("ui.validation.email.no_spaces");
+      }
+
+      // Kiểm tra định dạng email với regex chặt chẽ
       // ^ : bắt đầu chuỗi
-      // [a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+ : phần tên email
+      // [a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+ : phần tên email (không cho phép khoảng trắng)
       // @ : ký tự @
       // [a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])? : tên miền phụ (nếu có)
       // (?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+ : tên miền chính và đuôi
       // $ : kết thúc chuỗi
-      const emailRegex =
-        /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
 
-      // Kiểm tra xem giá trị đầu vào có khớp chính xác với định dạng không
-      // Nếu độ dài của value khác với độ dài của value.trim()
-      // hoặc email không khớp với regex thì báo lỗi
-      if (value.length !== value.trim().length || !emailRegex.test(value)) {
+      if (!emailRegex.test(value)) {
         return t("ui.validation.email.invalid_format");
       }
 
