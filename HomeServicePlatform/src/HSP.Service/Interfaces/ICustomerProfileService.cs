@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Dtos.AppUserDto;
+using HSP.Core.Dtos.FileDto;
 
 namespace HSP.Service.Interfaces
 {
@@ -11,5 +12,7 @@ namespace HSP.Service.Interfaces
 		Task<object> GetDebugInfoAsync();
 		Task<EmailChangeResponseDto> RequestEmailChangeAsync(string userId, string newEmail);
 		Task<EmailChangeResponseDto> ConfirmEmailChangeAsync(string userId, string token);
+		Task<AvatarUploadResponseDto> UploadAvatarAsync(string userId, FileUploadRequest fileRequest);
+		Task<AvatarUploadResponseDto> DeleteAvatarAsync(string userId);
 	}
 }

@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Dtos.AppUserDto;
+using HSP.Core.Dtos.FileDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
@@ -19,16 +20,25 @@ namespace HSP.Service.Implementations
         private readonly RoleManager<AppRole> _roleManager;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
+        private readonly IRepository<HSP.Core.Entities.File, Guid> _fileRepository;
+        private readonly IRepository<FileRelation, Guid> _fileRelationRepository;
+        private readonly IRepository<ObjectType, Guid> _objectTypeRepository;
 
         public CustomerProfileService(
             IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer,
             UserManager<AppUser> userManager, RoleManager<AppRole> roleManager,
-            IEmailService emailService, IConfiguration configuration) : base(unitOfWork, localizer)
+            IEmailService emailService, IConfiguration configuration,
+            IRepository<HSP.Core.Entities.File, Guid> fileRepository,
+            IRepository<FileRelation, Guid> fileRelationRepository,
+            IRepository<ObjectType, Guid> objectTypeRepository) : base(unitOfWork, localizer)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _emailService = emailService;
             _configuration = configuration;
+            _fileRepository = fileRepository;
+            _fileRelationRepository = fileRelationRepository;
+            _objectTypeRepository = objectTypeRepository;
         }
 
         public async Task<AppUserDto> GetCustomerByUserIdAsync(string userId)
@@ -48,7 +58,8 @@ namespace HSP.Service.Implementations
                 throw new KeyNotFoundException($"User not found for ID: {userId}");
             }
 
-
+            // Lấy avatar URL
+            var avatarUrl = await GetUserAvatarUrlAsync(user.Id);
 
             return new AppUserDto
             {
@@ -60,7 +71,8 @@ namespace HSP.Service.Implementations
                 DateModified = user.DateModified,
                 TotalHomes = user.Homes.Count,
                 IsActive = user.IsActive,
-                LastLoginAt = user.LastLoginAt
+                LastLoginAt = user.LastLoginAt,
+                AvatarUrl = avatarUrl
             };
         }
 
@@ -76,6 +88,8 @@ namespace HSP.Service.Implementations
                 throw new KeyNotFoundException($"User not found for ID: {userId}");
             }
 
+            // Lấy avatar URL
+            var avatarUrl = await GetUserAvatarUrlAsync(user.Id);
 
             return new AppUserDto
             {
@@ -87,7 +101,8 @@ namespace HSP.Service.Implementations
                 DateModified = user.DateModified,
                 TotalHomes = user.Homes.Count,
                 IsActive = user.IsActive,
-                LastLoginAt = user.LastLoginAt
+                LastLoginAt = user.LastLoginAt,
+                AvatarUrl = avatarUrl
             };
         }
 
@@ -174,6 +189,12 @@ namespace HSP.Service.Implementations
                     IsActive = x.IsActive,
                     LastLoginAt = x.LastLoginAt
                 }).ToListAsync();
+
+            // Load avatars for each customer
+            foreach (var customer in customers)
+            {
+                customer.AvatarUrl = await GetUserAvatarUrlAsync(customer.Id);
+            }
 
             return new
             {
@@ -413,6 +434,223 @@ namespace HSP.Service.Implementations
                 {
                     Success = false,
                     Message = $"Lỗi khi xác nhận thay đổi email: {ex.Message}"
+                };
+            }
+        }
+
+        private async Task<string?> GetUserAvatarUrlAsync(Guid userId)
+        {
+            // Lấy ObjectType cho User
+            var userObjectType = await _objectTypeRepository.GetAll()
+                .Where(x => x.Name == "User")
+                .FirstOrDefaultAsync();
+
+            if (userObjectType == null) return null;
+
+            // Lấy avatar file relation
+            var avatarRelation = await _fileRelationRepository.GetAll()
+                .Include(x => x.File)
+                .Where(x => x.ObjectId == userId &&
+                           x.ObjectTypeId == userObjectType.Id &&
+                           x.RelationType == "avatar" &&
+                           !x.File.IsDeleted)
+                .OrderByDescending(x => x.DateCreated)
+                .FirstOrDefaultAsync();
+
+            return avatarRelation?.File.FilePath;
+        }
+
+        public async Task<AvatarUploadResponseDto> UploadAvatarAsync(string userId, FileUploadRequest fileRequest)
+        {
+            try
+            {
+                if (!Guid.TryParse(userId, out var userGuid))
+                {
+                    return new AvatarUploadResponseDto
+                    {
+                        Success = false,
+                        Message = "User ID không hợp lệ"
+                    };
+                }
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return new AvatarUploadResponseDto
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy người dùng"
+                    };
+                }
+
+
+                // Lấy hoặc tạo ObjectType cho User
+                var userObjectType = await _objectTypeRepository.GetAll()
+                    .Where(x => x.Name == "User")
+                    .FirstOrDefaultAsync();
+
+                if (userObjectType == null)
+                {
+                    userObjectType = new ObjectType
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "User",
+                        Description = "User object type for file attachments"
+                    };
+                    await _objectTypeRepository.AddAsync(userObjectType);
+                }
+
+                // Xóa avatar cũ (soft delete)
+                var oldAvatarRelations = await _fileRelationRepository.GetAll()
+                    .Include(x => x.File)
+                    .Where(x => x.ObjectId == userGuid &&
+                               x.ObjectTypeId == userObjectType.Id &&
+                               x.RelationType == "avatar" &&
+                               !x.File.IsDeleted)
+                    .ToListAsync();
+
+                foreach (var oldRelation in oldAvatarRelations)
+                {
+                    oldRelation.File.IsDeleted = true;
+                    oldRelation.File.DateModified = DateTime.UtcNow;
+                    _fileRepository.Update(oldRelation.File);
+                }
+
+                // Tạo file mới
+                var newFile = new HSP.Core.Entities.File
+                {
+                    Id = Guid.NewGuid(),
+                    FileName = fileRequest.FileName,
+                    FilePath = fileRequest.FilePath,
+                    FileType = fileRequest.FileType,
+                    FileSize = fileRequest.FileSize,
+                    UploadedBy = fileRequest.UploadedBy,
+                    DateCreated = DateTime.UtcNow,
+                    DateModified = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+
+                await _fileRepository.AddAsync(newFile);
+
+                // Tạo file relation
+                var fileRelation = new FileRelation
+                {
+                    Id = Guid.NewGuid(),
+                    FileId = newFile.Id,
+                    ObjectTypeId = userObjectType.Id,
+                    ObjectId = userGuid,
+                    RelationType = "avatar",
+                    DateCreated = DateTime.UtcNow,
+                    DateModified = DateTime.UtcNow
+                };
+
+                await _fileRelationRepository.AddAsync(fileRelation);
+                await _unitOfWork.SaveChangesAsync();
+
+                return new AvatarUploadResponseDto
+                {
+                    Success = true,
+                    Message = "Avatar đã được upload thành công",
+                    File = new FileResponseDto
+                    {
+                        Id = newFile.Id,
+                        FileName = newFile.FileName,
+                        FilePath = newFile.FilePath,
+                        FileType = newFile.FileType,
+                        FileSize = newFile.FileSize,
+                        RelationType = "avatar",
+                        DateCreated = newFile.DateCreated
+                    },
+                    AvatarUrl = newFile.FilePath
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AvatarUploadResponseDto
+                {
+                    Success = false,
+                    Message = $"Lỗi khi upload avatar: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<AvatarUploadResponseDto> DeleteAvatarAsync(string userId)
+        {
+            try
+            {
+                if (!Guid.TryParse(userId, out var userGuid))
+                {
+                    return new AvatarUploadResponseDto
+                    {
+                        Success = false,
+                        Message = "User ID không hợp lệ"
+                    };
+                }
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return new AvatarUploadResponseDto
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy người dùng"
+                    };
+                }
+
+
+                // Lấy ObjectType cho User
+                var userObjectType = await _objectTypeRepository.GetAll()
+                    .Where(x => x.Name == "User")
+                    .FirstOrDefaultAsync();
+
+                if (userObjectType == null)
+                {
+                    return new AvatarUploadResponseDto
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy avatar để xóa"
+                    };
+                }
+
+                // Tìm và xóa avatar hiện tại (soft delete)
+                var avatarRelations = await _fileRelationRepository.GetAll()
+                    .Include(x => x.File)
+                    .Where(x => x.ObjectId == userGuid &&
+                               x.ObjectTypeId == userObjectType.Id &&
+                               x.RelationType == "avatar" &&
+                               !x.File.IsDeleted)
+                    .ToListAsync();
+
+                if (!avatarRelations.Any())
+                {
+                    return new AvatarUploadResponseDto
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy avatar để xóa"
+                    };
+                }
+
+                foreach (var relation in avatarRelations)
+                {
+                    relation.File.IsDeleted = true;
+                    relation.File.DateModified = DateTime.UtcNow;
+                    _fileRepository.Update(relation.File);
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+
+                return new AvatarUploadResponseDto
+                {
+                    Success = true,
+                    Message = "Avatar đã được xóa thành công"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AvatarUploadResponseDto
+                {
+                    Success = false,
+                    Message = $"Lỗi khi xóa avatar: {ex.Message}"
                 };
             }
         }
