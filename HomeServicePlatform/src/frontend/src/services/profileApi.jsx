@@ -197,4 +197,81 @@ export const profileApi = {
       };
     }
   },
+
+  // Upload avatar
+  uploadAvatar: async (avatarFile) => {
+    try {
+      const jwtToken = localStorage.getItem("jwtToken");
+      if (!jwtToken) {
+        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
+      }
+
+      // Tạo FormData để upload file
+      const formData = new FormData();
+      formData.append("file", avatarFile); // Controller expects "file" parameter
+
+      const response = await axiosClient.post(
+        `/CustomerProfile/upload-avatar`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        }
+      );
+
+      if (ENABLE_DEBUG) console.log("Upload avatar success:", response.data);
+      return {
+        success: true,
+        data: response.data,
+        message: response.data.message || "Tải lên avatar thành công",
+      };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error("Upload avatar error:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          error.message ||
+          "Lỗi khi tải lên avatar",
+      };
+    }
+  },
+
+  // Delete avatar
+  deleteAvatar: async () => {
+    try {
+      const jwtToken = localStorage.getItem("jwtToken");
+      if (!jwtToken) {
+        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
+      }
+
+      const response = await axiosClient.delete(
+        `/CustomerProfile/delete-avatar`,
+        {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        }
+      );
+
+      if (ENABLE_DEBUG) console.log("Delete avatar success:", response.data);
+      return {
+        success: true,
+        message: response.data.message || "Xóa avatar thành công",
+      };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error("Delete avatar error:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          error.message ||
+          "Lỗi khi xóa avatar",
+      };
+    }
+  },
 };

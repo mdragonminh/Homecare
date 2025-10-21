@@ -18,7 +18,7 @@ namespace HSP.Service.Extensions
 			services.AddScoped<IHomeService, HomeService>();
 			services.AddScoped<IGeocodingService, GoogleMapsGeocodingService>();
 			services.AddScoped<IHomeItemService, HomeItemService>();
-			//services.AddScoped<ICustomerProfileService, CustomerProfileService>();
+			services.AddScoped<ICustomerProfileService, CustomerProfileService>();
 			services.AddScoped<ITechnicianProfileService, TechnicianProfileService>();
 			services.AddHttpClient("GoogleMaps", client =>
 			{

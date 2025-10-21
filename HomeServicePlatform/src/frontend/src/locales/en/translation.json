@@ -119,6 +119,16 @@
     "account_created": "Account Created",
     "account_verified": "Account Verified",
     "not_updated": "Not updated",
+    "upload": "Upload",
+    "avatar_invalid_format": "Only JPEG, JPG, PNG, GIF files are supported",
+    "avatar_too_large": "File too large (max 5MB)",
+    "confirm_delete_avatar": "Are you sure you want to delete avatar?",
+    "delete_avatar_modal": {
+      "title": "Delete Avatar",
+      "message": "Are you sure you want to delete your current avatar? This action cannot be undone.",
+      "delete": "Delete",
+      "cancel": "Cancel"
+    },
     "refresh": "Refresh",
     "change_password": "Change Password",
     "view_manage_profile": "View and manage your profile information",

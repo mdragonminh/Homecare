@@ -118,6 +118,16 @@
     "account_created": "Ngày tạo tài khoản",
     "account_verified": "Tài khoản đã xác thực",
     "not_updated": "Chưa cập nhật",
+    "upload": "Tải lên",
+    "avatar_invalid_format": "Chỉ hỗ trợ file JPEG, JPG, PNG, GIF",
+    "avatar_too_large": "File quá lớn (tối đa 5MB)",
+    "confirm_delete_avatar": "Bạn có chắc muốn xóa avatar?",
+    "delete_avatar_modal": {
+      "title": "Xóa ảnh đại diện",
+      "message": "Bạn có chắc chắn muốn xóa ảnh đại diện hiện tại? Hành động này không thể hoàn tác.",
+      "delete": "Xóa",
+      "cancel": "Hủy bỏ"
+    },
     "refresh": "Làm mới",
     "change_password": "Đổi mật khẩu",
     "view_manage_profile": "Xem và quản lý thông tin profile của bạn",
