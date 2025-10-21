@@ -79,7 +79,7 @@ export const serviceApi = {
         serviceIds: serviceIds, 
         customerId: customerId,
         distanceKm: Number(distanceKm) || 0,
-        desiredDateTime: desiredDateTime
+        desireDateTime: desiredDateTime
       };
 
       if (ENABLE_DEBUG) {
