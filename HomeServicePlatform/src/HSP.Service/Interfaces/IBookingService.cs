@@ -3,12 +3,13 @@ using HSP.Core.Dtos.Shared;
 
 namespace HSP.Service.Interfaces
 {
-    public interface IBookingService
-    {
-        // Technician Operations
-        Task<PagedList<BookingDto>> GetAllBookingsAsync(BookingInput input);
-        Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId);
-        Task<bool> UpdateBookingStatusAsync(UpdateBookingStatusDto input, string technicianUserId);
-        Task<bool> CancelBookingAsync(CancelBookingDto input, string userId);
-    }
+	public interface IBookingService
+	{
+		// Technician Operations
+		Task<PagedList<BookingDto>> GetAllBookingsAsync(BookingInput input);
+		Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId);
+		Task<bool> UpdateBookingStatusAsync(UpdateBookingStatusDto input, string technicianUserId);
+		Task<bool> CancelBookingAsync(CancelBookingDto input, string userId);
+		Task<bool> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, Guid serviceId, string token, DateTime desiredDate);
+	}
 }

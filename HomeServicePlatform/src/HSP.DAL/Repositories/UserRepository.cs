@@ -13,89 +13,104 @@ namespace HSP.DAL.Repositories
 			_userManager = userManager;
 		}
 
-		public Task<IdentityResult> AddLoginAsync(AppUser user, UserLoginInfo login)
+		public async Task<IdentityResult> AddLoginAsync(AppUser user, UserLoginInfo login)
 		{
-			return _userManager.AddLoginAsync(user, login);
+			return await _userManager.AddLoginAsync(user, login);
 		}
 
-		public Task<IdentityResult> AddPasswordAsync(AppUser user, string password)
+		public async Task<IdentityResult> AddPasswordAsync(AppUser user, string password)
 		{
-			return _userManager.AddPasswordAsync(user, password);
+			return await _userManager.AddPasswordAsync(user, password);
 		}
 
-		public Task<IdentityResult> AddToRoleAsync(AppUser user, string role)
+		public async Task<IdentityResult> AddToRoleAsync(AppUser user, string role)
 		{
-			return _userManager.AddToRoleAsync(user, role);
+			return await _userManager.AddToRoleAsync(user, role);
 		}
 
-		public Task<bool> CheckPasswordAsync(AppUser user, string password)
+		public async Task<bool> CheckPasswordAsync(AppUser user, string password)
 		{
-			return _userManager.CheckPasswordAsync(user, password);
+			return await _userManager.CheckPasswordAsync(user, password);
 		}
 
-		public Task<IdentityResult> ConfirmEmailAsync(AppUser user, string token)
+		public async Task<IdentityResult> ConfirmEmailAsync(AppUser user, string token)
 		{
-			return _userManager.ConfirmEmailAsync(user, token);
+			return await _userManager.ConfirmEmailAsync(user, token);
 		}
 
-		public Task<IdentityResult> CreateAsync(AppUser user, string password)
+		public async Task<IdentityResult> CreateAsync(AppUser user, string password)
 		{
-			return _userManager.CreateAsync(user, password);
+			return await _userManager.CreateAsync(user, password);
 		}
 
-		public Task<IdentityResult> CreateAsync(AppUser user)
+		public async Task<IdentityResult> CreateAsync(AppUser user)
 		{
-			return _userManager.CreateAsync(user);
+			return await _userManager.CreateAsync(user);
 		}
 
-		public Task<AppUser?> FindByEmailAsync(string email)
+		public async Task<AppUser?> FindByEmailAsync(string email)
 		{
-			return _userManager.FindByEmailAsync(email);
+			return await _userManager.FindByEmailAsync(email);
 		}
 
-		public Task<AppUser?> FindByPhoneNumberAsync(string phoneNumber)
+		public async Task<AppUser?> FindByPhoneNumberAsync(string phoneNumber)
 		{
-			return Task.FromResult(_userManager.Users.FirstOrDefault(u => u.PhoneNumber == phoneNumber));
+			return await Task.FromResult(_userManager.Users.FirstOrDefault(u => u.PhoneNumber == phoneNumber));
 		}
 
-		public Task<AppUser?> FindByIdAsync(Guid id)
+		public async Task<AppUser?> FindByIdAsync(Guid id)
 		{
-			return _userManager.FindByIdAsync(id.ToString());
+			return await _userManager.FindByIdAsync(id.ToString());
 		}
 
-		public Task<AppUser?> FindByLoginAsync(string loginProvider, string providerKey)
+		public async Task<AppUser?> FindByLoginAsync(string loginProvider, string providerKey)
 		{
-			return _userManager.FindByLoginAsync(loginProvider, providerKey);
+			return await _userManager.FindByLoginAsync(loginProvider, providerKey);
 		}
 
-		public Task<string> GenerateEmailConfirmationTokenAsync(AppUser user)
+		public async Task<string> GenerateEmailConfirmationTokenAsync(AppUser user)
 		{
-			return _userManager.GenerateEmailConfirmationTokenAsync(user);
+			return await _userManager.GenerateEmailConfirmationTokenAsync(user);
 		}
 
-		public Task<string> GeneratePasswordResetTokenAsync(AppUser user)
+		public async Task<string> GeneratePasswordResetTokenAsync(AppUser user)
 		{
-			return _userManager.GeneratePasswordResetTokenAsync(user);
+			return await _userManager.GeneratePasswordResetTokenAsync(user);
 		}
 
-		public Task<IList<UserLoginInfo>> GetLoginsAsync(AppUser user)
+		public async Task<IList<UserLoginInfo>> GetLoginsAsync(AppUser user)
 		{
-			return _userManager.GetLoginsAsync(user);
+			return await _userManager.GetLoginsAsync(user);
 		}
 
-		public Task<IList<string>> GetRolesAsync(AppUser user)
+		public async Task<IList<string>> GetRolesAsync(AppUser user)
 		{
-			return _userManager.GetRolesAsync(user);
+			return await _userManager.GetRolesAsync(user);
 		}
 
-		public Task<IdentityResult> ResetPasswordAsync(AppUser user, string token, string newPassword)
+		public async Task<IdentityResult> ResetPasswordAsync(AppUser user, string token, string newPassword)
 		{
-			return _userManager.ResetPasswordAsync(user, token, newPassword);
+			return await _userManager.ResetPasswordAsync(user, token, newPassword);
 		}
 
-		public Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword)
+		public async Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword)
 		{
-			return _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+			return await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+		}
+
+		public async Task<string> GenerateUserTokenAsync(AppUser user, string tokenProvider, string purpose)
+		{
+			return await _userManager.GenerateUserTokenAsync(user, tokenProvider, purpose);
+		}
+
+		public async Task<bool> VerifyUserTokenAsync(AppUser user, string tokenProvider, string purpose, string token)
+		{
+			return await _userManager.VerifyUserTokenAsync(user, tokenProvider, purpose, token);
+		}
+
+		public async Task<IdentityResult> UpdateAccount(AppUser user)
+		{
+			return await _userManager.UpdateAsync(user);
 		}
 	}
 }

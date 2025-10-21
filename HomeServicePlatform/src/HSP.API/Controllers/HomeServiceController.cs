@@ -1,5 +1,4 @@
-﻿using HSP.Core.Dtos.ServiceDto;
-using HSP.Service.Interfaces;
+﻿using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HSP.API.Controllers
@@ -13,12 +12,12 @@ namespace HSP.API.Controllers
 		{
 			_homeServiceService = homeServiceService;
 		}
-		[HttpGet("services")]
-		public async Task<IActionResult> GetAllServices([FromQuery] HomeServiceInput input)
-		{
-			var services = await _homeServiceService.GetAllServicesAsync(input);
-			return Ok(services);
-		}
+		//[HttpGet("services")]
+		//public async Task<IActionResult> GetAllServices([FromQuery] HomeServiceInput input)
+		//{
+		//	var services = await _homeServiceService.GetAllServicesAsync(input);
+		//	return Ok(services);
+		//}
 		[HttpGet("services-homepage")]
 		public async Task<IActionResult> GetAllServiceHomePage()
 		{
@@ -26,12 +25,12 @@ namespace HSP.API.Controllers
 			return Ok(services);
 		}
 		#region service category
-		[HttpGet("service-categories")]
-		public async Task<IActionResult> GetAllServiceCategories()
-		{
-			var categories = await _homeServiceService.GetAllServicesCategoryAsync();
-			return Ok(categories);
-		}
+		//[HttpGet("service-categories")]
+		//public async Task<IActionResult> GetAllServiceCategories()
+		//{
+		//	var categories = await _homeServiceService.GetAllServicesCategoryAsync();
+		//	return Ok(categories);
+		//}
 		#endregion
 	}
 }

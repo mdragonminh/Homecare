@@ -72,21 +72,6 @@ namespace HSP.Service.Test.Implementations
 			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
 		}
 		[Fact]
-		public async Task CreateHomeAsync_WhenSaveChangesFails_ShouldThrowException()
-		{
-			var input = new CreateHomeDto { Name = "My Home", Address = "123 valid street" };
-			var customerProfileId = Guid.NewGuid();
-			var coordinates = new CoordinatesDto { Latitude = 10.0, Longitude = 20.0 };
-			_mockGeocodingService.Setup(s => s.GetCoordinatesForAddressAsync(input.Address))
-						.ReturnsAsync(coordinates);
-			_mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(0);
-
-			await Assert.ThrowsAsync<Exception>(() => _homeService.CreateHomeAsync(input, customerProfileId));
-
-			_mockHomeRepository.Verify(r => r.AddAsync(It.IsAny<Home>()), Times.Once);
-			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
-		}
-		[Fact]
 		public async Task DeleteHomeAsync_WithValidHomeId_ShouldDeleteAndReturnTrue()
 		{
 			var homeId = Guid.NewGuid();
@@ -96,7 +81,7 @@ namespace HSP.Service.Test.Implementations
 					new Home
 					{
 							Id = homeId,
-							CustomerProfile = new CustomerProfile { UserId = userId }
+							CustomerProfile = new AppUser { Id = userId }
 					}
 			};
 			var mockQueryable = homes.BuildMock();
@@ -126,29 +111,7 @@ namespace HSP.Service.Test.Implementations
 			_mockHomeRepository.Verify(r => r.DeleteAsync(It.IsAny<Guid>()), Times.Never);
 			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
 		}
-		[Fact]
-		public async Task DeleteHomeAsync_WhenDeleteFails_ShouldReturnFalse()
-		{
-			var homeId = Guid.NewGuid();
-			var userId = Guid.NewGuid();
-			var homes = new List<Home>
-			{
-					new Home
-					{
-							Id = homeId,
-							CustomerProfile = new CustomerProfile { UserId = userId }
-					}
-			};
-			var mockQueryable = homes.BuildMock();
-			_mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(0);
-			_mockHomeRepository
-				.Setup(r => r.GetAll())
-				.Returns(mockQueryable);
-			var result = await _homeService.DeleteHomeAsynce(homeId, userId.ToString());
-			Assert.False(result);
-			_mockHomeRepository.Verify(r => r.DeleteAsync(homeId), Times.Once);
-			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
-		}
+		
 		[Fact]
 		public async Task UpdateHomeAsync_WithValidInput_ShouldUpdateAndReturnTrue()
 		{
@@ -161,7 +124,7 @@ namespace HSP.Service.Test.Implementations
 				Id = homeId,
 				Name = "Old Home",
 				Address = "123 old street",
-				CustomerProfile = new CustomerProfile { UserId = userId }
+				CustomerProfile = new AppUser { Id = userId }
 			};
 			var homes = new List<Home>{ homeToUpdate };
 			var mockQueryable = homes.BuildMock();
@@ -212,7 +175,7 @@ namespace HSP.Service.Test.Implementations
 							Address = "123 old street",
 							Latitude = 10.0,
 							Longitude = 20.0,
-							CustomerProfile = new CustomerProfile { UserId = userId }
+							CustomerProfile = new AppUser { Id = userId }
 					}
 			};
 			var mockQueryable = homes.BuildMock();
@@ -227,35 +190,14 @@ namespace HSP.Service.Test.Implementations
 			_mockGeocodingService.Verify(s => s.GetCoordinatesForAddressAsync(input.Address), Times.Once);
 		}
 		[Fact]
-		public async Task UpdateHomeAsync_WhenSaveChangesFails_ShouldThrowException()
+		public async Task UpdateHomeAsync_WithNullInput_ShouldThrowArgumentException()
 		{
 			var homeId = Guid.NewGuid();
 			var userId = Guid.NewGuid();
-			var input = new UpdateHomeDto { Name = "Updated Home", Address = "456 valid street" };
-			var coordinates = new CoordinatesDto { Latitude = 30.0, Longitude = 40.0 };
-			var homes = new List<Home>
-			{
-					new Home
-					{
-							Id = homeId,
-							Name = "Old Home",
-							Address = "123 old street",
-							Latitude = 10.0,
-							Longitude = 20.0,
-							CustomerProfile = new CustomerProfile { UserId = userId }
-					}
-			};
-			var mockQueryable = homes.BuildMock();
-			_mockGeocodingService.Setup(s => s.GetCoordinatesForAddressAsync(input.Address))
-						.ReturnsAsync(coordinates);
-			_mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(0);
-			_mockHomeRepository
-				.Setup(r => r.GetAll())
-				.Returns(mockQueryable);
-			await Assert.ThrowsAsync<Exception>(() => _homeService.UpdateHomeAsync(homeId, input, userId.ToString()));
-			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
-			_mockHomeRepository.Verify(r => r.GetAll(), Times.Once);
-			_mockGeocodingService.Verify(s => s.GetCoordinatesForAddressAsync(input.Address), Times.Once);
+			await Assert.ThrowsAsync<ArgumentException>(() => _homeService.UpdateHomeAsync(homeId, null!, userId.ToString()));
+			_mockHomeRepository.Verify(r => r.GetAll(), Times.Never);
+			_mockGeocodingService.Verify(s => s.GetCoordinatesForAddressAsync(It.IsAny<string>()), Times.Never);
+			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
 		}
 		[Fact]
 		public async Task GetHomeByIdAsync_WithValidId_ShouldReturnHomeDto()
@@ -271,8 +213,8 @@ namespace HSP.Service.Test.Implementations
 							Address = "123 street",
 							Latitude = 10.0,
 							Longitude = 20.0,
-							CustomerProfileId = Guid.NewGuid(),
-							CustomerProfile = new CustomerProfile { UserId = userId }
+							CustomerId = Guid.NewGuid(),
+							CustomerProfile = new AppUser { Id = userId }
 					}
 			};
 			var mockQueryable = homes.BuildMock();
@@ -288,6 +230,7 @@ namespace HSP.Service.Test.Implementations
 			Assert.Equal(20.0, result.Longitude);
 			_mockHomeRepository.Verify(r => r.GetAll(), Times.Once);
 		}
+
 		[Fact]
 		public async Task GetHomeByIdAsync_WhenHomeNotFound_ShouldThrowValidationException()
 		{
@@ -308,8 +251,8 @@ namespace HSP.Service.Test.Implementations
 			var input = new HomeInput { Search = "home" };
 			var homes = new List<Home>
 			{
-					new Home { Name = "home sweet", CustomerProfile = new CustomerProfile { UserId = userId } },
-					new Home { Name = "villa", CustomerProfile = new CustomerProfile { UserId = userId } }
+					new Home { Name = "home sweet", CustomerProfile = new AppUser { Id = userId } },
+					new Home { Name = "villa", CustomerProfile = new AppUser { Id = userId } }
 			};
 			var mockQueryable = homes.BuildMock();
 

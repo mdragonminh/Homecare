@@ -56,7 +56,7 @@ namespace HSP.Service.Implementations
 		{
 			var query = _homeItemRepository.GetAll()
 				.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
-				.Where(x => x.HomeId == homeId && x.Home.CustomerProfile.UserId.ToString().Equals(userId));
+				.Where(x => x.HomeId == homeId && x.Home.CustomerProfile.Id.ToString().Equals(userId));
 
 			var homeItemDto = query.Select(x => new HomeItemDto
 			{
@@ -105,7 +105,7 @@ namespace HSP.Service.Implementations
 		{
 			var isOwner = await _homeRepository.GetAll()
 					.Include(h => h.CustomerProfile)
-					.AnyAsync(h => h.Id == homeId && h.CustomerProfile.UserId.ToString() == userId);
+					.AnyAsync(h => h.Id == homeId && h.CustomerProfile.Id.ToString() == userId);
 			if (!isOwner)
 			{
 				throw new UnauthorizedAccessException("User does not have access to these home items.");
@@ -116,8 +116,7 @@ namespace HSP.Service.Implementations
 			var homeItem = await _homeItemRepository.GetAll()
 					.Include(x => x.Home)
 					.ThenInclude(h => h.CustomerProfile)
-					.ThenInclude(cp => cp.User)
-					.FirstOrDefaultAsync(i => i.Id == itemId && i.Home.CustomerProfile.UserId.ToString() == userId);
+					.FirstOrDefaultAsync(i => i.Id == itemId && i.Home.CustomerProfile.Id.ToString() == userId);
 
 			if (homeItem == null)
 			{

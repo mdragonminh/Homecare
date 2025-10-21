@@ -1,13 +1,15 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Constans;
+using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.DAL.Data;
 using HSP.DAL.Interfaces;
 using HSP.DAL.Repositories;
 using HSP.DAL.UnitOfWorks;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Identity;
+using HSP.DAL.Identity;
 
 namespace HSP.DAL.Extensions
 {
@@ -27,20 +29,22 @@ namespace HSP.DAL.Extensions
 				o.Password.RequireDigit = true;
 				o.SignIn.RequireConfirmedEmail = true;
 			}).AddEntityFrameworkStores<ApplicationDbContext>()
-				.AddDefaultTokenProviders();
-			services.Configure<DataProtectionTokenProviderOptions>(options =>
+				.AddDefaultTokenProviders()
+				.AddTokenProvider<BookingTokenProvider<AppUser>>(IdentityTokenPurposes.Booking);
+			services.Configure<DataProtectionTokenProviderOptions>(opt =>
 			{
-				options.TokenLifespan = TimeSpan.FromMinutes(10);
+				opt.TokenLifespan = TimeSpan.FromMinutes(10);
 			});
+
 			services.AddScoped<IUserRepository, UserRepository>();
 			services.AddScoped<IRepository<TechnicianProfile, Guid>, Repository<TechnicianProfile, Guid>>();
-			services.AddScoped<IRepository<CustomerProfile, Guid>, Repository<CustomerProfile, Guid>>();
+			//services.AddScoped<IRepository<CustomerProfile, Guid>, Repository<CustomerProfile, Guid>>();
 			services.AddScoped<IRepository<Home, Guid>, Repository<Home, Guid>>();
 			services.AddScoped<IRepository<HomeItem, Guid>, Repository<HomeItem, Guid>>();
 			services.AddScoped<IRepository<Core.Entities.Service, Guid>, Repository<Core.Entities.Service, Guid>>();
-			services.AddScoped<IRepository<ServiceCategory, Guid>, Repository<ServiceCategory, Guid>>();
 			services.AddScoped<IRepository<HSP.Core.Entities.File, Guid>, Repository<HSP.Core.Entities.File, Guid>>();
 			services.AddScoped<IRepository<FileRelation, Guid>, Repository<FileRelation, Guid>>();
+			services.AddScoped<IRepository<ObjectType, Guid>, Repository<ObjectType, Guid>>();
 			services.AddScoped<IRepository<Warehouse, Guid>, Repository<Warehouse, Guid>>();
 			services.AddScoped<IRepository<Equipment, Guid>, Repository<Equipment, Guid>>();
 			services.AddScoped<IRepository<Booking, Guid>, Repository<Booking, Guid>>();

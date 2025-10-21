@@ -10,6 +10,7 @@ namespace HSP.Service.Extensions
 	{
 		public static IServiceCollection AddServiceServices(this IServiceCollection services)
 		{
+			services.AddScoped<IJwtService, JwtService>();
 			services.AddScoped<IAuthenticationService, AuthenticationService>();
 			services.AddScoped<IAccountManagementService, AccountManagementService>();
 			services.AddScoped<IEmailService, EmailService>();

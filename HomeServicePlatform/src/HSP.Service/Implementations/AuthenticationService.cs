@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.AccountDto;
 using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
@@ -25,28 +26,32 @@ namespace HSP.Service.Implementations
 	{
 		private readonly IUserRepository _userRepository;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
-		private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
+		//private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly SignInManager<AppUser> _signInManager;
-		private readonly JwtSettingsDto _jwtSettings;
+		//private readonly JwtSettingsDto _jwtSettings;
 		private readonly UrlSettingsDto _urlSettings;
+		private readonly IJwtService _jwtService;
 		private readonly IEmailService _emailService;
 		private readonly IEmailTemplateService _emailTemplateService;
 
-		public AuthenticationService(IUserRepository userRepository, IOptions<JwtSettingsDto> jwtOptions,
+		public AuthenticationService(IUserRepository userRepository,
+			//IOptions<JwtSettingsDto> jwtOptions,
 			IOptions<UrlSettingsDto> urlOptions,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
-			IRepository<CustomerProfile, Guid> customerProfileRepository,
+			//IRepository<CustomerProfile, Guid> customerProfileRepository,
 			SignInManager<AppUser> signInManager,
+			IJwtService jwtService,
 			IEmailService emailService,
 			IEmailTemplateService emailTemplateService,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_userRepository = userRepository;
-			_jwtSettings = jwtOptions.Value;
+			//_jwtSettings = jwtOptions.Value;
 			_urlSettings = urlOptions.Value;
 			_technicianRepository = technicianRepository;
 			_signInManager = signInManager;
-			_customerProfileRepository = customerProfileRepository;
+			_jwtService = jwtService;
+			//_customerProfileRepository = customerProfileRepository;
 			_emailService = emailService;
 			_emailTemplateService = emailTemplateService;
 		}
@@ -110,7 +115,12 @@ namespace HSP.Service.Implementations
 			{
 				throw new UnauthorizedAccessException(_localizer["InvalidPassword"]);
 			}
-			var token = await GenerateJwtToken(user);
+			var token = await _jwtService.GenerateJwtToken(new UserDto
+			{
+				Id = user.Id,
+				Email = user.Email ?? string.Empty,
+				FullName = user.FullName ?? string.Empty
+			});
 			return new LoginResponseDto
 			{
 				JwtToken = token,
@@ -131,7 +141,12 @@ namespace HSP.Service.Implementations
 				throw new Exception(_localizer["CannotFindOrCreateUser"]);
 			}
 
-			var token = await GenerateJwtToken(user);
+			var token = await _jwtService.GenerateJwtToken(new Core.Dtos.AccountDto.UserDto
+			{
+				Id = user.Id,
+				Email = user.Email ?? string.Empty,
+				FullName = user.FullName ?? string.Empty
+			});
 			return new LoginResponseDto
 			{
 				JwtToken = token,
@@ -176,39 +191,20 @@ namespace HSP.Service.Implementations
 				EmailConfirmed = true
 			};
 
-			using (var transaction = await _unitOfWork.BeginTransactionAsync())
+
+			var createResult = await _userRepository.CreateAsync(user);
+			if (!createResult.Succeeded)
 			{
-				try
-				{
-					var createResult = await _userRepository.CreateAsync(user);
-					if (!createResult.Succeeded)
-					{
-						throw new Exception(_localizer["UserCreationFailed"]);
-					}
-
-					var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
-					if (!roleResult.Succeeded)
-					{
-						throw new Exception(_localizer["AddToRoleFailed"]);
-					}
-
-					var customerProfile = new CustomerProfile
-					{
-						UserId = user.Id,
-						DateCreated = DateTime.UtcNow
-					};
-					await _customerProfileRepository.AddAsync(customerProfile);
-					await _unitOfWork.SaveChangesAsync();
-
-					await transaction.CommitAsync();
-					return user;
-				}
-				catch (Exception)
-				{
-					await transaction.RollbackAsync();
-					throw;
-				}
+				throw new Exception(_localizer["UserCreationFailed"]);
 			}
+
+			var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
+			if (!roleResult.Succeeded)
+			{
+				throw new Exception(_localizer["AddToRoleFailed"]);
+			}
+
+			return user;
 		}
 
 		private static bool IsValidEmail(string input)
@@ -222,33 +218,6 @@ namespace HSP.Service.Implementations
 			{
 				return false;
 			}
-		}
-
-		private async Task<string> GenerateJwtToken(AppUser user)
-		{
-			var roles = await _userRepository.GetRolesAsync(user);
-			var claims = new List<Claim>
-			{
-						new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-						new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-						new Claim(ClaimTypes.Name, user.FullName ?? string.Empty),
-				};
-			foreach (var role in roles)
-			{
-				claims.Add(new Claim(ClaimTypes.Role, role));
-			}
-			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
-			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-			var token = new JwtSecurityToken(
-					issuer: _jwtSettings.Issuer,
-					audience: _jwtSettings.Audience,
-					claims: claims,
-					expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
-					signingCredentials: creds
-			);
-
-			return new JwtSecurityTokenHandler().WriteToken(token);
 		}
 
 		public async Task<ChangePasswordResponseDto> ChangePassword(Guid userId, ChangePasswordRequestDto input)
@@ -291,40 +260,20 @@ namespace HSP.Service.Implementations
 			{
 				return await HandleExistingUserAsync(userExisting);
 			}
+			var user = await CreateCustomerAsync(input);
+			await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
+			var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
+			await SendConfirmationEmailAsync(user, token);
 
-			using (var transaction = await _unitOfWork.BeginTransactionAsync())
+			return new RegisterResponseDto
 			{
-				try
-				{
-					var user = await CreateCustomerAsync(input);
-					await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
-					await _unitOfWork.SaveChangesAsync();
-					var customerProfile = new CustomerProfile
-					{
-						UserId = user.Id,
-						DateCreated = DateTime.UtcNow,
-					};
-					await _customerProfileRepository.AddAsync(customerProfile);
-					await _unitOfWork.SaveChangesAsync();
-					var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
-					await SendConfirmationEmailAsync(user, token);
-
-					await _unitOfWork.CommitTransactionAsync();
-
-					return new RegisterResponseDto
-					{
-						UserId = user.Id,
-						Email = user.Email,
-						EmailConfirmToken = token
-					};
-				}
-				catch
-				{
-					await transaction.RollbackAsync();
-					throw;
-				}
-			}
+				UserId = user.Id,
+				Email = user.Email,
+				EmailConfirmToken = token
+			};
 		}
+
+
 		private async Task<AppUser> CreateCustomerAsync(RegisterRequestDto input)
 		{
 			var user = new AppUser
@@ -408,9 +357,9 @@ namespace HSP.Service.Implementations
 					UserId = user.Id,
 					//SkillSet = input.SkillSet,
 					ExperienceYears = input.ExperienceYears,
-					CertificatePaths = input.CertificateFilePaths?.Any() == true
-						? System.Text.Json.JsonSerializer.Serialize(input.CertificateFilePaths)
-						: null,
+					//CertificatePaths = input.CertificateFilePaths?.Any() == true
+					//	? System.Text.Json.JsonSerializer.Serialize(input.CertificateFilePaths)
+					//	: null,
 					DateCreated = DateTime.UtcNow,
 					DateModified = DateTime.UtcNow,
 					IsDeleted = false

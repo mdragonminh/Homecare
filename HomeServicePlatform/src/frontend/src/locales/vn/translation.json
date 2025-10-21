@@ -3,6 +3,26 @@
     "name": "HomeServicePlatform"
   },
   "ui": {
+    "validation": {
+      "fullname": {
+        "required": "Vui lòng nhập họ và tên",
+        "min_length": "Họ và tên phải có ít nhất 2 ký tự",
+        "max_length": "Họ và tên không được vượt quá 100 ký tự",
+        "no_consecutive_spaces": "Không được có khoảng trắng liên tiếp",
+        "invalid_chars": "Họ và tên chỉ chứa chữ, số và khoảng trắng"
+      },
+      "email": {
+        "required": "Vui lòng nhập email",
+        "invalid_format": "Email không đúng định dạng (vd: user@example.com)",
+        "no_spaces": "Email không được chứa khoảng trắng",
+        "max_length": "Email không được vượt quá 100 ký tự"
+      },
+      "phone": {
+        "required": "Vui lòng nhập số điện thoại",
+        "invalid_format": "Số điện thoại không hợp lệ",
+        "no_spaces": "Số điện thoại không được chứa khoảng trắng"
+      }
+    },
     "change_password_modal": {
       "title": "Đổi mật khẩu",
       "current_password": "Mật khẩu hiện tại",
@@ -98,6 +118,16 @@
     "account_created": "Ngày tạo tài khoản",
     "account_verified": "Tài khoản đã xác thực",
     "not_updated": "Chưa cập nhật",
+    "upload": "Tải lên",
+    "avatar_invalid_format": "Chỉ hỗ trợ file JPEG, JPG, PNG, GIF",
+    "avatar_too_large": "File quá lớn (tối đa 5MB)",
+    "confirm_delete_avatar": "Bạn có chắc muốn xóa avatar?",
+    "delete_avatar_modal": {
+      "title": "Xóa ảnh đại diện",
+      "message": "Bạn có chắc chắn muốn xóa ảnh đại diện hiện tại? Hành động này không thể hoàn tác.",
+      "delete": "Xóa",
+      "cancel": "Hủy bỏ"
+    },
     "refresh": "Làm mới",
     "change_password": "Đổi mật khẩu",
     "view_manage_profile": "Xem và quản lý thông tin profile của bạn",
@@ -358,6 +388,7 @@
       "subtitle": "Tiện lợi, nhanh chóng, phục vụ 24/7"
     }
   },
+ 
   "nav": {
     "home": "Trang chủ",
     "services": "Dịch vụ",
@@ -490,6 +521,9 @@
       "skills_specialization": "Kỹ năng & Chuyên môn",
       "specialization": "Chuyên môn",
       "certifications": "Chứng chỉ",
+      "certificate_files": "File chứng chỉ",
+      "preview": "Xem trước",
+      "download": "Tải xuống",
       "introduction": "Giới thiệu",
       "work_schedule": "Thời gian làm việc",
       "skill_description": "Mô tả kỹ năng",

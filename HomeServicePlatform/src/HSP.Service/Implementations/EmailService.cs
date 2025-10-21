@@ -10,17 +10,17 @@ namespace HSP.Service.Implementations
 	public class EmailService : IEmailService
 	{
 		private readonly SmtpConfigurationDto _smtpConfig;
-		private readonly SmtpClient _smtpClient;
+		//private readonly SmtpClient _smtpClient;
 		public EmailService(IOptions<SmtpConfigurationDto> smtpOptions)
 		{
 			_smtpConfig = smtpOptions.Value;
 
-			_smtpClient = new SmtpClient(_smtpConfig.Host)
-			{
-				Port = _smtpConfig.Port,
-				Credentials = new System.Net.NetworkCredential(_smtpConfig.UserName, _smtpConfig.Password),
-				EnableSsl = _smtpConfig.UseSsl,
-			};
+			//_smtpClient = new SmtpClient(_smtpConfig.Host)
+			//{
+			//	Port = _smtpConfig.Port,
+			//	Credentials = new System.Net.NetworkCredential(_smtpConfig.UserName, _smtpConfig.Password),
+			//	EnableSsl = _smtpConfig.UseSsl,
+			//};
 		}
 
 		public async Task SendEmailAsync(EmailDto input)
@@ -34,21 +34,31 @@ namespace HSP.Service.Implementations
 			if (string.IsNullOrWhiteSpace(input.FromName))
 				input.FromName = _smtpConfig.FromName;
 
-			var mailMessage = new MailMessage
+			using (var smtpClient = new SmtpClient(_smtpConfig.Host)
 			{
-				From = new MailAddress(input.FromEmail, input.FromName),
-				Subject = input.Subject,
-				Body = input.HtmlBody,
-				IsBodyHtml = true
-			};
-			mailMessage.To.Add(input.ToEmail);
-			try
+				Port = _smtpConfig.Port,
+				Credentials = new System.Net.NetworkCredential(_smtpConfig.UserName, _smtpConfig.Password),
+				EnableSsl = _smtpConfig.UseSsl,
+			})
 			{
-				await _smtpClient.SendMailAsync(mailMessage);
-			}
-			catch (Exception ex)
-			{
-				throw new InvalidOperationException("Email sending failed", ex);
+				using (var mailMessage = new MailMessage
+				{
+					From = new MailAddress(input.FromEmail, input.FromName),
+					Subject = input.Subject,
+					Body = input.HtmlBody,
+					IsBodyHtml = true
+				})
+				{
+					mailMessage.To.Add(input.ToEmail);
+					try
+					{
+						await smtpClient.SendMailAsync(mailMessage);
+					}
+					catch (Exception ex)
+					{
+						throw new InvalidOperationException($"Email sending failed to {input.ToEmail}", ex);
+					}
+				}
 			}
 		}
 	}

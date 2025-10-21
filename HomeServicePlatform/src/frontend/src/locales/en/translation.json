@@ -3,6 +3,26 @@
     "name": "HomeServicePlatform"
   },
   "ui": {
+    "validation": {
+      "fullname": {
+        "required": "Please enter your full name",
+        "min_length": "Full name must be at least 2 characters",
+        "max_length": "Full name cannot exceed 100 characters",
+        "no_consecutive_spaces": "Cannot have consecutive spaces",
+        "invalid_chars": "Full name can only contain letters, numbers and spaces"
+      },
+      "email": {
+        "required": "Please enter your email",
+        "invalid_format": "Invalid email format (e.g., user@example.com)",
+        "no_spaces": "Email cannot contain spaces",
+        "max_length": "Email cannot exceed 100 characters"
+      },
+      "phone": {
+        "required": "Please enter your phone number",
+        "invalid_format": "Invalid phone number format ",
+        "no_spaces": "Phone number cannot contain spaces"
+      }
+    },
     "change_password_modal": {
       "title": "Change Password",
       "current_password": "Current Password",
@@ -99,6 +119,16 @@
     "account_created": "Account Created",
     "account_verified": "Account Verified",
     "not_updated": "Not updated",
+    "upload": "Upload",
+    "avatar_invalid_format": "Only JPEG, JPG, PNG, GIF files are supported",
+    "avatar_too_large": "File too large (max 5MB)",
+    "confirm_delete_avatar": "Are you sure you want to delete avatar?",
+    "delete_avatar_modal": {
+      "title": "Delete Avatar",
+      "message": "Are you sure you want to delete your current avatar? This action cannot be undone.",
+      "delete": "Delete",
+      "cancel": "Cancel"
+    },
     "refresh": "Refresh",
     "change_password": "Change Password",
     "view_manage_profile": "View and manage your profile information",

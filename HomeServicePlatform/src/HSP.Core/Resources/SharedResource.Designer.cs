@@ -133,6 +133,15 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The Email or Phone Number field is required.
+        /// </summary>
+        public static string EmailOrPhoneIsRequired {
+            get {
+                return ResourceManager.GetString("EmailOrPhoneIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error loading google login.
         /// </summary>
         public static string ErrorLoadingGoogleLogin {
@@ -223,6 +232,24 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid phone number format.
+        /// </summary>
+        public static string InvalidPhoneNumberFormat {
+            get {
+                return ResourceManager.GetString("InvalidPhoneNumberFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No available technician found .
+        /// </summary>
+        public static string NoAvailableTechniciansFound {
+            get {
+                return ResourceManager.GetString("NoAvailableTechniciansFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Password change failed.
         /// </summary>
         public static string PasswordChangeFailed {
@@ -264,6 +291,24 @@ namespace HSP.Core.Resources {
         public static string PasswordsDoNotMatch {
             get {
                 return ResourceManager.GetString("PasswordsDoNotMatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Phone Number field is required.
+        /// </summary>
+        public static string PhoneNumberIsRequired {
+            get {
+                return ResourceManager.GetString("PhoneNumberIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Phone number cannot exceed 20 characters.
+        /// </summary>
+        public static string PhoneNumberMaxLength {
+            get {
+                return ResourceManager.GetString("PhoneNumberMaxLength", resourceCulture);
             }
         }
         

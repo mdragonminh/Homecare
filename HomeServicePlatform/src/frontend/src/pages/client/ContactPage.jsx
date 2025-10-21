@@ -432,20 +432,20 @@ export const ContactPage = ({ loggedInUser }) => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-white">
+      {/* <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2
               className="text-4xl font-bold text-gray-900 mb-4 animate-fade-in-up"
               style={{ animationFillMode: "backwards" }}
             >
-              Câu hỏi thường gặp
+              {t("contact.faq.title")}
             </h2>
             <p
               className="text-xl text-gray-600 animate-fade-in-up"
               style={{ animationFillMode: "backwards", animationDelay: "200ms" }}
             >
-              Những câu hỏi được khách hàng quan tâm nhất
+              {t("contact.faq.subtitle")}
             </p>
           </div>
 
@@ -472,14 +472,14 @@ export const ContactPage = ({ loggedInUser }) => {
           </div>
 
           <div className="text-center mt-12">
-            <p className="text-gray-600 mb-4">Không tìm thấy câu trả lời?</p>
+            <p className="text-gray-600 mb-4">{t("contact.faq.no_answer")}</p>
             <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-300 flex items-center gap-2 mx-auto transform hover:scale-105 hover:shadow-lg active:scale-100">
               <Headphones className="w-5 h-5" />
-              Liên hệ hỗ trợ trực tiếp
+              {t("contact.faq.direct_support")}
             </button>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };

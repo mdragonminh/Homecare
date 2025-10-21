@@ -25,15 +25,22 @@ export function TechnicianTracker({role}) {
     }
     const watchId = navigator.geolocation.watchPosition(
       async (pos) => {
-        const { latitude, longitude } = pos.coords;
+         const { latitude, longitude, accuracy } = pos.coords;
         const now = Date.now();
-
+        // if (accuracy > 1000) {
+        //   console.warn(`Độ chính xác thấp: ${accuracy}m, bỏ qua vị trí này`);
+        //   return;
+        // }
         const dist = calcDistance(
           last.current.lat,
           last.current.lng,
           latitude,
           longitude
         );
+        if (last.current.lat && dist > 5) {
+          console.warn(`Phát hiện nhảy vị trí bất thường: ${dist.toFixed(2)}km, bỏ qua`);
+          return;
+        }
         const moved = dist > 0.05; 
         const timedOut = now - last.current.time > 30000; 
         if (moved || timedOut) {
@@ -47,11 +54,11 @@ export function TechnicianTracker({role}) {
         }
       },
       (err) => console.warn("Không thể lấy vị trí:", err.message),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
+  }, [role]);
 
   return null;
 }

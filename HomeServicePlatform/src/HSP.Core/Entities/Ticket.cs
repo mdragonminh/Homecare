@@ -17,7 +17,7 @@ namespace HSP.Core.Entities
 		public Guid SupporterId { get; set; }
 
 		[ForeignKey("SupporterId")]
-		public CustomerSupporter Supporter { get; set; } = null!;
+		public AppUser Supporter { get; set; } = null!;
 
 		public Guid? TechnicianId { get; set; }
 

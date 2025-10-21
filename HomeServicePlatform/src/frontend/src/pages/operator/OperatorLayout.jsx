@@ -42,8 +42,14 @@ export default function OperatorLayout({ loggedInUser }) {
         theme="light"
         width={260}
         style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          height: "100vh",
           boxShadow: "2px 0 8px 0 rgba(29,35,41,.05)",
           borderRight: "none",
+          zIndex: 100,
         }}
       >
         {/* Logo Section */}
@@ -112,7 +118,13 @@ export default function OperatorLayout({ loggedInUser }) {
         />
       </Sider>
 
-      <Layout style={{ background: "#f5f5f5" }}>
+      <Layout
+        style={{
+          background: "#f5f5f5",
+          marginLeft: collapsed ? 80 : 260,
+          transition: "margin-left 0.2s ease",
+        }}
+      >
         <Header
           style={{
             background: "#fff",

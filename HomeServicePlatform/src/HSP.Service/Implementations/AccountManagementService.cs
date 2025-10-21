@@ -85,7 +85,7 @@ namespace HSP.Service.Implementations
                     Department = user.Department,
                     IsActive = user.IsActive,
                     EmailConfirmed = user.EmailConfirmed,
-                    CreatedAt = user.CreatedAt,
+                    CreatedAt = user.DateCreated,
                     LastLoginAt = user.LastLoginAt,
                     CreatedBy = user.CreatedBy
                 });
@@ -120,7 +120,7 @@ namespace HSP.Service.Implementations
                 Department = user.Department,
                 IsActive = user.IsActive,
                 EmailConfirmed = user.EmailConfirmed,
-                CreatedAt = user.CreatedAt,
+                CreatedAt = user.DateCreated,
                 LastLoginAt = user.LastLoginAt,
                 CreatedBy = user.CreatedBy
             };
@@ -164,7 +164,7 @@ namespace HSP.Service.Implementations
                 Department = input.Department,
                 EmailConfirmed = true, // Auto-confirm for admin created accounts
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
+                DateCreated = DateTime.UtcNow,
                 CreatedBy = createdById
             };
 
@@ -220,7 +220,7 @@ namespace HSP.Service.Implementations
 
             if (hasChanges)
             {
-                user.UpdatedAt = DateTime.UtcNow;
+                user.DateModified = DateTime.UtcNow;
                 user.UpdatedBy = updatedById;
 
                 var result = await _userManager.UpdateAsync(user);
@@ -236,7 +236,7 @@ namespace HSP.Service.Implementations
             if (user == null) return false;
 
             user.IsActive = false;
-            user.UpdatedAt = DateTime.UtcNow;
+            user.DateModified = DateTime.UtcNow;
             user.UpdatedBy = disabledById;
             user.DisabledReason = input.Reason;
             user.DisabledAt = DateTime.UtcNow;
@@ -251,7 +251,7 @@ namespace HSP.Service.Implementations
             if (user == null) return false;
 
             user.IsActive = true;
-            user.UpdatedAt = DateTime.UtcNow;
+            user.DateModified = DateTime.UtcNow;
             user.UpdatedBy = enabledById;
             user.DisabledReason = null;
             user.DisabledAt = null;
@@ -267,7 +267,7 @@ namespace HSP.Service.Implementations
 
             // Soft delete by disabling the account
             user.IsActive = false;
-            user.UpdatedAt = DateTime.UtcNow;
+            user.DateModified = DateTime.UtcNow;
             user.UpdatedBy = deletedById;
             user.DisabledReason = "Account deleted by administrator";
             user.DisabledAt = DateTime.UtcNow;
@@ -294,7 +294,7 @@ namespace HSP.Service.Implementations
                     Department = user.Department,
                     IsActive = user.IsActive,
                     EmailConfirmed = user.EmailConfirmed,
-                    CreatedAt = user.CreatedAt,
+                    CreatedAt = user.DateCreated,
                     LastLoginAt = user.LastLoginAt,
                     CreatedBy = user.CreatedBy
                 });

@@ -16,7 +16,7 @@ namespace HSP.DAL.Data
 		{
 		}
 
-		public DbSet<CustomerProfile> CustomerProfiles { get; set; }
+		//public DbSet<CustomerProfile> CustomerProfiles { get; set; }
 		public DbSet<TechnicianProfile> TechnicianProfiles { get; set; }
 		public DbSet<Home> Homes { get; set; }
 		public DbSet<HomeItem> HomeItems { get; set; }
@@ -24,13 +24,12 @@ namespace HSP.DAL.Data
 		public DbSet<ObjectType> ObjectTypes { get; set; }
 		public DbSet<FileRelation> FileRelations { get; set; }
 		public DbSet<Core.Entities.Service> Services { get; set; }
-		public DbSet<ServiceCategory> ServiceCategories { get; set; }
 		public DbSet<Booking> Bookings { get; set; }
 		public DbSet<BookingFeedback> BookingFeedbacks { get; set; }
 		public DbSet<BookingCancellation> BookingCancellations { get; set; }
 		public DbSet<Warehouse> Warehouses { get; set; }
 		public DbSet<Equipment> Equipments { get; set; }
-		public DbSet<CustomerSupporter> CustomerSupporters { get; set; }
+		//public DbSet<CustomerSupporter> CustomerSupporters { get; set; }
 		public DbSet<Ticket> Tickets { get; set; }
 		public DbSet<SystemSetting> SystemSettings { get; set; }
 		public DbSet<AuditLog> AuditLogs { get; set; }
@@ -51,11 +50,11 @@ namespace HSP.DAL.Data
 			builder.Entity<AppUser>()
 					.HasIndex(u => u.NormalizedEmail);
 
-			builder.Entity<CustomerProfile>()
-			.HasOne(p => p.User)
-			.WithOne(u => u.CustomerProfile)
-			.HasForeignKey<CustomerProfile>(p => p.UserId)
-			.OnDelete(DeleteBehavior.Cascade);
+			//builder.Entity<CustomerProfile>()
+			//.HasOne(p => p.User)
+			//.WithOne(u => u.CustomerProfile)
+			//.HasForeignKey<CustomerProfile>(p => p.UserId)
+			//.OnDelete(DeleteBehavior.Cascade);
 			builder.Entity<TechnicianProfile>()
 			.HasOne(p => p.User)
 			.WithOne(u => u.TechnicianProfile)
@@ -64,7 +63,7 @@ namespace HSP.DAL.Data
 			builder.Entity<Home>()
 			.HasOne(h => h.CustomerProfile)
 			.WithMany(cp => cp.Homes)
-			.HasForeignKey(h => h.CustomerProfileId)
+			.HasForeignKey(h => h.CustomerId)
 			.OnDelete(DeleteBehavior.Cascade);
 			builder.Entity<Home>()
 				.HasMany(h => h.HomeItems)
@@ -91,7 +90,7 @@ namespace HSP.DAL.Data
 			{
 				entity.HasOne(b => b.Customer)
 							.WithMany()
-							.HasForeignKey(b => b.CustomerProfileId)
+							.HasForeignKey(b => b.CustomerId)
 							.OnDelete(DeleteBehavior.Restrict);
 
 				entity.HasOne(b => b.Technician)
@@ -103,9 +102,6 @@ namespace HSP.DAL.Data
 							.WithMany(s => s.Bookings)
 							.HasForeignKey(b => b.ServiceId)
 							.OnDelete(DeleteBehavior.Restrict);
-				//entity.Property(b => b.DateModified)
-				// .HasColumnType("datetime2")
-				// .HasDefaultValueSql("GETUTCDATE()");
 			});
 			builder.Entity<BookingFeedback>()
 			.HasKey(f => f.BookingId);
@@ -170,15 +166,14 @@ namespace HSP.DAL.Data
 
 			builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
 			builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
-			builder.Entity<CustomerProfile>().HasQueryFilter(cp => !cp.IsDeleted);
+			//builder.Entity<CustomerProfile>().HasQueryFilter(cp => !cp.IsDeleted);
 			builder.Entity<TechnicianProfile>().HasQueryFilter(tp => !tp.IsDeleted);
 			builder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
 			builder.Entity<Core.Entities.Service>().HasQueryFilter(s => !s.IsDeleted);
-			builder.Entity<ServiceCategory>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<Booking>().HasQueryFilter(b => !b.IsDeleted);
 			builder.Entity<Warehouse>().HasQueryFilter(w => !w.IsDeleted);
 			builder.Entity<Equipment>().HasQueryFilter(e => !e.IsDeleted);
-			builder.Entity<CustomerSupporter>().HasQueryFilter(s => !s.IsDeleted);
+			//builder.Entity<CustomerSupporter>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<Ticket>().HasQueryFilter(t => !t.IsDeleted);
 			builder.Entity<SystemSetting>().HasQueryFilter(s => !s.IsDeleted);
 		}
