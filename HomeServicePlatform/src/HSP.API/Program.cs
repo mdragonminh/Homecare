@@ -82,6 +82,8 @@ namespace HSP.API
 
 			app.UseHttpsRedirection();
 
+			app.UseStaticFiles(); // Enable static files serving
+
 			app.UseCors(CorsConstants.AllowFrontendPolicy);
 
 			app.UseRequestLocalization();
