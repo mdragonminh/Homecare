@@ -3,11 +3,7 @@ import axiosClient from "../config/axiosClient";
 const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
 
 export const serviceApi = {
-  /**
-   * Lấy danh sách các dịch vụ cho trang chủ.
-   * Endpoint: GET /api/HomeService/services-homepage
-   * @returns {Promise<{success: boolean, data?: Array, message?: string}>}
-   */
+
   getServices: async () => {
     try {
       const url = "/HomeService/services-homepage";
@@ -29,11 +25,6 @@ export const serviceApi = {
     }
   },
 
-  /**
-   * @param {string} address - Địa chỉ của vị trí tìm kiếm.
-   * @param {number} maxDistanceKm - Bán kính tìm kiếm (km).
-   * @returns {Promise<{success: boolean, data?: Array, message?: string}>}
-   */
   getNearbyTechnicians: async (address, maxDistanceKm) => {
     try {
       if (!address || address.trim() === "") throw new Error("Thiếu địa chỉ!");
@@ -63,15 +54,6 @@ export const serviceApi = {
     }
   },
 
-  /**
-   * Tạo yêu cầu dịch vụ và khớp nối/tạo booking.
-   * Endpoint: POST /api/ServiceRequest/create-and-match-booking
-   * @param {string} address - Địa chỉ dịch vụ.
-   * @param {string[]} serviceIds - Mảng các ID dịch vụ (UUIDs).
-   * @param {string} customerId - ID của khách hàng tạo yêu cầu.
-   * @param {number} [distanceKm=0] - Khoảng cách/bán kính tìm kiếm (km), mặc định 0.
-   * @returns {Promise<{success: boolean, data?: object, message?: string}>}
-   */
   createAndMatchBooking: async (address, serviceIds, customerId, distanceKm = 0,desiredDateTime) => {
     try {
     
@@ -147,10 +129,10 @@ export const serviceApi = {
           errorMessage = data?.message || data?.error || errorMessage;
         }
       } else if (error.request) {
-        // Request đã được gửi nhưng không nhận được response
+       
         errorMessage = "Không thể kết nối đến máy chủ";
       } else {
-        // Lỗi khi setup request
+      
         errorMessage = error.message || errorMessage;
       }
         

@@ -4,18 +4,18 @@ import AppRoutes from "./routes/AppRoutes";
 import { authApi } from "./services/authApi";
 import { Toaster, toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { LoadScript } from "@react-google-maps/api";
 
-const I18nLoadingFallback = () => (
-  <div className="flex justify-center items-center h-screen">
-    <Loader2 className="h-10 w-10 animate-spin text-blue-600" /> {/* Hoặc dùng spinner của bạn */}
-  </div>
-);
+const defaultLibraries = ["places"];
 export default function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [showLoginToast, setShowLoginToast] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+
   const { t } = useTranslation();
-  // Lấy thông tin user từ localStorage
+  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+
   const updateLoggedInUserFromStorage = useCallback(() => {
     const jwtToken = localStorage.getItem("jwtToken");
     const userId = localStorage.getItem("userId");
@@ -24,8 +24,6 @@ export default function App() {
     const role = localStorage.getItem("role");
     const requirePasswordSetup =
       localStorage.getItem("requirePasswordSetup") === "true";
-
-    console.log("requirePasswordSetup:", requirePasswordSetup); // Log để kiểm tra
 
     if (jwtToken && userId && email && !requirePasswordSetup) {
       setLoggedInUser({
@@ -38,7 +36,6 @@ export default function App() {
     } else {
       setLoggedInUser(null);
     }
-
     setIsInitialized(true);
   }, []);
 
@@ -46,7 +43,6 @@ export default function App() {
     updateLoggedInUserFromStorage();
     const handleStorageChange = () => updateLoggedInUserFromStorage();
     window.addEventListener("storage", handleStorageChange);
-
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [updateLoggedInUserFromStorage]);
 
@@ -80,12 +76,12 @@ export default function App() {
     authApi.logout();
     setLoggedInUser(null);
     toast.info(t("toast.logout_success") || "Đăng xuất thành công 👋", {
-      duration: 500,
+      duration: 800,
     });
   }, [t]);
 
   const handlePasswordSetSuccess = useCallback(() => {
-    localStorage.setItem("requirePasswordSetup", "false"); // Cập nhật sau khi thêm mật khẩu
+    localStorage.setItem("requirePasswordSetup", "false");
     updateLoggedInUserFromStorage();
     setShowLoginToast(true);
   }, [updateLoggedInUserFromStorage]);
@@ -93,31 +89,33 @@ export default function App() {
   useEffect(() => {
     if (showLoginToast) {
       toast.dismiss();
-      // Thay thế chuỗi này:
       toast.success(t("toast.login_success") || "Đăng nhập thành công! 🎉", {
-        duration: 500,
+        duration: 800,
       });
       setShowLoginToast(false);
     }
-  }, [showLoginToast, t]); 
+  }, [showLoginToast, t]);
+
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col">
-        {isInitialized ? (
-          <AppRoutes
-            loggedInUser={loggedInUser}
-            onLoginSuccess={handleLoginSuccess}
-            onLogout={handleLogout}
-            onPasswordSetSuccess={handlePasswordSetSuccess}
-          />
-        ) : (
-          <div className="flex justify-center items-center h-screen">
-            <span className="loading loading-spinner loading-lg"></span>
-          </div>
-        )}
-      </div>
-      <Toaster position="top-right" richColors duration={1500} />
+     <LoadScript googleMapsApiKey={googleMapsApiKey} libraries={defaultLibraries}>
+        <div className="min-h-screen flex flex-col">
+          {isInitialized ? (
+            <AppRoutes
+              loggedInUser={loggedInUser}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              onPasswordSetSuccess={handlePasswordSetSuccess}
+            />
+          ) : (
+            <div className="flex justify-center items-center h-screen">
+              <span className="loading loading-spinner loading-lg"></span>
+            </div>
+          )}
+        </div>
+        <Toaster position="top-right" richColors duration={500} />
+      </LoadScript>
     </BrowserRouter>
   );
 }

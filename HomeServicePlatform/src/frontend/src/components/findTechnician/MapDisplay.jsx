@@ -54,8 +54,6 @@ const MapDisplay = ({ lat, lng, technicians, isDraggable, onMarkerDrag }) => {
   const markerInstance = useRef(null);
   const technicianMarkers = useRef([]);
   const defaultCoords = { lat: 21.0285, lng: 105.8542 }; // Hanoi
-
-  // Memoize popup content để tránh re-generate không cần thiết
   const popupContent = useMemo(() => {
     if (!technicians || technicians.length === 0) return null;
     const groupedTechs = technicians.reduce((acc, tech) => {
@@ -94,21 +92,19 @@ const MapDisplay = ({ lat, lng, technicians, isDraggable, onMarkerDrag }) => {
         ],
       });
 
-      // Tạo Marker vị trí người dùng
+      
       markerInstance.current = L.marker([initialLat, initialLng], {
         icon: customMarkerIcon,
-        draggable: isDraggable, // Sử dụng trạng thái kéo thả
+        draggable: isDraggable, 
       }).addTo(mapInstance.current);
 
-      // Thêm sự kiện khi kết thúc kéo
+     
       markerInstance.current.on("dragend", (e) => {
         const { lat, lng } = e.target.getLatLng();
-        // Gọi hàm callback từ component cha
         onMarkerDrag(lat, lng); 
       });
     }
 
-    // Cập nhật khả năng kéo thả động
     if (markerInstance.current) {
       if (isDraggable && !markerInstance.current.dragging.enabled()) {
         markerInstance.current.dragging.enable();
@@ -118,13 +114,11 @@ const MapDisplay = ({ lat, lng, technicians, isDraggable, onMarkerDrag }) => {
     }
 
 
-    // Cập nhật vị trí và pop-up của Marker chính
+   
     if (lat && lng) {
       const newLatlng = L.latLng(lat, lng);
       const currentCenter = mapInstance.current.getCenter();
       const distance = L.latLng(currentCenter).distanceTo(newLatlng);
-
-      // Chỉ thay đổi view nếu vị trí mới cách xa vị trí hiện tại
       if (distance > 100) {
         mapInstance.current.setView(newLatlng, 15);
       }
@@ -135,13 +129,10 @@ const MapDisplay = ({ lat, lng, technicians, isDraggable, onMarkerDrag }) => {
         .openPopup();
     }
 
-    // Xóa các Marker kỹ thuật viên cũ
+    
     technicianMarkers.current.forEach((marker) => marker.remove());
     technicianMarkers.current = [];
-
-    // Thêm các Marker kỹ thuật viên mới
     if (popupContent && lat && lng) {
-      // Khởi tạo bounds bằng vị trí người dùng
       const bounds = L.latLngBounds(L.latLng(lat, lng)); 
 
       popupContent.forEach(({ lat: techLat, lng: techLng, content }) => {
@@ -153,8 +144,6 @@ const MapDisplay = ({ lat, lng, technicians, isDraggable, onMarkerDrag }) => {
           .bindPopup(content);
         technicianMarkers.current.push(marker);
       });
-
-      // Điều chỉnh bản đồ để hiển thị tất cả marker
       if (technicians?.length > 0) {
         mapInstance.current.fitBounds(bounds, { padding: [50, 50] });
       }

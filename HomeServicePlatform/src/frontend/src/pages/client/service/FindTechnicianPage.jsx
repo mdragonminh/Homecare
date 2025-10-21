@@ -83,11 +83,7 @@ export function FindTechnicianPage({ loggedInUser }) {
   // ---------------------------------------------------------------------
   // 2. RENDER UTILITY FUNCTIONS (Giao diện)
   // ---------------------------------------------------------------------
-
-  // Thay thế hàm renderStatusMessage cũ bằng hàm này:
-
   const renderStatusMessage = (messageObj) => {
-    // Hỗ trợ cả string (cũ) và object (mới)
     const message =
       typeof messageObj === "string" ? messageObj : messageObj?.text || "";
     const type =
@@ -417,8 +413,6 @@ export function FindTechnicianPage({ loggedInUser }) {
                 </div>
               )}
             </div>
-
-            {/* Phần Nhập Vị Trí Thủ Công (Chỉ hiện khi chưa chọn nhà) */}
             {!loggedInUser || (loggedInUser && !selectedHomeId) ? (
               <div className="relative space-y-2">
                 <label className="block text-base font-semibold text-gray-800 mb-1">
@@ -438,8 +432,6 @@ export function FindTechnicianPage({ loggedInUser }) {
             ) : null}
 
             {renderStatusMessage(statusMessage)}
-
-            {/* BỐ CỤC NÚT ĐÃ THAY ĐỔI */}
             <div className="flex gap-4 mt-5">
               {/* Nút Tìm Kiếm Kỹ Thuật Viên */}
               <button
@@ -592,13 +584,9 @@ export function FindTechnicianPage({ loggedInUser }) {
           </ul>
         )}
       </div>
-      {/* Overlay: CHỈ LÀM MỜ + SPINNER NHẸ – KHÔNG CHE GÌ HẾT */}
       {isMatching && (
         <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-          {/* Chỉ blur nền, không có màu nền */}
           <div className="absolute inset-0 backdrop-blur-sm"></div>
-
-          {/* Spinner + thông báo nổi nhẹ ở giữa */}
           <div className="relative bg-white bg-opacity-80 px-8 py-6 rounded-2xl shadow-xl border border-gray-200 flex flex-col items-center space-y-3 animate-pulse">
             <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
             <p className="text-lg font-semibold text-gray-800 whitespace-nowrap">

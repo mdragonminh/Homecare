@@ -43,7 +43,7 @@ export const homeApi = {
 
      
       const res = await axiosClient.post(
-        "/Home/create-home", // Dùng relative path
+        "/Home/create-home", 
         {
           name,
           address,
@@ -57,7 +57,6 @@ export const homeApi = {
       return { success: true, data: res.data };
     } catch (error) {
       if (ENABLE_DEBUG) console.error("Create home error:", error);
-      // Xử lý lỗi theo định dạng đã dùng trong authApi, nhưng giữ lại cú pháp cũ nếu cần
       return {
         success: false,
         message:
@@ -69,7 +68,7 @@ export const homeApi = {
     }
   },
 
-  // Hàm lấy danh sách home của user hiện tại
+
   getHomesOfCurrentUser: async (
     page = 1,
     pageSize = 10,
@@ -103,14 +102,10 @@ export const homeApi = {
     }
   },
 
-  // =================================================================================
-  // CÁC API HOME BỔ SUNG (DELETE, PUT, GET BY ID)
-  // =================================================================================
-
   getHomeById: async (homeId) => {
     try {
      
-      const url = `/Home/${homeId}`; // Dùng relative path
+      const url = `/Home/${homeId}`; 
 
      
       const res = await axiosClient.get(url);
@@ -127,12 +122,12 @@ export const homeApi = {
     }
   },
 
-  // Hàm cập nhật Home (PUT /api/Home/{homeId})
+  
   updateHome: async (homeId, { name, address, latitude, longitude }) => {
     try {
       
       const res = await axiosClient.put(
-        `/Home/${homeId}`, // Dùng relative path
+        `/Home/${homeId}`, 
         {
           name,
           address,
@@ -283,7 +278,6 @@ export const homeApi = {
     }
   },
 
-  // Hàm xóa HomeItem (DELETE /api/HomeItem/{homeItemId})
   deleteHomeItem: async (homeItemId) => {
     try {
       const res = await axiosClient.delete(`/HomeItem/${homeItemId}`);
