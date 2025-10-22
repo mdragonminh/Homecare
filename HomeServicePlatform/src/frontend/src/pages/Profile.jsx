@@ -70,36 +70,33 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     [t]
   );
 
-  // Hàm validate Email
-  const validateEmail = useCallback(
-    (value) => {
-      if (!value || value.trim() === "") {
-        return t("ui.validation.email.required");
-      }
+// Hàm validate Email
+const validateEmail = useCallback(
+  (value) => {
+    if (!value || value.trim() === "") {
+      return t("ui.validation.email.required");
+    }
 
-      // Trim khoảng trắng đầu/cuối trước khi validate
-      const trimmedValue = value.trim();
+    // Kiểm tra có bất kỳ khoảng trắng nào trong toàn bộ chuỗi (kể cả đầu, giữa, cuối)
+    if (/\s/.test(value)) {
+      return t("ui.validation.email.no_spaces");
+    }
 
-      // Kiểm tra có khoảng trắng ở GIỮA không (sau khi đã trim)
-      if (/\s/.test(trimmedValue)) {
-        return t("ui.validation.email.no_spaces");
-      }
+    // Kiểm tra định dạng email với regex chặt chẽ
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
 
-      // Kiểm tra định dạng email với regex chặt chẽ
-      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+    if (!emailRegex.test(value)) {
+      return t("ui.validation.email.invalid_format");
+    }
 
-      if (!emailRegex.test(trimmedValue)) {
-        return t("ui.validation.email.invalid_format");
-      }
+    if (value.length > 100) {
+      return t("ui.validation.email.max_length");
+    }
 
-      if (trimmedValue.length > 100) {
-        return t("ui.validation.email.max_length");
-      }
-
-      return "";
-    },
-    [t]
-  );
+    return "";
+  },
+  [t]
+);
 
   // Hàm validate Phone Number
   const validatePhoneNumber = useCallback(
