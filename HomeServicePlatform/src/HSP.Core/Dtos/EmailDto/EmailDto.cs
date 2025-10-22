@@ -19,6 +19,10 @@
 		public bool Success { get; set; }
 		public string? Error { get; set; } 
 		public string? Message { get; set; }
+
+		public string Title { get; set; } = "";
+		public string Heading { get; set; } = "";
+		public string ActionUrl { get; set; } = "";
 	}
 	public class ResetPasswordDto
 	{

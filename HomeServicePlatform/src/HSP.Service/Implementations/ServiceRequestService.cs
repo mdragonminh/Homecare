@@ -26,7 +26,6 @@ namespace HSP.Service.Implementations
 		private readonly IEmailTemplateService _emailTemplateService;
 		private readonly IUserRepository _userRepository;
 		private readonly UrlSettingsDto _urlSettings;
-		//private static readonly ConcurrentDictionary<string, Guid> _acceptedRequests = new();
 		private readonly IRedisCacheService _redisCacheService;
 		public ServiceRequestService(IGeocodingService geocodingService,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
@@ -45,7 +44,6 @@ namespace HSP.Service.Implementations
 			_urlSettings = options.Value;
 			_redisCacheService = redisCacheService;
 		}
-
 
 		private async Task<Guid?> GetAcceptedTechnicianAsync(string token)
 		{

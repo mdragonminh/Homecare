@@ -1,5 +1,4 @@
-﻿using HSP.API.Models.Emails;
-using HSP.Core.Constans;
+﻿using HSP.Core.Constans;
 using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
@@ -202,33 +201,32 @@ namespace HSP.API.Controllers
 		{
 			var decodedTokenBytes = Convert.FromBase64String(token);
 			var decodedToken = Encoding.UTF8.GetString(decodedTokenBytes);
+
 			var result = await _authenticationService.ConfirmEmail(userId, decodedToken);
-			var vm = new ConfirmEmailResultViewModel();
 
 			if (result.Success)
 			{
-				vm.Success = true;
-				vm.Code = "";
-				vm.Title = "Xác nhận email thành công";
-				vm.Heading = "Hoàn tất!";
-				vm.Message = "Tài khoản của bạn đã được xác nhận. Bạn có thể đăng nhập để tiếp tục.";
-				vm.PrimaryActionText = "Đăng nhập";
-				vm.PrimaryActionUrl = _urlSettings.FrontendLoginFailed;
+				result.Title = "Xác nhận email thành công";
+				result.Heading = "Hoàn tất!";
+				result.ActionUrl = _urlSettings.FrontendLoginFailed;
+			}
+			else if (result.Error == "TokenExpired")
+			{
+				result.Title = "Liên kết đã hết hạn";
+				result.Heading = "Liên kết xác nhận hết hạn";
+				result.ActionUrl = _urlSettings.FrontendLoginFailed;
 			}
 			else
 			{
-				vm.Success = false;
-				vm.Code = "TokenExpired";
-				vm.Title = "Liên kết đã hết hạn";
-				vm.Heading = "Liên kết xác nhận hết hạn";
-				vm.Message = "Liên kết của bạn đã hết hạn. Vui lòng đăng ký lại để nhận liên kết mới!";
-				vm.PrimaryActionText = "Quay lại trang chủ";
-				vm.PrimaryActionUrl = _urlSettings.FrontendLoginFailed;
+				result.Title = "Xác nhận thất bại";
+				result.Heading = "Không thể xác nhận";
+				result.ActionUrl = _urlSettings.FrontendLoginFailed;
 			}
 
-			var html = await RazorTemplateEngine.RenderAsync("/Views/Authentications/ConfirmEmailResult.cshtml", vm);
+			var html = await RazorTemplateEngine.RenderAsync("/Views/Authentications/ConfirmEmailResult.cshtml", result);
 			return new ContentResult { Content = html, ContentType = "text/html" };
 		}
+
 
 		[HttpPost("change-password")]
 		[Authorize]

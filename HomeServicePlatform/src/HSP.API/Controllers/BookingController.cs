@@ -180,13 +180,18 @@ namespace HSP.API.Controllers
 		{
 			try
 			{
-				Console.WriteLine("Received token: " + token);
 				var result = await _bookingService.AcceptBookingEmailAsync(customerId, technicianId, serviceId, token, desiredDate);
 
-				if (!result)
-					return BadRequest("Không thể chấp nhận booking.");
-				var html = await RazorTemplateEngine.RenderAsync("/Views/Bookings/BookingAccepted.cshtml");
-				return new ContentResult { Content = html, ContentType = "text/html" };
+				if (result.IsSuccess)
+				{
+					var html = await RazorTemplateEngine.RenderAsync("/Views/Bookings/BookingAccepted.cshtml");
+					return new ContentResult { Content = html, ContentType = "text/html" };
+				}
+				else
+				{
+					var html = await RazorTemplateEngine.RenderAsync("/Views/Bookings/BookingError.cshtml", new { Message = result.Message });
+					return new ContentResult { Content = html, ContentType = "text/html" };
+				}
 			}
 			catch (Exception ex)
 			{

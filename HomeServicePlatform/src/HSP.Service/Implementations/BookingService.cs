@@ -16,14 +16,12 @@ namespace HSP.Service.Implementations
 	{
 		private readonly IRepository<Booking, Guid> _bookingRepository;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
-		//private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
 		private readonly IUserRepository _userRepository;
 		private readonly IRedisCacheService _redisCacheService;
 		public BookingService(
 				IRepository<Booking, Guid> bookingRepository,
 				IRepository<TechnicianProfile, Guid> technicianRepository,
-				//IRepository<CustomerProfile, Guid> customerProfileRepository,
 				IRepository<Core.Entities.Service, Guid> serviceRepository,
 				IUserRepository userRepository,
 				IRedisCacheService redisCacheService,
@@ -32,7 +30,6 @@ namespace HSP.Service.Implementations
 		{
 			_bookingRepository = bookingRepository;
 			_technicianRepository = technicianRepository;
-			//_customerProfileRepository = customerProfileRepository;
 			_serviceRepository = serviceRepository;
 			_userRepository = userRepository;
 			_redisCacheService = redisCacheService;
@@ -255,22 +252,22 @@ namespace HSP.Service.Implementations
 			return true;
 		}
 
-		public async Task<bool> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, Guid serviceId, string token, DateTime desiredDate)
+		public async Task<BookingAcceptResultDto> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, Guid serviceId, string token, DateTime desiredDate)
 		{
 			var waiting = await _redisCacheService.GetAsync<string>($"waiting_{token}");
 			if (string.IsNullOrEmpty(waiting))
-				throw new Exception("Token expired or already accepted");
-			
+				return new BookingAcceptResultDto { IsSuccess = false, Message = "Link đã hết hạn hoặc đã được sử dụng." };
+
 			var technician = await _technicianRepository.GetAll()
 				.Include(t => t.User)
 				.FirstOrDefaultAsync(t => t.Id == technicianId);
 			if (technician?.User == null)
-				throw new Exception("Technician not found or invalid.");
-			
+				return new BookingAcceptResultDto { IsSuccess = false, Message = "Không tìm thấy kỹ thuật viên." };
+
 			var storedTechId = await _redisCacheService.GetAsync<Guid>($"accept_{token}");
 			if (storedTechId == Guid.Empty || storedTechId != technicianId)
-				throw new Exception("Token invalid, expired, or technician mismatch");
-			
+				return new BookingAcceptResultDto { IsSuccess = false, Message = "Token không hợp lệ hoặc kỹ thuật viên không khớp." };
+
 			await _redisCacheService.RemoveAsync($"waiting_{token}");
 			await _redisCacheService.SetAsync($"accepted_{token}", technician.Id, TimeSpan.FromSeconds(60));
 
@@ -278,7 +275,7 @@ namespace HSP.Service.Implementations
 			var service = await _serviceRepository.GetByIdAsync(serviceId);
 
 			if (customer == null || service == null)
-				throw new Exception("Invalid data: Customer, Technician or Service not found.");
+				return new BookingAcceptResultDto { IsSuccess = false, Message = "Dữ liệu khách hàng hoặc dịch vụ không hợp lệ." };
 
 			var newBooking = new Booking
 			{
@@ -293,7 +290,7 @@ namespace HSP.Service.Implementations
 			await _bookingRepository.AddAsync(newBooking);
 			await _unitOfWork.SaveChangesAsync();
 
-			return true;
+			return new BookingAcceptResultDto { IsSuccess = true, Message = "Xác nhận thành công!" };
 		}
 	}
 }

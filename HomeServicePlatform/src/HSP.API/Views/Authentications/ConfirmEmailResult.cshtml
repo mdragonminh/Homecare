@@ -1,5 +1,5 @@
-﻿@using HSP.API.Models.Emails
-@model ConfirmEmailResultViewModel
+﻿@using HSP.Service.Dtos.EmailDto
+@model ConfirmEmailResultDto
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -147,8 +147,8 @@
       </div>
 
       <div class="actions">
-       
-          <a class="btn btn-primary" href="@Model.PrimaryActionUrl">@Model.PrimaryActionText</a>
+
+        <a class="btn btn-primary" href="@Model.ActionUrl">Đăng nhập</a>
        
       </div>
     </div>
