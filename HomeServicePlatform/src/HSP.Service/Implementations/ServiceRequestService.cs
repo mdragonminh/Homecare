@@ -13,7 +13,6 @@ using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
 
@@ -27,13 +26,15 @@ namespace HSP.Service.Implementations
 		private readonly IEmailTemplateService _emailTemplateService;
 		private readonly IUserRepository _userRepository;
 		private readonly UrlSettingsDto _urlSettings;
-		private static readonly ConcurrentDictionary<string, Guid> _acceptedRequests = new();
+		//private static readonly ConcurrentDictionary<string, Guid> _acceptedRequests = new();
+		private readonly IRedisCacheService _redisCacheService;
 		public ServiceRequestService(IGeocodingService geocodingService,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			IEmailService emailService,
 			IEmailTemplateService emailTemplateService,
 			IUserRepository userRepository,
 			IOptions<UrlSettingsDto> options,
+			IRedisCacheService redisCacheService,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_geocodingService = geocodingService;
@@ -42,17 +43,16 @@ namespace HSP.Service.Implementations
 			_emailTemplateService = emailTemplateService;
 			_userRepository = userRepository;
 			_urlSettings = options.Value;
-		}
-		public static void AcceptBookingResponse(string token, Guid technicianId)
-		{
-			_acceptedRequests[token] = technicianId;
+			_redisCacheService = redisCacheService;
 		}
 
-		private static Guid? GetAcceptedTechnician(string token)
+
+		private async Task<Guid?> GetAcceptedTechnicianAsync(string token)
 		{
-			if (_acceptedRequests.TryGetValue(token, out var techId))
+			var techId = await _redisCacheService.GetAsync<Guid>($"accepted_{token}");
+			if (techId != Guid.Empty)
 			{
-				_acceptedRequests.TryRemove(token, out _);
+				await _redisCacheService.RemoveAsync($"accepted_{token}");
 				return techId;
 			}
 			return null;
@@ -99,7 +99,6 @@ namespace HSP.Service.Implementations
 			{
 				throw new Exception(_localizer["NoAvailableTechniciansFound"]);
 			}
-			_acceptedRequests.Clear();
 
 			var matchResult = await NotifyTechniciansAndAwaitResponseAsync(sorted, customer, input);
 			return matchResult;
@@ -112,11 +111,15 @@ namespace HSP.Service.Implementations
 		{
 			foreach (var tech in sortedTechnicians)
 			{
-				var token = await SendInvitationEmailAsync(tech, customer, input);
+				var token = Guid.NewGuid().ToString("N");
+				await _redisCacheService.SetAsync($"waiting_{token}", "waiting", TimeSpan.FromSeconds(15));
+				await _redisCacheService.SetAsync($"accept_{token}", tech.Technician.Id, TimeSpan.FromSeconds(15));
+				await SendInvitationEmailAsync(tech, customer, input, token);
+
 				var stopwatch = Stopwatch.StartNew();
 				while (stopwatch.Elapsed < TimeSpan.FromSeconds(10))
 				{
-					var acceptedTechId = GetAcceptedTechnician(token);
+					var acceptedTechId = await GetAcceptedTechnicianAsync(token);
 					if (acceptedTechId.HasValue)
 					{
 						return new MatchedBookingResultDto
@@ -143,12 +146,12 @@ namespace HSP.Service.Implementations
 			};
 		}
 
-		private async Task<string> SendInvitationEmailAsync(
+		private async Task SendInvitationEmailAsync(
 			(TechnicianProfile Technician, double Distance) tech,
 			AppUser customer,
-			CustomerCreateBookingDto input)
+			CustomerCreateBookingDto input,
+			string token)
 		{
-			var token = await _userRepository.GenerateUserTokenAsync(tech.Technician.User, IdentityTokenPurposes.Booking, IdentityTokenPurposes.AcceptBooking);
 			string encodedToken = WebUtility.UrlEncode(token);
 			string baseUrl = _urlSettings.BaseUrl;
 			string acceptUrl = $"{baseUrl}/api/booking/accept" +
@@ -177,7 +180,6 @@ namespace HSP.Service.Implementations
 				HtmlBody = htmlBody
 			};
 			await _emailService.SendEmailAsync(email);
-			return token;
 		}
 
 		private (double minLat, double maxLat, double minLon, double maxLon) GetBoundingBox(double lat, double lon, double distanceKm)
@@ -200,7 +202,7 @@ namespace HSP.Service.Implementations
 
 			var allTechnicians = await _technicianRepository.GetAll()
 				.Include(x => x.User)
-				.Include(x=>x.Bookings)
+				.Include(x => x.Bookings)
 				.Where(x => x.ApprovalStatus == TechnicianApprovalStatus.Approved)
 				.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), x => x.Services.Any(s => input.ServiceIds.Contains(s.Id)))
 				.Where(x => !x.Bookings.Any(b =>

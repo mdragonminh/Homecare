@@ -4,12 +4,11 @@ using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Enums;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
-using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using System.Net;
 
 namespace HSP.Service.Implementations
 {
@@ -20,13 +19,14 @@ namespace HSP.Service.Implementations
 		//private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
 		private readonly IUserRepository _userRepository;
-
+		private readonly IRedisCacheService _redisCacheService;
 		public BookingService(
 				IRepository<Booking, Guid> bookingRepository,
 				IRepository<TechnicianProfile, Guid> technicianRepository,
 				//IRepository<CustomerProfile, Guid> customerProfileRepository,
 				IRepository<Core.Entities.Service, Guid> serviceRepository,
 				IUserRepository userRepository,
+				IRedisCacheService redisCacheService,
 				IUnitOfWork unitOfWork,
 				IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
@@ -35,6 +35,7 @@ namespace HSP.Service.Implementations
 			//_customerProfileRepository = customerProfileRepository;
 			_serviceRepository = serviceRepository;
 			_userRepository = userRepository;
+			_redisCacheService = redisCacheService;
 		}
 
 		public async Task<PagedList<BookingDto>> GetAllBookingsAsync(BookingInput input)
@@ -256,22 +257,24 @@ namespace HSP.Service.Implementations
 
 		public async Task<bool> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, Guid serviceId, string token, DateTime desiredDate)
 		{
+			var waiting = await _redisCacheService.GetAsync<string>($"waiting_{token}");
+			if (string.IsNullOrEmpty(waiting))
+				throw new Exception("Token expired or already accepted");
+			
 			var technician = await _technicianRepository.GetAll()
 				.Include(t => t.User)
 				.FirstOrDefaultAsync(t => t.Id == technicianId);
-
 			if (technician?.User == null)
 				throw new Exception("Technician not found or invalid.");
-			var isValid = await _userRepository.VerifyUserTokenAsync(technician.User,
-				IdentityTokenPurposes.Booking,
-				IdentityTokenPurposes.AcceptBooking,
-				token);
+			
+			var storedTechId = await _redisCacheService.GetAsync<Guid>($"accept_{token}");
+			if (storedTechId == Guid.Empty || storedTechId != technicianId)
+				throw new Exception("Token invalid, expired, or technician mismatch");
+			
+			await _redisCacheService.RemoveAsync($"waiting_{token}");
+			await _redisCacheService.SetAsync($"accepted_{token}", technician.Id, TimeSpan.FromSeconds(60));
 
-			if (!isValid)
-				throw new Exception("Token invalid or expired.");
-			ServiceRequestService.AcceptBookingResponse(token, technicianId);
 			var customer = await _userRepository.FindByIdAsync(customerId);
-			//var customer = await _customerProfileRepository.GetByIdAsync(customerId);
 			var service = await _serviceRepository.GetByIdAsync(serviceId);
 
 			if (customer == null || service == null)
@@ -292,6 +295,5 @@ namespace HSP.Service.Implementations
 
 			return true;
 		}
-
 	}
 }

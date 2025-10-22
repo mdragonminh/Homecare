@@ -13,10 +13,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
@@ -28,14 +26,12 @@ namespace HSP.Service.Implementations
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		//private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly SignInManager<AppUser> _signInManager;
-		//private readonly JwtSettingsDto _jwtSettings;
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly IJwtService _jwtService;
 		private readonly IEmailService _emailService;
 		private readonly IEmailTemplateService _emailTemplateService;
 
 		public AuthenticationService(IUserRepository userRepository,
-			//IOptions<JwtSettingsDto> jwtOptions,
 			IOptions<UrlSettingsDto> urlOptions,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			//IRepository<CustomerProfile, Guid> customerProfileRepository,
@@ -46,7 +42,6 @@ namespace HSP.Service.Implementations
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_userRepository = userRepository;
-			//_jwtSettings = jwtOptions.Value;
 			_urlSettings = urlOptions.Value;
 			_technicianRepository = technicianRepository;
 			_signInManager = signInManager;

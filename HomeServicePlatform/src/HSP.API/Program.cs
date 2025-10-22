@@ -1,6 +1,7 @@
 ﻿using HSP.API.Extensions;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Entities;
 using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.DAL.Interfaces;
@@ -59,6 +60,11 @@ namespace HSP.API
 			builder.Services.Configure<UrlSettingsDto>(builder.Configuration.GetSection("UrlSettings"));
 			builder.Services.Configure<IdentityTokenSettings>(builder.Configuration.GetSection("IdentityTokens"));
 			builder.Services.AddRazorTemplating();
+			builder.Services.AddStackExchangeRedisCache(options =>
+			{
+				options.Configuration = builder.Configuration.GetConnectionString("Redis");
+				options.InstanceName = "HSP_";
+			});
 
 			builder.Services.AddDALServices(builder.Configuration);
 			builder.Services.AddServiceServices();

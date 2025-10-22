@@ -24,6 +24,7 @@ namespace HSP.Service.Extensions
 			{
 				client.BaseAddress = new Uri("https://maps.googleapis.com/maps/api/");
 			});
+			services.AddScoped<IRedisCacheService, RedisCacheService>();
 			services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 			services.AddScoped<IHomeServiceService, HomeServiceService>();
 			services.AddScoped<IServiceRequestService, ServiceRequestService>();

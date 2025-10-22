@@ -5,11 +5,10 @@ using HSP.DAL.Data;
 using HSP.DAL.Interfaces;
 using HSP.DAL.Repositories;
 using HSP.DAL.UnitOfWorks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Identity;
-using HSP.DAL.Identity;
 
 namespace HSP.DAL.Extensions
 {
@@ -29,8 +28,7 @@ namespace HSP.DAL.Extensions
 				o.Password.RequireDigit = true;
 				o.SignIn.RequireConfirmedEmail = true;
 			}).AddEntityFrameworkStores<ApplicationDbContext>()
-				.AddDefaultTokenProviders()
-				.AddTokenProvider<BookingTokenProvider<AppUser>>(IdentityTokenPurposes.Booking);
+				.AddDefaultTokenProviders();
 			services.Configure<DataProtectionTokenProviderOptions>(opt =>
 			{
 				opt.TokenLifespan = TimeSpan.FromMinutes(10);
