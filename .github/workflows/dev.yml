@@ -21,9 +21,12 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore HomeServicePlatform.sln
+      working-directory: HomeServicePlatform
 
     - name: Build project
-      run: dotnet build --configuration Debug --no-restore
+      run: dotnet build HomeServicePlatform.sln --configuration Debug --no-restore
+      working-directory: HomeServicePlatform
 
     - name: Run tests
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test HomeServicePlatform.sln --no-build --verbosity normal
+      working-directory: HomeServicePlatform
