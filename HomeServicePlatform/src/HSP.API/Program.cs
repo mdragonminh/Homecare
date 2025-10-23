@@ -6,6 +6,7 @@ using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.DAL.Interfaces;
 using HSP.Service.Extensions;
+using System.Threading.Tasks;
 
 namespace HSP.API
 {
@@ -78,13 +79,13 @@ namespace HSP.API
 				app.UseSwagger();
 				app.UseSwaggerUI();
 			}
-			using (var scope = app.Services.CreateScope())
+			await using (var scope = app.Services.CreateAsyncScope())
 			{
 				var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
 				await initializer.InitializeAsync();
 			}
 
-			app.UseHttpsRedirection();
+			//app.UseHttpsRedirection();
 
 			app.UseStaticFiles(); // Enable static files serving
 

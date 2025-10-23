@@ -88,6 +88,8 @@
     "user": "Người dùng",
     "customer": "Khách hàng",
     "technician": "Thợ kỹ thuật",
+    "ticket_management": "Quản lý Tickets",
+    "ticket_management_desc": "Duyệt và gán tickets",
     "manage_account": "Quản lý tài khoản",
     "personal_info_settings": "Cài đặt thông tin cá nhân",
     "manage_homes": "Quản lý Địa chỉ",
