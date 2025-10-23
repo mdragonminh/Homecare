@@ -10,7 +10,7 @@ namespace HSP.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
     public class TechnicianManagementController : ControllerBase
     {
         private readonly ITechnicianProfileService _technicianProfileService;

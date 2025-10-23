@@ -7,9 +7,25 @@ import HomeItemsPage from "../pages/client/home/HomeItemsPage";
 import Profile from "../pages/Profile";
 import { jwtDecode } from "jwt-decode";
 import { FindTechnicianPage } from "../pages/client/service/FindTechnicianPage";
+
+import TicketManagementPage from "../pages/supporter/TicketManagementPage";
+
 const ProtectedRoute = ({ element: Element, loggedInUser }) => {
   if (!loggedInUser) {
     return <Navigate to="/login" replace />;
+  }
+
+  return Element;
+};
+
+
+const SupporterRoute = ({ element: Element, loggedInUser }) => {
+  if (!loggedInUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (loggedInUser.role !== "supporter") {
+    return <Navigate to="/" replace />;
   }
 
   return Element;
@@ -103,11 +119,21 @@ export default function ClientRoutes({
         path="/contact"
         element={<ContactPage loggedInUser={loggedInUser} />}
       />
-      
-<Route
-  path="/services"
-  element={<FindTechnicianPage loggedInUser={loggedInUser} />} 
-/>
+
+      <Route
+        path="/services"
+        element={<FindTechnicianPage loggedInUser={loggedInUser} />}
+      />
+
+      <Route
+        path="/supporter/tickets"
+        element={
+          <SupporterRoute
+            loggedInUser={loggedInUser}
+            element={<TicketManagementPage loggedInUser={loggedInUser} />}
+          />
+        }
+      />
     </Routes>
   );
 }
