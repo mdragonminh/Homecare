@@ -11,13 +11,7 @@ namespace HSP.Core.Entities
 		public Guid UserId { get; set; }
 		[ForeignKey("UserId")]
 		public AppUser User { get; set; } = null!;
-
-		[Range(0, 50)]
-		public int ExperienceYears { get; set; }
-
-		[Required]
-		public TechnicianApprovalStatus ApprovalStatus { get; set; } = TechnicianApprovalStatus.Pending;
-
+		
 		[Range(-90, 90)]
 		public double Latitude { get; set; }
 		[Range(-180, 180)]
@@ -25,11 +19,13 @@ namespace HSP.Core.Entities
 
 		[MaxLength(255)]
 		public string? Address { get; set; }
+		[Required]
+		public DayOfWeek DayOfWeek { get; set; }
+		[Range(0, 50)]
+		public int ExperienceYears { get; set; }
 
-		// JSON string chứa danh sách đường dẫn certificates
-		[MaxLength(2000)]
-		public string? CertificatePaths { get; set; }
-
+		[Required]
+		public TechnicianApprovalStatus ApprovalStatus { get; set; } = TechnicianApprovalStatus.Pending;
 		public DateTime? ApprovedAt { get; set; }
 		public string? ApprovedBy { get; set; }
 		public DateTime DateCreated { get; set; }
@@ -38,8 +34,5 @@ namespace HSP.Core.Entities
 
 		public ICollection<Service> Services { get; set; } = new List<Service>();
 		public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
-
-		// Navigation property để tham chiếu đến các files liên quan
-		public ICollection<FileRelation> CertificateFiles { get; set; } = new List<FileRelation>();
 	}
 }

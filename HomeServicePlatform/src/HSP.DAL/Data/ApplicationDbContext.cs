@@ -16,7 +16,6 @@ namespace HSP.DAL.Data
 		{
 		}
 
-		//public DbSet<CustomerProfile> CustomerProfiles { get; set; }
 		public DbSet<TechnicianProfile> TechnicianProfiles { get; set; }
 		public DbSet<Home> Homes { get; set; }
 		public DbSet<HomeItem> HomeItems { get; set; }
@@ -29,10 +28,12 @@ namespace HSP.DAL.Data
 		public DbSet<BookingCancellation> BookingCancellations { get; set; }
 		public DbSet<Warehouse> Warehouses { get; set; }
 		public DbSet<Equipment> Equipments { get; set; }
-		//public DbSet<CustomerSupporter> CustomerSupporters { get; set; }
 		public DbSet<Ticket> Tickets { get; set; }
 		public DbSet<SystemSetting> SystemSettings { get; set; }
 		public DbSet<AuditLog> AuditLogs { get; set; }
+		public DbSet<ChatConversation> ChatConversations { get; set; }
+		public DbSet<ChatMessage> ChatMessages { get; set; }
+		public DbSet<ChatAttachment> ChatAttachments { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -50,11 +51,6 @@ namespace HSP.DAL.Data
 			builder.Entity<AppUser>()
 					.HasIndex(u => u.NormalizedEmail);
 
-			//builder.Entity<CustomerProfile>()
-			//.HasOne(p => p.User)
-			//.WithOne(u => u.CustomerProfile)
-			//.HasForeignKey<CustomerProfile>(p => p.UserId)
-			//.OnDelete(DeleteBehavior.Cascade);
 			builder.Entity<TechnicianProfile>()
 			.HasOne(p => p.User)
 			.WithOne(u => u.TechnicianProfile)
@@ -163,17 +159,75 @@ namespace HSP.DAL.Data
 					.HasForeignKey(a => a.UserId)
 					.OnDelete(DeleteBehavior.Restrict);
 			});
+			builder.Entity<ChatConversation>(entity =>
+			{
+				entity.HasMany(c => c.Messages)
+							.WithOne(m => m.Conversation)
+							.HasForeignKey(m => m.ConversationId)
+							.OnDelete(DeleteBehavior.Cascade);
 
+				entity.HasOne(c => c.Customer)
+							.WithMany()
+							.HasForeignKey(c => c.CustomerId)
+							.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(c => c.Technician)
+							.WithMany()
+							.HasForeignKey(c => c.TechnicianId)
+							.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(c => c.Booking)
+							.WithMany()
+							.HasForeignKey(c => c.BookingId)
+							.OnDelete(DeleteBehavior.SetNull);
+
+				entity.HasOne(c => c.LastMessage)
+							.WithMany()
+							.HasForeignKey(c => c.LastMessageId)
+							.OnDelete(DeleteBehavior.SetNull);
+				entity.HasIndex(c => new { c.CustomerId, c.TechnicianId }).IsUnique();
+				entity.HasIndex(c => c.CreatedAt);
+			});
+
+			builder.Entity<ChatMessage>(entity =>
+			{
+				entity.HasMany(m => m.Attachments)
+							.WithOne(a => a.Message)
+							.HasForeignKey(a => a.MessageId)
+							.OnDelete(DeleteBehavior.Cascade);
+
+				entity.HasOne(m => m.Sender)
+							.WithMany()
+							.HasForeignKey(m => m.SenderId)
+							.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasOne(m => m.Receiver)
+							.WithMany()
+							.HasForeignKey(m => m.ReceiverId)
+							.OnDelete(DeleteBehavior.Restrict);
+
+				entity.HasIndex(m => m.ConversationId);
+				entity.HasIndex(m => m.SenderId);
+				entity.HasIndex(m => m.SentAt);
+			});
+
+			builder.Entity<ChatAttachment>(entity =>
+			{
+				entity.HasOne(a => a.Message)
+							.WithMany(m => m.Attachments)
+							.HasForeignKey(a => a.MessageId)
+							.OnDelete(DeleteBehavior.Cascade);
+
+				entity.HasIndex(a => a.MessageId);
+			});
 			builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
 			builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
-			//builder.Entity<CustomerProfile>().HasQueryFilter(cp => !cp.IsDeleted);
 			builder.Entity<TechnicianProfile>().HasQueryFilter(tp => !tp.IsDeleted);
 			builder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
 			builder.Entity<Core.Entities.Service>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<Booking>().HasQueryFilter(b => !b.IsDeleted);
 			builder.Entity<Warehouse>().HasQueryFilter(w => !w.IsDeleted);
 			builder.Entity<Equipment>().HasQueryFilter(e => !e.IsDeleted);
-			//builder.Entity<CustomerSupporter>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<Ticket>().HasQueryFilter(t => !t.IsDeleted);
 			builder.Entity<SystemSetting>().HasQueryFilter(s => !s.IsDeleted);
 		}
