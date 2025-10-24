@@ -37,8 +37,8 @@ namespace HSP.Service.Implementations
 		public async Task<PagedList<BookingDto>> GetAllBookingsAsync(BookingInput input)
 		{
 			var query = _bookingRepository.GetAll(
-					b => b.Customer,
-					b => b.Service
+					b => b.Customer
+					//b => b.Service
 			);
 
 			// Apply filters
@@ -47,7 +47,7 @@ namespace HSP.Service.Implementations
 				query = query.Where(b =>
 						(b.Customer != null && b.Customer.UserName != null &&
 						 b.Customer.UserName.Contains(input.SearchTerm)) ||
-						b.Service.Name.Contains(input.SearchTerm) ||
+						//b.Service.Name.Contains(input.SearchTerm) ||
 						(b.ProblemDescription != null && b.ProblemDescription.Contains(input.SearchTerm)));
 			}
 
@@ -88,7 +88,7 @@ namespace HSP.Service.Implementations
 						Id = b.Id,
 						CustomerProfileId = b.CustomerId,
 						TechnicianId = b.TechnicianId,
-						ServiceId = b.ServiceId,
+						//ServiceId = b.ServiceId,
 						DesiredDate = b.DesiredDate.Value,
 						ProblemDescription = b.ProblemDescription,
 						Status = b.Status,
@@ -109,12 +109,12 @@ namespace HSP.Service.Implementations
 							Email = b.Technician.User != null ? b.Technician.User.Email : null,
 							PhoneNumber = b.Technician.User != null ? b.Technician.User.PhoneNumber : null
 						} : null,
-						Service = new HSP.Core.Dtos.ServiceDto.HomeServiceDto
-						{
-							Id = b.Service.Id,
-							Name = b.Service.Name,
-							//BasePrice = b.Service.BasePrice
-						},
+						//Service = new HSP.Core.Dtos.ServiceDto.HomeServiceDto
+						//{
+						//	//Id = b.Service.Id,
+						//	//Name = b.Service.Name,
+						//	//BasePrice = b.Service.BasePrice
+						//},
 						Feedback = b.Feedback != null ? new BookingFeedbackResponseDto
 						{
 							BookingId = b.Feedback.BookingId,
@@ -137,8 +137,8 @@ namespace HSP.Service.Implementations
 		public async Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId)
 		{
 			var booking = await _bookingRepository.GetAll(
-					b => b.Customer,
-					b => b.Service
+					b => b.Customer
+					//b => b.Service
 			).FirstOrDefaultAsync(b => b.Id == bookingId);
 
 			if (booking == null)
@@ -157,7 +157,7 @@ namespace HSP.Service.Implementations
 				Id = booking.Id,
 				CustomerProfileId = booking.CustomerId,
 				TechnicianId = booking.TechnicianId,
-				ServiceId = booking.ServiceId,
+				//ServiceId = booking.ServiceId,
 				DesiredDate = booking.DesiredDate.Value,
 				ProblemDescription = booking.ProblemDescription,
 				Status = booking.Status,
@@ -170,7 +170,7 @@ namespace HSP.Service.Implementations
 				TechnicianName = technician?.User?.UserName,
 				TechnicianEmail = technician?.User?.Email,
 				TechnicianPhone = technician?.User?.PhoneNumber,
-				ServiceName = booking.Service.Name,
+				//ServiceName = booking.Service.Name,
 				//ServiceBasePrice = booking.Service.BasePrice,
 				Feedback = booking.Feedback != null ? new BookingFeedbackResponseDto
 				{
@@ -280,7 +280,7 @@ namespace HSP.Service.Implementations
 			{
 				CustomerId = customer.Id,
 				TechnicianId = technician.Id,
-				ServiceId = service.Id,
+				//ServiceId = service.Id,
 				DesiredDate = desiredDate,
 				DateCreated = DateTime.UtcNow,
 				Status = BookingStatus.Confirmed

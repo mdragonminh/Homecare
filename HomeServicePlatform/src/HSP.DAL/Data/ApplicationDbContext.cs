@@ -24,6 +24,7 @@ namespace HSP.DAL.Data
 		public DbSet<FileRelation> FileRelations { get; set; }
 		public DbSet<Core.Entities.Service> Services { get; set; }
 		public DbSet<Booking> Bookings { get; set; }
+		public DbSet<BookingItem> BookingItems { get; set; }
 		public DbSet<BookingFeedback> BookingFeedbacks { get; set; }
 		public DbSet<BookingCancellation> BookingCancellations { get; set; }
 		public DbSet<Warehouse> Warehouses { get; set; }
@@ -79,9 +80,9 @@ namespace HSP.DAL.Data
 			builder.Entity<FileRelation>()
 					.HasIndex(fr => new { fr.ObjectTypeId, fr.ObjectId });
 			builder.Entity<TechnicianProfile>()
-				.HasMany(t => t.Services)
-				.WithMany(s => s.Technicians)
-				.UsingEntity(j => j.ToTable("TechnicianServices"));
+					.HasMany(t => t.Services)
+					.WithMany(s => s.Technicians)
+					.UsingEntity(j => j.ToTable("TechnicianServices"));
 			builder.Entity<Booking>(entity =>
 			{
 				entity.HasOne(b => b.Customer)
@@ -90,17 +91,22 @@ namespace HSP.DAL.Data
 							.OnDelete(DeleteBehavior.Restrict);
 
 				entity.HasOne(b => b.Technician)
-							.WithMany(t=>t.Bookings)
+							.WithMany(t => t.Bookings)
 							.HasForeignKey(b => b.TechnicianId)
 							.OnDelete(DeleteBehavior.Restrict);
 
-				entity.HasOne(b => b.Service)
-							.WithMany(s => s.Bookings)
-							.HasForeignKey(b => b.ServiceId)
-							.OnDelete(DeleteBehavior.Restrict);
+				entity.HasMany(b => b.Items)
+							.WithOne(i => i.Booking)
+							.HasForeignKey(i => i.BookingId)
+							.OnDelete(DeleteBehavior.Cascade);
 			});
+			builder.Entity<BookingItem>()
+					.HasOne(i => i.Service)
+					.WithMany(s => s.BookingItems)
+					.HasForeignKey(i => i.ServiceId)
+					.OnDelete(DeleteBehavior.Restrict);
 			builder.Entity<BookingFeedback>()
-			.HasKey(f => f.BookingId);
+					.HasKey(f => f.BookingId);
 			builder.Entity<BookingFeedback>()
 					.HasOne(f => f.Booking)
 					.WithOne(b => b.Feedback)
@@ -119,10 +125,10 @@ namespace HSP.DAL.Data
 				.HasForeignKey(e => e.WarehouseId)
 				.OnDelete(DeleteBehavior.Restrict);
 			builder.Entity<Warehouse>()
-			.HasOne(w => w.Manager)
-			.WithMany()
-			.HasForeignKey(w => w.ManagerId)
-			.OnDelete(DeleteBehavior.Restrict);
+				.HasOne(w => w.Manager)
+				.WithMany()
+				.HasForeignKey(w => w.ManagerId)
+				.OnDelete(DeleteBehavior.Restrict);
 
 			builder.Entity<Ticket>()
 					.HasOne(t => t.Equipment)
@@ -184,7 +190,7 @@ namespace HSP.DAL.Data
 				entity.HasOne(c => c.LastMessage)
 							.WithMany()
 							.HasForeignKey(c => c.LastMessageId)
-							.OnDelete(DeleteBehavior.SetNull);
+							.OnDelete(DeleteBehavior.Restrict);
 				entity.HasIndex(c => new { c.CustomerId, c.TechnicianId }).IsUnique();
 				entity.HasIndex(c => c.CreatedAt);
 			});
@@ -226,6 +232,7 @@ namespace HSP.DAL.Data
 			builder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
 			builder.Entity<Core.Entities.Service>().HasQueryFilter(s => !s.IsDeleted);
 			builder.Entity<Booking>().HasQueryFilter(b => !b.IsDeleted);
+			builder.Entity<BookingItem>().HasQueryFilter(b => !b.IsDeleted);
 			builder.Entity<Warehouse>().HasQueryFilter(w => !w.IsDeleted);
 			builder.Entity<Equipment>().HasQueryFilter(e => !e.IsDeleted);
 			builder.Entity<Ticket>().HasQueryFilter(t => !t.IsDeleted);

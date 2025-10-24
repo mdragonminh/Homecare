@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using HSP.Core.Interfaces.Entity;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HSP.Core.Entities
 {
-	public class BookingItem : BaseEntity<Guid>
+	public class BookingItem : BaseEntity<Guid>, IHasSoftedDelete
 	{
 		public Guid BookingId { get; set; }
 		[ForeignKey("BookingId")]
@@ -11,5 +12,6 @@ namespace HSP.Core.Entities
 		[ForeignKey("ServiceId")]
 		public Service Service { get; set; } = null!;
 		public decimal Price { get; set; }
+		public bool IsDeleted { get; set; } = false;
 	}
 }
