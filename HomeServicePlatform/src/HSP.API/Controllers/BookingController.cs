@@ -175,12 +175,15 @@ namespace HSP.API.Controllers
 						[FromQuery] Guid customerId,
 						[FromQuery] Guid technicianId,
 						[FromQuery] string token,
-						[FromQuery] Guid serviceId,
+						[FromQuery] string serviceId,
 						[FromQuery] DateTime desiredDate)
 		{
 			try
 			{
-				var result = await _bookingService.AcceptBookingEmailAsync(customerId, technicianId, serviceId, token, desiredDate);
+				var serviceids = serviceId.Split(',')
+												.Select(Guid.Parse)
+												.ToList();
+				var result = await _bookingService.AcceptBookingEmailAsync(customerId, technicianId, serviceids, token, desiredDate);
 
 				if (result.IsSuccess)
 				{

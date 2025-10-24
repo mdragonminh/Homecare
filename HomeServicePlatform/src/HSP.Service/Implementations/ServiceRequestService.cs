@@ -76,7 +76,7 @@ namespace HSP.Service.Implementations
 					.Include(t => t.Bookings)
 					.Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
 					.Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
-					//.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
+					.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
 					.Where(t => !t.Bookings.Any(b =>
 					b.Status == BookingStatus.InProgress
 					|| b.Status == BookingStatus.Pending
@@ -152,11 +152,12 @@ namespace HSP.Service.Implementations
 		{
 			string encodedToken = WebUtility.UrlEncode(token);
 			string baseUrl = _urlSettings.BaseUrl;
+			string serviceIdsQuery = string.Join(",", input.ServiceIds);
 			string acceptUrl = $"{baseUrl}/api/booking/accept" +
 													 $"?customerId={customer.Id}" +
 													 $"&technicianId={tech.Technician.Id}" +
 													 $"&token={encodedToken}" +
-													 $"&serviceId={input.ServiceIds.First()}" +
+													 $"&serviceId={serviceIdsQuery}" +
 													 $"&desiredDate={input.DesireDateTime:o}";
 			string declineUrl = $"{baseUrl}/api/booking/cancel" +
 															$"?technicianId={tech.Technician.Id}&token={token}";
