@@ -28,6 +28,7 @@ export const authApi = {
       };
     }
   },
+
   addPassword: async ({ newPassword, confirmPassword }) => {
     try {
       const res = await axiosClient.post("/Authentication/add-password", {
@@ -52,11 +53,17 @@ export const authApi = {
       return { success: false, message };
     }
   },
- uploadFile: async (file, objectId = null, objectTypeName = null, relationType = null) => {
+
+  uploadFile: async (
+    file,
+    objectId = null,
+    objectTypeName = null,
+    relationType = null
+  ) => {
     try {
       const formData = new FormData();
       formData.append("File", file);
-      
+
       if (objectId) formData.append("ObjectId", objectId);
       if (objectTypeName) formData.append("ObjectTypeName", objectTypeName);
       if (relationType) formData.append("RelationType", relationType);
@@ -77,93 +84,102 @@ export const authApi = {
     }
   },
 
-  // Upload multiple files - theo API /api/File/upload-many
-  uploadFiles: async (files, objectId = null, objectTypeName = null, relationType = null) => {
+  uploadFiles: async (files, objectId = null, objectTypeName = null) => {
     try {
       const formData = new FormData();
-      
-      // Append multiple files
       files.forEach((file) => {
         formData.append("files", file);
       });
-      
+
       if (objectId) formData.append("objectId", objectId);
       if (objectTypeName) formData.append("objectTypeName", objectTypeName);
-      if (relationType) formData.append("relationType", relationType);
-
       const res = await axiosClient.post("/File/upload-many", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
+      if (Array.isArray(res.data)) {
+        console.log("✅ Response là array of file paths");
+        return { success: true, data: { filePaths: res.data } };
+      }
+      if (res.data?.filePaths) {
+        console.log("✅ Response có property filePaths");
+        return { success: true, data: res.data };
+      }
       return { success: true, data: res.data };
     } catch (error) {
       console.error("Upload files error:", error);
+      console.error("Error response:", error.response?.data);
       return {
         success: false,
         message: error.response?.data?.message || "Upload files thất bại",
       };
     }
   },
-
-  // Upload certificates - sử dụng uploadFiles
-  uploadCertificates: async (certificateFiles, objectId = null) => {
-    return await authApi.uploadFiles(
-      certificateFiles,
-      objectId,
-      "Certificate",
-      "TechnicianCertificate"
-    );
-  },
-
   registerTechnician: async ({
-  email,
-  fullName,
-  phoneNumber,
-  skillSet,
-  experienceYears,
-  certificateFilePaths = [],
-}) => {
-  try {
-    const payload = {
-      email,
-      fullName,
-      phoneNumber,
-      skillSet,
-      experienceYears,
-      certificateFilePaths,
-    };
-    console.log("Sending registerTechnician payload:", payload);
-    const res = await axiosClient.post("/Authentication/register-technician", payload);
-    return { success: true, data: res.data };
-  } catch (error) {
-    console.error("Register technician error:", error);
-    console.log("Response data:", JSON.stringify(error.response?.data, null, 2)); // Log chi tiết
-    return {
-      success: false,
-      message:
-        error.response?.data?.message ||
-        (typeof error.response?.data === "object"
-          ? JSON.stringify(error.response?.data)
-          : error.response?.data) ||
-        "Đăng ký kỹ thuật viên thất bại",
-      status: error.response?.status,
-      errors: error.response?.data?.errors || null, // Lưu errors nếu có
-    };
-  }
-},
+    email,
+    fullName,
+    phoneNumber,
+    experienceYears,
+    serviceIds,
+    address = "",
+  }) => {
+    try {
+      const payload = {
+        email,
+        fullName,
+        phoneNumber,
+        experienceYears,
+        serviceIds,
+        address,
+      };
 
-  // Helper function để chuẩn bị dữ liệu technician trước khi gọi registerTechnician
+      console.log("Sending registerTechnician payload:", payload);
+
+      const res = await axiosClient.post(
+        "/Authentication/register-technician",
+        payload
+      );
+      let technicianId;
+      if (typeof res.data === "string") {
+        technicianId = res.data;
+      } else if (typeof res.data === "object" && res.data !== null) {
+        technicianId = res.data.id || res.data.technicianId;
+      }
+      return {
+        success: true,
+        data: {
+          technicianId: technicianId,
+          id: technicianId,
+        },
+      };
+    } catch (error) {
+      console.error("Register technician error:", error);
+      console.log(
+        "Response data:",
+        JSON.stringify(error.response?.data, null, 2)
+      );
+
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          (typeof error.response?.data === "object"
+            ? JSON.stringify(error.response?.data)
+            : error.response?.data) ||
+          "Đăng ký kỹ thuật viên thất bại",
+        status: error.response?.status,
+        errors: error.response?.data?.errors || null,
+      };
+    }
+  },
   prepareRegisterTechnicianData: ({
     email,
     fullName,
     phoneNumber,
-    specializations = [],
+    serviceIds,
     experience,
-    bio,
-    certifications,
-    availability = [],
+    address = "",
   }) => {
     // Map experience string to years
     const expMap = {
@@ -175,62 +191,14 @@ export const authApi = {
     };
     const experienceYears = expMap[experience] ?? 0;
 
-    // Build skillSet object
-    let skillObj = {
-      specializations,
-      bio: bio?.slice(0, 80),
-      certifications: certifications?.slice(0, 80),
-      availability: availability.slice(0, 5),
-    };
-
-    // Convert to JSON string and check length
-    let skillSet = JSON.stringify(skillObj);
-    if (skillSet.length > 200) {
-      skillObj = { specializations: specializations.slice(0, 5) };
-      skillSet = JSON.stringify(skillObj);
-      if (skillSet.length > 200) {
-        skillSet = JSON.stringify({ s: specializations.slice(0, 3) });
-      }
-    }
-
     return {
       email,
       fullName,
       phoneNumber,
-      skillSet,
       experienceYears,
+      serviceIds,
+      address,
     };
-  },
-
-  changePassword: async ({ currentPassword, newPassword, confirmNewPassword }) => {
-    try {
-      const res = await axiosClient.post("/Authentication/change-password", {
-        currentPassword,
-        newPassword,
-        confirmNewPassword: confirmNewPassword, 
-      });
-      return { success: true, data: res.data };
-    } catch (error) {
-      console.error("Change password error:", error);
-
-      const responseData = error.response?.data;
-      let message = "Đổi mật khẩu thất bại.";
-
-      if (responseData && responseData.message) {
-        message = responseData.message;
-        const lowerCaseMessage = message.toLowerCase();
-
-        if (lowerCaseMessage.includes("current password incorrect")) {
-          message = "Mật khẩu hiện tại không đúng.";
-        } else if (lowerCaseMessage.includes("passwordlength")) {
-           message = "Mật khẩu mới phải có ít nhất 8 ký tự.";
-        } else if (lowerCaseMessage.includes("passwords do not match")) {
-           message = "Mật khẩu mới và xác nhận mật khẩu không khớp.";
-        }
-      }
-
-      return { success: false, message: message };
-    }
   },
 
   login: async ({ emailOrPhone, password }) => {
@@ -248,7 +216,6 @@ export const authApi = {
             emailOrPhone: res.data.emailOrPhone,
             jwtToken: res.data.jwtToken,
             requirePasswordSetup: res.data.requirePasswordSetup || false,
-            mustChangePasswordOnLogin: res.data.mustChangePasswordOnLogin || false,
           },
         };
       }
@@ -277,6 +244,7 @@ export const authApi = {
       return { success: false, message };
     }
   },
+
   requestPasswordReset: async ({ email }) => {
     try {
       const res = await axiosClient.post("/Authentication/forget-password", {
@@ -312,6 +280,7 @@ export const authApi = {
       return { success: false, message };
     }
   },
+
   resetPassword: async ({ userId, token, newPassword, confirmPassword }) => {
     try {
       const res = await axiosClient.post("/Authentication/reset-password", {
@@ -357,7 +326,7 @@ export const authApi = {
       return { success: false, message };
     }
   },
-  // --- Xác thực email ---
+
   confirmEmail: async ({ userId, token }) => {
     try {
       const res = await axiosClient.get("/Authentication/confirm-email", {

@@ -580,39 +580,19 @@
         "10+": "Trên 10 năm"
       },
       "specialization_required": "Lĩnh vực chuyên môn *",
-      "specializations": {
-        "electrical": "Điện",
-        "plumbing": "Nước", 
-        "ac": "Điều hòa",
-        "electronics": "Sửa chữa đồ điện tử",
-        "painting": "Sơn nhà",
-        "cleaning": "Dọn dẹp",
-        "gardening": "Làm vườn", 
-        "interior": "Sửa chữa nội thất",
-        "installation": "Lắp đặt thiết bị",
-        "maintenance": "Bảo trì máy móc"
-      },
       "certifications": "Upload Chứng chỉ & Bằng cấp",
       "upload_certificates": "Chọn file chứng chỉ để upload", 
       "upload_certificates_desc": "PDF, DOC, DOCX, JPG, PNG (tối đa 5MB mỗi file)",
       "uploading": "Đang upload...",
       "uploaded_files": "Các file đã upload",
-      "remove_file": "Xóa",
+      "file_removed": "Đã xóa file",
+      "file_uploaded": "Đã upload file: {{fileName}}",
       "file_too_large": "quá lớn (tối đa 5MB)",
       "file_invalid_format": "không đúng định dạng (chỉ chấp nhận PDF, DOC, DOCX, JPG, PNG)",
       "upload_success": "Đã upload {{count}} file chứng chỉ thành công!",
       "upload_failed": "Upload chứng chỉ thất bại",
       "upload_error": "Có lỗi xảy ra khi upload chứng chỉ",
-      "availability": "Thời gian có thể làm việc",
-      "availability_options": {
-        "monday": "Thứ 2",
-        "tuesday": "Thứ 3",
-        "wednesday": "Thứ 4",
-        "thursday": "Thứ 5", 
-        "friday": "Thứ 6",
-        "saturday": "Thứ 7",
-        "sunday": "Chủ nhật"
-      }
+      "availability": "Thời gian có thể làm việc"
     },
     "rate_bio": {
       "hourly_rate_required": "Mức lương mong muốn (VNĐ/giờ) *",
@@ -642,7 +622,17 @@
       "fill_required_fields": "Vui lòng điền đầy đủ thông tin bắt buộc!",
       "register_success": "Đăng ký thành công! Vui lòng chờ quản trị viên duyệt.",
       "register_failed": "Đăng ký kỹ thuật viên thất bại",
-      "error_occurred": "Có lỗi xảy ra. Vui lòng thử lại sau."
+      "error_occurred": "Có lỗi xảy ra. Vui lòng thử lại sau.",
+      "full_name_required_error": "Vui lòng nhập họ và tên.",
+      "email_invalid_error": "Email không hợp lệ.",
+      "phone_invalid_error": "Vui lòng nhập số điện thoại.",
+      "address_required_error": "Vui lòng nhập địa chỉ.",
+      "experience_required_error": "Vui lòng chọn số năm kinh nghiệm.",
+      "specialization_required_error": "Vui lòng chọn ít nhất một lĩnh vực chuyên môn.",
+      "agree_terms_required_error": "Bạn phải đồng ý với điều khoản dịch vụ và chính sách bảo mật để tiếp tục.",
+      "agree_background_check_required_error": "Bạn phải đồng ý cho phép kiểm tra lý lịch để tiếp tục.",
+      "certificate_required_error": "Vui lòng upload ít nhất một chứng chỉ hoặc bằng cấp."
+
     }
   },
   "toast":{
