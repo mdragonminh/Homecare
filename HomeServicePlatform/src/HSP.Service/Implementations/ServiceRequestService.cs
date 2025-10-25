@@ -152,12 +152,11 @@ namespace HSP.Service.Implementations
 		{
 			string encodedToken = WebUtility.UrlEncode(token);
 			string baseUrl = _urlSettings.BaseUrl;
-			string serviceIdsQuery = string.Join(",", input.ServiceIds);
 			string acceptUrl = $"{baseUrl}/api/booking/accept" +
 													 $"?customerId={customer.Id}" +
 													 $"&technicianId={tech.Technician.Id}" +
 													 $"&token={encodedToken}" +
-													 $"&serviceId={serviceIdsQuery}" +
+													 $"&serviceId={input.ServiceIds}" +
 													 $"&desiredDate={input.DesireDateTime:o}";
 			string declineUrl = $"{baseUrl}/api/booking/cancel" +
 															$"?technicianId={tech.Technician.Id}&token={token}";
@@ -175,7 +174,7 @@ namespace HSP.Service.Implementations
 			var email = new EmailDto
 			{
 				ToEmail = tech.Technician.User.Email,
-				Subject = $"Yêu cầu dịch vụ mới gần bạn {DateTime.Now:HH:mm:ss}",
+				Subject = $"Yêu cầu dịch vụ mới gần bạn lúc {DateTime.Now:HH:mm:ss}",
 				HtmlBody = htmlBody
 			};
 			await _emailService.SendEmailAsync(email);

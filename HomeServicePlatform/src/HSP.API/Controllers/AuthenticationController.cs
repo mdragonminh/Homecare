@@ -62,47 +62,47 @@ namespace HSP.API.Controllers
 				return BadRequest(new { message = "An error occurred" });
 			}
 		}
-		[HttpPost("upload-certificates")]
-		[AllowAnonymous]
-		public async Task<IActionResult> UploadCertificates([FromForm] IList<IFormFile> certificates)
-		{
-			try
-			{
-				if (certificates == null || !certificates.Any())
-				{
-					return BadRequest(new { message = "No certificates provided" });
-				}
+		//[HttpPost("upload-certificates")]
+		//[AllowAnonymous]
+		//public async Task<IActionResult> UploadCertificates([FromForm] IList<IFormFile> certificates)
+		//{
+		//	try
+		//	{
+		//		if (certificates == null || !certificates.Any())
+		//		{
+		//			return BadRequest(new { message = "No certificates provided" });
+		//		}
 
-				var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
-				var maxFileSize = 5 * 1024 * 1024; // 5MB
+		//		var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
+		//		var maxFileSize = 5 * 1024 * 1024; // 5MB
 
-				// Validate files
-				foreach (var file in certificates)
-				{
-					if (!_fileService.ValidateFileType(file, allowedExtensions))
-					{
-						return BadRequest(new { message = $"File type not allowed: {file.FileName}" });
-					}
-					if (!_fileService.ValidateFileSize(file, maxFileSize))
-					{
-						return BadRequest(new { message = $"File size too large: {file.FileName}" });
-					}
-				}
+		//		// Validate files
+		//		foreach (var file in certificates)
+		//		{
+		//			if (!_fileService.ValidateFileType(file, allowedExtensions))
+		//			{
+		//				return BadRequest(new { message = $"File type not allowed: {file.FileName}" });
+		//			}
+		//			if (!_fileService.ValidateFileSize(file, maxFileSize))
+		//			{
+		//				return BadRequest(new { message = $"File size too large: {file.FileName}" });
+		//			}
+		//		}
 
-				// Upload files
-				var uploadedPaths = await _fileService.UploadMultipleFilesAsync(certificates, "certificates");
+		//		// Upload files
+		//		var uploadedPaths = await _fileService.UploadMultipleFilesAsync(certificates, "certificates");
 
-				return Ok(new
-				{
-					message = "Certificates uploaded successfully",
-					filePaths = uploadedPaths
-				});
-			}
-			catch (Exception ex)
-			{
-				return StatusCode(500, new { message = "An error occurred while uploading certificates", details = ex.Message });
-			}
-		}
+		//		return Ok(new
+		//		{
+		//			message = "Certificates uploaded successfully",
+		//			filePaths = uploadedPaths
+		//		});
+		//	}
+		//	catch (Exception ex)
+		//	{
+		//		return StatusCode(500, new { message = "An error occurred while uploading certificates", details = ex.Message });
+		//	}
+		//}
 
 		[HttpPost("register-technician")]
 		[AllowAnonymous]

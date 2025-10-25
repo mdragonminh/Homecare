@@ -81,5 +81,11 @@ namespace HSP.DAL.Repositories
 		{
 			_context.Set<T>().Update(entity);
 		}
+
+		public async Task RemoveRange(IEnumerable<T> entities)
+		{
+			_context.Set<T>().RemoveRange(entities);
+			await Task.CompletedTask;
+		}
 	}
 }
