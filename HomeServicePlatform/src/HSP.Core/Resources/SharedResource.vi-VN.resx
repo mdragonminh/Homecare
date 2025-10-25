@@ -192,6 +192,9 @@
   <data name="EmailAlreadyExists" xml:space="preserve">
     <value>Email đã tồn tại</value>
   </data>
+  <data name="UsernameAlreadyExists" xml:space="preserve">
+    <value>Username đã tồn tại</value>
+  </data>
   <data name="EmailNotConfirmed" xml:space="preserve">
     <value>Email chưa được xác thực</value>
   </data>

@@ -25,9 +25,10 @@ namespace HSP.Core.Entities
 		public string? CreatedBy { get; set; }
 		public string? UpdatedBy { get; set; }
 		public string? DisabledReason { get; set; }
+        public bool MustChangePasswordOnLogin { get; set; } = false;
 
-		//public CustomerProfile? CustomerProfile { get; set; }
-		public TechnicianProfile? TechnicianProfile { get; set; }
+        //public CustomerProfile? CustomerProfile { get; set; }
+        public TechnicianProfile? TechnicianProfile { get; set; }
 		public DateTime DateCreated { get; set; } = DateTime.UtcNow;
 		public DateTime DateModified { get; set; }
 		public ICollection<Home> Homes { get; set; } = new List<Home>();
