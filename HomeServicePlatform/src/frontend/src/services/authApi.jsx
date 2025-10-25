@@ -118,40 +118,41 @@ export const authApi = {
   },
 
   registerTechnician: async ({
-    email,
-    fullName,
-    phoneNumber, // Đổi từ 'phone' thành 'phoneNumber' cho đúng với API
-    skillSet,
-    experienceYears,
-    certificateFilePaths = [],
-  }) => {
-    try {
-      // Payload theo đúng API schema
-      const payload = {
-        email,
-        fullName,
-        phoneNumber,
-        skillSet, // string - có thể là JSON string
-        experienceYears, // number
-        certificateFilePaths, // array of strings
-      };
-
-      const res = await axiosClient.post(
-        "/Authentication/register-technician",
-        payload
-      );
-      return { success: true, data: res.data };
-    } catch (error) {
-      console.error("Register technician error:", error);
-      return {
-        success: false,
-        message:
-          error.response?.data?.message ||
-          error.response?.data ||
-          "Đăng ký kỹ thuật viên thất bại",
-      };
-    }
-  },
+  email,
+  fullName,
+  phoneNumber,
+  skillSet,
+  experienceYears,
+  certificateFilePaths = [],
+}) => {
+  try {
+    const payload = {
+      email,
+      fullName,
+      phoneNumber,
+      skillSet,
+      experienceYears,
+      certificateFilePaths,
+    };
+    console.log("Sending registerTechnician payload:", payload);
+    const res = await axiosClient.post("/Authentication/register-technician", payload);
+    return { success: true, data: res.data };
+  } catch (error) {
+    console.error("Register technician error:", error);
+    console.log("Response data:", JSON.stringify(error.response?.data, null, 2)); // Log chi tiết
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        (typeof error.response?.data === "object"
+          ? JSON.stringify(error.response?.data)
+          : error.response?.data) ||
+        "Đăng ký kỹ thuật viên thất bại",
+      status: error.response?.status,
+      errors: error.response?.data?.errors || null, // Lưu errors nếu có
+    };
+  }
+},
 
   // Helper function để chuẩn bị dữ liệu technician trước khi gọi registerTechnician
   prepareRegisterTechnicianData: ({

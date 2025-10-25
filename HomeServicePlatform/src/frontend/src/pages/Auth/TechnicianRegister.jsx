@@ -37,7 +37,7 @@ export default function TechnicianRegister({
     phone: "",
     experience: "",
     specializations: [],
-    serviceCertificates: {}, // { serviceId: { file: File, name: string } }
+    serviceCertificates: {}, // { [serviceId]: [{ file: File, name: string }, ...] }
     bio: "",
     agreeToTerms: false,
     agreeToBackgroundCheck: false,
@@ -73,24 +73,22 @@ export default function TechnicianRegister({
 
   const toggleSpecialization = (serviceId) => {
     const isSelected = formData.specializations.includes(serviceId);
-    
-    updateFormData(
-      "specializations",
-      isSelected
-        ? formData.specializations.filter((s) => s !== serviceId)
-        : [...formData.specializations, serviceId]
-    );
-
-    if (isSelected && formData.serviceCertificates[serviceId]) {
-      setFormData((prev) => {
-        const newCerts = { ...prev.serviceCertificates };
-        delete newCerts[serviceId];
-        return { ...prev, serviceCertificates: newCerts };
-      });
-    }
+    setFormData((prev) => {
+      const newCerts = { ...prev.serviceCertificates };
+      if (isSelected) {
+        delete newCerts[serviceId]; // Xóa tất cả file của dịch vụ khi bỏ chọn
+      }
+      return {
+        ...prev,
+        specializations: isSelected
+          ? prev.specializations.filter((s) => s !== serviceId)
+          : [...prev.specializations, serviceId],
+        serviceCertificates: newCerts,
+      };
+    });
   };
 
-  // Chỉ lưu file tạm, không upload ngay
+  // Lưu file tạm vào state
   const handleCertificateUpload = useCallback(
     async (file, serviceId) => {
       if (!file) return;
@@ -118,36 +116,40 @@ export default function TechnicianRegister({
         return;
       }
 
-      // Chỉ lưu File object vào state, chưa upload
       setFormData((prev) => ({
         ...prev,
         serviceCertificates: {
           ...prev.serviceCertificates,
-          [serviceId]: {
-            file: file,
-            name: file.name,
-          },
+          [serviceId]: [
+            ...(prev.serviceCertificates[serviceId] || []),
+            { file, name: file.name },
+          ],
         },
       }));
-      
+
       toast.success(`Đã chọn file: ${file.name}`);
     },
     [t]
   );
 
-  const removeCertificate = (serviceId) => {
+  const removeCertificate = (serviceId, fileName) => {
     setFormData((prev) => {
-      const newCerts = { ...prev.serviceCertificates };
-      delete newCerts[serviceId];
-      return { ...prev, serviceCertificates: newCerts };
+      const updatedCerts = {
+        ...prev.serviceCertificates,
+        [serviceId]: prev.serviceCertificates[serviceId].filter(
+          (cert) => cert.name !== fileName
+        ),
+      };
+      if (updatedCerts[serviceId].length === 0) {
+        delete updatedCerts[serviceId];
+      }
+      return { ...prev, serviceCertificates: updatedCerts };
     });
     toast.info(t("technician_register.experience_skills.file_removed"));
   };
-  
-  // Preview ảnh trong popup
+
   const viewCertificate = (certData) => {
     if (!certData.file) return;
-    
     const fileURL = URL.createObjectURL(certData.file);
     setPreviewImage({ url: fileURL, name: certData.name });
   };
@@ -159,117 +161,124 @@ export default function TechnicianRegister({
     setPreviewImage(null);
   };
 
-  const handleSubmit = async () => {
-    // Validate
-    if (
-      !formData.fullName ||
-      !formData.email ||
-      !formData.phone ||
-      !formData.experience ||
-      formData.specializations.length === 0 ||
-      !formData.agreeToTerms ||
-      !formData.agreeToBackgroundCheck
-    ) {
-      toast.error(t("technician_register.validation.fill_required_fields"));
-      return;
-    }
+const handleSubmit = async () => {
+  // Validate
+  if (
+    !formData.fullName ||
+    !formData.email ||
+    !formData.phone ||
+    !formData.experience ||
+    formData.specializations.length === 0 ||
+    !formData.agreeToTerms ||
+    !formData.agreeToBackgroundCheck
+  ) {
+    toast.error(t("technician_register.validation.fill_required_fields"));
+    return;
+  }
 
-    // Validate: Kiểm tra xem tất cả specializations đã có certificate chưa
-    const missingCertificates = formData.specializations.filter(
-      serviceId => !formData.serviceCertificates[serviceId]?.file
+  const missingCertificates = formData.specializations.filter(
+    (serviceId) =>
+      !formData.serviceCertificates[serviceId] ||
+      formData.serviceCertificates[serviceId].length === 0
+  );
+
+  if (missingCertificates.length > 0) {
+    const missingServices = missingCertificates
+      .map((id) => services.find((s) => s.id === id)?.name || `Service ${id}`)
+      .join(", ");
+    toast.error(
+      `Vui lòng chọn ít nhất một chứng chỉ cho các dịch vụ: ${missingServices}`
     );
-    
-    if (missingCertificates.length > 0) {
-      const missingServices = missingCertificates.map(id => {
-        const service = services.find(s => s.id === id);
-        return service?.name || `Service ${id}`;
-      }).join(", ");
-      
-      toast.error(
-        `Vui lòng chọn chứng chỉ cho các dịch vụ: ${missingServices}`
-      );
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+
+    // Chuẩn bị dữ liệu
+    const selectedSpecializations = formData.specializations
+      .map((id) => services.find((s) => s.id === id)?.name || "")
+      .filter((name) => name !== "");
+
+    const preparedData = authApi.prepareRegisterTechnicianData({
+      email: formData.email,
+      fullName: formData.fullName,
+      phoneNumber: formData.phone,
+      specializations: selectedSpecializations,
+      experience: formData.experience,
+      bio: formData.bio,
+      certifications: "",
+      availability: [],
+    });
+
+    // Gọi API đăng ký
+    console.log("Bước 1: Gửi đăng ký với payload:", preparedData);
+    const registerRes = await authApi.registerTechnician({
+      ...preparedData,
+      certificateFilePaths: [], // Giữ mảng rỗng vì file chưa upload
+    });
+
+    if (!registerRes.success) {
+      // Hiển thị lỗi chi tiết
+      let errorMsg = registerRes.message;
+      if (registerRes.errors) {
+        errorMsg = Object.values(registerRes.errors).join(", ");
+      } else if (typeof registerRes.message === "object") {
+        errorMsg = JSON.stringify(registerRes.message);
+      }
+      toast.error(errorMsg || t("technician_register.validation.register_failed"));
       return;
     }
 
-    try {
-      setSubmitting(true);
-      
-      // Upload tất cả certificates trước khi đăng ký
-      toast.info("Đang upload chứng chỉ...");
-      
-      const uploadPromises = formData.specializations.map(async (serviceId) => {
-        const certData = formData.serviceCertificates[serviceId];
-        if (!certData?.file) return null;
-        
-        try {
-          const response = await authApi.uploadFile(
-            certData.file,
-            serviceId.toString(),
-            "Technician",
-            "Certificate"
-          );
-          
-          if (response.success && response.data?.filePath) {
-            return response.data.filePath;
-          }
-          throw new Error(`Upload failed for service ${serviceId}`);
-        } catch (error) {
-          console.error(`Upload error for service ${serviceId}:`, error);
-          throw error;
-        }
-      });
-      
-      const certificateFilePaths = await Promise.all(uploadPromises);
-      const validPaths = certificateFilePaths.filter(path => path);
-      
-      if (validPaths.length !== formData.specializations.length) {
-        toast.error("Có lỗi khi upload một số chứng chỉ. Vui lòng thử lại.");
-        return;
-      }
-      
-      toast.success("Upload chứng chỉ thành công!");
-      
-      // Lấy tên services từ IDs
-      const selectedSpecializations = formData.specializations.map(id => {
-        const service = services.find(s => s.id === id);
-        return service?.name || "";
-      }).filter(name => name !== "");
-
-      // Sử dụng prepareRegisterTechnicianData helper
-      const preparedData = authApi.prepareRegisterTechnicianData({
-        email: formData.email,
-        fullName: formData.fullName,
-        phoneNumber: formData.phone,
-        specializations: selectedSpecializations,
-        experience: formData.experience,
-        bio: formData.bio,
-        certifications: "",
-        availability: [],
-      });
-
-      // Gọi API đăng ký với certificateFilePaths đã upload
-      const res = await authApi.registerTechnician({
-        ...preparedData,
-        certificateFilePaths: validPaths,
-      });
-
-      if (res.success) {
-        toast.success(t("technician_register.validation.register_success"));
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
-      } else {
-        toast.error(
-          res.message || t("technician_register.validation.register_failed")
-        );
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.");
-    } finally {
-      setSubmitting(false);
+    const technicianId = registerRes.data?.technicianId;
+    if (!technicianId) {
+      toast.error("Không nhận được technicianId từ server.");
+      return;
     }
-  };
+
+    // Upload chứng chỉ
+    toast.info("Đang upload chứng chỉ...");
+    const uploadPromises = formData.specializations.map(async (serviceId) => {
+      const certs = formData.serviceCertificates[serviceId] || [];
+      if (certs.length === 0) return [];
+
+      const files = certs.map((cert) => cert.file);
+      const uploadRes = await authApi.uploadFiles(
+        files,
+        technicianId,
+        "Technician",
+        `Certificate_${serviceId}`
+      );
+
+      if (!uploadRes.success) {
+        throw new Error(`Upload failed for service ${serviceId}: ${uploadRes.message}`);
+      }
+
+      return uploadRes.data?.filePaths || [];
+    });
+
+    const allFilePaths = (await Promise.all(uploadPromises)).flat();
+    if (allFilePaths.length === 0) {
+      toast.error("Không có file nào được upload thành công.");
+      // TODO: Gọi API xóa technician nếu backend hỗ trợ
+      // await authApi.deleteTechnician(technicianId);
+      return;
+    }
+
+    toast.success("Upload chứng chỉ thành công!");
+    toast.success(t("technician_register.validation.register_success"));
+    setTimeout(() => {
+      navigate("/login");
+    }, 2000);
+  } catch (err) {
+    console.error("Lỗi trong handleSubmit:", err);
+    toast.error(
+      err.message || "Có lỗi xảy ra khi đăng ký hoặc upload file. Vui lòng thử lại."
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <div>
@@ -279,7 +288,7 @@ export default function TechnicianRegister({
             className="relative py-16"
             style={{
               backgroundImage:
-                "url('https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcTUvYMVwAgyyFHCZJc0lf74j85foiW-5tcp_0-Utq6btFnaDOiTCegimm48frzL8bcctQjWbSro5jXndDUSN-FIUaQnODNtA3KkalUdQGxF5-I4MnA')",
+                "https://www.advancedtech.com/wp-content/uploads/2023/05/Two-technicians-robotic-arm_1200x628-1200x720.jpg",
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
@@ -455,19 +464,19 @@ export default function TechnicianRegister({
                         {services.map((service) => {
                           const serviceId = service.id;
                           const isSelected = formData.specializations.includes(serviceId);
-                          const certInfo = formData.serviceCertificates[serviceId];
+                          const certList = formData.serviceCertificates[serviceId] || [];
 
                           return (
                             <div
                               key={serviceId}
-                              className="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white"
+                              className="flex flex-col p-3 border border-gray-200 rounded-lg bg-white"
                             >
-                              <label className="flex items-center gap-3 cursor-pointer flex-1">
+                              <label className="flex items-center gap-3 cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={() => toggleSpecialization(serviceId)}
-                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                   style={{ minWidth: "1rem" }}
                                 />
                                 <span className="text-sm text-gray-700 font-medium">
@@ -476,48 +485,53 @@ export default function TechnicianRegister({
                               </label>
 
                               {isSelected && (
-                                <div className="flex items-center space-x-2 flex-shrink-0">
-                                  {certInfo?.file ? (
-                                    <>
-                                      <span className="text-xs text-gray-500 truncate max-w-[80px]">
-                                        {certInfo.name}
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => viewCertificate(certInfo)}
-                                        className="text-green-600 hover:text-green-800 p-1 rounded-full bg-green-50"
-                                        title={t("technician_register.experience_skills.view_file")}
-                                      >
-                                        <Eye className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => removeCertificate(serviceId)}
-                                        className="text-red-600 hover:text-red-800 p-1 rounded-full bg-red-50"
-                                        title={t("technician_register.experience_skills.remove_file")}
-                                      >
-                                        <X className="w-4 h-4" />
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <label
-                                      htmlFor={`upload-cert-${serviceId}`}
-                                      className="cursor-pointer text-blue-600 hover:text-blue-800 p-1 rounded-full bg-blue-50"
-                                      title={t("technician_register.experience_skills.upload_certificate")}
+                                <div className="mt-2 space-y-2">
+                                  {certList.map((cert, index) => (
+                                    <div
+                                      key={`${serviceId}-${cert.name}-${index}`}
+                                      className="flex items-center justify-between"
                                     >
-                                      <Upload className="w-4 h-4" />
-                                      <input
-                                        id={`upload-cert-${serviceId}`}
-                                        name={`upload-cert-${serviceId}`}
-                                        type="file"
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                        className="sr-only"
-                                        onChange={(e) =>
-                                          handleCertificateUpload(e.target.files[0], serviceId)
-                                        }
-                                      />
-                                    </label>
-                                  )}
+                                      <span className="text-xs text-gray-500 truncate max-w-[120px]">
+                                        {cert.name}
+                                      </span>
+                                      <div className="flex items-center space-x-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => viewCertificate(cert)}
+                                          className="text-green-600 hover:text-green-800 p-1 rounded-full bg-green-50"
+                                          title={t("technician_register.experience_skills.view_file")}
+                                        >
+                                          <Eye className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => removeCertificate(serviceId, cert.name)}
+                                          className="text-red-600 hover:text-red-800 p-1 rounded-full bg-red-50"
+                                          title={t("technician_register.experience_skills.remove_file")}
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  <label
+                                    htmlFor={`upload-cert-${serviceId}`}
+                                    className="cursor-pointer text-blue-600 hover:text-blue-800 p-1 rounded-full bg-blue-50 inline-flex items-center"
+                                    title={t("technician_register.experience_skills.upload_certificate")}
+                                  >
+                                    <Upload className="w-4 h-4" />
+                                    <span className="text-xs ml-1">Thêm file</span>
+                                    <input
+                                      id={`upload-cert-${serviceId}`}
+                                      name={`upload-cert-${serviceId}`}
+                                      type="file"
+                                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                      className="sr-only"
+                                      onChange={(e) =>
+                                        handleCertificateUpload(e.target.files[0], serviceId)
+                                      }
+                                    />
+                                  </label>
                                 </div>
                               )}
                             </div>
@@ -620,11 +634,11 @@ export default function TechnicianRegister({
 
       {/* Image Preview Popup */}
       {previewImage && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
           onClick={closePreview}
         >
-          <div 
+          <div
             className="relative max-w-4xl max-h-[90vh] bg-white rounded-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
@@ -638,8 +652,8 @@ export default function TechnicianRegister({
               </button>
             </div>
             <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
-              <img 
-                src={previewImage.url} 
+              <img
+                src={previewImage.url}
                 alt={previewImage.name}
                 className="max-w-full h-auto mx-auto"
               />
