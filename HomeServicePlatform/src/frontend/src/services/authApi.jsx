@@ -52,81 +52,92 @@ export const authApi = {
       return { success: false, message };
     }
   },
-  uploadCertificates: async (certificateFiles) => {
+ uploadFile: async (file, objectId = null, objectTypeName = null, relationType = null) => {
     try {
       const formData = new FormData();
-      certificateFiles.forEach((file) => {
-        formData.append("certificates", file);
-      });
+      formData.append("File", file);
+      
+      if (objectId) formData.append("ObjectId", objectId);
+      if (objectTypeName) formData.append("ObjectTypeName", objectTypeName);
+      if (relationType) formData.append("RelationType", relationType);
 
-      const res = await axiosClient.post(
-        "/Authentication/upload-certificates",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const res = await axiosClient.post("/File/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       return { success: true, data: res.data };
     } catch (error) {
-      console.error("Upload certificates error:", error);
+      console.error("Upload file error:", error);
       return {
         success: false,
-        message: error.response?.data?.message || "Upload chứng chỉ thất bại",
+        message: error.response?.data?.message || "Upload file thất bại",
       };
     }
+  },
+
+  // Upload multiple files - theo API /api/File/upload-many
+  uploadFiles: async (files, objectId = null, objectTypeName = null, relationType = null) => {
+    try {
+      const formData = new FormData();
+      
+      // Append multiple files
+      files.forEach((file) => {
+        formData.append("files", file);
+      });
+      
+      if (objectId) formData.append("objectId", objectId);
+      if (objectTypeName) formData.append("objectTypeName", objectTypeName);
+      if (relationType) formData.append("relationType", relationType);
+
+      const res = await axiosClient.post("/File/upload-many", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return { success: true, data: res.data };
+    } catch (error) {
+      console.error("Upload files error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Upload files thất bại",
+      };
+    }
+  },
+
+  // Upload certificates - sử dụng uploadFiles
+  uploadCertificates: async (certificateFiles, objectId = null) => {
+    return await authApi.uploadFiles(
+      certificateFiles,
+      objectId,
+      "Certificate",
+      "TechnicianCertificate"
+    );
   },
 
   registerTechnician: async ({
     email,
     fullName,
-    phone,
-    specializations = [],
-    experience,
-    bio,
-    certifications,
-    availability = [],
+    phoneNumber, // Đổi từ 'phone' thành 'phoneNumber' cho đúng với API
+    skillSet,
+    experienceYears,
     certificateFilePaths = [],
   }) => {
     try {
-      const expMap = {
-        "0-1": 1,
-        "1-3": 2,
-        "3-5": 4,
-        "5-10": 7,
-        "10+": 10,
-      };
-      const experienceYears = expMap[experience] ?? 0;
-
-      let skillObj = {
-        specializations,
-        bio: bio?.slice(0, 80),
-        certifications: certifications?.slice(0, 80),
-        availability: availability.slice(0, 5),
-      };
-
-      let skillSet = JSON.stringify(skillObj);
-      if (skillSet.length > 200) {
-        skillObj = { specializations: specializations.slice(0, 5) };
-        skillSet = JSON.stringify(skillObj);
-        if (skillSet.length > 200) {
-          skillSet = JSON.stringify({ s: specializations.slice(0, 3) });
-        }
-      }
-
+      // Payload theo đúng API schema
       const payload = {
         email,
         fullName,
-        phoneNumber: phone,
-        skillSet,
-        experienceYears,
-        certificateFilePaths,
+        phoneNumber,
+        skillSet, // string - có thể là JSON string
+        experienceYears, // number
+        certificateFilePaths, // array of strings
       };
 
       const res = await axiosClient.post(
-        `/Authentication/register-technician`,
+        "/Authentication/register-technician",
         payload
       );
       return { success: true, data: res.data };
@@ -140,6 +151,54 @@ export const authApi = {
           "Đăng ký kỹ thuật viên thất bại",
       };
     }
+  },
+
+  // Helper function để chuẩn bị dữ liệu technician trước khi gọi registerTechnician
+  prepareRegisterTechnicianData: ({
+    email,
+    fullName,
+    phoneNumber,
+    specializations = [],
+    experience,
+    bio,
+    certifications,
+    availability = [],
+  }) => {
+    // Map experience string to years
+    const expMap = {
+      "0-1": 1,
+      "1-3": 2,
+      "3-5": 4,
+      "5-10": 7,
+      "10+": 10,
+    };
+    const experienceYears = expMap[experience] ?? 0;
+
+    // Build skillSet object
+    let skillObj = {
+      specializations,
+      bio: bio?.slice(0, 80),
+      certifications: certifications?.slice(0, 80),
+      availability: availability.slice(0, 5),
+    };
+
+    // Convert to JSON string and check length
+    let skillSet = JSON.stringify(skillObj);
+    if (skillSet.length > 200) {
+      skillObj = { specializations: specializations.slice(0, 5) };
+      skillSet = JSON.stringify(skillObj);
+      if (skillSet.length > 200) {
+        skillSet = JSON.stringify({ s: specializations.slice(0, 3) });
+      }
+    }
+
+    return {
+      email,
+      fullName,
+      phoneNumber,
+      skillSet,
+      experienceYears,
+    };
   },
 
   login: async ({ emailOrPhone, password }) => {
