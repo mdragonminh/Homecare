@@ -254,7 +254,7 @@ namespace HSP.Service.Implementations
 			return true;
 		}
 
-		public async Task<BookingAcceptResultDto> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, List<Guid> serviceId, string token, DateTime desiredDate)
+		public async Task<BookingAcceptResultDto> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, List<Guid> ServiceIds, string token, DateTime desiredDate)
 		{
 			var waiting = await _redisCacheService.GetAsync<string>($"waiting_{token}");
 			if (string.IsNullOrEmpty(waiting))
@@ -277,7 +277,7 @@ namespace HSP.Service.Implementations
 			if (customer == null )
 				return new BookingAcceptResultDto { IsSuccess = false, Message = "Dữ liệu khách hàng không hợp lệ." };
 			var services = await _serviceRepository.GetAll()
-				.Where(x=>serviceId.Contains(x.Id))
+				.Where(x=> ServiceIds.Contains(x.Id))
 				.ToListAsync();
 			if (services == null || !services.Any())
 				return new BookingAcceptResultDto { IsSuccess = false, Message = "Không tìm thấy dịch vụ hợp lệ." };

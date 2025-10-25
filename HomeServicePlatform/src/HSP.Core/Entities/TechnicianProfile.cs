@@ -19,8 +19,7 @@ namespace HSP.Core.Entities
 
 		[MaxLength(255)]
 		public string? Address { get; set; }
-		[Required]
-		public DayOfWeek DayOfWeek { get; set; }
+		
 		[Range(0, 50)]
 		public int ExperienceYears { get; set; }
 
