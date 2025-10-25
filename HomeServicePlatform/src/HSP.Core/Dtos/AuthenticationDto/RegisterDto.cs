@@ -29,6 +29,12 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		public string Email { get; set; } = string.Empty;
 		public string EmailConfirmToken { get; set; } = string.Empty;
 	}
+	public class RegisterTechnicianResponseDto
+	{
+		public Guid TechnicianId { get; set; }
+		public string Email { get; set; } = string.Empty;
+		public string EmailConfirmToken { get; set; } = string.Empty;
+	}
 	public class RegisterTechnicianRequestDto
 	{
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "EmailIsRequired")]

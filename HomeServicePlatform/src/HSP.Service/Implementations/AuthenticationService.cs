@@ -304,7 +304,7 @@ namespace HSP.Service.Implementations
 				EmailConfirmToken = newToken
 			};
 		}
-		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
+		public async Task<RegisterTechnicianResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
 		{
 			if (input == null)
 				throw new ArgumentException(_localizer["InputCannotBeNull"]);
@@ -359,12 +359,12 @@ namespace HSP.Service.Implementations
 				await _unitOfWork.SaveChangesAsync();
 
 				var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
-
+				await SendConfirmationEmailAsync(user, token);
 				await _unitOfWork.CommitTransactionAsync();
 
-				return new RegisterResponseDto
+				return new RegisterTechnicianResponseDto
 				{
-					UserId = user.Id,
+					TechnicianId = technicianProfile.Id,
 					Email = user.Email,
 					EmailConfirmToken = token
 				};

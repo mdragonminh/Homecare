@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using HSP.Core.Abstractions.Entity;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HSP.Core.Entities
 {

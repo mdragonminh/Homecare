@@ -1,4 +1,4 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Abstractions.Entity;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.Entity;
 using HSP.DAL.Data;

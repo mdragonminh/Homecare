@@ -2,6 +2,7 @@
 using HSP.Core.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using HSP.Core.Abstractions.Entity;
 
 namespace HSP.Core.Entities
 {

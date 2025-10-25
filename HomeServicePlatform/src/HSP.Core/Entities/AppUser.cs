@@ -17,8 +17,6 @@ namespace HSP.Core.Entities
 
 		public bool IsActive { get; set; } = true;
 
-		//public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-		//public DateTime? UpdatedAt { get; set; }
 		public DateTime? LastLoginAt { get; set; }
 		public DateTime? DisabledAt { get; set; }
 
@@ -26,7 +24,6 @@ namespace HSP.Core.Entities
 		public string? UpdatedBy { get; set; }
 		public string? DisabledReason { get; set; }
 
-		//public CustomerProfile? CustomerProfile { get; set; }
 		public TechnicianProfile? TechnicianProfile { get; set; }
 		public DateTime DateCreated { get; set; } = DateTime.UtcNow;
 		public DateTime DateModified { get; set; }
