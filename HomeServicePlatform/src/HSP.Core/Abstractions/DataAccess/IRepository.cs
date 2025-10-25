@@ -1,4 +1,4 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Abstractions.Entity;
 using System.Linq.Expressions;
 
 namespace HSP.Core.Interfaces.DataAccess

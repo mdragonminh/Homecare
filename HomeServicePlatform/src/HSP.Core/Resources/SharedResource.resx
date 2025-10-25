@@ -192,6 +192,9 @@
   <data name="EmailAlreadyExists" xml:space="preserve">
     <value>Email already exist</value>
   </data>
+  <data name="UsernameAlreadyExists" xml:space="preserve">
+    <value>Username already exist</value>
+  </data>
   <data name="EmailNotConfirmed" xml:space="preserve">
     <value>Email not confirmed</value>
   </data>

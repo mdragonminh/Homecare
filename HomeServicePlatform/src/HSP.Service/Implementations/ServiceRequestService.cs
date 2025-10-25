@@ -152,11 +152,12 @@ namespace HSP.Service.Implementations
 		{
 			string encodedToken = WebUtility.UrlEncode(token);
 			string baseUrl = _urlSettings.BaseUrl;
+			string serviceIdsQuery = string.Join("&serviceIds=", input.ServiceIds.Select(id => id.ToString()));
 			string acceptUrl = $"{baseUrl}/api/booking/accept" +
 													 $"?customerId={customer.Id}" +
 													 $"&technicianId={tech.Technician.Id}" +
 													 $"&token={encodedToken}" +
-													 $"&serviceId={input.ServiceIds}" +
+													 $"&ServiceIds={serviceIdsQuery}" +
 													 $"&desiredDate={input.DesireDateTime:o}";
 			string declineUrl = $"{baseUrl}/api/booking/cancel" +
 															$"?technicianId={tech.Technician.Id}&token={token}";

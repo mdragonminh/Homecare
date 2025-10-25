@@ -115,8 +115,8 @@ namespace HSP.API.Controllers
 			try
 			{
 				var result = await _authenticationService.RegisterTechnician(input);
-				await SendConfirmationEmailAsync(result, input.FullName);
-				return Ok(new { message = "Please check your email to confirm your registration." });
+				//await SendConfirmationEmailAsync(result, input.FullName);
+				return Ok(result.TechnicianId);
 			}
 			catch (ValidationException ex)
 			{
@@ -126,27 +126,6 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = "An error occurred" });
 			}
-		}
-		private async Task SendConfirmationEmailAsync(RegisterResponseDto result, string fullName)
-		{
-			var tokenBytes = Encoding.UTF8.GetBytes(result.EmailConfirmToken);
-			var base64Token = Convert.ToBase64String(tokenBytes);
-			var baseUrl = _urlSettings.BaseUrl;
-			var confirmUrl = $"{baseUrl}/api/Authentication/confirm-email?userId={result.UserId}&token={base64Token}";
-
-			var emailDto = new EmailDto
-			{
-				ToEmail = result.Email,
-				Subject = "Please confirm your email",
-				HtmlBody = $"""
-			<p>Hello {fullName},</p>
-			<p>Click the link to confirm your email:</p>
-			<p><a href="{confirmUrl}">Confirm Email</a></p>
-		""",
-				TextBody = $"Hello {fullName},\nClick the link to confirm your email: {confirmUrl}"
-			};
-
-			await _emailService.SendEmailAsync(emailDto);
 		}
 
 		[HttpPost("login")]

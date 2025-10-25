@@ -1,4 +1,5 @@
-﻿using HSP.Core.Enums;
+﻿using HSP.Core.Abstractions.Entity;
+using HSP.Core.Enums;
 using HSP.Core.Interfaces.Entity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -11,7 +12,8 @@ namespace HSP.Core.Entities
 		public Guid UserId { get; set; }
 		[ForeignKey("UserId")]
 		public AppUser User { get; set; } = null!;
-		
+		[MaxLength(12)]
+		public string? CitizenId { get; set; }
 		[Range(-90, 90)]
 		public double Latitude { get; set; }
 		[Range(-180, 180)]
@@ -19,8 +21,7 @@ namespace HSP.Core.Entities
 
 		[MaxLength(255)]
 		public string? Address { get; set; }
-		[Required]
-		public DayOfWeek DayOfWeek { get; set; }
+		
 		[Range(0, 50)]
 		public int ExperienceYears { get; set; }
 

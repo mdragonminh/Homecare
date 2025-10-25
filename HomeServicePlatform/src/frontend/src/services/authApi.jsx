@@ -202,6 +202,37 @@ export const authApi = {
     };
   },
 
+  changePassword: async ({ currentPassword, newPassword, confirmNewPassword }) => {
+    try {
+      const res = await axiosClient.post("/Authentication/change-password", {
+        currentPassword,
+        newPassword,
+        confirmNewPassword: confirmNewPassword, 
+      });
+      return { success: true, data: res.data };
+    } catch (error) {
+      console.error("Change password error:", error);
+
+      const responseData = error.response?.data;
+      let message = "Đổi mật khẩu thất bại.";
+
+      if (responseData && responseData.message) {
+        message = responseData.message;
+        const lowerCaseMessage = message.toLowerCase();
+
+        if (lowerCaseMessage.includes("current password incorrect")) {
+          message = "Mật khẩu hiện tại không đúng.";
+        } else if (lowerCaseMessage.includes("passwordlength")) {
+           message = "Mật khẩu mới phải có ít nhất 8 ký tự.";
+        } else if (lowerCaseMessage.includes("passwords do not match")) {
+           message = "Mật khẩu mới và xác nhận mật khẩu không khớp.";
+        }
+      }
+
+      return { success: false, message: message };
+    }
+  },
+
   login: async ({ emailOrPhone, password }) => {
     try {
       const res = await axiosClient.post(`/Authentication/login`, {
@@ -217,6 +248,7 @@ export const authApi = {
             emailOrPhone: res.data.emailOrPhone,
             jwtToken: res.data.jwtToken,
             requirePasswordSetup: res.data.requirePasswordSetup || false,
+            mustChangePasswordOnLogin: res.data.mustChangePasswordOnLogin || false,
           },
         };
       }
