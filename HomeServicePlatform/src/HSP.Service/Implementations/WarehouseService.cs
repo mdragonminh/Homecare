@@ -1,8 +1,9 @@
+﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.AccountDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Dtos.WarehouseDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
-using HSP.DAL.Interfaces;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,17 +15,21 @@ namespace HSP.Service.Implementations
         private readonly IRepository<Equipment, Guid> _equipmentRepository;
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAccountManagementService _accountManagementService;
 
         public WarehouseService(
             IRepository<Warehouse, Guid> warehouseRepository,
             IRepository<Equipment, Guid> equipmentRepository,
             IUserRepository userRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IAccountManagementService accountManagementService
+            )
         {
             _warehouseRepository = warehouseRepository;
             _equipmentRepository = equipmentRepository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
+            _accountManagementService = accountManagementService;
         }
 
         public async Task<PagedList<WarehouseListDto>> GetWarehousesAsync(int page = 1, int pageSize = 10, string? searchTerm = null)
@@ -102,6 +107,7 @@ namespace HSP.Service.Implementations
             // Validate manager if provided
             if (input.ManagerId.HasValue)
             {
+                // Bạn có thể cân nhắc dùng _accountManagementService.GetAccountByIdAsync ở đây
                 var managerUser = await _userRepository.FindByIdAsync(input.ManagerId.Value);
                 if (managerUser == null)
                 {
@@ -245,6 +251,32 @@ namespace HSP.Service.Implementations
             }
 
             return !await query.AnyAsync();
+        }
+
+        public async Task<IEnumerable<UserDto>> GetWarehouseManagersAsync()
+        {
+            var operators = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.Operator);
+            var eqManagers = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.EquipmentManager);
+
+            var allManagers = operators.Concat(eqManagers)
+                                       .GroupBy(a => a.Id)
+                                       .Select(g => g.First());
+
+            return allManagers.Select(a => new UserDto
+            {
+                Id = Guid.Parse(a.Id),
+                Email = a.Email,
+                Username = a.Username,
+                FullName = a.FullName,
+                PhoneNumber = a.PhoneNumber,
+                Role = a.Role,
+                Department = a.Department,
+                IsActive = a.IsActive,
+                EmailConfirmed = a.EmailConfirmed,
+                CreatedAt = a.CreatedAt,
+                LastLoginAt = a.LastLoginAt,
+                CreatedBy = a.CreatedBy
+            });
         }
     }
 }

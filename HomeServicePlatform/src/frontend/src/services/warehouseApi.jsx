@@ -35,6 +35,11 @@ export const warehouseApi = {
     await axiosClient.delete(`/warehouse/${id}`);
   },
 
+  getWarehouseManagers: async () => {
+    const response = await axiosClient.get("/warehouse/managers");
+    return response.data; 
+  },
+
   // Equipment APIs
   getAllEquipments: async (
     pageNumber = 1,

@@ -3,6 +3,7 @@ using HSP.Core.Dtos.MapDto;
 using HSP.Core.Interfaces.External;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
+using System.Globalization;
 
 namespace HSP.Service.Implementations
 {
@@ -39,5 +40,28 @@ namespace HSP.Service.Implementations
 
 			return new CoordinatesDto { Latitude = location.Lat, Longitude = location.Lng };
 		}
-	}
+
+        public async Task<string?> GetAddressForCoordinatesAsync(double latitude, double longitude)
+        {
+            var apiKey = _googleMapConfig.ApiKey;
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                throw new InvalidOperationException("Google Maps API Key is not configured.");
+            }
+
+            var client = _httpClientFactory.CreateClient("GoogleMaps");
+            var requestUrl = $"geocode/json?latlng={latitude.ToString(CultureInfo.InvariantCulture)}," +
+				$"{longitude.ToString(CultureInfo.InvariantCulture)}&key={apiKey}"; 
+			var response = await client.GetAsync(requestUrl);
+
+            if (!response.IsSuccessStatusCode) return null;
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var geocodingResponse = JsonSerializer.Deserialize<GeocodingResponseDto>(jsonResponse);
+
+            var formattedAddress = geocodingResponse?.Results?.FirstOrDefault()?.FormattedAddress;
+
+            return formattedAddress;
+        }
+    }
 }

@@ -18,7 +18,9 @@ namespace HSP.Core.Dtos.MapDto
 	{
 		[JsonPropertyName("geometry")]
 		public GeometryDto Geometry { get; set; }
-	}
+        [JsonPropertyName("formatted_address")]
+        public string FormattedAddress { get; set; }
+    }
 	public class GeometryDto
 	{
 		[JsonPropertyName("location")]
