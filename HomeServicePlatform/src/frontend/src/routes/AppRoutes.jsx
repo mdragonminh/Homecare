@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
+import { Routes, Route, useNavigate, Navigate, useLocation } from "react-router-dom"; 
 import { LoginPage } from "../pages/Auth/LoginPage";
 import RegisterPage from "../pages/Auth/RegisterPage";
 import ClientRoutes from "./ClientRoutes";
@@ -23,6 +23,20 @@ import EquipmentManagerWarehousePage from "../pages/equipmentmanager/EquipmentMa
 import TechnicianLayout from "../pages/technician/TechnicianLayout";
 import TechnicianBookingsPage from "../pages/technician/TechnicianBookingsPage";
 import BookingDetailPage from "../pages/technician/BookingDetailPage";
+
+function ProtectedRoleLayout({ loggedInUser, allowedRoles, children }) {
+  const location = useLocation();
+
+  if (!loggedInUser) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!allowedRoles.includes(loggedInUser.role)) {
+    return <Navigate to="/" replace />; 
+  }
+
+  return children;
+};
 
 export default function AppRoutes({
   loggedInUser,
@@ -91,7 +105,7 @@ export default function AppRoutes({
       <Route
         path="/login"
         element={
-          loggedInUser ? (
+          loggedInUser ? ( 
             <Navigate to="/" replace />
           ) : (
             <LoginPage
@@ -104,7 +118,6 @@ export default function AppRoutes({
           )
         }
       />
-
       <Route
         path="/register"
         element={
@@ -119,7 +132,6 @@ export default function AppRoutes({
           )
         }
       />
-
       <Route
         path="/forgot-password"
         element={
@@ -130,26 +142,22 @@ export default function AppRoutes({
           )
         }
       />
-
       <Route
         path="/reset-password"
         element={
           loggedInUser ? <Navigate to="/" replace /> : <ResetPasswordPage />
         }
       />
-
       <Route
         path="/google-callback"
         element={<GoogleCallbackPage onLoginSuccess={onLoginSuccess} />}
       />
-
       <Route
         path="/add-password"
         element={
           <AddPasswordPage onPasswordSetSuccess={onPasswordSetSuccess} />
         }
       />
-
       <Route
         path="/confirm-email-change"
         element={<ConfirmEmailChangePage />}
@@ -157,43 +165,69 @@ export default function AppRoutes({
 
       {/* ---- Admin ---- */}
       <Route
-        path="/admin"
-        element={<AdminLayout loggedInUser={loggedInUser} />}
+        element={
+          <ProtectedRoleLayout
+            loggedInUser={loggedInUser}
+            allowedRoles={["admin"]}
+          >
+            <AdminLayout loggedInUser={loggedInUser} />
+          </ProtectedRoleLayout>
+        }
       >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="accounts" element={<AccountsPage />} />
-        <Route path="settings" element={<AdminSettingsPage />} />
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/accounts" element={<AccountsPage />} />
+        <Route path="/admin/settings" element={<AdminSettingsPage />} />
       </Route>
 
-      {/* ---- Operator ---- */}
+      {/* ---- Operator & Supporter ---- */}
       <Route
-        path="/operator"
-        element={<OperatorLayout loggedInUser={loggedInUser} />}
+        element={
+          <ProtectedRoleLayout
+            loggedInUser={loggedInUser}
+            allowedRoles={["operator", "supporter"]}
+          >
+            <OperatorLayout loggedInUser={loggedInUser} />
+          </ProtectedRoleLayout>
+        }
       >
-        <Route index element={<Navigate to="customers" replace />} />
-        <Route path="customers" element={<OperatorCustomersPage />} />
-        <Route path="technicians" element={<OperatorTechniciansPage />} />
-        <Route path="settings" element={<OperatorSettingsPage />} />
+        <Route path="/operator" element={<Navigate to="/operator/customers" replace />} />
+        <Route path="/operator/customers" element={<OperatorCustomersPage />} />
+        <Route path="/operator/technicians" element={<OperatorTechniciansPage />} />
+        <Route path="/operator/settings" element={<OperatorSettingsPage />} />
       </Route>
 
+      {/* ---- Warehouse (Equipment Manager) ---- */}
       <Route
-        path="/warehouse"
-        element={<EquipmentManagerLayout loggedInUser={loggedInUser} />}
+        element={
+          <ProtectedRoleLayout
+            loggedInUser={loggedInUser}
+            allowedRoles={["equipmentmanager"]}
+          >
+            <EquipmentManagerLayout loggedInUser={loggedInUser} />
+          </ProtectedRoleLayout>
+        }
       >
-        <Route index element={<EquipmentManagerWarehousePage />} />
-        <Route path="equipments" element={<EquipmentManagerEquipmentPage />} />
+        <Route path="/warehouse" element={<EquipmentManagerWarehousePage />} />
+        <Route path="/warehouse/equipments" element={<EquipmentManagerEquipmentPage />} />
       </Route>
 
       {/* ---- Technician ---- */}
       <Route
-        path="/technician"
-        element={<TechnicianLayout loggedInUser={loggedInUser} />}
+        element={
+          <ProtectedRoleLayout
+            loggedInUser={loggedInUser}
+            allowedRoles={["technician"]}
+          >
+            <TechnicianLayout loggedInUser={loggedInUser} />
+          </ProtectedRoleLayout>
+        }
       >
-        <Route index element={<Navigate to="bookings" replace />} />
-        <Route path="bookings" element={<TechnicianBookingsPage />} />
-        <Route path="bookings/:id" element={<BookingDetailPage />} />
+        <Route path="/technician" element={<Navigate to="/technician/bookings" replace />} />
+        <Route path="/technician/bookings" element={<TechnicianBookingsPage />} />
+        <Route path="/technician/bookings/:id" element={<BookingDetailPage />} />
       </Route>
+
     </Routes>
   );
 }

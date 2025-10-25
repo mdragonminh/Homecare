@@ -120,8 +120,9 @@ namespace HSP.Service.Implementations
 			return new LoginResponseDto
 			{
 				JwtToken = token,
-				RequirePasswordSetup = string.IsNullOrEmpty(user.PasswordHash)
-			};
+				RequirePasswordSetup = string.IsNullOrEmpty(user.PasswordHash),
+                MustChangePasswordOnLogin = user.MustChangePasswordOnLogin
+            };
 		}
 		public async Task<LoginResponseDto> GoogleLogin()
 		{
@@ -238,7 +239,13 @@ namespace HSP.Service.Implementations
 				throw new ValidationException($"{_localizer["PasswordChangeFailed"]}: {errors}");
 			}
 
-			return new ChangePasswordResponseDto
+            if (user.MustChangePasswordOnLogin)
+            {
+                user.MustChangePasswordOnLogin = false;
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            return new ChangePasswordResponseDto
 			{
 				Message = _localizer["PasswordChangeSuccess"]
 			};

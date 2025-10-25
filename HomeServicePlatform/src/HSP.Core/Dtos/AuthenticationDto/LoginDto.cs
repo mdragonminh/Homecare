@@ -7,7 +7,8 @@ namespace HSP.Service.Dtos.AuthenticationDto
 	{
 		public string JwtToken { get; set; } = string.Empty;
 		public bool RequirePasswordSetup { get; set; }
-	}
+        public bool MustChangePasswordOnLogin { get; set; }
+    }
 	public class LoginRequestDto
 	{
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "EmailOrPhoneIsRequired")]

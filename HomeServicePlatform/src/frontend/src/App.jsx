@@ -2,15 +2,19 @@ import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 import { authApi } from "./services/authApi";
-import { Toaster, toast } from "sonner";
+import { Toaster, toast } from "sonner"; 
 import { useTranslation } from "react-i18next";
 import { LoadScript } from "@react-google-maps/api";
+
+import ChangePasswordModal from "./components/ChangePasswordModal"; 
 
 const defaultLibraries = ["places"];
 export default function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [showLoginToast, setShowLoginToast] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  const [isForceModalVisible, setIsForceModalVisible] = useState(false);
 
   const { t } = useTranslation();
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -22,19 +26,30 @@ export default function App() {
     const email = localStorage.getItem("email");
     const name = localStorage.getItem("name");
     const role = localStorage.getItem("role");
+    
     const requirePasswordSetup =
       localStorage.getItem("requirePasswordSetup") === "true";
+    const mustChangePasswordOnLogin =
+      localStorage.getItem("mustChangePasswordOnLogin") === "true";
 
-    if (jwtToken && userId && email && !requirePasswordSetup) {
+    if (jwtToken && userId && email) {
       setLoggedInUser({
         userId,
         email,
         jwtToken,
         name: name || "",
         role: role || "",
+        requirePasswordSetup, 
+        mustChangePasswordOnLogin,
       });
+
+      if (mustChangePasswordOnLogin) {
+        setIsForceModalVisible(true);
+      }
+
     } else {
       setLoggedInUser(null);
+      setIsForceModalVisible(false); 
     }
     setIsInitialized(true);
   }, []);
@@ -58,6 +73,10 @@ export default function App() {
         "requirePasswordSetup",
         data.requirePasswordSetup?.toString() || "false"
       );
+      localStorage.setItem(
+        "mustChangePasswordOnLogin",
+        data.mustChangePasswordOnLogin?.toString() || "false"
+      );
 
       if (!skipStateUpdate) {
         setLoggedInUser({
@@ -66,15 +85,22 @@ export default function App() {
           jwtToken: token,
           name: data.name || "",
           role: data.role || "",
+          requirePasswordSetup: data.requirePasswordSetup,
+          mustChangePasswordOnLogin: data.mustChangePasswordOnLogin,
         });
         setShowLoginToast(true);
+
+        if (data.mustChangePasswordOnLogin) {
+          setIsForceModalVisible(true);
+        }
       }
     }
   }, []);
 
   const handleLogout = useCallback(() => {
-    authApi.logout();
+    authApi.logout(); 
     setLoggedInUser(null);
+    setIsForceModalVisible(false);
     toast.info(t("toast.logout_success") || "Đăng xuất thành công 👋", {
       duration: 800,
     });
@@ -82,9 +108,42 @@ export default function App() {
 
   const handlePasswordSetSuccess = useCallback(() => {
     localStorage.setItem("requirePasswordSetup", "false");
-    updateLoggedInUserFromStorage();
-    setShowLoginToast(true);
+    localStorage.setItem("mustChangePasswordOnLogin", "false"); 
+    
+    setIsForceModalVisible(false);
+
+    updateLoggedInUserFromStorage(); 
+    setShowLoginToast(false);
   }, [updateLoggedInUserFromStorage]);
+
+  const handleForceSubmit = async (currentPassword, newPassword, confirmNewPassword) => {
+    const result = await authApi.changePassword({
+      currentPassword,
+      newPassword,
+      confirmNewPassword,
+    });
+
+    if (result.success) {
+      handlePasswordSetSuccess();
+      toast.success("Đổi mật khẩu thành công!", {
+        description: "Bây giờ bạn có thể tiếp tục sử dụng dịch vụ.",
+        duration: 3000,
+      });
+    } else {
+      throw new Error(result.message);
+    }
+  };
+
+  useEffect(() => {
+    if (isForceModalVisible) {
+      toast.warning("Yêu cầu đổi mật khẩu", {
+        description: "Vì lý do bảo mật, bạn cần đổi mật khẩu trước khi tiếp tục.",
+        duration: 10000, 
+        dismissible: false,
+      });
+    }
+  }, [isForceModalVisible]);
+
 
   useEffect(() => {
     if (showLoginToast) {
@@ -115,6 +174,13 @@ export default function App() {
           )}
         </div>
         <Toaster position="top-right" richColors duration={500} />
+
+        <ChangePasswordModal
+          isOpen={isForceModalVisible}
+          onClose={() => {}} 
+          onSubmit={handleForceSubmit}
+          isCancellable={false} 
+        />
       </LoadScript>
     </BrowserRouter>
   );

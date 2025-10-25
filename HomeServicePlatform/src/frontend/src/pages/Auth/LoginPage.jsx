@@ -1,5 +1,3 @@
-// LoginPage.jsx - ĐÃ SỬA ĐỔI ĐẦY ĐỦ
-
 import { useState, useEffect } from "react";
 import {
   Eye,
@@ -113,6 +111,7 @@ export function LoginPage({
           name,
           role,
           requirePasswordSetup: res.data.requirePasswordSetup,
+          mustChangePasswordOnLogin: res.data.mustChangePasswordOnLogin,
         });
       } else {
         // Lỗi từ authApi (thường là lỗi 400 hoặc 401 đã được xử lý trong authApi.js)

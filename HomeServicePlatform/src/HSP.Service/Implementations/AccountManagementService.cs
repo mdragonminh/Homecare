@@ -165,14 +165,30 @@ namespace HSP.Service.Implementations
                 EmailConfirmed = true, // Auto-confirm for admin created accounts
                 IsActive = true,
                 DateCreated = DateTime.UtcNow,
-                CreatedBy = createdById
+                CreatedBy = createdById,
+                MustChangePasswordOnLogin = true
             };
 
             var result = await _userManager.CreateAsync(user, input.Password);
             if (!result.Succeeded)
             {
+
+                foreach (var error in result.Errors)
+                {
+                    if (error.Code == "InvalidUserName")
+                    {
+                        throw new ValidationException($"username:{error.Description}");
+                    }
+
+                    if (error.Code.StartsWith("Password"))
+                    {
+                        throw new ValidationException($"password:{error.Description}");
+                    }
+                }
+
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 throw new ValidationException(_localizer["FailedToCreateAccount", errors]);
+
             }
 
             // Add role to user
