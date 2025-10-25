@@ -151,7 +151,23 @@ export default function AccountsPage() {
         loadTabData();
         loadStatistics();
       } else {
-        message.error(result.message);
+        if (result.errors) {
+          const antErrors = Object.keys(result.errors).map((key) => ({
+            name: key.toLowerCase(), 
+            errors: result.errors[key],
+          }));
+
+          form.setFields(antErrors);
+
+          const generalError = antErrors.find(e => e.name === 'general');
+          if (generalError) {
+             message.error(generalError.errors[0]);
+          }
+
+        } else {
+          message.error(result.message);
+        }
+        
       }
     } catch (error) {
       message.error("Lỗi khi tạo tài khoản");
@@ -576,7 +592,13 @@ export default function AccountsPage() {
             <Form.Item
               name="username"
               label="Username"
-              rules={[{ required: true, message: "Vui lòng nhập username!" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập username!" },
+                {
+                  pattern: /^[a-zA-Z0-9]+$/,
+                  message: "Username chỉ được chứa chữ cái (a-z) và số (0-9), không chứa dấu cách.",
+                }
+              ]}
             >
               <Input placeholder="username123" />
             </Form.Item>

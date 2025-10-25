@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Eye, EyeOff, Key } from "lucide-react";
 
-const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
+const ChangePasswordModal = ({ isOpen, onClose, onSubmit, isCancellable = true }) => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     currentPassword: "",
@@ -24,10 +24,11 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
       [name]: value,
     }));
     // Clear error when user starts typing
-    if (errors[name]) {
+    if (errors[name] || errors.general) { 
       setErrors(prev => ({
         ...prev,
         [name]: "",
+        general: "", 
       }));
     }
   };
@@ -77,14 +78,16 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
     
     try {
       await onSubmit(formData.currentPassword, formData.newPassword, formData.confirmPassword);
-      // Reset form on success
-      setFormData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-      setErrors({});
-      onClose();
+      
+      if (isCancellable) {
+        setFormData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        setErrors({});
+        onClose();
+      }      
     } catch (error) {
       setErrors({
         general: error.message || t("ui.change_password_modal.error_general"),
@@ -95,7 +98,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
   };
 
   const handleClose = () => {
-    if (!isLoading) {
+    if (!isLoading && isCancellable) {
       setFormData({
         currentPassword: "",
         newPassword: "",
@@ -122,13 +125,16 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
             <Key className="w-5 h-5 text-red-600 mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">{t("ui.change_password_modal.title")}</h2>
           </div>
-          <button
-            onClick={handleClose}
-            disabled={isLoading}
-            className="text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          
+          {isCancellable && (
+            <button
+              onClick={handleClose}
+              disabled={isLoading}
+              className="text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Form */}
@@ -234,7 +240,6 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
             </div>
           </div>
 
-          {/* Security Note */}
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
             <p className="text-sm text-yellow-800">
               <strong>{t("ui.change_password_modal.note_title") || "Lưu ý:"}</strong> {t("ui.change_password_modal.note")}
@@ -243,18 +248,24 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit }) => {
 
           {/* Actions */}
           <div className="flex gap-3 mt-6">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isLoading}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t("ui.change_password_modal.cancel")}
-            </button>
+            
+            {isCancellable && (
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={isLoading}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t("ui.change_password_modal.cancel")}
+              </button>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center"
+              className={`px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center ${
+                isCancellable ? 'flex-1' : 'w-full'
+              }`}
             >
               {isLoading ? (
                 <>

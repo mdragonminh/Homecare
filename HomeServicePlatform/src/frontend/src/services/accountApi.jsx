@@ -64,6 +64,14 @@ export const accountApi = {
       return { success: true, data: res.data };
     } catch (error) {
       if (ENABLE_DEBUG) console.error("Create account error:", error);
+
+      if (error.response?.data?.errors) {
+        return {
+          success: false,
+          errors: error.response.data.errors, 
+        };
+      }
+
       return {
         success: false,
         message:
