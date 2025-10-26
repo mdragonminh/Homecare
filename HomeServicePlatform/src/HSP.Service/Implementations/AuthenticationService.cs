@@ -315,7 +315,8 @@ namespace HSP.Service.Implementations
 		{
 			if (input == null)
 				throw new ArgumentException(_localizer["InputCannotBeNull"]);
-
+			if (input.Password != input.ConfirmPassword)
+				throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
 			var existingUser = await _userRepository.FindByEmailAsync(input.Email);
 			if (existingUser != null)
 				throw new ValidationException(_localizer["EmailAlreadyExists"]);
@@ -332,7 +333,7 @@ namespace HSP.Service.Implementations
 					EmailConfirmed = false
 				};
 
-				var created = await _userRepository.CreateAsync(user, "123Qwe@@");
+				var created = await _userRepository.CreateAsync(user, input.Password);
 				if (!created.Succeeded)
 				{
 					var errors = string.Join(", ", created.Errors.Select(e => e.Description));

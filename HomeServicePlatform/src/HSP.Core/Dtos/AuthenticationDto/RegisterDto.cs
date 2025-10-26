@@ -57,5 +57,11 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		public List<Guid> ServiceIds { get; set; } = new List<Guid>();
 		[Required]
 		public string Address {  get; set; }
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordIsRequired")]
+		[StringLength(100, MinimumLength = 8, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordLengthError")]
+		public string Password { get; set; } = string.Empty;
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ConfirmPasswordIsRequired")]
+		[Compare("Password", ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordsDoNotMatch")]
+		public string ConfirmPassword { get; set; } = string.Empty;
 	}
 }
