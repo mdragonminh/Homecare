@@ -15,6 +15,8 @@
         "required": "Vui lòng nhập email",
         "invalid_format": "Email không đúng định dạng (vd: user@example.com)",
         "no_spaces": "Email không được chứa khoảng trắng",
+        "single_at_required": "Email phải có đúng 1 ký tự @",
+        "dot_required": "Email phải có ít nhất một dấu chấm (.) trong phần tên miền",
         "max_length": "Email không được vượt quá 100 ký tự"
       },
       "phone": {

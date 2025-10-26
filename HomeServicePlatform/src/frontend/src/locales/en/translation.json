@@ -15,6 +15,8 @@
         "required": "Please enter your email",
         "invalid_format": "Invalid email format (e.g., user@example.com)",
         "no_spaces": "Email cannot contain spaces",
+        "single_at_required": "Email must contain exactly one @ character",
+        "dot_required": "Email must contain at least one dot (.) in the domain part",
         "max_length": "Email cannot exceed 100 characters"
       },
       "phone": {
