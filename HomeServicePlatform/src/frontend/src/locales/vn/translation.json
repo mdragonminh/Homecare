@@ -43,8 +43,9 @@
       "error_new_length": "Mật khẩu mới phải có ít nhất 6 ký tự",
       "error_confirm_required": "Vui lòng xác nhận mật khẩu mới",
       "error_confirm_mismatch": "Mật khẩu xác nhận không khớp",
-      "error_new_same": "Mật khẩu mới phải khác mật khẩu hiện tại",
-      "error_general": "Có lỗi xảy ra khi đổi mật khẩu"
+      "errors_general": "Mật khẩu hiện tại không đúng",
+      "error_new_same": "Mật khẩu mới phải khác mật khẩu hiện tại"
+      
     },
     "welcome_back": "Chào mừng trở lại!",
     "login_button": "Đăng nhập",
