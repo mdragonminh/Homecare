@@ -2,9 +2,7 @@
 using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
-using HSP.Core.Interfaces.External;
 using HSP.Service.Dtos.AuthenticationDto;
-using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -22,20 +20,14 @@ namespace HSP.API.Controllers
 	public class AuthenticationController : ControllerBase
 	{
 		private readonly IAuthenticationService _authenticationService;
-		private readonly IEmailService _emailService;
-		private readonly IFileService _fileService;
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly SignInManager<AppUser> _signInManager;
 
-		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService,
-			IFileService fileService,
+		public AuthenticationController(IAuthenticationService authenticationService,
 			IOptions<UrlSettingsDto> urlOptions,
-			IOptions<UrlSettingsDto> urlSetting,
 			SignInManager<AppUser> signInManager)
 		{
 			_authenticationService = authenticationService;
-			_emailService = emailService;
-			_fileService = fileService;
 			_urlSettings = urlOptions.Value;
 			_signInManager = signInManager;
 		}
@@ -62,47 +54,6 @@ namespace HSP.API.Controllers
 				return BadRequest(new { message = "An error occurred" });
 			}
 		}
-		//[HttpPost("upload-certificates")]
-		//[AllowAnonymous]
-		//public async Task<IActionResult> UploadCertificates([FromForm] IList<IFormFile> certificates)
-		//{
-		//	try
-		//	{
-		//		if (certificates == null || !certificates.Any())
-		//		{
-		//			return BadRequest(new { message = "No certificates provided" });
-		//		}
-
-		//		var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
-		//		var maxFileSize = 5 * 1024 * 1024; // 5MB
-
-		//		// Validate files
-		//		foreach (var file in certificates)
-		//		{
-		//			if (!_fileService.ValidateFileType(file, allowedExtensions))
-		//			{
-		//				return BadRequest(new { message = $"File type not allowed: {file.FileName}" });
-		//			}
-		//			if (!_fileService.ValidateFileSize(file, maxFileSize))
-		//			{
-		//				return BadRequest(new { message = $"File size too large: {file.FileName}" });
-		//			}
-		//		}
-
-		//		// Upload files
-		//		var uploadedPaths = await _fileService.UploadMultipleFilesAsync(certificates, "certificates");
-
-		//		return Ok(new
-		//		{
-		//			message = "Certificates uploaded successfully",
-		//			filePaths = uploadedPaths
-		//		});
-		//	}
-		//	catch (Exception ex)
-		//	{
-		//		return StatusCode(500, new { message = "An error occurred while uploading certificates", details = ex.Message });
-		//	}
-		//}
 
 		[HttpPost("register-technician")]
 		[AllowAnonymous]
@@ -115,7 +66,6 @@ namespace HSP.API.Controllers
 			try
 			{
 				var result = await _authenticationService.RegisterTechnician(input);
-				//await SendConfirmationEmailAsync(result, input.FullName);
 				return Ok(result.TechnicianId);
 			}
 			catch (ValidationException ex)
