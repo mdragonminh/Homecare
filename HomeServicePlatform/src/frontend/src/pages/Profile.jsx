@@ -89,6 +89,15 @@ const validateEmail = useCallback(
       return t("ui.validation.email.invalid_format");
     }
 
+if ((value.match(/@/g) || []).length !== 1) {
+  return t("ui.validation.email.single_at_required");
+}
+
+const domainParts = value.split('@')[1];
+if ((domainParts.match(/\./g) || []).length < 1) {
+  return t("ui.validation.email.dot_required");
+}
+
     if (value.length > 100) {
       return t("ui.validation.email.max_length");
     }
