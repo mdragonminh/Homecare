@@ -50,6 +50,7 @@ namespace HSP.DAL.Extensions
 			services.AddScoped<IRepository<Equipment, Guid>, Repository<Equipment, Guid>>();
 			services.AddScoped<IRepository<Booking, Guid>, Repository<Booking, Guid>>();
 			services.AddScoped<IRepository<Ticket, Guid>, Repository<Ticket, Guid>>();
+			services.AddScoped<IRepository<Supplier, Guid>, Repository<Supplier, Guid>>();
 
 			services.AddScoped<IUnitOfWork, UnitOfWork>();
 			services.AddScoped<IDbInitializer, DbInitializer>();

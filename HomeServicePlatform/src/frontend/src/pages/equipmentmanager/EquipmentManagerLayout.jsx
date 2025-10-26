@@ -20,8 +20,8 @@ export default function EquipmentManagerLayout({ loggedInUser }) {
   const { t } = useTranslation();
 
   const selectedKeys = useMemo(() => {
+    if (location.pathname.startsWith("/warehouse/equipments")) return ["equipments"];
     if (location.pathname.startsWith("/warehouse")) return ["warehouse"];
-    if (location.pathname.startsWith("/equipments")) return ["equipments"];
 
     return ["warehouse"];
   }, [location.pathname]);
