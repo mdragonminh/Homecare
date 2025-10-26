@@ -1,3 +1,5 @@
+// fileName: FindTechnicianPage.jsx
+
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFindTechnician } from "../../../hooks/useFindTechnician.jsx";
@@ -218,10 +220,10 @@ export function FindTechnicianPage({ loggedInUser }) {
                 </div>
               </div>
             ) : loggedInUser ? (
-              // Người dùng đã đăng nhập nhưng chưa có nhà
               <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
-                <p className="text-gray-600 font-medium mb-4 text-base">
-                  {statusMessage || t("ui.no_properties_found")}
+                {/* CHỈ HIỂN THỊ THÔNG BÁO CHƯA CÓ NHÀ Ở ĐÂY */}
+                <p className="text-gray-600 font-medium text-base">
+                  {t("ui.no_properties_found")}
                 </p>
                 <button
                   onClick={() => setIsAddHomeModalOpen(true)}
@@ -413,7 +415,7 @@ export function FindTechnicianPage({ loggedInUser }) {
                 </div>
               )}
             </div>
-            {!loggedInUser || (loggedInUser && !selectedHomeId) ? (
+            {!loggedInUser ? (
               <div className="relative space-y-2">
                 <label className="block text-base font-semibold text-gray-800 mb-1">
                   {t("ui.manual_address_label")}
@@ -478,19 +480,15 @@ export function FindTechnicianPage({ loggedInUser }) {
             {/* KẾT THÚC BỐ CỤC NÚT ĐÃ THAY ĐỔI */}
           </div>
         </div>
-
-        {/* Cột Phải: Bản Đồ (Map) */}
         <div className="lg:w-2/5 flex relative min-h-[450px]">
           <MapDisplay
             lat={coords.latitude}
             lng={coords.longitude}
             technicians={technicians}
-            isDraggable={!loggedInUser || (loggedInUser && !selectedHomeId)}
+            isDraggable={!loggedInUser}
             onMarkerDrag={handleMarkerDrag}
           />
-
-          {/* Nút Floating Action Button cho Vị trí Hiện tại */}
-          {!loggedInUser || (loggedInUser && !selectedHomeId) ? (
+          {!loggedInUser ? (
             <button
               onClick={handleGetMyLocation}
               disabled={isSearching || isGettingLocation || isMatching}

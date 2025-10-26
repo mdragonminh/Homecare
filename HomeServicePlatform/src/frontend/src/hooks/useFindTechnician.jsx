@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { homeApi } from "../services/homeApi.jsx";
 import { serviceApi } from "../services/serviceApi.jsx";
 import { calculateDistance } from "../components/findTechnician/MapDisplay.jsx";
-
+import { loadGoogleMapsAPI } from "../utils/googleMapsLoader";
 // ---------------------------------------------------------------------
 // CUSTOM HOOK: useFindTechnician
 // ---------------------------------------------------------------------
@@ -488,25 +488,18 @@ const matchResult = await serviceApi.createAndMatchBooking(
   }, [loadUserHomes, loadServices]);
 
   useEffect(() => {
-    // Logic for Google Autocomplete initialization
-    if (!window.google || !window.google.maps) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${
-        import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-      }&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
+  let isMounted = true;
 
-      script.onload = () => initAutocomplete();
-      return () => document.head.removeChild(script);
-    } else {
-      initAutocomplete();
-    }
+  async function initAutocomplete() {
+    try {
+      // Đợi Google Maps API load xong
+      await loadGoogleMapsAPI();
+      
+      if (!isMounted) return;
 
-    function initAutocomplete() {
       const input = document.getElementById("address-input");
-      if (input) {
+      
+      if (input && !autocompleteRef.current) {
         autocompleteRef.current = new window.google.maps.places.Autocomplete(
           input,
           {
@@ -523,12 +516,24 @@ const matchResult = await serviceApi.createAndMatchBooking(
               latitude: place.geometry.location.lat(),
               longitude: place.geometry.location.lng(),
             });
-            setStatusMessage(t("success.geocode_success"));
+            setStatusMessage({
+              text: t("success.geocode_success"),
+              type: "success"
+            });
           }
         });
       }
+    } catch (error) {
+      console.error("Autocomplete initialization error:", error);
     }
-  }, [t]);
+  }
+
+  initAutocomplete();
+
+  return () => {
+    isMounted = false;
+  };
+}, [t]);
 
   // ---------------------------------------------------------------------
   // RETURN VALUES

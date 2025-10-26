@@ -4,21 +4,28 @@ import AppRoutes from "./routes/AppRoutes";
 import { authApi } from "./services/authApi";
 import { Toaster, toast } from "sonner"; 
 import { useTranslation } from "react-i18next";
-import { LoadScript } from "@react-google-maps/api";
+import { loadGoogleMapsAPI } from "./utils/googleMapsLoader"; 
 
 import ChangePasswordModal from "./components/ChangePasswordModal"; 
 
-const defaultLibraries = ["places"];
 export default function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [showLoginToast, setShowLoginToast] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-
   const [isForceModalVisible, setIsForceModalVisible] = useState(false);
 
   const { t } = useTranslation();
-  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+  
+  useEffect(() => {
+    loadGoogleMapsAPI()
+      .then(() => {
+        console.log(' Google Maps API loaded successfully');
+      })
+      .catch((error) => {
+        console.error(' Error loading Google Maps API:', error);
+      });
+  }, []); 
 
   const updateLoggedInUserFromStorage = useCallback(() => {
     const jwtToken = localStorage.getItem("jwtToken");
@@ -46,7 +53,6 @@ export default function App() {
       if (mustChangePasswordOnLogin) {
         setIsForceModalVisible(true);
       }
-
     } else {
       setLoggedInUser(null);
       setIsForceModalVisible(false); 
@@ -111,7 +117,6 @@ export default function App() {
     localStorage.setItem("mustChangePasswordOnLogin", "false"); 
     
     setIsForceModalVisible(false);
-
     updateLoggedInUserFromStorage(); 
     setShowLoginToast(false);
   }, [updateLoggedInUserFromStorage]);
@@ -144,7 +149,6 @@ export default function App() {
     }
   }, [isForceModalVisible]);
 
-
   useEffect(() => {
     if (showLoginToast) {
       toast.dismiss();
@@ -155,33 +159,30 @@ export default function App() {
     }
   }, [showLoginToast, t]);
 
-
   return (
     <BrowserRouter>
-     <LoadScript googleMapsApiKey={googleMapsApiKey} libraries={defaultLibraries}>
-        <div className="min-h-screen flex flex-col">
-          {isInitialized ? (
-            <AppRoutes
-              loggedInUser={loggedInUser}
-              onLoginSuccess={handleLoginSuccess}
-              onLogout={handleLogout}
-              onPasswordSetSuccess={handlePasswordSetSuccess}
-            />
-          ) : (
-            <div className="flex justify-center items-center h-screen">
-              <span className="loading loading-spinner loading-lg"></span>
-            </div>
-          )}
-        </div>
-        <Toaster position="top-right" richColors duration={1000} />
+      <div className="min-h-screen flex flex-col">
+        {isInitialized ? (
+          <AppRoutes
+            loggedInUser={loggedInUser}
+            onLoginSuccess={handleLoginSuccess}
+            onLogout={handleLogout}
+            onPasswordSetSuccess={handlePasswordSetSuccess}
+          />
+        ) : (
+          <div className="flex justify-center items-center h-screen">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        )}
+      </div>
+      <Toaster position="top-right" richColors duration={1000} />
 
-        <ChangePasswordModal
-          isOpen={isForceModalVisible}
-          onClose={() => {}} 
-          onSubmit={handleForceSubmit}
-          isCancellable={false} 
-        />
-      </LoadScript>
+      <ChangePasswordModal
+        isOpen={isForceModalVisible}
+        onClose={() => {}} 
+        onSubmit={handleForceSubmit}
+        isCancellable={false} 
+      />
     </BrowserRouter>
   );
 }
