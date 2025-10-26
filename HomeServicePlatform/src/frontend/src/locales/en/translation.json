@@ -664,7 +664,7 @@
       "stats": {
         "customers": "Customers",
         "technicians": "Technicians",
-        "services_completed": "Services Completed",
+        "services": "Services Completed",
         "satisfaction": "Satisfaction"
       }
     },

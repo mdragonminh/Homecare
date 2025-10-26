@@ -652,7 +652,7 @@
       "stats": {
         "customers": "Khách hàng",
         "technicians": "Thợ sửa chữa",
-        "services_completed": "Dịch vụ hoàn thành",
+        "services": "Dịch vụ hoàn thành",
         "satisfaction": "Hài lòng"
       }
     },
