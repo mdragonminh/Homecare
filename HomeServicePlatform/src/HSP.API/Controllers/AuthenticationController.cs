@@ -66,7 +66,7 @@ namespace HSP.API.Controllers
 			try
 			{
 				var result = await _authenticationService.RegisterTechnician(input);
-				return Ok(result.TechnicianId);
+				return Ok("Đăng ký thành công!");
 			}
 			catch (ValidationException ex)
 			{
