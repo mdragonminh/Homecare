@@ -562,6 +562,16 @@
       "date_of_birth": "Ngày sinh",
       "city": "Thành phố",
       "city_placeholder": "Chọn thành phố",
+      "password_required": "Mật khẩu *",
+      "password_placeholder": "Tối thiểu 8 ký tự, có chữ hoa, chữ số",
+      "confirm_password_required": "Xác nhận mật khẩu *",
+      "confirm_password_placeholder": "Nhập lại mật khẩu",
+      "avatar_required": "Ảnh đại diện *",
+      "avatar_placeholder": "Tải lên ảnh đại diện",
+      "avatar_removed": "Ảnh đại diện đã được xóa",
+      "avatar_uploaded": "Ảnh đại diện đã được tải lên: {{fileName}}",
+      "file_invalid_format": "không đúng định dạng (chỉ chấp nhận JPEG, JPG, PNG, GIF)",
+      "upload_prompt": "Thêm ảnh",
       "cities": {
         "hanoi": "Hà Nội",
         "hcm": "TP. Hồ Chí Minh", 
@@ -585,13 +595,13 @@
       "specialization_required": "Lĩnh vực chuyên môn *",
       "certifications": "Upload Chứng chỉ & Bằng cấp",
       "upload_certificates": "Chọn file chứng chỉ để upload", 
-      "upload_certificates_desc": "PDF, DOC, DOCX, JPG, PNG (tối đa 5MB mỗi file)",
+      "upload_certificates_desc": "PDF JPG, PNG (tối đa 5MB mỗi file)",
       "uploading": "Đang upload...",
       "uploaded_files": "Các file đã upload",
       "file_removed": "Đã xóa file",
       "file_uploaded": "Đã upload file: {{fileName}}",
       "file_too_large": "quá lớn (tối đa 5MB)",
-      "file_invalid_format": "không đúng định dạng (chỉ chấp nhận PDF, DOC, DOCX, JPG, PNG)",
+      "file_invalid_format": "không đúng định dạng (chỉ chấp nhận PDFJPG, PNG)",
       "upload_success": "Đã upload {{count}} file chứng chỉ thành công!",
       "upload_failed": "Upload chứng chỉ thất bại",
       "upload_error": "Có lỗi xảy ra khi upload chứng chỉ",
@@ -634,8 +644,11 @@
       "specialization_required_error": "Vui lòng chọn ít nhất một lĩnh vực chuyên môn.",
       "agree_terms_required_error": "Bạn phải đồng ý với điều khoản dịch vụ và chính sách bảo mật để tiếp tục.",
       "agree_background_check_required_error": "Bạn phải đồng ý cho phép kiểm tra lý lịch để tiếp tục.",
-      "certificate_required_error": "Vui lòng upload ít nhất một chứng chỉ hoặc bằng cấp."
-
+      "certificate_required_error": "Vui lòng upload ít nhất một chứng chỉ hoặc bằng cấp.",
+      "password_required_error": "Vui lòng nhập mật khẩu.",
+      "avatar_required_error": "Vui lòng upload ảnh đại diện.",
+      "confirm_password_mismatch_error": "Xác nhận mật khẩu không khớp.",
+      "password_strength_error": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
     }
   },
   "toast":{

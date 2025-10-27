@@ -17,6 +17,9 @@ axiosClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+     if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
     if (ENABLE_DEBUG) {
       console.groupCollapsed(`[Axios Interceptor] Gửi Request đến: ${config.url}`);
       console.log("Ngôn ngữ (Accept-Language):", lang);

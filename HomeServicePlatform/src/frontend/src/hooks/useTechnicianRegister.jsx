@@ -4,7 +4,7 @@ import { serviceApi } from "../services/serviceApi";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { X } from "lucide-react"; // Cần import để dùng trong ErrorMessage (hoặc chuyển ErrorMessage sang đây nếu muốn)
+import { X } from "lucide-react";
 
 // Constants
 export const majorCities = [
@@ -15,7 +15,7 @@ export const majorCities = [
   { value: "CanTho", name: "Cần Thơ" },
 ];
 
-// Custom Hook chứa toàn bộ logic
+
 export default function useTechnicianRegister(loggedInUser) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -30,7 +30,9 @@ export default function useTechnicianRegister(loggedInUser) {
     experience: "",
     specializations: [],
     serviceCertificates: {},
-    bio: "",
+    password: "",
+    confirmPassword: "",
+    avatarFile: null,
     agreeToTerms: false,
     agreeToBackgroundCheck: false,
   });
@@ -38,8 +40,6 @@ export default function useTechnicianRegister(loggedInUser) {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
-
-  // Initial Data Fetch & Navigation Check
   useEffect(() => {
     if (loggedInUser) {
       navigate("/");
@@ -60,85 +60,86 @@ export default function useTechnicianRegister(loggedInUser) {
     fetchServices();
   }, [loggedInUser, navigate, t]);
 
-  // Handlers
   const updateFormData = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setValidationErrors((prev) => ({ ...prev, [field]: null }));
   };
 
-const toggleSpecialization = (serviceId) => {
-
+  const toggleSpecialization = (serviceId) => {
     const isCurrentlySelected = formData.specializations.includes(serviceId);
     if (isCurrentlySelected) {
-        setValidationErrors((prevErrors) => {
-            const newErrors = { ...prevErrors };
-            if (newErrors.certificateUploadErrors?.[serviceId]) {
-                const { [serviceId]: _, ...rest } = newErrors.certificateUploadErrors;
-                newErrors.certificateUploadErrors = rest;
-                if (Object.keys(newErrors.certificateUploadErrors).length === 0) {
-                    delete newErrors.certificateUploadErrors;
-                }
-            }
-            if (newErrors.certificate) {
-                newErrors.certificate = newErrors.certificate.filter((id) => id !== serviceId);
-                if (newErrors.certificate.length === 0) {
-                    delete newErrors.certificate;
-                }
-            }
-            return { ...newErrors, specializations: null };
-        });
+      setValidationErrors((prevErrors) => {
+        const newErrors = { ...prevErrors };
+        if (newErrors.certificateUploadErrors?.[serviceId]) {
+          const { [serviceId]: _, ...rest } = newErrors.certificateUploadErrors;
+          newErrors.certificateUploadErrors = rest;
+          if (Object.keys(newErrors.certificateUploadErrors).length === 0) {
+            delete newErrors.certificateUploadErrors;
+          }
+        }
+        if (newErrors.certificate) {
+          newErrors.certificate = newErrors.certificate.filter((id) => id !== serviceId);
+          if (newErrors.certificate.length === 0) {
+            delete newErrors.certificate;
+          }
+        }
+        return { ...newErrors, specializations: null };
+      });
     } else {
-        
-        setValidationErrors((prev) => ({ ...prev, specializations: null }));
+      setValidationErrors((prev) => ({ ...prev, specializations: null }));
     }
     setFormData((prev) => {
-        const newCerts = { ...prev.serviceCertificates };
-        const isSelected = prev.specializations.includes(serviceId); 
-        
-        if (isSelected) {
-            delete newCerts[serviceId]; 
-        }
+      const newCerts = { ...prev.serviceCertificates };
+      const isSelected = prev.specializations.includes(serviceId);
 
-        return {
-            ...prev,
-            specializations: isSelected
-                ? prev.specializations.filter((s) => s !== serviceId)
-                : [...prev.specializations, serviceId],
-            serviceCertificates: newCerts,
-        };
+      if (isSelected) {
+        delete newCerts[serviceId];
+      }
+
+      return {
+        ...prev,
+        specializations: isSelected
+          ? prev.specializations.filter((s) => s !== serviceId)
+          : [...prev.specializations, serviceId],
+        serviceCertificates: newCerts,
+      };
     });
   };
 
-const handleCertificateUpload = useCallback(
+  const handleCertificateUpload = useCallback(
     async (file, serviceId) => {
       if (!file) return;
       setValidationErrors((prev) => {
         const newErrors = { ...prev };
-        if (newErrors.certificateUploadErrors?.[serviceId]) {
-             const { [serviceId]: _, ...rest } = newErrors.certificateUploadErrors;
-             newErrors.certificateUploadErrors = rest;
+        if (newErrors.certificate) {
+          newErrors.certificate = newErrors.certificate.filter(
+            (id) => id !== serviceId
+          );
+          if (newErrors.certificate.length === 0) {
+            delete newErrors.certificate;
+          }
         }
-        if (Object.keys(newErrors.certificateUploadErrors || {}).length === 0) {
-            delete newErrors.certificateUploadErrors;
+        // Đảm bảo lỗi upload cụ thể cũng được xóa
+        if (newErrors.certificateUploadErrors?.[serviceId]) {
+            const { [serviceId]: _, ...rest } = newErrors.certificateUploadErrors;
+            newErrors.certificateUploadErrors = rest;
+            if (Object.keys(newErrors.certificateUploadErrors).length === 0) {
+              delete newErrors.certificateUploadErrors;
+            }
         }
         return newErrors;
       });
 
-      const maxFileSize = 5 * 1024 * 1024; // 5MB
-      const allowedTypes = [
-        "application/pdf",
-        "image/jpeg",
-        "image/png",
-        "image/jpg",
-      ];
+      const maxFileSize = 5 * 1024 * 1024; 
+      const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
       const allowedExtensions = [".pdf", ".jpeg", ".png", ".jpg"];
-      
+
       const fileNameLower = file.name.toLowerCase();
-      const fileExtension = fileNameLower.substring(fileNameLower.lastIndexOf('.'));
-      
+      const fileExtension = fileNameLower.substring(fileNameLower.lastIndexOf("."));
+
       const isAllowedType = allowedTypes.includes(file.type);
       const isAllowedExtension = allowedExtensions.includes(fileExtension);
-      
+
       let error = null;
 
       if (file.size > maxFileSize) {
@@ -146,23 +147,20 @@ const handleCertificateUpload = useCallback(
       }
 
       if (!isAllowedType || !isAllowedExtension) {
-       
         error = `File ${file.name} ${t("technician_register.experience_skills.file_invalid_format")}`;
       }
 
       if (error) {
-         
-          setValidationErrors(prev => ({
-              ...prev,
-              certificateUploadErrors: {
-                  ...(prev.certificateUploadErrors || {}),
-                  [serviceId]: error,
-              }
-          }));
-          toast.error(error); 
-          return;
+        setValidationErrors((prev) => ({
+          ...prev,
+          certificateUploadErrors: {
+            ...(prev.certificateUploadErrors || {}),
+            [serviceId]: error,
+          },
+        }));
+        toast.error(error);
+        return;
       }
-     
 
       setFormData((prev) => ({
         ...prev,
@@ -177,6 +175,57 @@ const handleCertificateUpload = useCallback(
 
       toast.success(
         t("technician_register.experience_skills.file_uploaded", { fileName: file.name })
+      );
+    },
+    [t]
+  );
+
+  const handleAvatarUpload = useCallback(
+    async (file) => {
+      if (!file) return;
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.avatarFile; // Xóa lỗi file bị thiếu
+        delete newErrors.avatarUploadError;
+        return newErrors;
+      });
+
+      const maxFileSize = 5 * 1024 * 1024; 
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+      const allowedExtensions = [".jpeg", ".png", ".jpg"];
+
+      const fileNameLower = file.name.toLowerCase();
+      const fileExtension = fileNameLower.substring(fileNameLower.lastIndexOf("."));
+
+      const isAllowedType = allowedTypes.includes(file.type);
+      const isAllowedExtension = allowedExtensions.includes(fileExtension);
+
+      let error = null;
+
+      if (file.size > maxFileSize) {
+        error = `File ${file.name} ${t("technician_register.personal_info.file_too_large")}`;
+      }
+
+      if (!isAllowedType || !isAllowedExtension) {
+        error = `File ${t("technician_register.personal_info.file_invalid_format")}`;
+      }
+
+      if (error) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          avatarUploadError: error,
+        }));
+        toast.error(error);
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        avatarFile: file,
+      }));
+
+      toast.success(
+        t("technician_register.personal_info.avatar_uploaded", { fileName: file.name })
       );
     },
     [t]
@@ -198,6 +247,14 @@ const handleCertificateUpload = useCallback(
     toast.info(t("technician_register.experience_skills.file_removed"));
   };
 
+  const removeAvatar = () => {
+    setFormData((prev) => ({
+      ...prev,
+      avatarFile: null,
+    }));
+    toast.info(t("technician_register.personal_info.avatar_removed"));
+  };
+
   const viewCertificate = (certData) => {
     if (!certData.file) return;
     const fileURL = URL.createObjectURL(certData.file);
@@ -213,7 +270,9 @@ const handleCertificateUpload = useCallback(
 
   const validateForm = () => {
     const errors = {};
-
+    const password = formData.password;
+    const minLength = 8;
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!formData.fullName.trim()) {
       errors.fullName = t("technician_register.validation.full_name_required_error");
     }
@@ -226,14 +285,26 @@ const handleCertificateUpload = useCallback(
     if (!formData.address) {
       errors.address = t("technician_register.validation.address_required_error");
     }
-
+    if (!password) {
+      errors.password = t("technician_register.validation.password_required_error");
+    } else if (password.length < minLength) {
+      errors.password = t("technician_register.validation.password_min_length_error", { minLength }); // Giả sử bạn có key này trong file dịch
+    } else if (!strongPasswordRegex.test(password)) {
+      errors.password = t("technician_register.validation.password_strength_error"); // Cần thêm key này vào file dịch
+    }
+    if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = t("technician_register.validation.confirm_password_mismatch_error");
+    }
     if (!formData.experience) {
       errors.experience = t("technician_register.validation.experience_required_error");
     }
     if (formData.specializations.length === 0) {
-      errors.specializations = t(
-        "technician_register.validation.specialization_required_error"
-      );
+      errors.specializations = t("technician_register.validation.specialization_required_error");
+    }
+    if (!formData.avatarFile) {
+      errors.avatarFile = t("technician_register.validation.avatar_required_error");
+    } else if (validationErrors.avatarUploadError) {
+      errors.avatarFile = validationErrors.avatarUploadError;
     }
 
     const missingCertificates = formData.specializations.filter(
@@ -249,9 +320,7 @@ const handleCertificateUpload = useCallback(
       errors.agreeToTerms = t("technician_register.validation.agree_terms_required_error");
     }
     if (!formData.agreeToBackgroundCheck) {
-      errors.agreeToBackgroundCheck = t(
-        "technician_register.validation.agree_background_check_required_error"
-      );
+      errors.agreeToBackgroundCheck = t("technician_register.validation.agree_background_check_required_error");
     }
 
     setValidationErrors(errors);
@@ -276,8 +345,6 @@ const handleCertificateUpload = useCallback(
       return;
     }
 
-    let technicianId = null;
-
     try {
       setSubmitting(true);
 
@@ -288,6 +355,10 @@ const handleCertificateUpload = useCallback(
         serviceIds: formData.specializations,
         experience: formData.experience,
         address: formData.address,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        avatarFile: formData.avatarFile,
+        serviceCertificates: formData.serviceCertificates,
       });
 
       const registerRes = await authApi.registerTechnician(preparedData);
@@ -303,66 +374,14 @@ const handleCertificateUpload = useCallback(
         return;
       }
 
-      technicianId = registerRes.data?.technicianId || registerRes.data?.id;
-
-      if (!technicianId) {
-        toast.error("Không nhận được technicianId từ server.");
-        return;
-      }
-
-      const uploadPromises = formData.specializations.map(async (serviceId) => {
-        const certs = formData.serviceCertificates[serviceId] || [];
-        if (certs.length === 0) return [];
-
-        const files = certs.map((cert) => cert.file);
-
-        const uploadRes = await authApi.uploadFiles(files, technicianId, "Technician");
-
-        if (!uploadRes.success) {
-          throw new Error(
-            `Upload thất bại cho dịch vụ ${serviceId}: ${uploadRes.message}`
-          );
-        }
-
-        const filePaths = uploadRes.data?.filePaths || [];
-        return filePaths;
-      });
-
-      const allFilePaths = (await Promise.all(uploadPromises)).flat();
-
-      if (allFilePaths.length === 0 && Object.keys(formData.serviceCertificates).length > 0) {
-        throw new Error("Không có file nào được upload thành công.");
-      }
-
       toast.success(t("technician_register.validation.register_success"));
-
       setTimeout(() => {
         navigate("/login");
       }, 2000);
     } catch (err) {
-      if (technicianId) {
-        try {
-          const deleteRes = await authApi.deleteTechnician(technicianId);
-
-          if (deleteRes.success) {
-            toast.error("Đã hủy đăng ký do lỗi upload. Vui lòng thử lại.");
-          } else {
-            toast.error(
-              "Đăng ký đã tạo nhưng upload thất bại. Vui lòng liên hệ support."
-            );
-          }
-        } catch (error) {
-          console.error("Error deleting technician:", error);
-          toast.error(
-            "Không thể hủy đăng ký tự động. Vui lòng liên hệ support."
-          );
-        }
-      } else {
-        toast.error(
-          err.message ||
-            "Có lỗi xảy ra khi đăng ký hoặc upload file. Vui lòng thử lại."
-        );
-      }
+      toast.error(
+        err.message || "Có lỗi xảy ra khi đăng ký. Vui lòng thử lại."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -381,6 +400,8 @@ const handleCertificateUpload = useCallback(
     removeCertificate,
     viewCertificate,
     closePreview,
+    handleAvatarUpload, 
+    removeAvatar, 
     handleSubmit,
     t,
   };

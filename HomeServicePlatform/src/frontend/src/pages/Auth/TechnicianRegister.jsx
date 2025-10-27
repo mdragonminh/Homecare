@@ -15,12 +15,12 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { Header } from "../../components/Header"; // Giữ nguyên import
-import { Footer } from "../../components/Footer"; // Giữ nguyên import
+import { Header } from "../../components/Header";
+import { Footer } from "../../components/Footer";
 import useTechnicianRegister, {
   majorCities,
-} from "../../hooks/useTechnicianRegister"; // Thay thế imports cũ bằng Custom Hook mới
-
+} from "../../hooks/useTechnicianRegister";
+import React from "react";
 const ErrorMessage = ({ error }) => {
   return error ? (
     <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -30,7 +30,7 @@ const ErrorMessage = ({ error }) => {
   ) : null;
 };
 
-export default function TechnicianRegister({ loggedInUser }) {
+function TechnicianRegister({ loggedInUser }) {
   const {
     formData,
     validationErrors,
@@ -44,9 +44,11 @@ export default function TechnicianRegister({ loggedInUser }) {
     removeCertificate,
     viewCertificate,
     closePreview,
+    handleAvatarUpload,
+    removeAvatar,
     handleSubmit,
     t,
-  } = useTechnicianRegister(loggedInUser); // Gọi Custom Hook
+  } = useTechnicianRegister(loggedInUser);
 
   return (
     <div className="relative">
@@ -130,74 +132,180 @@ export default function TechnicianRegister({ loggedInUser }) {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               {/* Personal Info Section */}
               <div className="p-8 border-b border-gray-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <User className="w-5 h-5 text-blue-600" />
+                <div className="flex items-start gap-4 mb-8">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <User className="w-6 h-6 text-blue-600" />
                   </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-800">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-1">
                       {t("technician_register.personal_info.title")}
                     </h2>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-500">
                       {t("technician_register.personal_info.subtitle")}
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t(
-                        "technician_register.personal_info.full_name_required"
+
+                {/* Avatar + Name and Email Row */}
+                <div className="mb-8">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3 ml-1">
+                    {t("technician_register.personal_info.avatar_required")}
+                  </label>
+                  <div className="flex items-start gap-6">
+                    <div className="flex flex-col flex-shrink-0 w-48">
+                      {/* Avatar Upload Circle */}
+                      <div className="relative w-48 h-48">
+                        {formData.avatarFile ? (
+                          <>
+                            <img
+                              src={
+                                previewImage?.url ||
+                                URL.createObjectURL(formData.avatarFile)
+                              }
+                              alt="Avatar Preview"
+                              className="w-full h-full object-cover rounded-full border-4 border-gray-200 shadow-sm"
+                            />
+                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity space-x-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  viewCertificate({
+                                    file: formData.avatarFile,
+                                    name: formData.avatarFile.name,
+                                  })
+                                }
+                                className="p-2 rounded-full bg-white text-blue-600 hover:bg-gray-100 transition-colors"
+                                title={t(
+                                  "technician_register.personal_info.view_avatar"
+                                )}
+                              >
+                                <Eye className="w-5 h-5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={removeAvatar}
+                                className="p-2 rounded-full bg-white text-red-600 hover:bg-gray-100 transition-colors"
+                                title={t(
+                                  "technician_register.personal_info.remove_avatar"
+                                )}
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <label
+                            htmlFor="upload-avatar"
+                            className="w-full h-full cursor-pointer bg-gray-100 rounded-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                            title={t(
+                              "technician_register.personal_info.upload_avatar"
+                            )}
+                          >
+                            <Upload className="w-10 h-10 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                            <span className="text-sm text-gray-500 mt-2 group-hover:text-blue-600">
+                              {t(
+                                "technician_register.personal_info.upload_prompt"
+                              ) || "Thêm ảnh"}
+                            </span>
+                          </label>
+                        )}
+                        <input
+                          id="upload-avatar"
+                          name="upload-avatar"
+                          type="file"
+                          className="sr-only"
+                          onChange={(e) =>
+                            handleAvatarUpload(e.target.files[0])
+                          }
+                          onClick={(e) => {
+                            e.target.value = null;
+                          }}
+                        />
+                      </div>
+                      {(validationErrors.avatarFile ||
+                        validationErrors.avatarUploadError) && (
+                        <div className="mt-2">
+                          {" "}
+                          {/* Đã xóa ml-[208px] và chỉ dùng mt-2 */}
+                          {validationErrors.avatarFile && (
+                            <ErrorMessage error={validationErrors.avatarFile} />
+                          )}
+                          {validationErrors.avatarUploadError && (
+                            <ErrorMessage
+                              error={validationErrors.avatarUploadError}
+                            />
+                          )}
+                        </div>
                       )}
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.fullName}
-                      onChange={(e) =>
-                        updateFormData("fullName", e.target.value)
-                      }
-                      className={`w-full border rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 outline-none transition-colors ${
-                        validationErrors.fullName
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-500/50"
-                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/50"
-                      }`}
-                      placeholder={t(
-                        "technician_register.personal_info.full_name_placeholder"
-                      )}
-                    />
-                    <ErrorMessage error={validationErrors.fullName} />
+                    </div>
+                    <div className="flex-1 flex flex-col justify-start gap-4 h-48">
+                      {/* Full Name */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
+                          {t(
+                            "technician_register.personal_info.full_name_required"
+                          )}
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.fullName}
+                          onChange={(e) =>
+                            updateFormData("fullName", e.target.value)
+                          }
+                          className={`w-full border rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all ${
+                            validationErrors.fullName
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-100 bg-red-50"
+                              : "border-gray-300 focus:border-blue-500 focus:ring-blue-100 bg-white"
+                          }`}
+                          placeholder={t(
+                            "technician_register.personal_info.full_name_placeholder"
+                          )}
+                        />
+                        <ErrorMessage error={validationErrors.fullName} />
+                      </div>
+
+                      {/* Email */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
+                          {t(
+                            "technician_register.personal_info.email_required"
+                          )}
+                        </label>
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) =>
+                            updateFormData("email", e.target.value)
+                          }
+                          className={`w-full border rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all ${
+                            validationErrors.email
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-100 bg-red-50"
+                              : "border-gray-300 focus:border-blue-500 focus:ring-blue-100 bg-white"
+                          }`}
+                          placeholder={t(
+                            "technician_register.personal_info.email_placeholder"
+                          )}
+                        />
+                        <ErrorMessage error={validationErrors.email} />
+                      </div>
+                    </div>
                   </div>
+                </div>
+
+                {/* Phone and City Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("technician_register.personal_info.email_required")}
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => updateFormData("email", e.target.value)}
-                      className={`w-full border rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 outline-none transition-colors ${
-                        validationErrors.email
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-500/50"
-                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/50"
-                      }`}
-                      placeholder={t(
-                        "technician_register.personal_info.email_placeholder"
-                      )}
-                    />
-                    <ErrorMessage error={validationErrors.email} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
                       {t("technician_register.personal_info.phone_required")}
                     </label>
                     <input
                       type="text"
                       value={formData.phone}
                       onChange={(e) => updateFormData("phone", e.target.value)}
-                      className={`w-full border rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 outline-none transition-colors ${
+                      className={`w-full border rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all ${
                         validationErrors.phone
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-500/50"
-                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/50"
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-100 bg-red-50"
+                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-100 bg-white"
                       }`}
                       placeholder={t(
                         "technician_register.personal_info.phone_placeholder"
@@ -205,8 +313,9 @@ export default function TechnicianRegister({ loggedInUser }) {
                     />
                     <ErrorMessage error={validationErrors.phone} />
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
                       {t("technician_register.personal_info.city")} *
                     </label>
                     <select
@@ -214,10 +323,10 @@ export default function TechnicianRegister({ loggedInUser }) {
                       onChange={(e) =>
                         updateFormData("address", e.target.value)
                       }
-                      className={`w-full border rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 outline-none transition-colors appearance-none ${
+                      className={`w-full border rounded-lg px-4 py-3 text-gray-900 focus:ring-2 outline-none transition-all appearance-none ${
                         validationErrors.address
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-500/50"
-                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/50"
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-100 bg-red-50"
+                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-100 bg-white"
                       }`}
                     >
                       <option value="">
@@ -232,6 +341,55 @@ export default function TechnicianRegister({ loggedInUser }) {
                       ))}
                     </select>
                     <ErrorMessage error={validationErrors.address} />
+                  </div>
+                </div>
+
+                {/* Password Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
+                      {t("technician_register.personal_info.password_required")}
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.password || ""}
+                      onChange={(e) =>
+                        updateFormData("password", e.target.value)
+                      }
+                      className={`w-full border rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all ${
+                        validationErrors.password
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-100 bg-red-50"
+                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-100 bg-white"
+                      }`}
+                      placeholder={t(
+                        "technician_register.personal_info.password_placeholder"
+                      )}
+                    />
+                    <ErrorMessage error={validationErrors.password} />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
+                      {t(
+                        "technician_register.personal_info.confirm_password_required"
+                      )}
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.confirmPassword || ""}
+                      onChange={(e) =>
+                        updateFormData("confirmPassword", e.target.value)
+                      }
+                      className={`w-full border rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all ${
+                        validationErrors.confirmPassword
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-100 bg-red-50"
+                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-100 bg-white"
+                      }`}
+                      placeholder={t(
+                        "technician_register.personal_info.confirm_password_placeholder"
+                      )}
+                    />
+                    <ErrorMessage error={validationErrors.confirmPassword} />
                   </div>
                 </div>
               </div>
@@ -306,6 +464,7 @@ export default function TechnicianRegister({ loggedInUser }) {
                       {t(
                         "technician_register.experience_skills.specialization_required"
                       )}
+                      <ErrorMessage error={validationErrors.specializations} />
                     </label>
                     {loading ? (
                       <p className="text-gray-500">
@@ -333,7 +492,6 @@ export default function TechnicianRegister({ loggedInUser }) {
                             <div
                               key={serviceId}
                               className={`flex flex-col p-3 border rounded-lg bg-white ${
-                                // SỬ DỤNG biến 'hasError' ĐÃ CẬP NHẬT
                                 hasError
                                   ? "border-red-500 ring-1 ring-red-500"
                                   : "border-gray-200"
@@ -532,32 +690,10 @@ export default function TechnicianRegister({ loggedInUser }) {
                   </button>
                 </div>
               </div>
-              <div className="text-center mt-8 text-gray-600 pb-12">
-                <p className="mb-2">
-                  {t("technician_register.submit.need_support")}
-                </p>
-                <div className="flex items-center justify-center gap-6">
-                  <a
-                    href="mailto:support@homeservice.com"
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
-                  >
-                    <Mail className="w-4 h-4" />
-                    {t("technician_register.submit.support_email")}
-                  </a>
-                  <a
-                    href="tel:1900-1234"
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
-                  >
-                    <Phone className="w-4 h-4" />
-                    {t("technician_register.submit.support_phone")}
-                  </a>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
-      // ... (Tiếp tục từ phần cuối của TechnicianRegister.jsx)
       {/* Preview Modal */}
       {previewImage && (
         <div
@@ -565,7 +701,6 @@ export default function TechnicianRegister({ loggedInUser }) {
           onClick={closePreview}
         >
           <div
-            // ĐÃ THAY ĐỔI: max-w-4xl thành max-w-6xl để tăng chiều rộng
             className="relative max-w-6xl w-full max-h-[90vh] bg-white rounded-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
@@ -586,8 +721,8 @@ export default function TechnicianRegister({ loggedInUser }) {
                   <embed
                     src={previewImage.url}
                     type="application/pdf"
-                    width="100%" // Giữ 100% để chiếm hết chiều rộng của modal
-                    height="800px" // Giữ chiều cao đã tăng từ bước trước
+                    width="100%"
+                    height="800px"
                     style={{ minHeight: "600px" }}
                   />
                 ) : (
@@ -604,3 +739,4 @@ export default function TechnicianRegister({ loggedInUser }) {
     </div>
   );
 }
+export default React.memo(TechnicianRegister);

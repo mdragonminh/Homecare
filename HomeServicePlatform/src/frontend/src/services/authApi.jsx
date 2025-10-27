@@ -99,11 +99,11 @@ export const authApi = {
         },
       });
       if (Array.isArray(res.data)) {
-        console.log("✅ Response là array of file paths");
+        console.log(" Response là array of file paths");
         return { success: true, data: { filePaths: res.data } };
       }
       if (res.data?.filePaths) {
-        console.log("✅ Response có property filePaths");
+        console.log(" Response có property filePaths");
         return { success: true, data: res.data };
       }
       return { success: true, data: res.data };
@@ -116,36 +116,22 @@ export const authApi = {
       };
     }
   },
-  registerTechnician: async ({
-    email,
-    fullName,
-    phoneNumber,
-    experienceYears,
-    serviceIds,
-    address = "",
-  }) => {
+  registerTechnician: async (formData) => {
     try {
-      const payload = {
-        email,
-        fullName,
-        phoneNumber,
-        experienceYears,
-        serviceIds,
-        address,
-      };
-
-      console.log("Sending registerTechnician payload:", payload);
+      console.log("Sending registerTechnician (FormData) payload");
 
       const res = await axiosClient.post(
         "/Authentication/register-technician",
-        payload
+        formData 
       );
+
       let technicianId;
       if (typeof res.data === "string") {
         technicianId = res.data;
       } else if (typeof res.data === "object" && res.data !== null) {
         technicianId = res.data.id || res.data.technicianId;
       }
+
       return {
         success: true,
         data: {
@@ -180,8 +166,11 @@ export const authApi = {
     serviceIds,
     experience,
     address = "",
+    password,
+    confirmPassword,
+    avatarFile,
+    serviceCertificates,
   }) => {
-    // Map experience string to years
     const expMap = {
       "0-1": 1,
       "1-3": 2,
@@ -191,14 +180,54 @@ export const authApi = {
     };
     const experienceYears = expMap[experience] ?? 0;
 
-    return {
-      email,
-      fullName,
-      phoneNumber,
-      experienceYears,
-      serviceIds,
-      address,
-    };
+    const formData = new FormData();
+    formData.append("Email", email);
+    formData.append("FullName", fullName);
+    formData.append("PhoneNumber", phoneNumber);
+    formData.append("ExperienceYears", experienceYears.toString());
+    formData.append("Address", address);
+    formData.append("Password", password);
+    formData.append("ConfirmPassword", confirmPassword);
+    if (serviceIds && serviceIds.length > 0) {
+      serviceIds.forEach((id) => {
+        formData.append("ServiceIds", id.toString());
+      });
+    }
+    if (avatarFile) {
+      formData.append("AvatarFile", avatarFile, avatarFile.name);
+    }
+    if (serviceCertificates) {
+      serviceIds.forEach((serviceId) => {
+        const certs = serviceCertificates[serviceId] || [];
+        certs.forEach((cert) => {
+          if (cert.file) {
+            formData.append("CertificateFiles", cert.file, cert.name);
+          }
+        });
+      });
+    }
+
+    console.log("=== FormData Debug ===");
+    console.log("Total serviceIds:", serviceIds.length);
+    console.log("Has avatar:", !!avatarFile);
+    console.log(
+      "Certificate count:",
+      Object.values(serviceCertificates).reduce(
+        (sum, certs) => sum + certs.length,
+        0
+      )
+    );
+
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}:`, `[File] ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`${key}:`, value);
+      }
+    }
+    console.log("=== End FormData ===");
+
+    return formData;
   },
 
   login: async ({ emailOrPhone, password }) => {
