@@ -57,36 +57,34 @@ namespace HSP.Service.Implementations
 					?? throw new Exception($"ObjectType '{input.ObjectTypeName}' not found");
 			var fileEntity = new Core.Entities.File
 			{
-				Id = Guid.NewGuid(),
 				FileName = file.FileName,
 				FilePath = relativePath,
 				FileType = file.ContentType,
 				FileSize = file.Length,
-				UploadedBy = Guid.Empty,
+				UploadedBy = input.UserId,
 				DateCreated = DateTime.UtcNow
 			};
 			var relation = new FileRelation
 			{
-				Id = Guid.NewGuid(),
 				File = fileEntity,
 				ObjectTypeId = objectType.Id,
 				ObjectId = input.ObjectId,
 				RelationType = input.RelationType
 			};
-			using (var transaction = await _unitOfWork.BeginTransactionAsync())
+
+			try
 			{
-				try {
-					await _fileRepository.AddAsync(fileEntity);
-					await _fileRelationRepository.AddAsync(relation);
-					await _unitOfWork.SaveChangesAsync();
-					await _unitOfWork.CommitTransactionAsync();
-				}
-				catch { 
-					await transaction.RollbackAsync();
-					if (System.IO.File.Exists(filePath))	System.IO.File.Delete(filePath);
-					throw; 
-				}
+				await _fileRepository.AddAsync(fileEntity);
+				await _fileRelationRepository.AddAsync(relation);
+				await _unitOfWork.SaveChangesAsync();
 			}
+			catch
+			{
+				if (System.IO.File.Exists(filePath))
+					System.IO.File.Delete(filePath);
+				throw;
+			}
+
 			return new FileDto
 			{
 				Id = fileEntity.Id,
