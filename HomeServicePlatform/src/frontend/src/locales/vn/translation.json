@@ -841,7 +841,7 @@
     }
   },
   "warehouse": {
-    "title": "Quản lý Kho",
+    "title": "Quản lý kho thiết bị",
     "description": "Quản lý thông tin các kho hàng",
     "add": "Thêm Kho",
     "edit": "Sửa Kho",
