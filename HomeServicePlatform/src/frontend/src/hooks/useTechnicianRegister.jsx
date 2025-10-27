@@ -66,61 +66,103 @@ export default function useTechnicianRegister(loggedInUser) {
     setValidationErrors((prev) => ({ ...prev, [field]: null }));
   };
 
-  const toggleSpecialization = (serviceId) => {
-    setValidationErrors((prev) => ({ ...prev, specializations: null }));
-    const isSelected = formData.specializations.includes(serviceId);
+const toggleSpecialization = (serviceId) => {
+
+    const isCurrentlySelected = formData.specializations.includes(serviceId);
+    if (isCurrentlySelected) {
+        setValidationErrors((prevErrors) => {
+            const newErrors = { ...prevErrors };
+            if (newErrors.certificateUploadErrors?.[serviceId]) {
+                const { [serviceId]: _, ...rest } = newErrors.certificateUploadErrors;
+                newErrors.certificateUploadErrors = rest;
+                if (Object.keys(newErrors.certificateUploadErrors).length === 0) {
+                    delete newErrors.certificateUploadErrors;
+                }
+            }
+            if (newErrors.certificate) {
+                newErrors.certificate = newErrors.certificate.filter((id) => id !== serviceId);
+                if (newErrors.certificate.length === 0) {
+                    delete newErrors.certificate;
+                }
+            }
+            return { ...newErrors, specializations: null };
+        });
+    } else {
+        
+        setValidationErrors((prev) => ({ ...prev, specializations: null }));
+    }
     setFormData((prev) => {
-      const newCerts = { ...prev.serviceCertificates };
-      if (isSelected) {
-        delete newCerts[serviceId];
-      }
-      return {
-        ...prev,
-        specializations: isSelected
-          ? prev.specializations.filter((s) => s !== serviceId)
-          : [...prev.specializations, serviceId],
-        serviceCertificates: newCerts,
-      };
+        const newCerts = { ...prev.serviceCertificates };
+        const isSelected = prev.specializations.includes(serviceId); 
+        
+        if (isSelected) {
+            delete newCerts[serviceId]; 
+        }
+
+        return {
+            ...prev,
+            specializations: isSelected
+                ? prev.specializations.filter((s) => s !== serviceId)
+                : [...prev.specializations, serviceId],
+            serviceCertificates: newCerts,
+        };
     });
   };
 
-  const handleCertificateUpload = useCallback(
+const handleCertificateUpload = useCallback(
     async (file, serviceId) => {
       if (!file) return;
-
       setValidationErrors((prev) => {
         const newErrors = { ...prev };
-        if (newErrors.certificate) {
-          newErrors.certificate = newErrors.certificate.filter((id) => id !== serviceId);
-          if (newErrors.certificate.length === 0) {
-            delete newErrors.certificate;
-          }
+        if (newErrors.certificateUploadErrors?.[serviceId]) {
+             const { [serviceId]: _, ...rest } = newErrors.certificateUploadErrors;
+             newErrors.certificateUploadErrors = rest;
+        }
+        if (Object.keys(newErrors.certificateUploadErrors || {}).length === 0) {
+            delete newErrors.certificateUploadErrors;
         }
         return newErrors;
       });
 
-      const maxFileSize = 5 * 1024 * 1024;
+      const maxFileSize = 5 * 1024 * 1024; // 5MB
       const allowedTypes = [
         "application/pdf",
         "image/jpeg",
         "image/png",
         "image/jpg",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       ];
+      const allowedExtensions = [".pdf", ".jpeg", ".png", ".jpg"];
+      
+      const fileNameLower = file.name.toLowerCase();
+      const fileExtension = fileNameLower.substring(fileNameLower.lastIndexOf('.'));
+      
+      const isAllowedType = allowedTypes.includes(file.type);
+      const isAllowedExtension = allowedExtensions.includes(fileExtension);
+      
+      let error = null;
 
       if (file.size > maxFileSize) {
-        toast.error(
-          `File ${file.name} ${t("technician_register.experience_skills.file_too_large")}`
-        );
-        return;
+        error = `File ${file.name} ${t("technician_register.experience_skills.file_too_large")}`;
       }
-      if (!allowedTypes.includes(file.type)) {
-        toast.error(
-          `File ${file.name} ${t("technician_register.experience_skills.file_invalid_format")}`
-        );
-        return;
+
+      if (!isAllowedType || !isAllowedExtension) {
+       
+        error = `File ${file.name} ${t("technician_register.experience_skills.file_invalid_format")}`;
       }
+
+      if (error) {
+         
+          setValidationErrors(prev => ({
+              ...prev,
+              certificateUploadErrors: {
+                  ...(prev.certificateUploadErrors || {}),
+                  [serviceId]: error,
+              }
+          }));
+          toast.error(error); 
+          return;
+      }
+     
 
       setFormData((prev) => ({
         ...prev,

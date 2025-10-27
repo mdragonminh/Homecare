@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import { Header } from "../../components/Header"; // Giữ nguyên import
 import { Footer } from "../../components/Footer"; // Giữ nguyên import
-import useTechnicianRegister, { majorCities } from "../../hooks/useTechnicianRegister"; // Thay thế imports cũ bằng Custom Hook mới
+import useTechnicianRegister, {
+  majorCities,
+} from "../../hooks/useTechnicianRegister"; // Thay thế imports cũ bằng Custom Hook mới
 
 const ErrorMessage = ({ error }) => {
   return error ? (
@@ -59,13 +61,17 @@ export default function TechnicianRegister({ loggedInUser }) {
           </div>
         </div>
       )}
-      <div className={`min-h-screen flex flex-col bg-gray-50 ${submitting ? "opacity-50" : ""}`}>
+      <div
+        className={`min-h-screen flex flex-col bg-gray-50 ${
+          submitting ? "opacity-50" : ""
+        }`}
+      >
         <main className="flex-1 py-8">
           <div
             className="relative py-16"
             style={{
               backgroundImage:
-                'url(https://www.etcourse.com/sites/default/files/2019-01/Highlights-Job%20Opportunities.jpg)',
+                "url(https://www.etcourse.com/sites/default/files/2019-01/Highlights-Job%20Opportunities.jpg)",
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
@@ -78,7 +84,9 @@ export default function TechnicianRegister({ loggedInUser }) {
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 {t("technician_register.title")}
               </h1>
-              <p className="text-xl mb-12">{t("technician_register.subtitle")}</p>
+              <p className="text-xl mb-12">
+                {t("technician_register.subtitle")}
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
                 <div className="bg-white rounded-xl p-6 shadow-md">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
@@ -138,18 +146,24 @@ export default function TechnicianRegister({ loggedInUser }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("technician_register.personal_info.full_name_required")}
+                      {t(
+                        "technician_register.personal_info.full_name_required"
+                      )}
                     </label>
                     <input
                       type="text"
                       value={formData.fullName}
-                      onChange={(e) => updateFormData("fullName", e.target.value)}
+                      onChange={(e) =>
+                        updateFormData("fullName", e.target.value)
+                      }
                       className={`w-full border rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 outline-none transition-colors ${
                         validationErrors.fullName
                           ? "border-red-500 focus:border-red-500 focus:ring-red-500/50"
                           : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/50"
                       }`}
-                      placeholder={t("technician_register.personal_info.full_name_placeholder")}
+                      placeholder={t(
+                        "technician_register.personal_info.full_name_placeholder"
+                      )}
                     />
                     <ErrorMessage error={validationErrors.fullName} />
                   </div>
@@ -166,7 +180,9 @@ export default function TechnicianRegister({ loggedInUser }) {
                           ? "border-red-500 focus:border-red-500 focus:ring-red-500/50"
                           : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/50"
                       }`}
-                      placeholder={t("technician_register.personal_info.email_placeholder")}
+                      placeholder={t(
+                        "technician_register.personal_info.email_placeholder"
+                      )}
                     />
                     <ErrorMessage error={validationErrors.email} />
                   </div>
@@ -183,7 +199,9 @@ export default function TechnicianRegister({ loggedInUser }) {
                           ? "border-red-500 focus:border-red-500 focus:ring-red-500/50"
                           : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/50"
                       }`}
-                      placeholder={t("technician_register.personal_info.phone_placeholder")}
+                      placeholder={t(
+                        "technician_register.personal_info.phone_placeholder"
+                      )}
                     />
                     <ErrorMessage error={validationErrors.phone} />
                   </div>
@@ -193,7 +211,9 @@ export default function TechnicianRegister({ loggedInUser }) {
                     </label>
                     <select
                       value={formData.address}
-                      onChange={(e) => updateFormData("address", e.target.value)}
+                      onChange={(e) =>
+                        updateFormData("address", e.target.value)
+                      }
                       className={`w-full border rounded-lg px-4 py-3 bg-gray-50 focus:ring-2 outline-none transition-colors appearance-none ${
                         validationErrors.address
                           ? "border-red-500 focus:border-red-500 focus:ring-red-500/50"
@@ -201,7 +221,9 @@ export default function TechnicianRegister({ loggedInUser }) {
                       }`}
                     >
                       <option value="">
-                        {t("technician_register.personal_info.city_placeholder")}
+                        {t(
+                          "technician_register.personal_info.city_placeholder"
+                        )}
                       </option>
                       {majorCities.map((city) => (
                         <option key={city.value} value={city.value}>
@@ -231,11 +253,15 @@ export default function TechnicianRegister({ loggedInUser }) {
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("technician_register.experience_skills.years_experience_required")}
+                      {t(
+                        "technician_register.experience_skills.years_experience_required"
+                      )}
                     </label>
                     <select
                       value={formData.experience}
-                      onChange={(e) => updateFormData("experience", e.target.value)}
+                      onChange={(e) =>
+                        updateFormData("experience", e.target.value)
+                      }
                       className={`w-full border rounded-lg px-4 py-3 focus:ring-2 outline-none transition-colors appearance-none ${
                         validationErrors.experience
                           ? "border-red-500 focus:border-red-500 focus:ring-red-500/50"
@@ -243,53 +269,83 @@ export default function TechnicianRegister({ loggedInUser }) {
                       }`}
                     >
                       <option value="">
-                        {t("technician_register.experience_skills.years_experience_placeholder")}
+                        {t(
+                          "technician_register.experience_skills.years_experience_placeholder"
+                        )}
                       </option>
                       <option value="0-1">
-                        {t("technician_register.experience_skills.experience_options.0-1")}
+                        {t(
+                          "technician_register.experience_skills.experience_options.0-1"
+                        )}
                       </option>
                       <option value="1-3">
-                        {t("technician_register.experience_skills.experience_options.1-3")}
+                        {t(
+                          "technician_register.experience_skills.experience_options.1-3"
+                        )}
                       </option>
                       <option value="3-5">
-                        {t("technician_register.experience_skills.experience_options.3-5")}
+                        {t(
+                          "technician_register.experience_skills.experience_options.3-5"
+                        )}
                       </option>
                       <option value="5-10">
-                        {t("technician_register.experience_skills.experience_options.5-10")}
+                        {t(
+                          "technician_register.experience_skills.experience_options.5-10"
+                        )}
                       </option>
                       <option value="10+">
-                        {t("technician_register.experience_skills.experience_options.10+")}
+                        {t(
+                          "technician_register.experience_skills.experience_options.10+"
+                        )}
                       </option>
                     </select>
                     <ErrorMessage error={validationErrors.experience} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
-                      {t("technician_register.experience_skills.specialization_required")}
+                      {t(
+                        "technician_register.experience_skills.specialization_required"
+                      )}
                     </label>
                     {loading ? (
-                      <p className="text-gray-500">Đang tải danh sách dịch vụ...</p>
+                      <p className="text-gray-500">
+                        Đang tải danh sách dịch vụ...
+                      </p>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {services.map((service) => {
                           const serviceId = service.id;
-                          const isSelected = formData.specializations.includes(serviceId);
-                          const certList = formData.serviceCertificates[serviceId] || [];
+                          const isSelected =
+                            formData.specializations.includes(serviceId);
+                          const certList =
+                            formData.serviceCertificates[serviceId] || [];
+
+                          const uploadError =
+                            validationErrors.certificateUploadErrors?.[
+                              serviceId
+                            ];
                           const isMissingCert =
                             validationErrors.certificate &&
                             validationErrors.certificate.includes(serviceId);
+                          const hasError = isMissingCert || uploadError;
+
                           return (
                             <div
                               key={serviceId}
                               className={`flex flex-col p-3 border rounded-lg bg-white ${
-                                isMissingCert ? "border-red-500 ring-1 ring-red-500" : "border-gray-200"
+                                // SỬ DỤNG biến 'hasError' ĐÃ CẬP NHẬT
+                                hasError
+                                  ? "border-red-500 ring-1 ring-red-500"
+                                  : "border-gray-200"
                               }`}
                             >
                               <label className="flex items-center gap-3 cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
-                                  onChange={() => toggleSpecialization(serviceId)}
+                                  onChange={() =>
+                                    toggleSpecialization(serviceId)
+                                  }
                                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                   style={{ minWidth: "1rem" }}
                                 />
@@ -312,15 +368,24 @@ export default function TechnicianRegister({ loggedInUser }) {
                                           type="button"
                                           onClick={() => viewCertificate(cert)}
                                           className="text-green-600 hover:text-green-800 p-1 rounded-full bg-green-50"
-                                          title={t("technician_register.experience_skills.view_file")}
+                                          title={t(
+                                            "technician_register.experience_skills.view_file"
+                                          )}
                                         >
                                           <Eye className="w-4 h-4" />
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => removeCertificate(serviceId, cert.name)}
+                                          onClick={() =>
+                                            removeCertificate(
+                                              serviceId,
+                                              cert.name
+                                            )
+                                          }
                                           className="text-red-600 hover:text-red-800 p-1 rounded-full bg-red-50"
-                                          title={t("technician_register.experience_skills.remove_file")}
+                                          title={t(
+                                            "technician_register.experience_skills.remove_file"
+                                          )}
                                         >
                                           <X className="w-4 h-4" />
                                         </button>
@@ -330,28 +395,44 @@ export default function TechnicianRegister({ loggedInUser }) {
                                   <label
                                     htmlFor={`upload-cert-${serviceId}`}
                                     className="cursor-pointer text-blue-600 hover:text-blue-800 p-1 rounded-full bg-blue-50 inline-flex items-center"
-                                    title={t("technician_register.experience_skills.upload_certificate")}
+                                    title={t(
+                                      "technician_register.experience_skills.upload_certificate"
+                                    )}
                                   >
                                     <Upload className="w-4 h-4" />
-                                    <span className="text-xs ml-1">Thêm file</span>
+                                    <span className="text-xs ml-1">
+                                      Thêm file
+                                    </span>
                                     <input
                                       id={`upload-cert-${serviceId}`}
                                       name={`upload-cert-${serviceId}`}
                                       type="file"
-                                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                                       className="sr-only"
                                       onChange={(e) =>
-                                        handleCertificateUpload(e.target.files[0], serviceId)
+                                        handleCertificateUpload(
+                                          e.target.files[0],
+                                          serviceId
+                                        )
                                       }
                                       onClick={(e) => {
                                         e.target.value = null;
                                       }}
                                     />
                                   </label>
-                                  {isMissingCert && (
+
+                                  {uploadError && (
                                     <p className="mt-1 text-xs text-red-600 flex items-center">
                                       <X className="w-3 h-3 mr-1 flex-shrink-0" />
-                                      {t("technician_register.validation.certificate_required_error")}
+                                      {uploadError}{" "}
+                                    </p>
+                                  )}
+
+                                  {isMissingCert && !uploadError && (
+                                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                                      <X className="w-3 h-3 mr-1 flex-shrink-0" />
+                                      {t(
+                                        "technician_register.validation.certificate_required_error"
+                                      )}
                                     </p>
                                   )}
                                 </div>
@@ -359,11 +440,6 @@ export default function TechnicianRegister({ loggedInUser }) {
                             </div>
                           );
                         })}
-                        {validationErrors.specializations && (
-                          <div className="md:col-span-2">
-                            <ErrorMessage error={validationErrors.specializations} />
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -390,7 +466,9 @@ export default function TechnicianRegister({ loggedInUser }) {
                       <input
                         type="checkbox"
                         checked={formData.agreeToTerms}
-                        onChange={(e) => updateFormData("agreeToTerms", e.target.checked)}
+                        onChange={(e) =>
+                          updateFormData("agreeToTerms", e.target.checked)
+                        }
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1 flex-shrink-0"
                       />
                       <span className="text-sm text-gray-700">
@@ -417,7 +495,10 @@ export default function TechnicianRegister({ loggedInUser }) {
                         type="checkbox"
                         checked={formData.agreeToBackgroundCheck}
                         onChange={(e) =>
-                          updateFormData("agreeToBackgroundCheck", e.target.checked)
+                          updateFormData(
+                            "agreeToBackgroundCheck",
+                            e.target.checked
+                          )
                         }
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1 flex-shrink-0"
                       />
@@ -427,7 +508,9 @@ export default function TechnicianRegister({ loggedInUser }) {
                     </div>
                     {validationErrors.agreeToBackgroundCheck && (
                       <div className="ml-7">
-                        <ErrorMessage error={validationErrors.agreeToBackgroundCheck} />
+                        <ErrorMessage
+                          error={validationErrors.agreeToBackgroundCheck}
+                        />
                       </div>
                     )}
                   </label>
@@ -450,7 +533,9 @@ export default function TechnicianRegister({ loggedInUser }) {
                 </div>
               </div>
               <div className="text-center mt-8 text-gray-600 pb-12">
-                <p className="mb-2">{t("technician_register.submit.need_support")}</p>
+                <p className="mb-2">
+                  {t("technician_register.submit.need_support")}
+                </p>
                 <div className="flex items-center justify-center gap-6">
                   <a
                     href="mailto:support@homeservice.com"
@@ -472,8 +557,7 @@ export default function TechnicianRegister({ loggedInUser }) {
           </div>
         </div>
       </div>
-     // ... (Tiếp tục từ phần cuối của TechnicianRegister.jsx)
-
+      // ... (Tiếp tục từ phần cuối của TechnicianRegister.jsx)
       {/* Preview Modal */}
       {previewImage && (
         <div
@@ -486,7 +570,9 @@ export default function TechnicianRegister({ loggedInUser }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="font-semibold text-gray-800">{previewImage.name}</h3>
+              <h3 className="font-semibold text-gray-800">
+                {previewImage.name}
+              </h3>
               <button
                 onClick={closePreview}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -495,14 +581,14 @@ export default function TechnicianRegister({ loggedInUser }) {
               </button>
             </div>
             <div className="p-4 overflow-auto max-h-[calc(90vh-80px)] w-full">
-              {previewImage.url.startsWith("blob:http") && (
-                previewImage.name.toLowerCase().endsWith(".pdf") ? (
+              {previewImage.url.startsWith("blob:http") &&
+                (previewImage.name.toLowerCase().endsWith(".pdf") ? (
                   <embed
                     src={previewImage.url}
                     type="application/pdf"
                     width="100%" // Giữ 100% để chiếm hết chiều rộng của modal
                     height="800px" // Giữ chiều cao đã tăng từ bước trước
-                    style={{ minHeight: '600px' }}
+                    style={{ minHeight: "600px" }}
                   />
                 ) : (
                   <img
@@ -510,8 +596,7 @@ export default function TechnicianRegister({ loggedInUser }) {
                     alt={previewImage.name}
                     className="max-w-full h-auto mx-auto"
                   />
-                )
-              )}
+                ))}
             </div>
           </div>
         </div>
