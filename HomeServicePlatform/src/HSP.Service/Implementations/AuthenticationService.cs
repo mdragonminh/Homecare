@@ -143,7 +143,7 @@ namespace HSP.Service.Implementations
 				throw new Exception(_localizer["CannotFindOrCreateUser"]);
 			}
 
-			var token = await _jwtService.GenerateJwtToken(new Core.Dtos.AccountDto.UserDto
+			var token = await _jwtService.GenerateJwtToken(new UserDto
 			{
 				Id = user.Id,
 				Email = user.Email ?? string.Empty,
@@ -289,10 +289,8 @@ namespace HSP.Service.Implementations
 				try
 				{
 					var user = await CreateUserAsync(input.Email, input.FullName, input.PhoneNumber, input.Password);
-					await _unitOfWork.SaveChangesAsync();
 
 					var response = await AssignRoleAndSendConfirmationAsync(user, RoleNames.Technician);
-					await _unitOfWork.SaveChangesAsync();
 
 					var technicianProfile = new TechnicianProfile
 					{
@@ -366,8 +364,7 @@ namespace HSP.Service.Implementations
 			var roleResult = await _userRepository.AddToRoleAsync(user, role);
 			if (!roleResult.Succeeded)
 			{
-				var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-				throw new ValidationException($"{_localizer["AddToRoleFailed"]}: {errors}");
+				throw new ValidationException(_localizer["AddToRoleFailed"]);
 			}
 
 			var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
@@ -544,7 +541,5 @@ namespace HSP.Service.Implementations
 				HtmlBody = body
 			});
 		}
-
-
 	}
 }
