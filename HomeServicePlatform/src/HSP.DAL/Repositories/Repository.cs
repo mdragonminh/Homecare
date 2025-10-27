@@ -1,4 +1,4 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Abstractions.Entity;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.Entity;
 using HSP.DAL.Data;
@@ -80,6 +80,12 @@ namespace HSP.DAL.Repositories
 		public void Update(T entity)
 		{
 			_context.Set<T>().Update(entity);
+		}
+
+		public async Task RemoveRange(IEnumerable<T> entities)
+		{
+			_context.Set<T>().RemoveRange(entities);
+			await Task.CompletedTask;
 		}
 	}
 }

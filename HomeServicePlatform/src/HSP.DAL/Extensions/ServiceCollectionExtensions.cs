@@ -35,11 +35,7 @@ namespace HSP.DAL.Extensions
 			});
 
 			services.AddScoped<IUserRepository, UserRepository>();
-
-            //services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
-
 			services.AddScoped<IRepository<TechnicianProfile, Guid>, Repository<TechnicianProfile, Guid>>();
-			//services.AddScoped<IRepository<CustomerProfile, Guid>, Repository<CustomerProfile, Guid>>();
 			services.AddScoped<IRepository<Home, Guid>, Repository<Home, Guid>>();
 			services.AddScoped<IRepository<HomeItem, Guid>, Repository<HomeItem, Guid>>();
 			services.AddScoped<IRepository<Core.Entities.Service, Guid>, Repository<Core.Entities.Service, Guid>>();
@@ -49,6 +45,7 @@ namespace HSP.DAL.Extensions
 			services.AddScoped<IRepository<Warehouse, Guid>, Repository<Warehouse, Guid>>();
 			services.AddScoped<IRepository<Equipment, Guid>, Repository<Equipment, Guid>>();
 			services.AddScoped<IRepository<Booking, Guid>, Repository<Booking, Guid>>();
+			services.AddScoped<IRepository<BookingItem, Guid>, Repository<BookingItem, Guid>>();
 			services.AddScoped<IRepository<Ticket, Guid>, Repository<Ticket, Guid>>();
 
 			services.AddScoped<IUnitOfWork, UnitOfWork>();

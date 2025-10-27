@@ -7,7 +7,7 @@ namespace HSP.Service.Interfaces
 	public interface IAuthenticationService
 	{
 		Task<RegisterResponseDto> Register(RegisterRequestDto input);
-		Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input);
+		Task<RegisterTechnicianResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input);
 		Task<ConfirmEmailResultDto> ConfirmEmail(Guid userId, string token);
 		Task<LoginResponseDto> Login(LoginRequestDto input);
 		Task<LoginResponseDto> GoogleLogin();

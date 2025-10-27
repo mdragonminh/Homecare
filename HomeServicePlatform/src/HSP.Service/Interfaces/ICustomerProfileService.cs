@@ -12,7 +12,7 @@ namespace HSP.Service.Interfaces
 		Task<object> GetDebugInfoAsync();
 		Task<EmailChangeResponseDto> RequestEmailChangeAsync(string userId, string newEmail);
 		Task<EmailChangeResponseDto> ConfirmEmailChangeAsync(string userId, string token);
-		Task<AvatarUploadResponseDto> UploadAvatarAsync(string userId, FileUploadRequest fileRequest);
-		Task<AvatarUploadResponseDto> DeleteAvatarAsync(string userId);
+		//Task<AvatarUploadResponseDto> UploadAvatarAsync(string userId, FileUploadRequest fileRequest);
+		//Task<AvatarUploadResponseDto> DeleteAvatarAsync(string userId);
 	}
 }

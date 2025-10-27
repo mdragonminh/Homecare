@@ -15,6 +15,8 @@
         "required": "Please enter your email",
         "invalid_format": "Invalid email format (e.g., user@example.com)",
         "no_spaces": "Email cannot contain spaces",
+        "single_at_required": "Email must contain exactly one @ character",
+        "dot_required": "Email must contain at least one dot (.) in the domain part",
         "max_length": "Email cannot exceed 100 characters"
       },
       "phone": {
@@ -41,8 +43,9 @@
       "error_new_length": "New password must be at least 6 characters",
       "error_confirm_required": "Please confirm your new password",
       "error_confirm_mismatch": "Confirmation password does not match",
-      "error_new_same": "New password must be different from current password",
-      "error_general": "An error occurred while changing password"
+      "errors_general": "Current password is incorrect",
+      "error_new_same": "New password must be different from current password"
+      
     },
     "welcome_back": "Welcome back!",
     "login_button": "Log in",
@@ -589,7 +592,8 @@
       "upload_certificates_desc": "PDF, DOC, DOCX, JPG, PNG (max 5MB per file)",
       "uploading": "Uploading...",
       "uploaded_files": "Uploaded files",
-      "remove_file": "Remove",
+      "file_removed": "Removed file",
+      "file_uploaded": "Uploaded file: {{fileName}}",
       "file_too_large": "too large (max 5MB)",
       "file_invalid_format": "invalid format (only PDF, DOC, DOCX, JPG, PNG accepted)",
       "upload_success": "{{count}} certificate files uploaded successfully!",
@@ -634,7 +638,16 @@
       "fill_required_fields": "Please fill in all required fields!",
       "register_success": "Registration successful! Please wait for admin approval.",
       "register_failed": "Technician registration failed",
-      "error_occurred": "An error occurred. Please try again later."
+      "error_occurred": "An error occurred. Please try again later.",
+      "full_name_required_error": "Please enter your full name.",
+      "email_invalid_error": "Invalid email.",
+      "phone_invalid_error": "Please enter your phone number.",
+      "address_required_error": "Please enter your address.",
+      "experience_required_error": "Please select years of experience.",
+      "specialization_required_error": "Please select at least one area of specialization.",
+      "agree_terms_required_error": "You must agree to the terms of service and privacy policy to continue.",
+      "agree_background_check_required_error": "You must agree to allow background checks to continue.",
+      "certificates_required_error": "Please upload at least one certification or qualification document."
     }
   },
   "toast":{
@@ -651,7 +664,7 @@
       "stats": {
         "customers": "Customers",
         "technicians": "Technicians",
-        "services_completed": "Services Completed",
+        "services": "Services Completed",
         "satisfaction": "Satisfaction"
       }
     },

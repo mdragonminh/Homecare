@@ -139,11 +139,11 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit, isCancellable = true }
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6">
-          {errors.general && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-              {errors.general}
-            </div>
-          )}
+{errors.general && (
+  <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+    {t("ui.change_password_modal.errors_general")} *
+  </div>
+)}
 
           <div className="space-y-4">
             {/* Current Password */}

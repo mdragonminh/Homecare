@@ -1,4 +1,5 @@
-﻿using HSP.Core.Interfaces.Entity;
+﻿using HSP.Core.Abstractions.Entity;
+using HSP.Core.Interfaces.Entity;
 using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Core.Entities
@@ -18,6 +19,7 @@ namespace HSP.Core.Entities
 
 		public ICollection<TechnicianProfile> Technicians { get; set; } = new List<TechnicianProfile>();
 		public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+		public ICollection<BookingItem> BookingItems { get; set; } = new List<BookingItem>();
 		public Guid? CreatedBy { get; set; }
 		public Guid? ModifiedBy { get; set; }
 	}

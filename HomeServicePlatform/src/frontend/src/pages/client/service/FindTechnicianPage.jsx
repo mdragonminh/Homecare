@@ -1,3 +1,5 @@
+// fileName: FindTechnicianPage.jsx
+
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFindTechnician } from "../../../hooks/useFindTechnician.jsx";
@@ -84,10 +86,17 @@ export function FindTechnicianPage({ loggedInUser }) {
   // 2. RENDER UTILITY FUNCTIONS (Giao diện)
   // ---------------------------------------------------------------------
   const renderStatusMessage = (messageObj) => {
-    const message =
-      typeof messageObj === "string" ? messageObj : messageObj?.text || "";
-    const type =
-      typeof messageObj === "string" ? null : messageObj?.type || null;
+    if (!messageObj) return null; 
+
+    let message = "";
+    let type = null;
+
+    if (typeof messageObj === "string") {
+      message = messageObj;
+    } else if (typeof messageObj === "object") {
+      message = typeof messageObj.text === "string" ? messageObj.text : JSON.stringify(messageObj.text ?? "");
+      type = messageObj.type || null;
+    }
 
     let icon, colorClass;
 
@@ -114,6 +123,7 @@ export function FindTechnicianPage({ loggedInUser }) {
       </div>
     );
   };
+
 
   // ---------------------------------------------------------------------
   // 3. MAIN RENDER
@@ -218,10 +228,10 @@ export function FindTechnicianPage({ loggedInUser }) {
                 </div>
               </div>
             ) : loggedInUser ? (
-              // Người dùng đã đăng nhập nhưng chưa có nhà
               <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
-                <p className="text-gray-600 font-medium mb-4 text-base">
-                  {statusMessage || t("ui.no_properties_found")}
+                {/* CHỈ HIỂN THỊ THÔNG BÁO CHƯA CÓ NHÀ Ở ĐÂY */}
+                <p className="text-gray-600 font-medium text-base">
+                  {t("ui.no_properties_found")}
                 </p>
                 <button
                   onClick={() => setIsAddHomeModalOpen(true)}
@@ -316,11 +326,10 @@ export function FindTechnicianPage({ loggedInUser }) {
                           e.preventDefault();
                           handleServiceSelection(service.id);
                         }}
-                        className={`p-3 cursor-pointer hover:bg-blue-50 flex items-center justify-between transition-colors text-base ${
-                          isSelected
-                            ? "bg-blue-100 text-blue-700 font-semibold"
-                            : "text-gray-800"
-                        }`}
+                        className={`p-3 cursor-pointer hover:bg-blue-50 flex items-center justify-between transition-colors text-base ${isSelected
+                          ? "bg-blue-100 text-blue-700 font-semibold"
+                          : "text-gray-800"
+                          }`}
                       >
                         {service.name}
                         {isSelected && (
@@ -342,9 +351,8 @@ export function FindTechnicianPage({ loggedInUser }) {
 
             {/* Phần Chọn Bán Kính */}
             <div
-              className={`grid gap-4 mt-5 ${
-                loggedInUser ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1"
-              }`}
+              className={`grid gap-4 mt-5 ${loggedInUser ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1"
+                }`}
             >
               {/* 1. BÁN KÍNH – LUÔN HIỆN */}
               <div>
@@ -413,7 +421,7 @@ export function FindTechnicianPage({ loggedInUser }) {
                 </div>
               )}
             </div>
-            {!loggedInUser || (loggedInUser && !selectedHomeId) ? (
+            {!loggedInUser ? (
               <div className="relative space-y-2">
                 <label className="block text-base font-semibold text-gray-800 mb-1">
                   {t("ui.manual_address_label")}
@@ -478,27 +486,22 @@ export function FindTechnicianPage({ loggedInUser }) {
             {/* KẾT THÚC BỐ CỤC NÚT ĐÃ THAY ĐỔI */}
           </div>
         </div>
-
-        {/* Cột Phải: Bản Đồ (Map) */}
         <div className="lg:w-2/5 flex relative min-h-[450px]">
           <MapDisplay
             lat={coords.latitude}
             lng={coords.longitude}
             technicians={technicians}
-            isDraggable={!loggedInUser || (loggedInUser && !selectedHomeId)}
+            isDraggable={!loggedInUser}
             onMarkerDrag={handleMarkerDrag}
           />
-
-          {/* Nút Floating Action Button cho Vị trí Hiện tại */}
-          {!loggedInUser || (loggedInUser && !selectedHomeId) ? (
+          {!loggedInUser ? (
             <button
               onClick={handleGetMyLocation}
               disabled={isSearching || isGettingLocation || isMatching}
-              className={`absolute bottom-4 right-4 z-10 w-12 h-12 rounded-full shadow-2xl transition-all flex items-center justify-center ${
-                isGettingLocation
-                  ? "bg-blue-500 animate-pulse disabled:opacity-100"
-                  : "bg-red-500 hover:bg-red-600 hover:scale-105 active:scale-95"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`absolute bottom-4 right-4 z-10 w-12 h-12 rounded-full shadow-2xl transition-all flex items-center justify-center ${isGettingLocation
+                ? "bg-blue-500 animate-pulse disabled:opacity-100"
+                : "bg-red-500 hover:bg-red-600 hover:scale-105 active:scale-95"
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
               title={t("ui.use_my_current_location", {
                 defaultValue: "Sử dụng Vị trí Hiện tại của tôi",
               })}
@@ -547,9 +550,8 @@ export function FindTechnicianPage({ loggedInUser }) {
               >
                 <div className="flex items-center mb-3 sm:mb-0 w-full sm:w-auto">
                   <span
-                    className={`text-2xl font-extrabold mr-3 w-8 text-center ${
-                      index < 3 ? "text-red-600" : "text-gray-500"
-                    }`}
+                    className={`text-2xl font-extrabold mr-3 w-8 text-center ${index < 3 ? "text-red-600" : "text-gray-500"
+                      }`}
                   >
                     {index + 1}
                   </span>

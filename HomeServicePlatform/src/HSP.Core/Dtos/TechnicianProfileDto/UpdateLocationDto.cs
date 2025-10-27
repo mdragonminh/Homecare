@@ -1,4 +1,4 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Abstractions.Entity;
 
 namespace HSP.Core.Dtos.TechnicianProfileDto
 {

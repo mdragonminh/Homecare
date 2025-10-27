@@ -29,6 +29,12 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		public string Email { get; set; } = string.Empty;
 		public string EmailConfirmToken { get; set; } = string.Empty;
 	}
+	public class RegisterTechnicianResponseDto
+	{
+		public Guid TechnicianId { get; set; }
+		public string Email { get; set; } = string.Empty;
+		public string EmailConfirmToken { get; set; } = string.Empty;
+	}
 	public class RegisterTechnicianRequestDto
 	{
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "EmailIsRequired")]
@@ -44,15 +50,18 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		[StringLength(20, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberMaxLength")]
 		public string PhoneNumber { get; set; } = string.Empty;
 
-		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "SkillSetIsRequired")]
-		[StringLength(200, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "SkillSetMaxLength")]
-		public string SkillSet { get; set; } = string.Empty;
-
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsIsRequired")]
 		[Range(0, 50, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsRange")]
 		public int ExperienceYears { get; set; }
-
-		// Danh sách các file paths của chứng chỉ đã upload
-		public List<string> CertificateFilePaths { get; set; } = new List<string>();
+		[Required]
+		public List<Guid> ServiceIds { get; set; } = new List<Guid>();
+		[Required]
+		public string Address {  get; set; }
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordIsRequired")]
+		[StringLength(100, MinimumLength = 8, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordLengthError")]
+		public string Password { get; set; } = string.Empty;
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ConfirmPasswordIsRequired")]
+		[Compare("Password", ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordsDoNotMatch")]
+		public string ConfirmPassword { get; set; } = string.Empty;
 	}
 }

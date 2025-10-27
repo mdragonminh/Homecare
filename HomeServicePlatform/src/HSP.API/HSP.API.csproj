@@ -29,4 +29,8 @@
     <ProjectReference Include="..\HSP.Service\HSP.Service.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>

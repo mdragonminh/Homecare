@@ -11,6 +11,7 @@ using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
@@ -24,21 +25,21 @@ namespace HSP.Service.Implementations
 	{
 		private readonly IUserRepository _userRepository;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
-		//private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly SignInManager<AppUser> _signInManager;
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly IJwtService _jwtService;
 		private readonly IEmailService _emailService;
 		private readonly IEmailTemplateService _emailTemplateService;
+		private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
 
 		public AuthenticationService(IUserRepository userRepository,
 			IOptions<UrlSettingsDto> urlOptions,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
-			//IRepository<CustomerProfile, Guid> customerProfileRepository,
 			SignInManager<AppUser> signInManager,
 			IJwtService jwtService,
 			IEmailService emailService,
 			IEmailTemplateService emailTemplateService,
+			IRepository<Core.Entities.Service, Guid> serviceRepository,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_userRepository = userRepository;
@@ -46,9 +47,9 @@ namespace HSP.Service.Implementations
 			_technicianRepository = technicianRepository;
 			_signInManager = signInManager;
 			_jwtService = jwtService;
-			//_customerProfileRepository = customerProfileRepository;
 			_emailService = emailService;
 			_emailTemplateService = emailTemplateService;
+			_serviceRepository = serviceRepository;
 		}
 
 		public async Task<ConfirmEmailResultDto> ConfirmEmail(Guid userId, string token)
@@ -310,21 +311,19 @@ namespace HSP.Service.Implementations
 				EmailConfirmToken = newToken
 			};
 		}
-		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
+		public async Task<RegisterTechnicianResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
 		{
 			if (input == null)
 				throw new ArgumentException(_localizer["InputCannotBeNull"]);
-
-			// Kiểm tra email đã tồn tại chưa
+			if (input.Password != input.ConfirmPassword)
+				throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
 			var existingUser = await _userRepository.FindByEmailAsync(input.Email);
 			if (existingUser != null)
 				throw new ValidationException(_localizer["EmailAlreadyExists"]);
 
-			// Bắt đầu transaction trên DbContext dùng chung giữa Identity và Repository
 			await _unitOfWork.BeginTransactionAsync();
 			try
 			{
-				// Tạo user với password mặc định "123Qwe@@"
 				var user = new AppUser
 				{
 					Email = input.Email,
@@ -334,51 +333,46 @@ namespace HSP.Service.Implementations
 					EmailConfirmed = false
 				};
 
-				var created = await _userRepository.CreateAsync(user, "123Qwe@@");
+				var created = await _userRepository.CreateAsync(user, input.Password);
 				if (!created.Succeeded)
 				{
 					var errors = string.Join(", ", created.Errors.Select(e => e.Description));
 					throw new ValidationException($"{_localizer["UserCreationFailed"]}: {errors}");
 				}
-				// Đảm bảo lưu user vào AppUsers
 				await _unitOfWork.SaveChangesAsync();
 
-				// Thêm role Technician
 				var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Technician);
 				if (!roleResult.Succeeded)
 				{
 					var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
 					throw new ValidationException($"{_localizer["AddToRoleFailed"]}: {errors}");
 				}
-				// Lưu quan hệ role
 				await _unitOfWork.SaveChangesAsync();
 
-				// Tạo TechnicianProfile
 				var technicianProfile = new TechnicianProfile
 				{
 					UserId = user.Id,
-					//SkillSet = input.SkillSet,
 					ExperienceYears = input.ExperienceYears,
-					//CertificatePaths = input.CertificateFilePaths?.Any() == true
-					//	? System.Text.Json.JsonSerializer.Serialize(input.CertificateFilePaths)
-					//	: null,
+					Address = input.Address,
 					DateCreated = DateTime.UtcNow,
-					DateModified = DateTime.UtcNow,
 					IsDeleted = false
 				};
-
+				if (input.ServiceIds != null && input.ServiceIds.Any())
+				{
+					var services = await _serviceRepository.GetAll().Where(x=>input.ServiceIds.Contains(x.Id)).ToListAsync();
+					foreach (var service in services)
+						technicianProfile.Services.Add(service);
+				}
 				await _technicianRepository.AddAsync(technicianProfile);
 				await _unitOfWork.SaveChangesAsync();
 
-				// Tạo email confirmation token
 				var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
-
-				// Commit transaction (bao gồm tất cả thay đổi)
+				await SendConfirmationEmailAsync(user, token);
 				await _unitOfWork.CommitTransactionAsync();
 
-				return new RegisterResponseDto
+				return new RegisterTechnicianResponseDto
 				{
-					UserId = user.Id,
+					TechnicianId = technicianProfile.Id,
 					Email = user.Email,
 					EmailConfirmToken = token
 				};
