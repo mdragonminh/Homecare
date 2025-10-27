@@ -1,6 +1,7 @@
 using HSP.Core.Dtos.FileDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace HSP.API.Controllers
 {
@@ -26,6 +27,14 @@ namespace HSP.API.Controllers
 				var result = await _fileService.UploadAsync(input);
 				return Ok(result);
 			}
+			catch (ArgumentException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
 			catch (Exception ex)
 			{
 				return StatusCode(500, ex.Message);
@@ -50,9 +59,17 @@ namespace HSP.API.Controllers
 				var results = await _fileService.UploadManyAsync(uploadDtos);
 				return Ok(results);
 			}
+			catch (ArgumentException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
 			catch (Exception ex)
 			{
-				return StatusCode(500, ex.Message);
+				return StatusCode(500, ex.Message );
 			}
 		}
 		[HttpGet("{objectTypeName}/{objectId:guid}")]

@@ -1,5 +1,6 @@
 using HSP.Core.Dtos.WarehouseDto;
 using HSP.Core.Dtos.Shared;
+using HSP.Core.Dtos.AccountDto;
 
 namespace HSP.Service.Interfaces
 {
@@ -13,5 +14,6 @@ namespace HSP.Service.Interfaces
         Task<List<WarehouseListDto>> GetAllWarehousesAsync();
         Task<bool> WarehouseExistsAsync(Guid id);
         Task<bool> IsWarehouseNameUniqueAsync(string name, Guid? excludeId = null);
+        Task<IEnumerable<UserDto>> GetWarehouseManagersAsync();
     }
 }

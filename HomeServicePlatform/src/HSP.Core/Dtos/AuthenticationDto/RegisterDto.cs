@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Resources;
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Dtos.AuthenticationDto
@@ -29,27 +30,8 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		public string Email { get; set; } = string.Empty;
 		public string EmailConfirmToken { get; set; } = string.Empty;
 	}
-	public class RegisterTechnicianResponseDto
+	public class RegisterTechnicianRequestDto : RegisterRequestDto
 	{
-		public Guid TechnicianId { get; set; }
-		public string Email { get; set; } = string.Empty;
-		public string EmailConfirmToken { get; set; } = string.Empty;
-	}
-	public class RegisterTechnicianRequestDto
-	{
-		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "EmailIsRequired")]
-		[EmailAddress(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "InvalidEmailFormat")]
-		public string Email { get; set; } = string.Empty;
-
-		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "FullNameIsRequired")]
-		[StringLength(100, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "FullNameMaxLength")]
-		public string FullName { get; set; } = string.Empty;
-
-		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberIsRequired")]
-		[Phone(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "InvalidPhoneNumberFormat")]
-		[StringLength(20, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberMaxLength")]
-		public string PhoneNumber { get; set; } = string.Empty;
-
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsIsRequired")]
 		[Range(0, 50, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsRange")]
 		public int ExperienceYears { get; set; }
@@ -57,11 +39,8 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		public List<Guid> ServiceIds { get; set; } = new List<Guid>();
 		[Required]
 		public string Address {  get; set; }
-		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordIsRequired")]
-		[StringLength(100, MinimumLength = 8, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordLengthError")]
-		public string Password { get; set; } = string.Empty;
-		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ConfirmPasswordIsRequired")]
-		[Compare("Password", ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordsDoNotMatch")]
-		public string ConfirmPassword { get; set; } = string.Empty;
+		[Required]
+		public IFormFile AvatarFile { get; set; }
+		public List<IFormFile> CertificateFiles { get; set; } = new List<IFormFile>();
 	}
 }

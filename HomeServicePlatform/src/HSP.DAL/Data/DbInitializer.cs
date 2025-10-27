@@ -66,20 +66,14 @@ namespace HSP.DAL.Data
 					new ObjectType
 					{
 						Id = Guid.NewGuid(),
-						Name = "Technician",
+						Name = RoleNames.Technician,
 						Description = "Hồ sơ kỹ thuật viên"
 					},
 					new ObjectType
 					{
 						Id = Guid.NewGuid(),
-						Name = "Customer",
+						Name = RoleNames.Customer,
 						Description = "Avatar khách hàng"
-					},
-					new ObjectType
-					{
-						Id = Guid.NewGuid(),
-						Name = "TechnicianService",
-						Description = "chứng chỉ của kỹ thuật viên"
 					}
 				};
 

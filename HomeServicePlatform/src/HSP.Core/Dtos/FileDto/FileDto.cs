@@ -33,6 +33,8 @@ namespace HSP.Core.Dtos.FileDto
 	public class FileUploadDto
 	{
 		[Required]
+		public Guid UserId { get; set; }
+		[Required]
 		public IFormFile File { get; set; }
 		public Guid ObjectId { get; set; }
 		[Required]

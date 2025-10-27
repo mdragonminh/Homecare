@@ -115,7 +115,7 @@ export function AuthButtons({
                             : loggedInUser.role === "technician"
                             ? t("ui.technician")
                             : loggedInUser.role === "equipmentmanager"
-                            ? "Quản lý kho"
+                            ? "Quản lý kho thiết bị"
                             : loggedInUser.role}
                         </span>
                       )}

@@ -3,7 +3,6 @@ using HSP.Core.Dtos.WarehouseDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace HSP.API.Controllers
@@ -14,10 +13,15 @@ namespace HSP.API.Controllers
     public class WarehouseController : ControllerBase
     {
         private readonly IWarehouseService _warehouseService;
+        private readonly IAccountManagementService _accountManagementService;
 
-        public WarehouseController(IWarehouseService warehouseService)
+        public WarehouseController(
+        IWarehouseService warehouseService,
+        IAccountManagementService accountManagementService
+        )
         {
             _warehouseService = warehouseService;
+            _accountManagementService = accountManagementService;
         }
 
         [HttpGet]
@@ -169,6 +173,27 @@ namespace HSP.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while checking warehouse", details = ex.Message });
+            }
+        }
+
+        [HttpGet("managers")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
+        public async Task<IActionResult> GetWarehouseManagers()
+        {
+            try
+            {
+                var operators = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.Operator);
+                var eqManagers = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.EquipmentManager);
+
+                var allManagers = operators.Concat(eqManagers)
+                                           .GroupBy(a => a.Id)
+                                           .Select(g => g.First());
+
+                return Ok(allManagers);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving managers", details = ex.Message });
             }
         }
     }
