@@ -116,7 +116,7 @@ namespace HSP.Service.Implementations
 			{
 				throw new UnauthorizedAccessException(_localizer["InvalidPassword"]);
 			}
-			var token = await _jwtService.GenerateJwtToken(new UserDto
+			var token = await _jwtService.GenerateTokenPairAsync(new UserDto
 			{
 				Id = user.Id,
 				Email = user.Email ?? string.Empty,
@@ -143,7 +143,7 @@ namespace HSP.Service.Implementations
 				throw new Exception(_localizer["CannotFindOrCreateUser"]);
 			}
 
-			var token = await _jwtService.GenerateJwtToken(new UserDto
+			var token = await _jwtService.GenerateTokenPairAsync(new UserDto
 			{
 				Id = user.Id,
 				Email = user.Email ?? string.Empty,

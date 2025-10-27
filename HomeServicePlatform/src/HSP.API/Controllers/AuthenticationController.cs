@@ -22,13 +22,16 @@ namespace HSP.API.Controllers
 		private readonly IAuthenticationService _authenticationService;
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly SignInManager<AppUser> _signInManager;
+		private readonly IJwtService _jwtService;
 
 		public AuthenticationController(IAuthenticationService authenticationService,
 			IOptions<UrlSettingsDto> urlOptions,
+			IJwtService jwtService,
 			SignInManager<AppUser> signInManager)
 		{
 			_authenticationService = authenticationService;
 			_urlSettings = urlOptions.Value;
+			_jwtService = jwtService;
 			_signInManager = signInManager;
 		}
 
@@ -75,6 +78,49 @@ namespace HSP.API.Controllers
 			catch (Exception)
 			{
 				return BadRequest(new { message = "An error occurred" });
+			}
+		}
+		[HttpPost("refresh-token")]
+		public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto input)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest();
+			}
+			try
+			{
+				var result = await _jwtService.RefreshTokenAsync(input.RefreshToken);
+				return Ok(result);
+			}
+			catch (UnauthorizedAccessException ex)
+			{
+				return Unauthorized(new { message = ex.Message });
+			}
+			catch (Exception)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." });
+			}
+		}
+
+		[Authorize]
+		[HttpPost("logout")]
+		public async Task<IActionResult> Logout()
+		{
+			try
+			{
+				var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+				if (string.IsNullOrEmpty(userIdClaim))
+					return Unauthorized(new { message = "Invalid user identity." });
+
+				var userId = Guid.Parse(userIdClaim);
+
+				await _jwtService.RevokeRefreshTokenAsync(userId);
+
+				return Ok(new { message = "Logout successful." });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Logout failed", detail = ex.Message });
 			}
 		}
 
