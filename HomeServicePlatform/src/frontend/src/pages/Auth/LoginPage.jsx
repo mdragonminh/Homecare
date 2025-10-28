@@ -84,16 +84,20 @@ export function LoginPage({
         const { jwtToken } = res.data;
         const decoded = jwtDecode(jwtToken);
         const userId =
+          decoded.sub ||
           decoded[
             "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
           ];
         const email =
+          decoded.email ||
           decoded[
             "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
           ];
         const name =
+          decoded["UniqueName"] ||
           decoded["name"] ||
           decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
+
         const role =
           decoded["role"] ||
           decoded[

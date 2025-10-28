@@ -1,50 +1,50 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
-import { authApi } from "../../services/authApi.jsx"; 
+import { authApi } from "../../services/authApi.jsx";
+import { toast } from "sonner";
 
 export function GoogleCallbackPage({ onLoginSuccess }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => { 
+  useEffect(() => {
     const processGoogleLogin = async () => {
       try {
-        const parseResult = authApi.parseGoogleTokenFromUrl(location.search);
+        const result = authApi.parseGoogleTokenFromUrl(location.search);
 
-        console.log("parseResult:", parseResult); // Log để kiểm tra
+        console.log("parseResult:", result);
 
-        if (!parseResult.success) {
-          alert(parseResult.message || 'Không tìm thấy token từ Google login');
-          return navigate('/login', { replace: true });
+        if (!result.success) {
+          toast.error(result.message || "Đăng nhập Google thất bại.");
+          return navigate("/login", { replace: true });
         }
 
-        const { jwtToken, requirePasswordSetup } = parseResult.data;
-        
-        console.log("requirePasswordSetup:", requirePasswordSetup); // Log để kiểm tra
+        const {
+          jwtToken,
+          refreshToken,
+          requirePasswordSetup,
+          userId,
+          email,
+          name,
+          role,
+        } = result.data;
 
-        // Giải mã token để lấy thông tin user
-        const decoded = jwtDecode(jwtToken);
-        const userId = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
-        const email = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
-        const name = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] || "";
-        const role = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || "";
-
-        // Dữ liệu đăng nhập
-        const userData = { userId, email, jwtToken, name, role, requirePasswordSetup };
-
-        if (requirePasswordSetup) {
-          console.log("Navigating to /add-password"); // Log để kiểm tra
-          onLoginSuccess(userData, true); 
-          navigate('/add-password', { replace: true }); 
-        } else {
-          console.log("Navigating to /"); // Log để kiểm tra
-          onLoginSuccess(userData);
-          navigate('/', { replace: true });
-        }
+        const userData = {
+          userId,
+          email,
+          jwtToken,
+          refreshToken: refreshToken || "",
+          name: name || "",
+          role: role || "",
+          requirePasswordSetup: !!requirePasswordSetup,
+        };
+        onLoginSuccess(userData, requirePasswordSetup);
+        navigate(requirePasswordSetup ? "/add-password" : "/", {
+          replace: true,
+        });
       } catch (error) {
-        console.error("Google login processing error:", error);
-        alert('Lỗi xử lý đăng nhập Google');
+        console.error("Google login error:", error);
+        toast.error("Lỗi xử lý đăng nhập. Vui lòng thử lại.");
         navigate("/login", { replace: true });
       }
     };
@@ -53,9 +53,15 @@ export function GoogleCallbackPage({ onLoginSuccess }) {
   }, [location.search, navigate, onLoginSuccess]);
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="p-8 bg-white rounded-lg shadow-xl text-center">
-        <p className="text-gray-700">Đang xử lý đăng nhập Google...</p>
+    <div className="flex items-center justify-center h-screen bg-gray-50">
+      <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+        <div className="flex justify-center mb-4">
+          <span className="loading loading-spinner loading-lg text-blue-600"></span>
+        </div>
+        <p className="text-lg font-medium text-gray-700">
+          Đang xử lý đăng nhập Google...
+        </p>
+        <p className="text-sm text-gray-500 mt-2">Vui lòng chờ một chút</p>
       </div>
     </div>
   );

@@ -2,11 +2,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 import { authApi } from "./services/authApi";
-import { Toaster, toast } from "sonner"; 
+import { Toaster, toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { loadGoogleMapsAPI } from "./utils/googleMapsLoader"; 
+import { loadGoogleMapsAPI } from "./utils/googleMapsLoader";
 
-import ChangePasswordModal from "./components/ChangePasswordModal"; 
+import ChangePasswordModal from "./components/ChangePasswordModal";
 
 export default function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
@@ -16,16 +16,15 @@ export default function App() {
 
   const { t } = useTranslation();
 
-  
   useEffect(() => {
     loadGoogleMapsAPI()
       .then(() => {
-        console.log(' Google Maps API loaded successfully');
+        console.log(" Google Maps API loaded successfully");
       })
       .catch((error) => {
-        console.error(' Error loading Google Maps API:', error);
+        console.error(" Error loading Google Maps API:", error);
       });
-  }, []); 
+  }, []);
 
   const updateLoggedInUserFromStorage = useCallback(() => {
     const jwtToken = localStorage.getItem("jwtToken");
@@ -33,7 +32,7 @@ export default function App() {
     const email = localStorage.getItem("email");
     const name = localStorage.getItem("name");
     const role = localStorage.getItem("role");
-    
+
     const requirePasswordSetup =
       localStorage.getItem("requirePasswordSetup") === "true";
     const mustChangePasswordOnLogin =
@@ -46,7 +45,7 @@ export default function App() {
         jwtToken,
         name: name || "",
         role: role || "",
-        requirePasswordSetup, 
+        requirePasswordSetup,
         mustChangePasswordOnLogin,
       });
 
@@ -55,7 +54,7 @@ export default function App() {
       }
     } else {
       setLoggedInUser(null);
-      setIsForceModalVisible(false); 
+      setIsForceModalVisible(false);
     }
     setIsInitialized(true);
   }, []);
@@ -71,6 +70,10 @@ export default function App() {
     const token = data.jwtToken || data.token;
     if (token) {
       localStorage.setItem("jwtToken", token);
+      if (data.refreshToken) {
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
+
       localStorage.setItem("userId", data.userId);
       localStorage.setItem("email", data.email);
       localStorage.setItem("name", data.name || "");
@@ -94,6 +97,7 @@ export default function App() {
           requirePasswordSetup: data.requirePasswordSetup,
           mustChangePasswordOnLogin: data.mustChangePasswordOnLogin,
         });
+
         setShowLoginToast(true);
 
         if (data.mustChangePasswordOnLogin) {
@@ -104,7 +108,7 @@ export default function App() {
   }, []);
 
   const handleLogout = useCallback(() => {
-    authApi.logout(); 
+    authApi.logout();
     setLoggedInUser(null);
     setIsForceModalVisible(false);
     toast.info(t("toast.logout_success") || "Đăng xuất thành công 👋", {
@@ -114,14 +118,18 @@ export default function App() {
 
   const handlePasswordSetSuccess = useCallback(() => {
     localStorage.setItem("requirePasswordSetup", "false");
-    localStorage.setItem("mustChangePasswordOnLogin", "false"); 
-    
+    localStorage.setItem("mustChangePasswordOnLogin", "false");
+
     setIsForceModalVisible(false);
-    updateLoggedInUserFromStorage(); 
+    updateLoggedInUserFromStorage();
     setShowLoginToast(false);
   }, [updateLoggedInUserFromStorage]);
 
-  const handleForceSubmit = async (currentPassword, newPassword, confirmNewPassword) => {
+  const handleForceSubmit = async (
+    currentPassword,
+    newPassword,
+    confirmNewPassword
+  ) => {
     const result = await authApi.changePassword({
       currentPassword,
       newPassword,
@@ -142,8 +150,9 @@ export default function App() {
   useEffect(() => {
     if (isForceModalVisible) {
       toast.warning("Yêu cầu đổi mật khẩu", {
-        description: "Vì lý do bảo mật, bạn cần đổi mật khẩu trước khi tiếp tục.",
-        duration: 10000, 
+        description:
+          "Vì lý do bảo mật, bạn cần đổi mật khẩu trước khi tiếp tục.",
+        duration: 10000,
         dismissible: false,
       });
     }
@@ -179,9 +188,9 @@ export default function App() {
 
       <ChangePasswordModal
         isOpen={isForceModalVisible}
-        onClose={() => {}} 
+        onClose={() => {}}
         onSubmit={handleForceSubmit}
-        isCancellable={false} 
+        isCancellable={false}
       />
     </BrowserRouter>
   );

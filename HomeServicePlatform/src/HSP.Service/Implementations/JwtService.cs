@@ -69,13 +69,13 @@ namespace HSP.Service.Implementations
 			var user = await _userRepository.FindByIdAsync(input.Id)
 				?? throw new InvalidOperationException("User not found");
 			var roles = await _userRepository.GetRolesAsync(user);
-			var claims = new List<Claim>
-		{
-			new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-			new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-			new Claim(JwtRegisteredClaimNames.UniqueName, user.FullName)
-		};
-			foreach (var role in roles)
+            var claims = new List<Claim>
+            {
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                        new Claim(ClaimTypes.Email, user.Email??string.Empty),
+                        new Claim(ClaimTypes.Name, user.FullName),
+                };
+            foreach (var role in roles)
 				claims.Add(new Claim(ClaimTypes.Role, role));
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
 			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
