@@ -1,4 +1,3 @@
-// ResetPasswordPage.jsx - ĐÃ CẬP NHẬT HOÀN TOÀN (Căn lề, Validate, Màu xanh & Thu nhỏ Form)
 
 import { useState, useEffect } from "react";
 import { Lock, Loader2, Eye, EyeOff } from "lucide-react";
@@ -18,20 +17,17 @@ export default function ResetPasswordPage() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState(""); // 'success' | 'error'
+  const [messageType, setMessageType] = useState(""); 
   const [validationError, setValidationError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Lấy userId và token từ URL
+ 
   const userId = searchParams.get("userId");
   const token = searchParams.get("token");
-
-  // Regex kiểm tra độ mạnh mật khẩu (Tối thiểu 6 ký tự, có chữ hoa, chữ thường, số)
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
   useEffect(() => {
-    // ⭐ LOGIC CHUYỂN HƯỚNG QUAN TRỌNG:
     if (!userId || !token) {
       console.log("Missing userId or token. Redirecting to /forgot-password");
       navigate("/forgot-password", { replace: true });
@@ -291,8 +287,6 @@ export default function ResetPasswordPage() {
             </button>
           </form>
         </div>
-
-        {/* Nút quay lại trang quên mật khẩu */}
         {messageType === "error" && (
           <div className="mt-4 text-center">
             <button

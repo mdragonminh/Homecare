@@ -16,8 +16,6 @@ import { useTranslation } from "react-i18next";
 import { homeApi } from "../../../services/homeApi";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-
-// Khởi tạo icon marker tùy chỉnh
 const customMarkerIcon = new L.Icon({
   iconUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
@@ -134,8 +132,6 @@ export default function AddAddressPage({ onClose, onSuccess }) {
     });
 
     setIsMapInit(true);
-
-    // Force re-render nút sau khi bản đồ khởi tạo
     setTimeout(() => {
       mapRef.current?.dispatchEvent(new Event("resize"));
     }, 100);

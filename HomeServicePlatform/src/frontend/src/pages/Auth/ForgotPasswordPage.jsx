@@ -1,4 +1,3 @@
-// ForgotPasswordPage.jsx
 
 import { useState } from 'react';
 import { Mail, Loader2, ArrowLeft } from 'lucide-react';
@@ -20,8 +19,6 @@ export default function ForgotPasswordPage({ onSwitchToLogin }) {
   const handleValidation = () => {
     let errors = {};
     let formIsValid = true;
-
-    // 1. Kiểm tra trường Email
     if (!email) {
       formIsValid = false;
       errors.email = t('validation.email_required') || "Vui lòng nhập địa chỉ email.";
@@ -39,8 +36,6 @@ export default function ForgotPasswordPage({ onSwitchToLogin }) {
     setMessage('');
     setMessageType('');
     setValidationError({});
-
-    // 🌟 1. VALIDATE TẤT CẢ TRƯỜNG NHẬP
     if (!handleValidation()) {
       return;
     }
@@ -54,7 +49,6 @@ export default function ForgotPasswordPage({ onSwitchToLogin }) {
         setMessage(res.message);
         setMessageType('success');
       } else {
-        // 🌟 2. HIỆN LỖI BACKEND (đã được làm rõ trong authApi)
         setMessage(res.message); 
         setMessageType('error');
       }
@@ -68,7 +62,6 @@ export default function ForgotPasswordPage({ onSwitchToLogin }) {
   };
 
   return (
-    // 🌟 3. CANH GIỮA TOÀN MÀN HÌNH
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 relative">
       <div className="absolute top-4 right-4 z-20"> 
         <LanguageSwitcher />
@@ -83,8 +76,6 @@ export default function ForgotPasswordPage({ onSwitchToLogin }) {
               {t('ui.forgot_password_instruction') || "Nhập email của bạn để nhận liên kết đặt lại mật khẩu."}
             </p>
           </div>
-
-          {/* Hiển thị message từ API */}
           {(message && messageType) && (
             <div className={`p-4 mb-4 rounded-xl text-sm font-medium ${messageType === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
               {message}
@@ -107,7 +98,6 @@ export default function ForgotPasswordPage({ onSwitchToLogin }) {
                   onChange={(e) => setEmail(e.target.value)}
                   className={`w-full pl-12 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${validationError.email ? 'border-red-500 focus:border-red-500' : 'border-gray-200'}`}
                   disabled={loading || messageType === 'success'}
-                  // Loại bỏ validate mặc định của trình duyệt
                   autoComplete="off"
                 />
               </div>

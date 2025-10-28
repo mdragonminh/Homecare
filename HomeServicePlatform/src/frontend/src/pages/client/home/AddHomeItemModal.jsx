@@ -4,11 +4,7 @@ import { homeApi } from "../../../services/homeApi";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-// Danh sách các loại vật phẩm (keys)
 const itemTypes = ["appliance", "furniture", "electronics", "tool", "other"];
-
-// 1. Simulate API for Suggestions
-// In a real application, you'd replace this with an actual API call (e.g., homeApi.searchBrands(query))
 const MOCK_BRANDS = [
   "Samsung",
   "LG",
@@ -29,29 +25,19 @@ const getBrandSuggestions = (query) => {
   const lowerQuery = query.toLowerCase();
   return MOCK_BRANDS.filter((brand) =>
     brand.toLowerCase().includes(lowerQuery)
-  ).slice(0, 5); // Giới hạn 5 kết quả
+  ).slice(0, 5); 
 };
-
-/**
- * Modal thêm vật phẩm/thiết bị vào một Home cụ thể.
- * @param {object} props
- * @param {string} props.homeId
- * @param {function} props.onClose
- * @param {function} props.onSuccess - Hàm gọi khi thêm thành công (để refresh data).
- */
 export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     name: "",
     brand: "",
-    type: "appliance", // Thiết lập mặc định
+    type: "appliance", 
     modelNumber: "",
     serialNumber: "",
     notes: "",
   });
-
-  // 2. Add Suggestion State
   const [brandSuggestions, setBrandSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -67,11 +53,9 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
       setBrandSuggestions(suggestions);
     }
   };
-
-  // 5. Handle Selection
   const handleSelectBrand = useCallback((selectedBrand) => {
     setFormData((prev) => ({ ...prev, brand: selectedBrand }));
-    setBrandSuggestions([]); // Ẩn danh sách gợi ý sau khi chọn
+    setBrandSuggestions([]); 
   }, []);
 
   const handleSubmit = async (e) => {
@@ -83,7 +67,6 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
       !formData.brand ||
       !formData.modelNumber
     ) {
-      // Logic kiểm tra validation giữ nguyên...
       let validationError =
         t("validation.required_fields_missing") ||
         "Vui lòng điền đầy đủ các trường bắt buộc (Tên, Loại, Thương hiệu, Mã Model).";
@@ -109,10 +92,8 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
 
     const payload = {
       ...formData,
-      homeId: homeId, // Truyền homeId vào payload
+      homeId: homeId, 
     };
-
-    // Khởi tạo promise cho API call
     const addPromise = homeApi.addHomeItem(payload);
 
     toast.promise(addPromise, {
@@ -167,14 +148,13 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
           <button
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-            disabled={loading} // Không cho đóng khi đang tải
+            disabled={loading} 
           >
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5" noValidate>
-          {/* Tên Vật Phẩm */}
           <div>
             <label
               htmlFor="name"
@@ -202,7 +182,6 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Thương Hiệu (Brand) - Có Autocomplete */}
             <div className="relative">
               <label
                 htmlFor="brand"
@@ -220,7 +199,6 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                   name="brand"
                   value={formData.brand}
                   onChange={handleChange}
-                  // Xử lý khi blur để ẩn suggestions nếu không chọn gì
                   onBlur={() =>
                     setTimeout(() => setBrandSuggestions([]), 200)
                   }
@@ -228,7 +206,7 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                   placeholder={t("form.placeholder.brand")}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                   disabled={loading}
-                  autoComplete="off" // Tắt autocomplete mặc định của trình duyệt
+                  autoComplete="off" 
                 />
               </div>
 
@@ -238,7 +216,6 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                   {brandSuggestions.map((brand) => (
                     <li
                       key={brand}
-                      // Thêm onMouseDown để ngăn input bị blur trước khi click xử lý
                       onMouseDown={(e) => {
                         e.preventDefault();
                         handleSelectBrand(brand);
@@ -311,8 +288,6 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
                 />
               </div>
             </div>
-
-            {/* Số Serial (Optional) */}
             <div>
               <label
                 htmlFor="serialNumber"
@@ -338,8 +313,6 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
               </div>
             </div>
           </div>
-
-          {/* Ghi chú (Optional) */}
           <div>
             <label
               htmlFor="notes"
@@ -364,15 +337,11 @@ export default function AddHomeItemModal({ homeId, onClose, onSuccess }) {
               />
             </div>
           </div>
-
-          {/* Error Messages */}
           {error && (
             <div className="p-3 rounded-lg text-sm font-medium bg-red-100 text-red-700">
               {error}
             </div>
           )}
-
-          {/* Footer / Submit Button */}
           <div className="pt-2 flex gap-3">
             <button
               type="button"

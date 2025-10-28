@@ -33,8 +33,6 @@ export function LoginPage({
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { t } = useTranslation();
-
-  // Regex cơ bản để kiểm tra định dạng email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   useEffect(() => {
@@ -55,13 +53,11 @@ export function LoginPage({
     e.preventDefault();
     setError("");
 
-    // 1. KIỂM TRA TRƯỜNG RỖNG
     if (!formData.emailOrPhone) {
       setError(t("validation.email_or_phone_required"));
       return;
     }
-
-    // 2. KIỂM TRA ĐỊNH DẠNG (email hoặc số điện thoại)
+    // eslint-disable-next-line no-useless-escape
     const phoneRegex = /^[+]?[\s\d\-\(\)]*$/;
     const isValidEmail = emailRegex.test(formData.emailOrPhone);
     const isValidPhone =
@@ -114,7 +110,6 @@ export function LoginPage({
           mustChangePasswordOnLogin: res.data.mustChangePasswordOnLogin,
         });
       } else {
-        // Lỗi từ authApi (thường là lỗi 400 hoặc 401 đã được xử lý trong authApi.js)
         setError(res.message || t("error.invalid_email_or_password"));
       }
     } catch (err) {
@@ -127,7 +122,6 @@ export function LoginPage({
         if (status === 400) {
           setError(backendMessage || t("error.invalid_request"));
         } else if (status === 401) {
-          // Logic kiểm tra lỗi 401 (Unauthorized)
           if (
             backendMessage &&
             (backendMessage.includes("Invalid credentials") ||
