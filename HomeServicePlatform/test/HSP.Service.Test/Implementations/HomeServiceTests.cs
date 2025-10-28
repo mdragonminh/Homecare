@@ -10,13 +10,12 @@ using Moq;
 using System.ComponentModel.DataAnnotations;
 using MockQueryable;
 using HSP.Core.Dtos.HomeDto;
-using HSP.Core.Abstractions.DataAccess;
 
 namespace HSP.Service.Test.Implementations
 {
 	public class HomeServiceTests
 	{
-		private readonly Mock<IHomeRepository> _mockHomeRepository;
+		private readonly Mock<IRepository<Home, Guid>> _mockHomeRepository;
 		private readonly Mock<IUnitOfWork> _mockUnitOfWork;
 		private readonly Mock<IGeocodingService> _mockGeocodingService;
 		private readonly Mock<IStringLocalizer<SharedResource>> _mockLocalizer;
@@ -24,7 +23,7 @@ namespace HSP.Service.Test.Implementations
 
 		public HomeServiceTests()
 		{
-			_mockHomeRepository = new Mock<IHomeRepository>();
+			_mockHomeRepository = new Mock<IRepository<Home, Guid>>();
 			_mockUnitOfWork = new Mock<IUnitOfWork>();
 			_mockGeocodingService = new Mock<IGeocodingService>();
 			_mockLocalizer = new Mock<IStringLocalizer<SharedResource>>();

@@ -1,5 +1,4 @@
-﻿using HSP.Core.Abstractions.DataAccess;
-using HSP.Core.Dtos.HomeDto;
+﻿using HSP.Core.Dtos.HomeDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
@@ -16,9 +15,9 @@ namespace HSP.Service.Implementations
 {
 	public class HomeService : BaseService, IHomeService
 	{
-		private readonly IHomeRepository _homeRepository;
+		private readonly IRepository<Home, Guid> _homeRepository;
 		private readonly IGeocodingService _geocodingService;
-		public HomeService(IGeocodingService geocodingService, IHomeRepository homeRepository,
+		public HomeService(IGeocodingService geocodingService, IRepository<Home, Guid> homeRepository,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_geocodingService = geocodingService;

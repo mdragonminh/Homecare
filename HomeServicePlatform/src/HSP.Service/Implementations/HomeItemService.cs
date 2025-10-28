@@ -1,11 +1,11 @@
-﻿using HSP.Core.Abstractions.DataAccess;
-using HSP.Core.Dtos.HomeItemDto;
+﻿using HSP.Core.Dtos.HomeItemDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
 
@@ -13,10 +13,10 @@ namespace HSP.Service.Implementations
 {
 	public class HomeItemService : BaseService, IHomeItemService
 	{
-		private readonly IHomeItemRepository _homeItemRepository;
-		private readonly IHomeRepository _homeRepository;
-		public HomeItemService(IHomeItemRepository homeItemRepository,
-			IHomeRepository homeRepository,
+		private readonly IRepository<HomeItem, Guid> _homeItemRepository;
+		private readonly IRepository<Home, Guid> _homeRepository;
+		public HomeItemService(IRepository<HomeItem, Guid> homeItemRepository,
+			IRepository<Home, Guid> homeRepository,
 		IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_homeItemRepository = homeItemRepository;
@@ -29,11 +29,7 @@ namespace HSP.Service.Implementations
 			{
 				throw new ArgumentException("input parameter can not be null");
 			}
-			var isOwner = await _homeRepository.IsUserOwnerAsync(input.HomeId, userId);
-			if (!isOwner)
-			{
-				throw new UnauthorizedAccessException("User does not have access to these home items.");
-			}
+			await VerifyHomeOwnershipAsync(input.HomeId, userId);
 			var newHomeItem = new HomeItem
 			{
 				Name = input.Name,
@@ -51,9 +47,7 @@ namespace HSP.Service.Implementations
 		}
 		public async Task<bool> DeleteHomeItemAsync(Guid homeItemId, string userId)
 		{
-			var itemToDelete = await _homeItemRepository.GetOwnedItemAsync(homeItemId, userId);
-			if (itemToDelete == null)
-				throw new ValidationException("Home item not found or you do not have permission.");
+			var itemToDelete = await GetOwnedHomeItemAsync(homeItemId, userId);
 			await _homeItemRepository.DeleteAsync(homeItemId);
 			await _unitOfWork.SaveChangesAsync();
 			return true;
@@ -80,9 +74,7 @@ namespace HSP.Service.Implementations
 		}
 		public async Task<HomeItemDto> GetHomeItemByIdAsync(Guid homeItemId, string userId)
 		{
-			var homeItem = await _homeItemRepository.GetOwnedItemAsync(homeItemId, userId);
-			if (homeItem == null)
-				throw new ValidationException("Home item not found or you do not have permission.");
+			var homeItem = await GetOwnedHomeItemAsync(homeItemId, userId);
 			var homeItemDto = new HomeItemDto
 			{
 				Id = homeItem.Id,
@@ -98,9 +90,7 @@ namespace HSP.Service.Implementations
 		}
 		public async Task<bool> UpdateHomeItemAsync(Guid homeItemId, UpdateHomeItemDto input, string userId)
 		{
-			var homeItem = await _homeItemRepository.GetOwnedItemAsync(homeItemId, userId);
-			if (homeItem == null)
-				throw new ValidationException("Home item not found or you do not have permission.");
+			var homeItem = await GetOwnedHomeItemAsync(homeItemId, userId);
 			homeItem.Name = input.Name;
 			homeItem.Brand = input.Brand;
 			homeItem.ModelNumber = input.ModelNumber;
@@ -110,6 +100,30 @@ namespace HSP.Service.Implementations
 			homeItem.DateModified = DateTime.UtcNow;
 			await _unitOfWork.SaveChangesAsync();
 			return true;
+		}
+		private async Task VerifyHomeOwnershipAsync(Guid homeId, string userId)
+		{
+			var isOwner = await _homeRepository.GetAll()
+					.Include(h => h.CustomerProfile)
+					.AnyAsync(h => h.Id == homeId && h.CustomerProfile.Id.ToString() == userId);
+			if (!isOwner)
+			{
+				throw new UnauthorizedAccessException("User does not have access to these home items.");
+			}
+		}
+		private async Task<HomeItem> GetOwnedHomeItemAsync(Guid itemId, string userId)
+		{
+			var homeItem = await _homeItemRepository.GetAll()
+					.Include(x => x.Home)
+					.ThenInclude(h => h.CustomerProfile)
+					.FirstOrDefaultAsync(i => i.Id == itemId && i.Home.CustomerProfile.Id.ToString() == userId);
+
+			if (homeItem == null)
+			{
+				throw new ValidationException("Home item not found or you do not have permission to delete this home item.");
+			}
+
+			return homeItem;
 		}
 	}
 }
