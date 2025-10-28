@@ -39,7 +39,6 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		public List<Guid> ServiceIds { get; set; } = new List<Guid>();
 		[Required]
 		public string Address {  get; set; }
-		[Required]
 		public IFormFile AvatarFile { get; set; }
 		public List<IFormFile> CertificateFiles { get; set; } = new List<IFormFile>();
 	}

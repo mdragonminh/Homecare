@@ -27,5 +27,9 @@ namespace HSP.Core.Interfaces.DataAccess
 		Task<IdentityResult> AddPasswordAsync(AppUser user, string password);
 		Task<string> GenerateUserTokenAsync(AppUser user,string tokenProvider,string purpose);
 		Task<bool> VerifyUserTokenAsync(AppUser user,string tokenProvider,string purpose,string token);
+		Task RemoveAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName);
+		Task SetAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName, string tokenValue);
+		Task<string?> GetAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName);
+		Task<AppUser?> FindByTokenAsync(string tokenValue, string tokenName = "RefreshToken", string loginProvider = "Default");
 	}
 }

@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace HSP.Core.Entities
 {
 	[Table("AppUsers")]
-	public class AppUser : IdentityUser<Guid>, IDateTracking
+	public class AppUser : IdentityUser<Guid>, IDateTracking, IUserTracking
 	{
 		[Required]
 		[StringLength(100)]
@@ -20,11 +20,10 @@ namespace HSP.Core.Entities
 		public DateTime? LastLoginAt { get; set; }
 		public DateTime? DisabledAt { get; set; }
 
-		public string? CreatedBy { get; set; }
-		public string? UpdatedBy { get; set; }
+		public Guid? ModifiedBy { get; set; }
+		public Guid? CreatedBy { get; set; }
 		public string? DisabledReason { get; set; }
 		public bool MustChangePasswordOnLogin { get; set; } = false;
-
 		public TechnicianProfile? TechnicianProfile { get; set; }
 		public DateTime DateCreated { get; set; } = DateTime.UtcNow;
 		public DateTime DateModified { get; set; }
