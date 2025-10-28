@@ -9,7 +9,7 @@ namespace HSP.DAL.Repositories
 {
 	public class Repository<T, K> : IRepository<T, K> where T : BaseEntity<K>
 	{
-		private readonly ApplicationDbContext _context;
+		protected readonly ApplicationDbContext _context;
 
 		public Repository(ApplicationDbContext context)
 		{
