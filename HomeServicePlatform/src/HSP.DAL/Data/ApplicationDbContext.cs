@@ -33,8 +33,9 @@ namespace HSP.DAL.Data
 		public DbSet<Ticket> Tickets { get; set; }
 		public DbSet<SystemSetting> SystemSettings { get; set; }
 		public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<ChatMessageHistory> ChatMessageHistories { get; set; }
 
-		protected override void OnModelCreating(ModelBuilder builder)
+        protected override void OnModelCreating(ModelBuilder builder)
 		{
 			base.OnModelCreating(builder);
 			builder.Entity<AppUser>().ToTable("AppUsers");
