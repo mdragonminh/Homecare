@@ -2,6 +2,7 @@
   "app": {
     "name": "HomeServicePlatform"
   },
+  
   "ui": {
     "validation": {
       "fullname": {
@@ -377,7 +378,9 @@
     "fetch_home_failed_toast": "Lỗi tải danh sách nhà.",
     "fetch_items_failed": "Không thể tải danh sách vật phẩm.",
     "missing_home_id": "Thiếu ID nhà để xem vật phẩm.",
-    "add_item_unknown": "Lỗi không xác định khi thêm vật phẩm."
+    "add_item_unknown": "Lỗi không xác định khi thêm vật phẩm.",
+    "invalid_email_format": "Email hoặc số điện thoại không đúng định dạng.",
+    "invalid_password": "Mật khẩu không đúng. Vui lòng thử lại."
   },
   "feature": {
     "professional_worker": {

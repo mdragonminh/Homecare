@@ -76,8 +76,11 @@ axiosClient.interceptors.response.use(
 
     const originalRequest = error.config;
     const status = error.response?.status;
+    const isLoginEndpoint = originalRequest.url.includes("/Authentication/login");
+
     if (
       status === 401 &&
+      !isLoginEndpoint && 
       originalRequest.url !== "/Authentication/refresh-token" &&
       !originalRequest._retry
     ) {

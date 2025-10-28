@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import { useState, useEffect } from "react";
 import {
   Eye,
@@ -33,8 +34,6 @@ export function LoginPage({
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   useEffect(() => {
     if (loggedInUser) {
       navigate("/");
@@ -49,111 +48,80 @@ export function LoginPage({
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    if (!formData.emailOrPhone) {
-      setError(t("validation.email_or_phone_required"));
-      return;
-    }
-    // eslint-disable-next-line no-useless-escape
-    const phoneRegex = /^[+]?[\s\d\-\(\)]*$/;
-    const isValidEmail = emailRegex.test(formData.emailOrPhone);
-    const isValidPhone =
-      phoneRegex.test(formData.emailOrPhone) &&
-      formData.emailOrPhone.length >= 8 &&
-      formData.emailOrPhone.length <= 20;
+  // === VALIDATION FRONTEND ===
+  if (!formData.emailOrPhone.trim()) {
+    setError(t("validation.email_or_phone_required"));
+    setLoading(false);
+    return;
+  }
 
-    if (!isValidEmail && !isValidPhone) {
-      setError(t("validation.email_or_phone_invalid_format"));
-      return;
-    }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[+]?[\s\d\-\(\)]*$/;
+  const isValidEmail = emailRegex.test(formData.emailOrPhone);
+  const isValidPhone = phoneRegex.test(formData.emailOrPhone) && formData.emailOrPhone.replace(/\D/g, "").length >= 8;
 
-    if (!formData.password) {
-      setError(t("validation.password_required"));
-      return;
-    }
+  if (!isValidEmail && !isValidPhone) {
+    setError(t("validation.email_or_phone_invalid_format"));
+    setLoading(false);
+    return;
+  }
 
-    setLoading(true);
+  if (!formData.password) {
+    setError(t("validation.password_required"));
+    setLoading(false);
+    return;
+  }
+  // === END VALIDATION ===
 
-    try {
-      const res = await authApi.login(formData);
+  try {
+    const res = await authApi.login(formData);
 
-      if (res.success) {
-        const { jwtToken } = res.data;
-        const decoded = jwtDecode(jwtToken);
-        const userId =
-          decoded.sub ||
-          decoded[
-            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-          ];
-        const email =
-          decoded.email ||
-          decoded[
-            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-          ];
-        const name =
-          decoded["UniqueName"] ||
-          decoded["name"] ||
-          decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
+    if (res.success) {
+      // ... login thành công (giữ nguyên)
+      const { jwtToken } = res.data;
+      const decoded = jwtDecode(jwtToken);
+      const userId = decoded.sub || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+      const email = decoded.email || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
+      const name = decoded["UniqueName"] || decoded["name"] || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
+      const role = decoded["role"] || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 
-        const role =
-          decoded["role"] ||
-          decoded[
-            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-          ];
-
-        onLoginSuccess({
-          userId,
-          email,
-          jwtToken,
-          name,
-          role,
-          requirePasswordSetup: res.data.requirePasswordSetup,
-          mustChangePasswordOnLogin: res.data.mustChangePasswordOnLogin,
-        });
-      } else {
-        setError(res.message || t("error.invalid_email_or_password"));
+      onLoginSuccess({
+        userId,
+        email,
+        jwtToken,
+        name,
+        role,
+        requirePasswordSetup: res.data.requirePasswordSetup,
+        mustChangePasswordOnLogin: res.data.mustChangePasswordOnLogin,
+      });
+    } else {
+      switch (res.errorType) {
+        case "INVALID_EMAIL_FORMAT":
+          setError(t("error.invalid_email_format"));
+          break;
+        case "INVALID_PASSWORD":
+          setError(t("error.invalid_password"));
+          break;
+        case "EMAIL_NOT_CONFIRMED":
+          setError(t("error.account_not_activated"));
+          break;
+        case "INVALID_CREDENTIALS":
+        default:
+          setError(t("error.invalid_email_or_password"));
       }
-    } catch (err) {
-      console.error("Lỗi đăng nhập:", err);
-
-      if (err.response) {
-        const status = err.response.status;
-        const backendMessage = err.response.data?.message;
-
-        if (status === 400) {
-          setError(backendMessage || t("error.invalid_request"));
-        } else if (status === 401) {
-          if (
-            backendMessage &&
-            (backendMessage.includes("Invalid credentials") ||
-              backendMessage.includes("Invalid password"))
-          ) {
-            setError(t("error.invalid_email_or_password"));
-          } else if (
-            backendMessage &&
-            backendMessage.includes("not confirmed")
-          ) {
-            setError(t("error.account_not_activated"));
-          } else {
-            setError(t("error.account_not_activated"));
-          }
-        } else if (status === 500) {
-          setError(t("error.server_internal"));
-        } else {
-          setError(t("error.unknown", { status }));
-        }
-      } else if (err.request) {
-        setError(t("error.network"));
-      } else {
-        setError(t("error.unexpected"));
-      }
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (err) {
+    console.error("Login error:", err);
+    setError(t("error.network"));
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleGoogleLogin = () => {
     authApi.googleLogin();

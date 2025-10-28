@@ -174,8 +174,8 @@ export const authApi = {
         password,
       });
 
+      // === THÀNH CÔNG ===
       const tokenData = res.data?.jwtToken;
-
       if (
         res.status === 200 &&
         tokenData?.accessToken &&
@@ -188,20 +188,21 @@ export const authApi = {
         const name =
           decodedToken.UniqueName || decodedToken.name || decodedToken.Fullname;
         const role = decodedToken.role || decodedToken.Role;
+
         localStorage.setItem("jwtToken", accessToken);
         localStorage.setItem("refreshToken", tokenData.refreshToken);
         localStorage.setItem("userId", userId || "");
         localStorage.setItem("email", email || "");
-        localStorage.setItem("name", name || ""); 
-        localStorage.setItem("role", role || ""); 
+        localStorage.setItem("name", name || "");
+        localStorage.setItem("role", role || "");
 
         return {
           success: true,
           data: {
-            userId: userId,
-            email: email,
-            name: name,
-            role: role,
+            userId,
+            email,
+            name,
+            role,
             jwtToken: accessToken,
             refreshToken: tokenData.refreshToken,
             requirePasswordSetup: res.data.requirePasswordSetup || false,
@@ -211,32 +212,24 @@ export const authApi = {
         };
       }
 
-      return {
-        success: false,
-        message:
-          "Đăng nhập thất bại. Sai định dạng hoặc thiếu token phản hồi từ server.",
-      };
+      return { success: false, message: "Phản hồi không hợp lệ từ server." };
     } catch (error) {
       console.error("Login error:", error);
 
-      const responseData = error.response?.data;
-      if (
-        responseData &&
-        typeof responseData === "object" &&
-        !Array.isArray(responseData)
-      ) {
-        return { success: false, validationErrors: responseData };
+      const status = error.response?.status;
+      const message = error.response?.data?.message || "";
+      if (status === 400 && message === "InvalidEmail") {
+        return { success: false, errorType: "INVALID_EMAIL_FORMAT" };
       }
-
-      const message =
-        responseData?.message ||
-        (error.response?.status === 401
-          ? "Email hoặc mật khẩu không đúng."
-          : "Đăng nhập thất bại.");
-      return { success: false, message };
+      if (status === 401 && message === "Mật khẩu không hợp lệ") {
+        return { success: false, errorType: "INVALID_PASSWORD" };
+      }
+      if (status === 401 && message === "Email chưa được xác thực") {
+        return { success: false, errorType: "EMAIL_NOT_CONFIRMED" };
+      }
+      return { success: false, errorType: "INVALID_CREDENTIALS" };
     }
   },
-
   refreshToken: async (refreshToken) => {
     try {
       const res = await axiosClient.post("/Authentication/refresh-token", {
@@ -383,7 +376,7 @@ export const authApi = {
       const requirePasswordSetup =
         params.get("requirePasswordSetup") === "true";
 
-      console.log("Raw token from URL:", token); 
+      console.log("Raw token from URL:", token);
       if (
         !token ||
         typeof token !== "string" ||
@@ -404,7 +397,7 @@ export const authApi = {
           "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
         ];
       const name =
-        decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] || 
+        decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ||
         decoded.UniqueName ||
         decoded.name ||
         decoded.given_name ||
@@ -455,7 +448,7 @@ export const authApi = {
     }
     [
       "jwtToken",
-      "refreshToken", 
+      "refreshToken",
       "userId",
       "email",
       "name",

@@ -271,7 +271,8 @@
       "notes": "Notes",
       "username": "Username",
       "new_password": "New Password",
-      "confirm_new_password": "Confirm New Password"
+      "confirm_new_password": "Confirm New Password",
+      "email_or_phone": "Email or Phone Number"
     },
     "placeholder": {
       "fullname": "Enter your full name",
@@ -288,7 +289,8 @@
       "operator_username": "operator001",
       "new_password": "Enter new password",
       "search_radius": "Search radius (Km)",
-      "address": " Enter address to search on map"
+      "address": " Enter address to search on map",
+      "email_or_phone": "Enter your email or phone number"
     },
     "usertype": {
       "customer": "Customer",
@@ -298,6 +300,8 @@
   "validation": {
     "email_required": "Please enter your email.",
     "email_invalid_format": "Invalid email format.",
+    "email_or_phone_required": "Please enter your email or phone number.",
+    "email_or_phone_invalid_format": "Invalid email or phone number format.",
     "password_required": "Please enter your password.",
     "password_min_length": "Password must be at least 8 characters!",
     "password_uppercase": "Password must contain at least one uppercase letter!",
@@ -372,7 +376,9 @@
     "fetch_home_failed_toast": "Error loading home list.",
     "fetch_items_failed": "Failed to load the item list.",
     "missing_home_id": "Missing home ID to view items.",
-    "add_item_unknown": "Unknown error while adding item."
+    "add_item_unknown": "Unknown error while adding item.",
+    "invalid_email_format": "Invalid email and phone number format.",
+    "invalid_password": "Invalid password. Please try again."
   },
   "feature": {
     "professional_worker": {
