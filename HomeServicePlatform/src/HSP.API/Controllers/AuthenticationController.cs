@@ -2,16 +2,19 @@
 using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Entities;
+using HSP.Core.Interfaces.External;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Razor.Templating.Core;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 namespace HSP.API.Controllers
 {
@@ -23,15 +26,18 @@ namespace HSP.API.Controllers
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly SignInManager<AppUser> _signInManager;
 		private readonly IJwtService _jwtService;
+		private readonly IRedisCacheService _redisCacheService;
 
 		public AuthenticationController(IAuthenticationService authenticationService,
 			IOptions<UrlSettingsDto> urlOptions,
 			IJwtService jwtService,
+			IRedisCacheService redisCacheService,
 			SignInManager<AppUser> signInManager)
 		{
 			_authenticationService = authenticationService;
 			_urlSettings = urlOptions.Value;
 			_jwtService = jwtService;
+			_redisCacheService = redisCacheService;
 			_signInManager = signInManager;
 		}
 
@@ -164,11 +170,28 @@ namespace HSP.API.Controllers
 		public async Task<IActionResult> GoogleCallback()
 		{
 			var loginResponse = await _authenticationService.GoogleLogin();
-			var frontendSuccessUrl = _urlSettings.FrontendLoginSuccess;
-			var redirectUrl = $"{frontendSuccessUrl}?accesstoken={loginResponse.JwtToken.AccessToken}&refreshtoken={loginResponse.JwtToken.RefreshToken}&requirePasswordSetup={loginResponse.RequirePasswordSetup}";
+			var code = Guid.NewGuid().ToString("N");
+			await _redisCacheService.SetAsync($"auth:{code}", 
+				JsonSerializer.Serialize(loginResponse), 
+				TimeSpan.FromMinutes(3));
+			var redirectUrl = $"{_urlSettings.FrontendLoginSuccess}?code={code}";
 			return Redirect(redirectUrl);
 		}
+		[HttpGet("exchange-token")]
+		[AllowAnonymous]
+		public async Task<IActionResult> ExchangeToken([FromQuery] string code)
+		{
+			var data = await _redisCacheService.GetAsync<string>($"auth:{code}");
 
+			if (string.IsNullOrEmpty(data))
+				return Unauthorized("Code invalid or expired");
+
+			var token = JsonSerializer.Deserialize<LoginResponseDto>(data);
+
+			await _redisCacheService.RemoveAsync($"auth:{code}");
+
+			return Ok(token);
+		}
 
 		[HttpGet("confirm-email")]
 		[AllowAnonymous]

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { authApi } from "../../services/authApi.jsx";
 import { toast } from "sonner";
@@ -6,11 +6,14 @@ import { toast } from "sonner";
 export function GoogleCallbackPage({ onLoginSuccess }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const executedRef = useRef(false);
 
   useEffect(() => {
     const processGoogleLogin = async () => {
+      if (executedRef.current) return;
+      executedRef.current = true;
       try {
-        const result = authApi.parseGoogleTokenFromUrl(location.search);
+        const result = await authApi.parseGoogleTokenFromUrl(location.search);
 
         console.log("parseResult:", result);
 
@@ -38,10 +41,14 @@ export function GoogleCallbackPage({ onLoginSuccess }) {
           role: role || "",
           requirePasswordSetup: !!requirePasswordSetup,
         };
+
         onLoginSuccess(userData, requirePasswordSetup);
-        navigate(requirePasswordSetup ? "/add-password" : "/", {
-          replace: true,
-        });
+
+        if (requirePasswordSetup) {
+          navigate("/add-password", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
       } catch (error) {
         console.error("Google login error:", error);
         toast.error("Lỗi xử lý đăng nhập. Vui lòng thử lại.");

@@ -366,36 +366,37 @@ export const authApi = {
     const API_URL = axiosClient.defaults.baseURL;
     window.location.href = `${API_URL}/Authentication/google-login`;
   },
-
-  parseGoogleTokenFromUrl: (urlSearch) => {
+  exchangeToken: (code) => {
+    return axiosClient.get(`/Authentication/exchange-token?code=${code}`);
+  },
+  parseGoogleTokenFromUrl: async (urlSearch) => {
     try {
       const params = new URLSearchParams(urlSearch);
-      const token = params.get("accesstoken") || params.get("token");
-      const refreshToken =
-        params.get("refreshtoken") || params.get("refreshToken") || "";
-      const requirePasswordSetup =
-        params.get("requirePasswordSetup") === "true";
-
-      console.log("Raw token from URL:", token);
-      if (
-        !token ||
-        typeof token !== "string" ||
-        token.split(".").length !== 3
-      ) {
-        console.error("Invalid token:", token);
-        return { success: false, message: "Token không hợp lệ." };
+      const code = params.get("code");
+      if (!code) {
+        console.error("Missing code param in URL.");
+        return { success: false, message: "Thiếu mã xác thực Google." };
       }
-      const decoded = jwtDecode(token);
+
+      const response = await axiosClient.get(`/Authentication/exchange-token?code=${code}`);
+      const loginData = response.data;
+      const tokenData = loginData.jwtToken;
+      console.log("login data received:", loginData);
+      console.log("Token data received:", tokenData);
+      if (!tokenData || !tokenData.accessToken) {
+        return { success: false, message: "Không nhận được access token." };
+      }
+
+      const requirePasswordSetup = loginData.requirePasswordSetup || false;
+
+      const decoded = jwtDecode(tokenData.accessToken);
+
       const userId =
         decoded.sub ||
-        decoded[
-          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-        ];
+        decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
       const email =
         decoded.email ||
-        decoded[
-          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-        ];
+        decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
       const name =
         decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ||
         decoded.UniqueName ||
@@ -404,39 +405,36 @@ export const authApi = {
         "";
       const role =
         decoded.role ||
-        decoded[
-          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-        ] ||
+        decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
         "";
-      localStorage.setItem("jwtToken", token);
-      localStorage.setItem("refreshToken", refreshToken);
+
+      localStorage.setItem("jwtToken", tokenData.accessToken);
+      localStorage.setItem("refreshToken", tokenData.refreshToken);
       localStorage.setItem("userId", userId || "");
       localStorage.setItem("email", email || "");
       localStorage.setItem("name", name);
       localStorage.setItem("role", role);
-      localStorage.setItem(
-        "requirePasswordSetup",
-        requirePasswordSetup.toString()
-      );
+      localStorage.setItem("requirePasswordSetup", requirePasswordSetup.toString());
 
       return {
         success: true,
         data: {
-          jwtToken: token,
-          refreshToken,
-          requirePasswordSetup,
+          jwtToken: tokenData.accessToken,
+          refreshToken: tokenData.refreshToken,
+          accessTokenExpiresAt: tokenData.accessTokenExpiresAt,
+          refreshTokenExpiresAt: tokenData.refreshTokenExpiresAt,
           userId,
           email,
           name,
           role,
+          requirePasswordSetup
         },
       };
     } catch (error) {
-      console.error("Parse token error:", error);
-      return { success: false, message: "Lỗi giải mã token." };
+      console.error("Exchange or decode error:", error);
+      return { success: false, message: "Lỗi xử lý đăng nhập Google." };
     }
   },
-
   logout: async () => {
     try {
       await axiosClient.post("/Authentication/logout");

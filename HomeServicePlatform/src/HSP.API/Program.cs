@@ -83,12 +83,12 @@ namespace HSP.API
 				await initializer.InitializeAsync();
 			}
 
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseHttpsRedirection();
-            }
+			if (!app.Environment.IsDevelopment())
+			{
+				app.UseHttpsRedirection();
+			}
 
-            app.UseStaticFiles(); 
+			app.UseStaticFiles();
 
 			app.UseCors(CorsConstants.AllowFrontendPolicy);
 
