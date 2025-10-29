@@ -40,7 +40,7 @@
       "note": "After changing your password, you will need to log in again with the new password.",
       "error_current_required": "Please enter your current password",
       "error_new_required": "Please enter a new password",
-      "error_new_length": "New password must be at least 6 characters",
+      "error_new_length": "New password must be at least 8 characters, including uppercase, lowercase, number, and special character",
       "error_confirm_required": "Please confirm your new password",
       "error_confirm_mismatch": "Confirmation password does not match",
       "errors_general": "Current password is incorrect",
