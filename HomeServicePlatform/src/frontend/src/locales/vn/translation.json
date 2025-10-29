@@ -41,7 +41,7 @@
       "note": "Sau khi đổi mật khẩu, bạn sẽ cần đăng nhập lại với mật khẩu mới.",
       "error_current_required": "Vui lòng nhập mật khẩu hiện tại",
       "error_new_required": "Vui lòng nhập mật khẩu mới",
-      "error_new_length": "Mật khẩu mới có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
+      "error_new_length": "Mật khẩu mới phải có ít nhất 6 ký tự",
       "error_confirm_required": "Vui lòng xác nhận mật khẩu mới",
       "error_confirm_mismatch": "Mật khẩu xác nhận không khớp",
       "errors_general": "Mật khẩu hiện tại không đúng",

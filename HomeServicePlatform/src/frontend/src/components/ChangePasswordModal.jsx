@@ -49,7 +49,7 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit, isCancellable = true }
     
     if (!formData.newPassword.trim()) {
   newErrors.newPassword = t("ui.change_password_modal.error_new_required");
-    } else if (formData.newPassword.length < 8) {
+    } else if (formData.newPassword.length < 6) {
   newErrors.newPassword = t("ui.change_password_modal.error_new_length");
     }
     
