@@ -1,12 +1,13 @@
 ﻿using HSP.Core.Dtos.ChatbotDto;
 using HSP.Core.Dtos.ServiceRequestDto;
-using HSP.Core.Dtos.ChatbotDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
+using HSP.Core.Resources;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Localization;
 using OpenAI.Chat;
 using System.Text.Json;
 
@@ -19,18 +20,21 @@ namespace HSP.Service.Implementations
         private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
         private readonly IRepository<ChatMessageHistory, Guid> _historyRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IStringLocalizer<SharedResource> _localizer;
 
         public ChatbotService(
             IConfiguration configuration,
             IServiceRequestService serviceRequestService,
             IRepository<Core.Entities.Service, Guid> serviceRepository,
             IRepository<ChatMessageHistory, Guid> historyRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IStringLocalizer<SharedResource> localizer)
         {
             _serviceRequestService = serviceRequestService;
             _serviceRepository = serviceRepository;
             _historyRepository = historyRepository;
             _unitOfWork = unitOfWork;
+            _localizer = localizer;
 
             var apiKey = configuration["OPENAI_API_KEY"];
             if (string.IsNullOrEmpty(apiKey))
@@ -63,26 +67,16 @@ namespace HSP.Service.Implementations
             var bookingSchema = new BookingToolParameters { Properties = toolProperties };
             var schemaBytes = JsonSerializer.SerializeToUtf8Bytes(bookingSchema);
 
+            string toolDescription = _localizer["ChatbotToolDescription"];
+
             var createBookingTool = ChatTool.CreateFunctionTool(
                 functionName: "create_booking_request",
-                functionDescription: "Tạo một yêu cầu đặt dịch vụ (booking) mới cho người dùng. Chỉ gọi khi đã có ĐỦ 3 thông tin: Address, DesireDateTime, và ServiceIds.",
+                functionDescription: toolDescription,
                 functionParameters: BinaryData.FromBytes(schemaBytes)
             );
 
             // System Prompt
-            string systemPrompt = $$"""
-                Bạn LÀ trợ lý ảo của Home Service Platform. Vai trò DUY NHẤT của bạn là thu thập thông tin đặt lịch.
-                ## Quy tắc BẮT BUỘC:
-                1.  Nhiệm vụ của bạn là lấy 3 thông tin: `Address` (Địa chỉ), `DesireDateTime` (Thời gian), và `ServiceIds` (Dịch vụ).
-                2.  **PHẢI HỎI LẠI** nếu thiếu bất kỳ thông tin nào. Ví dụ:
-                    * Nếu user chỉ nói "dọn nhà", hãy hỏi: "Bạn muốn dọn nhà ở đâu và vào lúc nào ạ?"
-                    * Nếu user nói "dọn nhà ở Hòa Lạc", hãy hỏi: "Bạn muốn dọn vào lúc nào?"
-                3.  **CHỈ** gọi hàm `create_booking_request` khi và CHỈ KHI bạn đã có CẢ 3 thông tin.
-                4.  **KHÔNG ĐƯỢC** tự trả lời lỗi. Nếu bạn không hiểu, hãy hỏi lại.
-                ## Danh sách dịch vụ (Name và Id):
-                {{servicesJsonForPrompt}}
-                Hãy dùng đúng Id này khi gọi hàm.
-                """;
+            string systemPrompt = _localizer["ChatbotSystemPrompt", servicesJsonForPrompt];
 
             List<ChatMessage> messages = new List<ChatMessage>
             {
@@ -183,7 +177,7 @@ namespace HSP.Service.Implementations
                                     Role = "Assistant",
                                     ToolCallId = toolCall.Id,
                                     FunctionName = toolCall.FunctionName,
-                                    FunctionArguments = toolCall.FunctionArguments.ToString(), 
+                                    FunctionArguments = toolCall.FunctionArguments.ToString(),
                                     DateCreated = DateTime.UtcNow,
                                     DateModified = DateTime.UtcNow
                                 });

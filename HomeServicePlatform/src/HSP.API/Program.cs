@@ -84,7 +84,7 @@ namespace HSP.API
 				await initializer.InitializeAsync();
 			}
 
-			app.UseHttpsRedirection();
+			//app.UseHttpsRedirection();
 
 			app.UseStaticFiles(); // Enable static files serving
 
