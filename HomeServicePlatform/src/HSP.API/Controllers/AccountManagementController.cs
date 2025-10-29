@@ -1,5 +1,7 @@
-using HSP.Core.Constans;
+﻿using HSP.Core.Constans;
 using HSP.Core.Dtos.AccountDto;
+using HSP.Core.Interfaces.External;
+using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,10 +16,13 @@ namespace HSP.API.Controllers
     public class AccountManagementController : ControllerBase
     {
         private readonly IAccountManagementService _accountManagementService;
-
-        public AccountManagementController(IAccountManagementService accountManagementService)
+        private readonly IEmailService _emailService;
+        public AccountManagementController(
+            IAccountManagementService accountManagementService,
+            IEmailService emailService)
         {
-            _accountManagementService = accountManagementService;
+            _accountManagementService = accountManagementService;   
+            _emailService = emailService;
         }
 
         /// <summary>
@@ -78,21 +83,77 @@ namespace HSP.API.Controllers
                 }
 
                 var accountId = await _accountManagementService.CreateAccountAsync(input, currentUserId);
+
+                try
+                {
+                    string displayName = string.IsNullOrWhiteSpace(input.FullName) ? input.Username : input.FullName;
+
+                    string emailBody = $@"
+                <h1>Chào mừng bạn đến với hệ thống HSP!</h1>
+                <p>Xin chào {displayName},</p>
+                <p>Tài khoản của bạn đã được quản trị viên khởi tạo thành công.</p>
+                <p>Dưới đây là thông tin đăng nhập của bạn:</p>
+                <ul>
+                    <li><strong>Email (Tên đăng nhập):</strong> {input.Email}</li>
+                    <li><strong>Mật khẩu:</strong> {input.Password}</li>
+                    <li><strong>Vai trò (Role):</strong> {input.Role}</li>
+                </ul>
+                <p>Vui lòng đăng nhập vào hệ thống và đổi mật khẩu sớm nhất có thể.</p>
+                <p>Trân trọng.</p>";
+
+                    var emailDto = new EmailDto
+                    {
+                        ToEmail = input.Email,
+                        Subject = "HSP - Thông tin tài khoản mới",
+                        HtmlBody = emailBody
+                    };
+
+                    await _emailService.SendEmailAsync(emailDto);
+                }
+                catch (Exception emailEx)
+                {
+                    throw new InvalidOperationException($"Account was created (ID: {accountId}), but failed to send notification email. Error: {emailEx.Message}", emailEx);
+                }
+
                 var createdAccount = await _accountManagementService.GetAccountByIdAsync(accountId);
 
                 return CreatedAtAction(
                     nameof(GetAccountById),
                     new { accountId },
-                    new { message = "Account created successfully", account = createdAccount }
+                    new { message = "Account created successfully and notification email sent", account = createdAccount }
                 );
             }
             catch (ValidationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                var errors = new Dictionary<string, string[]>();
+                var message = ex.Message;
+
+                if (message.StartsWith("username:"))
+                {
+                    errors.Add("username", new[] { message.Substring("username:".Length) });
+                }
+                else if (message.StartsWith("password:"))
+                {
+                    errors.Add("password", new[] { message.Substring("password:".Length) });
+                }
+                else if (message.ToLower().Contains("email"))
+                {
+                    errors.Add("email", new[] { message });
+                }
+                else if (message.ToLower().Contains("username"))
+                {
+                    errors.Add("username", new[] { message });
+                }
+                else
+                {
+                    errors.Add("general", new[] { message });
+                }
+
+                return BadRequest(new { errors = errors });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while creating account", details = ex.Message });
+                return StatusCode(500, new { message = "An error occurred during the account creation process", details = ex.Message });
             }
         }
 

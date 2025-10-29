@@ -87,7 +87,7 @@ namespace HSP.Service.Implementations
                     EmailConfirmed = user.EmailConfirmed,
                     CreatedAt = user.DateCreated,
                     LastLoginAt = user.LastLoginAt,
-                    CreatedBy = user.CreatedBy
+                    CreatedBy = user.CreatedBy.ToString()
                 });
             }
 
@@ -122,7 +122,7 @@ namespace HSP.Service.Implementations
                 EmailConfirmed = user.EmailConfirmed,
                 CreatedAt = user.DateCreated,
                 LastLoginAt = user.LastLoginAt,
-                CreatedBy = user.CreatedBy
+                CreatedBy = user.CreatedBy.ToString()
             };
         }
 
@@ -165,14 +165,30 @@ namespace HSP.Service.Implementations
                 EmailConfirmed = true, // Auto-confirm for admin created accounts
                 IsActive = true,
                 DateCreated = DateTime.UtcNow,
-                CreatedBy = createdById
+                CreatedBy = Guid.Parse(createdById),
+                MustChangePasswordOnLogin = true
             };
 
             var result = await _userManager.CreateAsync(user, input.Password);
             if (!result.Succeeded)
             {
+
+                foreach (var error in result.Errors)
+                {
+                    if (error.Code == "InvalidUserName")
+                    {
+                        throw new ValidationException($"username:{error.Description}");
+                    }
+
+                    if (error.Code.StartsWith("Password"))
+                    {
+                        throw new ValidationException($"password:{error.Description}");
+                    }
+                }
+
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 throw new ValidationException(_localizer["FailedToCreateAccount", errors]);
+
             }
 
             // Add role to user
@@ -221,7 +237,7 @@ namespace HSP.Service.Implementations
             if (hasChanges)
             {
                 user.DateModified = DateTime.UtcNow;
-                user.UpdatedBy = updatedById;
+                user.ModifiedBy = Guid.Parse(updatedById);
 
                 var result = await _userManager.UpdateAsync(user);
                 return result.Succeeded;
@@ -237,7 +253,7 @@ namespace HSP.Service.Implementations
 
             user.IsActive = false;
             user.DateModified = DateTime.UtcNow;
-            user.UpdatedBy = disabledById;
+            user.ModifiedBy = Guid.Parse(disabledById);
             user.DisabledReason = input.Reason;
             user.DisabledAt = DateTime.UtcNow;
 
@@ -252,7 +268,7 @@ namespace HSP.Service.Implementations
 
             user.IsActive = true;
             user.DateModified = DateTime.UtcNow;
-            user.UpdatedBy = enabledById;
+            user.ModifiedBy = Guid.Parse(enabledById);
             user.DisabledReason = null;
             user.DisabledAt = null;
 
@@ -268,7 +284,7 @@ namespace HSP.Service.Implementations
             // Soft delete by disabling the account
             user.IsActive = false;
             user.DateModified = DateTime.UtcNow;
-            user.UpdatedBy = deletedById;
+            user.ModifiedBy = Guid.Parse(deletedById);
             user.DisabledReason = "Account deleted by administrator";
             user.DisabledAt = DateTime.UtcNow;
 
@@ -296,7 +312,7 @@ namespace HSP.Service.Implementations
                     EmailConfirmed = user.EmailConfirmed,
                     CreatedAt = user.DateCreated,
                     LastLoginAt = user.LastLoginAt,
-                    CreatedBy = user.CreatedBy
+                    CreatedBy = user.CreatedBy.ToString()
                 });
             }
 

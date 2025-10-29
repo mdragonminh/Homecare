@@ -1,4 +1,3 @@
-// RegisterPage.jsx - ĐÃ SỬA ĐỔI HOÀN TOÀN THEO YÊU CẦU
 
 import { useState, useEffect } from "react";
 import {
@@ -38,13 +37,13 @@ export default function RegisterPage({
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState(""); // success | warning | error
+  const [messageType, setMessageType] = useState(""); 
   const navigate = useNavigate();
 
-  // Regex cơ bản để kiểm tra định dạng email và số điện thoại
+  
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  // 
-  const phoneRegex = /^[+]?[\s\d\-\(\)]*$/; 
+  // eslint-disable-next-line no-useless-escape
+  const phoneRegex = /^[+]?[\s\d\-\(\)]*$/;
 
   useEffect(() => {
     if (loggedInUser) {
@@ -99,7 +98,6 @@ export default function RegisterPage({
       setMessageType("error");
       return;
     }
-    // ✅ THÊM: KIỂM TRA ĐỊNH DẠNG EMAIL (sau khi tắt noValidate)
     if (!emailRegex.test(formData.email)) {
       setMessage(t("validation.email_invalid_format"));
       setMessageType("error");
@@ -175,8 +173,6 @@ export default function RegisterPage({
       } else {
         const errorMessage = res.message?.toLowerCase() || "";
         console.log("Error message from res:", errorMessage);
-
-        // ✅ CẢI THIỆN: LOGIC KIỂM TRA LỖI EMAIL ĐÃ TỒN TẠI (LỖI 400 không phải là Axios Error)
         if (
           errorMessage.includes("email") &&
           (errorMessage.includes("exist") ||
@@ -375,8 +371,6 @@ export default function RegisterPage({
                     {message}
                   </div>
                 )}
-
-                {/* ✅ SỬA: Thêm noValidate vào form để tắt validation mặc định của trình duyệt */}
                 <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                   <div className="space-y-1">
                     <label

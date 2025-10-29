@@ -362,6 +362,15 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Username already exist.
+        /// </summary>
+        public static string UsernameAlreadyExists {
+            get {
+                return ResourceManager.GetString("UsernameAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to User not found.
         /// </summary>
         public static string UserNotFound {

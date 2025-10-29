@@ -31,9 +31,6 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-// ==========================================================
-// HOOK useDebounce
-// ==========================================================
 function useDebounce(value, delay) {
     const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -50,9 +47,6 @@ function useDebounce(value, delay) {
     return debouncedValue;
 }
 
-// ==========================================================
-// Constants và Icons
-// ==========================================================
 const homeTypes = ["apartment", "house", "villa", "condo"];
 
 const homeTypeLabels = {
@@ -70,10 +64,6 @@ const homeTypeIcons = {
     villa: <Map className="w-4 h-4 text-current" />,
     condo: <Building className="w-4 h-4 text-current" />,
 };
-
-// ==========================================================
-// Component Dropdown Lọc
-// ==========================================================
 const FilterDropdown = ({ t, filterType, setFilterType, homeTypeLabels, homeTypeIcons, className = "" }) => {
     const [isOpen, setIsOpen] = useState(false);
     const currentLabelKey = homeTypeLabels[filterType] || homeTypeLabels.all;
@@ -133,10 +123,6 @@ const FilterDropdown = ({ t, filterType, setFilterType, homeTypeLabels, homeType
         </div>
     );
 };
-
-// ==========================================================
-// Component Chính: HomeManagementPage
-// ==========================================================
 export default function HomeManagementPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -166,7 +152,7 @@ export default function HomeManagementPage() {
         if (res.success) {
             const mappedHomes = res.data.items.map((item) => ({
                 ...item,
-                ownerName: item.customerProfileName || "ui.no_name",  // Dùng key thay vì t()
+                ownerName: item.customerProfileName || "ui.no_name",  
                 type: item.type ? item.type.toLowerCase() : "house",
             }));
             setHomes(mappedHomes);
@@ -174,15 +160,15 @@ export default function HomeManagementPage() {
             setTotalPages(res.data.totalPages);
             setTotalCount(res.data.totalCount);
         } else {
-            setError(res.message || "error.fetch_failed");  // Dùng key thay vì t()
+            setError(res.message || "error.fetch_failed");  
         }
     } catch (error) {
         console.error("Error fetching homes:", error);
-        setError("error.fetch_failed");  // Dùng key
+        setError("error.fetch_failed");  
     } finally {
         setLoading(false);
     }
-}, [debouncedSearchTerm, filterType]);  // Xóa t khỏi dependency
+}, [debouncedSearchTerm, filterType]); 
     const handleCloseAddModal = () => {
         setShowAddModal(false);
     };
@@ -322,7 +308,6 @@ export default function HomeManagementPage() {
     return (
         <div className="min-h-screen bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-                {/* HÀNG 1: TIÊU ĐỀ, NÚT QUAY LẠI */}
                 <div className="mb-8 flex items-center">
                     <button
                         onClick={() => navigate(-1)}
@@ -335,8 +320,6 @@ export default function HomeManagementPage() {
                         {t("ui.home_management")}
                     </h1>
                 </div>
-
-                {/* HÀNG 2: STATS, SEARCH, FILTER, ADD BUTTON */}
                 <div className="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6 w-full">
                     {/* Stats/Total Count */}
                     <div className="bg-white rounded-xl px-6 py-3 shadow-sm border border-gray-200 flex items-center justify-center h-12 min-w-[180px]">
@@ -344,8 +327,6 @@ export default function HomeManagementPage() {
                             {t("ui.showing")} {totalCount} {t("ui.homes")}
                         </span>
                     </div>
-
-                    {/* Search Bar, Filter Dropdown, và Add Button */}
                     <div className="flex flex-col sm:flex-row gap-3 w-full lg:flex-1 items-center">
                         {/* Search Bar */}
                         <div className="relative flex-grow w-full sm:w-auto">
@@ -359,8 +340,6 @@ export default function HomeManagementPage() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-
-                        {/* Dropdown Lọc */}
                         <FilterDropdown
                             t={t}
                             filterType={filterType}

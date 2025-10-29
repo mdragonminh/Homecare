@@ -4,6 +4,7 @@ namespace HSP.Core.Dtos.ServiceRequestDto
 {
 	public class CustomerCreateBookingDto
 	{
+		[Required]
 		public string Address { get; set; }
 		[Required]
 		public List<Guid> ServiceIds { get; set; }

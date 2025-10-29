@@ -1,7 +1,9 @@
 ﻿using HSP.Core.Constans;
+using HSP.Core.Constants;
 using HSP.Core.Dtos.AccountDto;
 using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Dtos.FileDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
@@ -11,6 +13,7 @@ using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
@@ -24,21 +27,23 @@ namespace HSP.Service.Implementations
 	{
 		private readonly IUserRepository _userRepository;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
-		//private readonly IRepository<CustomerProfile, Guid> _customerProfileRepository;
 		private readonly SignInManager<AppUser> _signInManager;
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly IJwtService _jwtService;
 		private readonly IEmailService _emailService;
 		private readonly IEmailTemplateService _emailTemplateService;
+		private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
+		private readonly IFileService _fileService;
 
 		public AuthenticationService(IUserRepository userRepository,
 			IOptions<UrlSettingsDto> urlOptions,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
-			//IRepository<CustomerProfile, Guid> customerProfileRepository,
 			SignInManager<AppUser> signInManager,
 			IJwtService jwtService,
 			IEmailService emailService,
 			IEmailTemplateService emailTemplateService,
+			IRepository<Core.Entities.Service, Guid> serviceRepository,
+			IFileService fileService,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_userRepository = userRepository;
@@ -46,9 +51,10 @@ namespace HSP.Service.Implementations
 			_technicianRepository = technicianRepository;
 			_signInManager = signInManager;
 			_jwtService = jwtService;
-			//_customerProfileRepository = customerProfileRepository;
 			_emailService = emailService;
 			_emailTemplateService = emailTemplateService;
+			_serviceRepository = serviceRepository;
+			_fileService = fileService;
 		}
 
 		public async Task<ConfirmEmailResultDto> ConfirmEmail(Guid userId, string token)
@@ -110,7 +116,7 @@ namespace HSP.Service.Implementations
 			{
 				throw new UnauthorizedAccessException(_localizer["InvalidPassword"]);
 			}
-			var token = await _jwtService.GenerateJwtToken(new UserDto
+			var token = await _jwtService.GenerateTokenPairAsync(new UserDto
 			{
 				Id = user.Id,
 				Email = user.Email ?? string.Empty,
@@ -119,7 +125,8 @@ namespace HSP.Service.Implementations
 			return new LoginResponseDto
 			{
 				JwtToken = token,
-				RequirePasswordSetup = string.IsNullOrEmpty(user.PasswordHash)
+				RequirePasswordSetup = string.IsNullOrEmpty(user.PasswordHash),
+				MustChangePasswordOnLogin = user.MustChangePasswordOnLogin
 			};
 		}
 		public async Task<LoginResponseDto> GoogleLogin()
@@ -136,7 +143,7 @@ namespace HSP.Service.Implementations
 				throw new Exception(_localizer["CannotFindOrCreateUser"]);
 			}
 
-			var token = await _jwtService.GenerateJwtToken(new Core.Dtos.AccountDto.UserDto
+			var token = await _jwtService.GenerateTokenPairAsync(new UserDto
 			{
 				Id = user.Id,
 				Email = user.Email ?? string.Empty,
@@ -237,6 +244,12 @@ namespace HSP.Service.Implementations
 				throw new ValidationException($"{_localizer["PasswordChangeFailed"]}: {errors}");
 			}
 
+			if (user.MustChangePasswordOnLogin)
+			{
+				user.MustChangePasswordOnLogin = false;
+				await _unitOfWork.SaveChangesAsync();
+			}
+
 			return new ChangePasswordResponseDto
 			{
 				Message = _localizer["PasswordChangeSuccess"]
@@ -250,42 +263,85 @@ namespace HSP.Service.Implementations
 
 			if (input.Password != input.ConfirmPassword)
 				throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
-			var userExisting = await _userRepository.FindByEmailAsync(input.Email);
-			if (userExisting != null)
-			{
-				return await HandleExistingUserAsync(userExisting);
-			}
-			var user = await CreateCustomerAsync(input);
-			await _userRepository.AddToRoleAsync(user, RoleNames.Customer);
-			var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
-			await SendConfirmationEmailAsync(user, token);
 
-			return new RegisterResponseDto
-			{
-				UserId = user.Id,
-				Email = user.Email,
-				EmailConfirmToken = token
-			};
+			var existing = await _userRepository.FindByEmailAsync(input.Email);
+			if (existing != null)
+				return await HandleExistingUserAsync(existing);
+
+			var user = await CreateUserAsync(input.Email, input.FullName, input.PhoneNumber, input.Password);
+			return await AssignRoleAndSendConfirmationAsync(user, RoleNames.Customer);
 		}
 
+		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
+		{
+			if (input == null)
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
 
-		private async Task<AppUser> CreateCustomerAsync(RegisterRequestDto input)
+			if (input.Password != input.ConfirmPassword)
+				throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
+
+			var existing = await _userRepository.FindByEmailAsync(input.Email);
+			if (existing != null)
+				return await HandleExistingUserAsync(existing);
+
+			using (var transaction = await _unitOfWork.BeginTransactionAsync())
+			{
+				try
+				{
+					var user = await CreateUserAsync(input.Email, input.FullName, input.PhoneNumber, input.Password);
+
+					var response = await AssignRoleAndSendConfirmationAsync(user, RoleNames.Technician);
+
+					var technicianProfile = new TechnicianProfile
+					{
+						UserId = user.Id,
+						ExperienceYears = input.ExperienceYears,
+						Address = input.Address,
+						DateCreated = DateTime.UtcNow,
+						IsDeleted = false
+					};
+
+					if (input.ServiceIds != null && input.ServiceIds.Any())
+					{
+						var services = await _serviceRepository.GetAll()
+							.Where(x => input.ServiceIds.Contains(x.Id))
+							.ToListAsync();
+						foreach (var service in services)
+							technicianProfile.Services.Add(service);
+					}
+					await _technicianRepository.AddAsync(technicianProfile);
+					await _unitOfWork.SaveChangesAsync();
+					await transaction.CommitAsync();
+					await HandleTechnicianFilesAsync(technicianProfile, input);
+					return response;
+				}
+				catch
+				{
+					await transaction.RollbackAsync();
+					throw;
+				}
+			}
+		}
+		private async Task<AppUser> CreateUserAsync(string email, string fullName, string phone, string password)
 		{
 			var user = new AppUser
 			{
-				Email = input.Email,
-				UserName = input.Email,
-				FullName = input.FullName,
-				PhoneNumber = input.PhoneNumber,
-				EmailConfirmed = false,
+				Email = email,
+				UserName = email,
+				FullName = fullName,
+				PhoneNumber = phone,
+				EmailConfirmed = false
 			};
 
-			var created = await _userRepository.CreateAsync(user, input.Password);
-			if (!created.Succeeded)
-				throw new Exception(_localizer["UserCreationFailed"]);
+			var result = await _userRepository.CreateAsync(user, password);
+			if (!result.Succeeded)
+			{
+				var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+				throw new ValidationException($"{_localizer["UserCreationFailed"]}: {errors}");
+			}
+
 			return user;
 		}
-
 		private async Task<RegisterResponseDto> HandleExistingUserAsync(AppUser userExisting)
 		{
 			if (userExisting.EmailConfirmed)
@@ -303,85 +359,52 @@ namespace HSP.Service.Implementations
 				EmailConfirmToken = newToken
 			};
 		}
-		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
+		private async Task<RegisterResponseDto> AssignRoleAndSendConfirmationAsync(AppUser user, string role)
 		{
-			if (input == null)
-				throw new ArgumentException(_localizer["InputCannotBeNull"]);
-
-			// Kiểm tra email đã tồn tại chưa
-			var existingUser = await _userRepository.FindByEmailAsync(input.Email);
-			if (existingUser != null)
-				throw new ValidationException(_localizer["EmailAlreadyExists"]);
-
-			// Bắt đầu transaction trên DbContext dùng chung giữa Identity và Repository
-			await _unitOfWork.BeginTransactionAsync();
-			try
+			var roleResult = await _userRepository.AddToRoleAsync(user, role);
+			if (!roleResult.Succeeded)
 			{
-				// Tạo user với password mặc định "123Qwe@@"
-				var user = new AppUser
-				{
-					Email = input.Email,
-					UserName = input.Email,
-					FullName = input.FullName,
-					PhoneNumber = input.PhoneNumber,
-					EmailConfirmed = false
-				};
-
-				var created = await _userRepository.CreateAsync(user, "123Qwe@@");
-				if (!created.Succeeded)
-				{
-					var errors = string.Join(", ", created.Errors.Select(e => e.Description));
-					throw new ValidationException($"{_localizer["UserCreationFailed"]}: {errors}");
-				}
-				// Đảm bảo lưu user vào AppUsers
-				await _unitOfWork.SaveChangesAsync();
-
-				// Thêm role Technician
-				var roleResult = await _userRepository.AddToRoleAsync(user, RoleNames.Technician);
-				if (!roleResult.Succeeded)
-				{
-					var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-					throw new ValidationException($"{_localizer["AddToRoleFailed"]}: {errors}");
-				}
-				// Lưu quan hệ role
-				await _unitOfWork.SaveChangesAsync();
-
-				// Tạo TechnicianProfile
-				var technicianProfile = new TechnicianProfile
-				{
-					UserId = user.Id,
-					//SkillSet = input.SkillSet,
-					ExperienceYears = input.ExperienceYears,
-					//CertificatePaths = input.CertificateFilePaths?.Any() == true
-					//	? System.Text.Json.JsonSerializer.Serialize(input.CertificateFilePaths)
-					//	: null,
-					DateCreated = DateTime.UtcNow,
-					DateModified = DateTime.UtcNow,
-					IsDeleted = false
-				};
-
-				await _technicianRepository.AddAsync(technicianProfile);
-				await _unitOfWork.SaveChangesAsync();
-
-				// Tạo email confirmation token
-				var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
-
-				// Commit transaction (bao gồm tất cả thay đổi)
-				await _unitOfWork.CommitTransactionAsync();
-
-				return new RegisterResponseDto
-				{
-					UserId = user.Id,
-					Email = user.Email,
-					EmailConfirmToken = token
-				};
+				throw new ValidationException(_localizer["AddToRoleFailed"]);
 			}
-			catch
+
+			var token = await _userRepository.GenerateEmailConfirmationTokenAsync(user);
+			await SendConfirmationEmailAsync(user, token);
+
+			return new RegisterResponseDto
 			{
-				await _unitOfWork.RollbackTransactionAsync();
-				throw;
+				UserId = user.Id,
+				Email = user.Email,
+				EmailConfirmToken = token
+			};
+		}
+		private async Task HandleTechnicianFilesAsync(TechnicianProfile profile, RegisterTechnicianRequestDto input)
+		{
+			if (input.AvatarFile != null)
+			{
+				await _fileService.UploadAsync(new FileUploadDto
+				{
+					UserId = profile.UserId,
+					File = input.AvatarFile,
+					ObjectId = profile.Id,
+					ObjectTypeName = RoleNames.Technician,
+					RelationType = FileConstants.Avatar
+				});
+			}
+
+			if (input.CertificateFiles != null && input.CertificateFiles.Any())
+			{
+				var uploadDtos = input.CertificateFiles.Select(certFile => new FileUploadDto
+				{
+					UserId = profile.UserId,
+					File = certFile,
+					ObjectId = profile.Id,
+					ObjectTypeName = RoleNames.Technician,
+					RelationType = FileConstants.TechnicianCertificate
+				});
+				await _fileService.UploadManyAsync(uploadDtos);
 			}
 		}
+
 
 		public async Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input)
 		{
@@ -518,7 +541,5 @@ namespace HSP.Service.Implementations
 				HtmlBody = body
 			});
 		}
-
-
 	}
 }

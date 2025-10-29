@@ -20,7 +20,7 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
     const jwtToken = localStorage.getItem("jwtToken");
     const requirePasswordSetup = localStorage.getItem("requirePasswordSetup") === "true";
 
-    console.log("AddPasswordPage - requirePasswordSetup:", requirePasswordSetup); // Log để kiểm tra
+    console.log("AddPasswordPage - requirePasswordSetup:", requirePasswordSetup); 
 
     if (!jwtToken) {
       toast.error(t("error.please_login") || "Vui lòng đăng nhập trước");
@@ -37,8 +37,6 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
     e.preventDefault();
     setError("");
     setSuccess(false);
-
-    // Kiểm tra không được để trống
     if (!newPassword.trim()) {
       setError(t("validation.new_password_required") || "Mật khẩu mới không được để trống.");
       return;
@@ -47,8 +45,6 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
       setError(t("validation.confirm_password_required") || "Xác nhận mật khẩu không được để trống.");
       return;
     }
-
-    // Kiểm tra định dạng mật khẩu
     const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
     if (!passwordRegex.test(newPassword)) {
       setError(t("validation.password_format") || "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ cái viết hoa và ký tự đặc biệt.");
@@ -67,7 +63,7 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
 
       if (res.success) {
         setSuccess(true);
-        localStorage.setItem("requirePasswordSetup", "false"); // Cập nhật sau khi thêm mật khẩu
+        localStorage.setItem("requirePasswordSetup", "false"); 
         onPasswordSetSuccess && onPasswordSetSuccess();
         setTimeout(() => {
           navigate("/", { replace: true });

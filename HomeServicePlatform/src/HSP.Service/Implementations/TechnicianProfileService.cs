@@ -77,18 +77,18 @@ namespace HSP.Service.Implementations
 				var technicianEntity = await _technicianProfileRepository.GetAll()
 					.FirstOrDefaultAsync(x => x.Id == technician.Id);
 
-				if (technicianEntity != null && !string.IsNullOrEmpty(technicianEntity.CertificatePaths))
-				{
-					try
-					{
-						technician.CertificatePaths = System.Text.Json.JsonSerializer.Deserialize<List<string>>(technicianEntity.CertificatePaths);
-					}
-					catch
-					{
-						// If parsing fails, leave as null
-						technician.CertificatePaths = null;
-					}
-				}
+				//if (technicianEntity != null && !string.IsNullOrEmpty(technicianEntity.CertificatePaths))
+				//{
+				//	try
+				//	{
+				//		technician.CertificatePaths = System.Text.Json.JsonSerializer.Deserialize<List<string>>(technicianEntity.CertificatePaths);
+				//	}
+				//	catch
+				//	{
+				//		// If parsing fails, leave as null
+				//		technician.CertificatePaths = null;
+				//	}
+				//}
 			}
 
 			return pagedTechnicians;
@@ -105,18 +105,18 @@ namespace HSP.Service.Implementations
 
 			// Parse certificate paths from JSON string
 			List<string>? certificatePaths = null;
-			if (!string.IsNullOrEmpty(technician.CertificatePaths))
-			{
-				try
-				{
-					certificatePaths = System.Text.Json.JsonSerializer.Deserialize<List<string>>(technician.CertificatePaths);
-				}
-				catch
-				{
-					// If parsing fails, leave as null
-					certificatePaths = null;
-				}
-			}
+			//if (!string.IsNullOrEmpty(technician.CertificatePaths))
+			//{
+			//	try
+			//	{
+			//		certificatePaths = System.Text.Json.JsonSerializer.Deserialize<List<string>>(technician.CertificatePaths);
+			//	}
+			//	catch
+			//	{
+			//		// If parsing fails, leave as null
+			//		certificatePaths = null;
+			//	}
+			//}
 
 			return new TechnicianProfileResponseDto
 			{

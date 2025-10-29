@@ -1,5 +1,5 @@
 import axiosClient from "../config/axiosClient";
-
+import { jwtDecode } from "jwt-decode";
 export const authApi = {
   register: async ({ email, fullName, phoneNumber, password }) => {
     try {
@@ -28,6 +28,7 @@ export const authApi = {
       };
     }
   },
+
   addPassword: async ({ newPassword, confirmPassword }) => {
     try {
       const res = await axiosClient.post("/Authentication/add-password", {
@@ -52,96 +53,120 @@ export const authApi = {
       return { success: false, message };
     }
   },
-  uploadCertificates: async (certificateFiles) => {
+
+  registerTechnician: async (formData) => {
     try {
-      const formData = new FormData();
-      certificateFiles.forEach((file) => {
-        formData.append("certificates", file);
-      });
+      console.log("Sending registerTechnician (FormData) payload");
 
       const res = await axiosClient.post(
-        "/Authentication/upload-certificates",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        "/Authentication/register-technician",
+        formData
       );
 
-      return { success: true, data: res.data };
-    } catch (error) {
-      console.error("Upload certificates error:", error);
-      return {
-        success: false,
-        message: error.response?.data?.message || "Upload chứng chỉ thất bại",
-      };
-    }
-  },
-
-  registerTechnician: async ({
-    email,
-    fullName,
-    phone,
-    specializations = [],
-    experience,
-    bio,
-    certifications,
-    availability = [],
-    certificateFilePaths = [],
-  }) => {
-    try {
-      const expMap = {
-        "0-1": 1,
-        "1-3": 2,
-        "3-5": 4,
-        "5-10": 7,
-        "10+": 10,
-      };
-      const experienceYears = expMap[experience] ?? 0;
-
-      let skillObj = {
-        specializations,
-        bio: bio?.slice(0, 80),
-        certifications: certifications?.slice(0, 80),
-        availability: availability.slice(0, 5),
-      };
-
-      let skillSet = JSON.stringify(skillObj);
-      if (skillSet.length > 200) {
-        skillObj = { specializations: specializations.slice(0, 5) };
-        skillSet = JSON.stringify(skillObj);
-        if (skillSet.length > 200) {
-          skillSet = JSON.stringify({ s: specializations.slice(0, 3) });
-        }
+      let technicianId;
+      if (typeof res.data === "string") {
+        technicianId = res.data;
+      } else if (typeof res.data === "object" && res.data !== null) {
+        technicianId = res.data.id || res.data.technicianId;
       }
 
-      const payload = {
-        email,
-        fullName,
-        phoneNumber: phone,
-        skillSet,
-        experienceYears,
-        certificateFilePaths,
+      return {
+        success: true,
+        data: {
+          technicianId: technicianId,
+          id: technicianId,
+        },
       };
-
-      const res = await axiosClient.post(
-        `/Authentication/register-technician`,
-        payload
-      );
-      return { success: true, data: res.data };
     } catch (error) {
       console.error("Register technician error:", error);
+      console.log(
+        "Response data:",
+        JSON.stringify(error.response?.data, null, 2)
+      );
+
       return {
         success: false,
         message:
           error.response?.data?.message ||
-          error.response?.data ||
+          (typeof error.response?.data === "object"
+            ? JSON.stringify(error.response?.data)
+            : error.response?.data) ||
           "Đăng ký kỹ thuật viên thất bại",
+        status: error.response?.status,
+        errors: error.response?.data?.errors || null,
       };
     }
   },
+  prepareRegisterTechnicianData: ({
+    email,
+    fullName,
+    phoneNumber,
+    serviceIds,
+    experience,
+    address = "",
+    password,
+    confirmPassword,
+    avatarFile,
+    serviceCertificates,
+  }) => {
+    const expMap = {
+      "0-1": 1,
+      "1-3": 2,
+      "3-5": 4,
+      "5-10": 7,
+      "10+": 10,
+    };
+    const experienceYears = expMap[experience] ?? 0;
 
+    const formData = new FormData();
+    formData.append("Email", email);
+    formData.append("FullName", fullName);
+    formData.append("PhoneNumber", phoneNumber);
+    formData.append("ExperienceYears", experienceYears.toString());
+    formData.append("Address", address);
+    formData.append("Password", password);
+    formData.append("ConfirmPassword", confirmPassword);
+    if (serviceIds && serviceIds.length > 0) {
+      serviceIds.forEach((id) => {
+        formData.append("ServiceIds", id.toString());
+      });
+    }
+    if (avatarFile) {
+      formData.append("AvatarFile", avatarFile, avatarFile.name);
+    }
+    if (serviceCertificates) {
+      serviceIds.forEach((serviceId) => {
+        const certs = serviceCertificates[serviceId] || [];
+        certs.forEach((cert) => {
+          if (cert.file) {
+            formData.append("CertificateFiles", cert.file, cert.name);
+          }
+        });
+      });
+    }
+
+    console.log("=== FormData Debug ===");
+    console.log("Total serviceIds:", serviceIds.length);
+    console.log("Has avatar:", !!avatarFile);
+    console.log(
+      "Certificate count:",
+      Object.values(serviceCertificates).reduce(
+        (sum, certs) => sum + certs.length,
+        0
+      )
+    );
+
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}:`, `[File] ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`${key}:`, value);
+      }
+    }
+    console.log("=== End FormData ===");
+
+    return formData;
+  },
   login: async ({ emailOrPhone, password }) => {
     try {
       const res = await axiosClient.post(`/Authentication/login`, {
@@ -149,40 +174,86 @@ export const authApi = {
         password,
       });
 
-      if (res.status === 200 && res.data?.jwtToken) {
+      // === THÀNH CÔNG ===
+      const tokenData = res.data?.jwtToken;
+      if (
+        res.status === 200 &&
+        tokenData?.accessToken &&
+        tokenData?.refreshToken
+      ) {
+        const accessToken = tokenData.accessToken;
+        const decodedToken = jwtDecode(accessToken);
+        const userId = decodedToken.sub || decodedToken.UserId;
+        const email = decodedToken.email || decodedToken.Email;
+        const name =
+          decodedToken.UniqueName || decodedToken.name || decodedToken.Fullname;
+        const role = decodedToken.role || decodedToken.Role;
+
+        localStorage.setItem("jwtToken", accessToken);
+        localStorage.setItem("refreshToken", tokenData.refreshToken);
+        localStorage.setItem("userId", userId || "");
+        localStorage.setItem("email", email || "");
+        localStorage.setItem("name", name || "");
+        localStorage.setItem("role", role || "");
+
         return {
           success: true,
           data: {
-            userId: res.data.userId,
-            emailOrPhone: res.data.emailOrPhone,
-            jwtToken: res.data.jwtToken,
+            userId,
+            email,
+            name,
+            role,
+            jwtToken: accessToken,
+            refreshToken: tokenData.refreshToken,
             requirePasswordSetup: res.data.requirePasswordSetup || false,
+            mustChangePasswordOnLogin:
+              res.data.mustChangePasswordOnLogin || false,
           },
         };
       }
 
-      return {
-        success: false,
-        message: "Đăng nhập thất bại. Sai định dạng phản hồi từ server.",
-      };
+      return { success: false, message: "Phản hồi không hợp lệ từ server." };
     } catch (error) {
       console.error("Login error:", error);
 
-      const responseData = error.response?.data;
-      if (
-        responseData &&
-        typeof responseData === "object" &&
-        !Array.isArray(responseData)
-      ) {
-        return { success: false, validationErrors: responseData };
+      const status = error.response?.status;
+      const message = error.response?.data?.message || "";
+      if (status === 400 && message === "InvalidEmail") {
+        return { success: false, errorType: "INVALID_EMAIL_FORMAT" };
       }
-
-      const message =
-        responseData?.message ||
-        (error.response?.status === 401
-          ? "Email hoặc mật khẩu không đúng."
-          : "Đăng nhập thất bại.");
-      return { success: false, message };
+      if (status === 401 && message === "Mật khẩu không hợp lệ") {
+        return { success: false, errorType: "INVALID_PASSWORD" };
+      }
+      if (status === 401 && message === "Email chưa được xác thực") {
+        return { success: false, errorType: "EMAIL_NOT_CONFIRMED" };
+      }
+      return { success: false, errorType: "INVALID_CREDENTIALS" };
+    }
+  },
+  refreshToken: async (refreshToken) => {
+    try {
+      const res = await axiosClient.post("/Authentication/refresh-token", {
+        refreshToken: refreshToken,
+      });
+      if (res.status === 200 && res.data?.jwtToken && res.data?.refreshToken) {
+        localStorage.setItem("jwtToken", res.data.jwtToken);
+        localStorage.setItem("refreshToken", res.data.refreshToken);
+        return {
+          success: true,
+          data: res.data,
+        };
+      }
+      return {
+        success: false,
+        message: "Làm mới token thất bại: Sai định dạng phản hồi.",
+      };
+    } catch (error) {
+      console.error("Refresh token error:", error);
+      return {
+        success: false,
+        message: "Làm mới token thất bại. Vui lòng đăng nhập lại.",
+        status: error.response?.status,
+      };
     }
   },
   requestPasswordReset: async ({ email }) => {
@@ -220,6 +291,7 @@ export const authApi = {
       return { success: false, message };
     }
   },
+
   resetPassword: async ({ userId, token, newPassword, confirmPassword }) => {
     try {
       const res = await axiosClient.post("/Authentication/reset-password", {
@@ -265,7 +337,7 @@ export const authApi = {
       return { success: false, message };
     }
   },
-  // --- Xác thực email ---
+
   confirmEmail: async ({ userId, token }) => {
     try {
       const res = await axiosClient.get("/Authentication/confirm-email", {
@@ -294,40 +366,87 @@ export const authApi = {
     const API_URL = axiosClient.defaults.baseURL;
     window.location.href = `${API_URL}/Authentication/google-login`;
   },
-
-  parseGoogleTokenFromUrl: (searchParams) => {
+  exchangeToken: (code) => {
+    return axiosClient.get(`/Authentication/exchange-token?code=${code}`);
+  },
+  parseGoogleTokenFromUrl: async (urlSearch) => {
     try {
-      const urlParams = new URLSearchParams(searchParams);
-      const token = urlParams.get("token");
+      const params = new URLSearchParams(urlSearch);
+      const code = params.get("code");
+      if (!code) {
+        console.error("Missing code param in URL.");
+        return { success: false, message: "Thiếu mã xác thực Google." };
+      }
 
-      const requirePasswordSetupParam = urlParams
-        .get("requirePasswordSetup")
-        ?.toLowerCase();
-      const requirePasswordSetup = requirePasswordSetupParam === "true";
+      const response = await axiosClient.get(`/Authentication/exchange-token?code=${code}`);
+      const loginData = response.data;
+      const tokenData = loginData.jwtToken;
+      console.log("login data received:", loginData);
+      console.log("Token data received:", tokenData);
+      if (!tokenData || !tokenData.accessToken) {
+        return { success: false, message: "Không nhận được access token." };
+      }
 
-      if (!token) return { success: false, message: "No token found in URL" };
+      const requirePasswordSetup = loginData.requirePasswordSetup || false;
 
-      localStorage.setItem(
-        "requirePasswordSetup",
-        requirePasswordSetup.toString()
-      );
+      const decoded = jwtDecode(tokenData.accessToken);
+
+      const userId =
+        decoded.sub ||
+        decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+      const email =
+        decoded.email ||
+        decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
+      const name =
+        decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ||
+        decoded.UniqueName ||
+        decoded.name ||
+        decoded.given_name ||
+        "";
+      const role =
+        decoded.role ||
+        decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
+        "";
+
+      localStorage.setItem("jwtToken", tokenData.accessToken);
+      localStorage.setItem("refreshToken", tokenData.refreshToken);
+      localStorage.setItem("userId", userId || "");
+      localStorage.setItem("email", email || "");
+      localStorage.setItem("name", name);
+      localStorage.setItem("role", role);
+      localStorage.setItem("requirePasswordSetup", requirePasswordSetup.toString());
 
       return {
         success: true,
         data: {
-          jwtToken: token,
-          requirePasswordSetup: requirePasswordSetup,
+          jwtToken: tokenData.accessToken,
+          refreshToken: tokenData.refreshToken,
+          accessTokenExpiresAt: tokenData.accessTokenExpiresAt,
+          refreshTokenExpiresAt: tokenData.refreshTokenExpiresAt,
+          userId,
+          email,
+          name,
+          role,
+          requirePasswordSetup
         },
       };
     } catch (error) {
-      console.error("Parse token error:", error);
-      return { success: false, message: "Failed to parse token from URL" };
+      console.error("Exchange or decode error:", error);
+      return { success: false, message: "Lỗi xử lý đăng nhập Google." };
     }
   },
-
-  logout: () => {
+  logout: async () => {
+    try {
+      await axiosClient.post("/Authentication/logout");
+    } catch (error) {
+      console.warn(
+        "Logout API failed (token might be expired or invalid), proceeding with client-side cleanup:",
+        error.response?.status
+      );
+    }
     [
       "jwtToken",
+      "refreshToken",
       "userId",
       "email",
       "name",

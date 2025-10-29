@@ -26,7 +26,7 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
     const [itemData, setItemData] = useState(initialItemState);
     const [loading, setLoading] = useState(false);
     const [fetchError, setFetchError] = useState(null);
-    const [submitError, setSubmitError] = useState(null); // Dùng cho validation FE và lỗi logic BE
+    const [submitError, setSubmitError] = useState(null); 
 
     // Fetch item details
     useEffect(() => {
@@ -65,19 +65,13 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setItemData((prev) => ({ ...prev, [name]: value }));
-        setSubmitError(null); // Xóa lỗi submit khi người dùng bắt đầu gõ lại
+        setSubmitError(null); 
     };
 
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitError(null);
-
-        // =========================================================================
-        // ⭐ ĐÃ SỬA: Logic Validation Client-Side Mở Rộng
-        // Kiểm tra tất cả các trường quan trọng là bắt buộc (ví dụ: name, type, brand, modelNumber)
-        // =========================================================================
-
         if (!itemData.name || !itemData.type || !itemData.brand || !itemData.modelNumber) {
             let validationError = t("validation.required_fields_missing") || "Vui lòng điền đầy đủ các trường bắt buộc.";
             
@@ -95,25 +89,21 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
 
         try {
             const res = await homeApi.updateHomeItem(homeItemId, itemData);
-            setLoading(false); // Di chuyển setLoading(false) ra ngoài để không bị lặp
+            setLoading(false); 
 
             if (res.success) {
                 toast.success(t("success.item_edited") || "Item updated successfully!");
                 onSuccess();
-                onClose(); // Đóng modal khi thành công
+                onClose(); 
             } else {
-                // Lỗi logic từ BE (như validation BE, không tìm thấy ID, v.v.)
                 setSubmitError(res.message);
             }
         } catch (err) {
             setLoading(false);
             console.error("Error updating item:", err);
-            // Lỗi mạng hoặc lỗi server không mong muốn
             setSubmitError(t("error.network_connect_failed") || "Lỗi kết nối mạng, vui lòng thử lại.");
         }
     };
-
-    // UI Render
     if (fetchError) {
         return (
             <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
@@ -178,7 +168,6 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     onChange={handleChange}
                                     placeholder={t("form.placeholder.item_name")}
                                     className="block w-full border border-gray-200 rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white"
-                                    // ĐÃ SỬA: Loại bỏ thuộc tính 'required' của HTML
                                 />
                             </div>
 
@@ -192,7 +181,7 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     value={itemData.type}
                                     onChange={handleChange}
                                     className="block w-full border border-gray-200 rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white"
-                                    // ĐÃ SỬA: Loại bỏ thuộc tính 'required' của HTML
+                                   
                                 >
                                     {itemTypes.map((type) => (
                                         <option key={type} value={type}>

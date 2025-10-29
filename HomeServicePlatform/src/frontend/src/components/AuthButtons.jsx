@@ -1,4 +1,3 @@
-// src/components/AuthButtons.jsx
 import { useState, useRef, useEffect } from "react";
 import {
   LogIn,
@@ -10,6 +9,7 @@ import {
   Settings,
   UserCircle,
   MapPin,
+  Ticket, 
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -115,7 +115,7 @@ export function AuthButtons({
                             : loggedInUser.role === "technician"
                             ? t("ui.technician")
                             : loggedInUser.role === "equipmentmanager"
-                            ? "Quản lý kho"
+                            ? "Quản lý kho thiết bị"
                             : loggedInUser.role}
                         </span>
                       )}
@@ -214,6 +214,25 @@ export function AuthButtons({
                         <div className="font-medium">Technician Panel</div>
                         <div className="text-xs text-gray-500">
                           Quản lý booking
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
+                  {loggedInUser.role === "supporter" && (
+                    <button
+                      onClick={() => handleNavigate("/supporter/tickets")}
+                      className="flex items-center w-full px-3 py-2.5 text-sm text-gray-700 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 group"
+                    >
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-blue-200 transition-colors">
+                        <Ticket className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium">
+                          {t("ui.ticket_management")}
+                        </div>
+                        <div className="text-xs text-blue-500">
+                          {t("ui.ticket_management_desc")}
                         </div>
                       </div>
                     </button>

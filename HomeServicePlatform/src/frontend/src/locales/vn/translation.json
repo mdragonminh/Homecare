@@ -2,6 +2,7 @@
   "app": {
     "name": "HomeServicePlatform"
   },
+  
   "ui": {
     "validation": {
       "fullname": {
@@ -15,6 +16,8 @@
         "required": "Vui lòng nhập email",
         "invalid_format": "Email không đúng định dạng (vd: user@example.com)",
         "no_spaces": "Email không được chứa khoảng trắng",
+        "single_at_required": "Email phải có đúng 1 ký tự @",
+        "dot_required": "Email phải có ít nhất một dấu chấm (.) trong phần tên miền",
         "max_length": "Email không được vượt quá 100 ký tự"
       },
       "phone": {
@@ -41,8 +44,9 @@
       "error_new_length": "Mật khẩu mới phải có ít nhất 6 ký tự",
       "error_confirm_required": "Vui lòng xác nhận mật khẩu mới",
       "error_confirm_mismatch": "Mật khẩu xác nhận không khớp",
-      "error_new_same": "Mật khẩu mới phải khác mật khẩu hiện tại",
-      "error_general": "Có lỗi xảy ra khi đổi mật khẩu"
+      "errors_general": "Mật khẩu hiện tại không đúng",
+      "error_new_same": "Mật khẩu mới phải khác mật khẩu hiện tại"
+      
     },
     "welcome_back": "Chào mừng trở lại!",
     "login_button": "Đăng nhập",
@@ -88,6 +92,8 @@
     "user": "Người dùng",
     "customer": "Khách hàng",
     "technician": "Thợ kỹ thuật",
+    "ticket_management": "Quản lý Tickets",
+    "ticket_management_desc": "Duyệt và gán tickets",
     "manage_account": "Quản lý tài khoản",
     "personal_info_settings": "Cài đặt thông tin cá nhân",
     "manage_homes": "Quản lý Địa chỉ",
@@ -372,7 +378,9 @@
     "fetch_home_failed_toast": "Lỗi tải danh sách nhà.",
     "fetch_items_failed": "Không thể tải danh sách vật phẩm.",
     "missing_home_id": "Thiếu ID nhà để xem vật phẩm.",
-    "add_item_unknown": "Lỗi không xác định khi thêm vật phẩm."
+    "add_item_unknown": "Lỗi không xác định khi thêm vật phẩm.",
+    "invalid_email_format": "Email hoặc số điện thoại không đúng định dạng.",
+    "invalid_password": "Mật khẩu không đúng. Vui lòng thử lại."
   },
   "feature": {
     "professional_worker": {
@@ -557,6 +565,16 @@
       "date_of_birth": "Ngày sinh",
       "city": "Thành phố",
       "city_placeholder": "Chọn thành phố",
+      "password_required": "Mật khẩu *",
+      "password_placeholder": "Tối thiểu 8 ký tự, có chữ hoa, chữ số",
+      "confirm_password_required": "Xác nhận mật khẩu *",
+      "confirm_password_placeholder": "Nhập lại mật khẩu",
+      "avatar_required": "Ảnh đại diện *",
+      "avatar_placeholder": "Tải lên ảnh đại diện",
+      "avatar_removed": "Ảnh đại diện đã được xóa",
+      "avatar_uploaded": "Ảnh đại diện đã được tải lên: {{fileName}}",
+      "file_invalid_format": "không đúng định dạng (chỉ chấp nhận JPEG, JPG, PNG, GIF)",
+      "upload_prompt": "Thêm ảnh",
       "cities": {
         "hanoi": "Hà Nội",
         "hcm": "TP. Hồ Chí Minh", 
@@ -578,39 +596,19 @@
         "10+": "Trên 10 năm"
       },
       "specialization_required": "Lĩnh vực chuyên môn *",
-      "specializations": {
-        "electrical": "Điện",
-        "plumbing": "Nước", 
-        "ac": "Điều hòa",
-        "electronics": "Sửa chữa đồ điện tử",
-        "painting": "Sơn nhà",
-        "cleaning": "Dọn dẹp",
-        "gardening": "Làm vườn", 
-        "interior": "Sửa chữa nội thất",
-        "installation": "Lắp đặt thiết bị",
-        "maintenance": "Bảo trì máy móc"
-      },
       "certifications": "Upload Chứng chỉ & Bằng cấp",
       "upload_certificates": "Chọn file chứng chỉ để upload", 
-      "upload_certificates_desc": "PDF, DOC, DOCX, JPG, PNG (tối đa 5MB mỗi file)",
+      "upload_certificates_desc": "PDF JPG, PNG (tối đa 5MB mỗi file)",
       "uploading": "Đang upload...",
       "uploaded_files": "Các file đã upload",
-      "remove_file": "Xóa",
+      "file_removed": "Đã xóa file",
+      "file_uploaded": "Đã upload file: {{fileName}}",
       "file_too_large": "quá lớn (tối đa 5MB)",
-      "file_invalid_format": "không đúng định dạng (chỉ chấp nhận PDF, DOC, DOCX, JPG, PNG)",
+      "file_invalid_format": "không đúng định dạng (chỉ chấp nhận PDFJPG, PNG)",
       "upload_success": "Đã upload {{count}} file chứng chỉ thành công!",
       "upload_failed": "Upload chứng chỉ thất bại",
       "upload_error": "Có lỗi xảy ra khi upload chứng chỉ",
-      "availability": "Thời gian có thể làm việc",
-      "availability_options": {
-        "monday": "Thứ 2",
-        "tuesday": "Thứ 3",
-        "wednesday": "Thứ 4",
-        "thursday": "Thứ 5", 
-        "friday": "Thứ 6",
-        "saturday": "Thứ 7",
-        "sunday": "Chủ nhật"
-      }
+      "availability": "Thời gian có thể làm việc"
     },
     "rate_bio": {
       "hourly_rate_required": "Mức lương mong muốn (VNĐ/giờ) *",
@@ -640,7 +638,20 @@
       "fill_required_fields": "Vui lòng điền đầy đủ thông tin bắt buộc!",
       "register_success": "Đăng ký thành công! Vui lòng chờ quản trị viên duyệt.",
       "register_failed": "Đăng ký kỹ thuật viên thất bại",
-      "error_occurred": "Có lỗi xảy ra. Vui lòng thử lại sau."
+      "error_occurred": "Có lỗi xảy ra. Vui lòng thử lại sau.",
+      "full_name_required_error": "Vui lòng nhập họ và tên.",
+      "email_invalid_error": "Email không hợp lệ.",
+      "phone_invalid_error": "Vui lòng nhập số điện thoại.",
+      "address_required_error": "Vui lòng nhập địa chỉ.",
+      "experience_required_error": "Vui lòng chọn số năm kinh nghiệm.",
+      "specialization_required_error": "Vui lòng chọn ít nhất một lĩnh vực chuyên môn.",
+      "agree_terms_required_error": "Bạn phải đồng ý với điều khoản dịch vụ và chính sách bảo mật để tiếp tục.",
+      "agree_background_check_required_error": "Bạn phải đồng ý cho phép kiểm tra lý lịch để tiếp tục.",
+      "certificate_required_error": "Vui lòng upload ít nhất một chứng chỉ hoặc bằng cấp.",
+      "password_required_error": "Vui lòng nhập mật khẩu.",
+      "avatar_required_error": "Vui lòng upload ảnh đại diện.",
+      "confirm_password_mismatch_error": "Xác nhận mật khẩu không khớp.",
+      "password_strength_error": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
     }
   },
   "toast":{
@@ -657,7 +668,7 @@
       "stats": {
         "customers": "Khách hàng",
         "technicians": "Thợ sửa chữa",
-        "services_completed": "Dịch vụ hoàn thành",
+        "services": "Dịch vụ hoàn thành",
         "satisfaction": "Hài lòng"
       }
     },
@@ -846,7 +857,7 @@
     }
   },
   "warehouse": {
-    "title": "Quản lý Kho",
+    "title": "Quản lý kho thiết bị",
     "description": "Quản lý thông tin các kho hàng",
     "add": "Thêm Kho",
     "edit": "Sửa Kho",

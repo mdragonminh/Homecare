@@ -1,4 +1,3 @@
-// src/components/Header.jsx
 
 import React from "react";
 import { Home, Menu } from "lucide-react";

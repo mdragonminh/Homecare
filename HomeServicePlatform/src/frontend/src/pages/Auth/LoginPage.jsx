@@ -1,5 +1,4 @@
-// LoginPage.jsx - ĐÃ SỬA ĐỔI ĐẦY ĐỦ
-
+/* eslint-disable no-useless-escape */
 import { useState, useEffect } from "react";
 import {
   Eye,
@@ -35,10 +34,6 @@ export function LoginPage({
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { t } = useTranslation();
-
-  // Regex cơ bản để kiểm tra định dạng email
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   useEffect(() => {
     if (loggedInUser) {
       navigate("/");
@@ -53,110 +48,80 @@ export function LoginPage({
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    // 1. KIỂM TRA TRƯỜNG RỖNG
-    if (!formData.emailOrPhone) {
-      setError(t("validation.email_or_phone_required"));
-      return;
-    }
+  // === VALIDATION FRONTEND ===
+  if (!formData.emailOrPhone.trim()) {
+    setError(t("validation.email_or_phone_required"));
+    setLoading(false);
+    return;
+  }
 
-    // 2. KIỂM TRA ĐỊNH DẠNG (email hoặc số điện thoại)
-    const phoneRegex = /^[+]?[\s\d\-\(\)]*$/;
-    const isValidEmail = emailRegex.test(formData.emailOrPhone);
-    const isValidPhone =
-      phoneRegex.test(formData.emailOrPhone) &&
-      formData.emailOrPhone.length >= 8 &&
-      formData.emailOrPhone.length <= 20;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[+]?[\s\d\-\(\)]*$/;
+  const isValidEmail = emailRegex.test(formData.emailOrPhone);
+  const isValidPhone = phoneRegex.test(formData.emailOrPhone) && formData.emailOrPhone.replace(/\D/g, "").length >= 8;
 
-    if (!isValidEmail && !isValidPhone) {
-      setError(t("validation.email_or_phone_invalid_format"));
-      return;
-    }
+  if (!isValidEmail && !isValidPhone) {
+    setError(t("validation.email_or_phone_invalid_format"));
+    setLoading(false);
+    return;
+  }
 
-    if (!formData.password) {
-      setError(t("validation.password_required"));
-      return;
-    }
+  if (!formData.password) {
+    setError(t("validation.password_required"));
+    setLoading(false);
+    return;
+  }
+  // === END VALIDATION ===
 
-    setLoading(true);
+  try {
+    const res = await authApi.login(formData);
 
-    try {
-      const res = await authApi.login(formData);
+    if (res.success) {
+      // ... login thành công (giữ nguyên)
+      const { jwtToken } = res.data;
+      const decoded = jwtDecode(jwtToken);
+      const userId = decoded.sub || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+      const email = decoded.email || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
+      const name = decoded["UniqueName"] || decoded["name"] || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
+      const role = decoded["role"] || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 
-      if (res.success) {
-        const { jwtToken } = res.data;
-        const decoded = jwtDecode(jwtToken);
-        const userId =
-          decoded[
-            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-          ];
-        const email =
-          decoded[
-            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-          ];
-        const name =
-          decoded["name"] ||
-          decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
-        const role =
-          decoded["role"] ||
-          decoded[
-            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-          ];
-
-        onLoginSuccess({
-          userId,
-          email,
-          jwtToken,
-          name,
-          role,
-          requirePasswordSetup: res.data.requirePasswordSetup,
-        });
-      } else {
-        // Lỗi từ authApi (thường là lỗi 400 hoặc 401 đã được xử lý trong authApi.js)
-        setError(res.message || t("error.invalid_email_or_password"));
+      onLoginSuccess({
+        userId,
+        email,
+        jwtToken,
+        name,
+        role,
+        requirePasswordSetup: res.data.requirePasswordSetup,
+        mustChangePasswordOnLogin: res.data.mustChangePasswordOnLogin,
+      });
+    } else {
+      switch (res.errorType) {
+        case "INVALID_EMAIL_FORMAT":
+          setError(t("error.invalid_email_format"));
+          break;
+        case "INVALID_PASSWORD":
+          setError(t("error.invalid_password"));
+          break;
+        case "EMAIL_NOT_CONFIRMED":
+          setError(t("error.account_not_activated"));
+          break;
+        case "INVALID_CREDENTIALS":
+        default:
+          setError(t("error.invalid_email_or_password"));
       }
-    } catch (err) {
-      console.error("Lỗi đăng nhập:", err);
-
-      if (err.response) {
-        const status = err.response.status;
-        const backendMessage = err.response.data?.message;
-
-        if (status === 400) {
-          setError(backendMessage || t("error.invalid_request"));
-        } else if (status === 401) {
-          // Logic kiểm tra lỗi 401 (Unauthorized)
-          if (
-            backendMessage &&
-            (backendMessage.includes("Invalid credentials") ||
-              backendMessage.includes("Invalid password"))
-          ) {
-            setError(t("error.invalid_email_or_password"));
-          } else if (
-            backendMessage &&
-            backendMessage.includes("not confirmed")
-          ) {
-            setError(t("error.account_not_activated"));
-          } else {
-            setError(t("error.account_not_activated"));
-          }
-        } else if (status === 500) {
-          setError(t("error.server_internal"));
-        } else {
-          setError(t("error.unknown", { status }));
-        }
-      } else if (err.request) {
-        setError(t("error.network"));
-      } else {
-        setError(t("error.unexpected"));
-      }
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (err) {
+    console.error("Login error:", err);
+    setError(t("error.network"));
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleGoogleLogin = () => {
     authApi.googleLogin();

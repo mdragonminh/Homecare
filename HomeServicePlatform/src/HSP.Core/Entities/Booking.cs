@@ -2,6 +2,7 @@
 using HSP.Core.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using HSP.Core.Abstractions.Entity;
 
 namespace HSP.Core.Entities
 {
@@ -13,9 +14,9 @@ namespace HSP.Core.Entities
 		public Guid? TechnicianId { get; set; }
 		[ForeignKey("TechnicianId")]
 		public TechnicianProfile? Technician { get; set; } = null!;
-		public Guid ServiceId { get; set; }
-		[ForeignKey("ServiceId")]
-		public Service Service { get; set; } = null!;
+		//public Guid ServiceId { get; set; }
+		//[ForeignKey("ServiceId")]
+		//public Service Service { get; set; } = null!;
 		public DateTime? DesiredDate { get; set; }
 		[MaxLength(1000)]
 		public string? ProblemDescription { get; set; }
@@ -33,5 +34,6 @@ namespace HSP.Core.Entities
 		public bool IsDeleted { get; set; }
 		public DateTime DateCreated { get; set; }
 		public DateTime DateModified { get; set; }
+		public ICollection<BookingItem> Items { get; set; } = new List<BookingItem>();
 	}
 }

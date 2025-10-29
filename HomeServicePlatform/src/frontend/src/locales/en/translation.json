@@ -15,6 +15,8 @@
         "required": "Please enter your email",
         "invalid_format": "Invalid email format (e.g., user@example.com)",
         "no_spaces": "Email cannot contain spaces",
+        "single_at_required": "Email must contain exactly one @ character",
+        "dot_required": "Email must contain at least one dot (.) in the domain part",
         "max_length": "Email cannot exceed 100 characters"
       },
       "phone": {
@@ -41,8 +43,9 @@
       "error_new_length": "New password must be at least 6 characters",
       "error_confirm_required": "Please confirm your new password",
       "error_confirm_mismatch": "Confirmation password does not match",
-      "error_new_same": "New password must be different from current password",
-      "error_general": "An error occurred while changing password"
+      "errors_general": "Current password is incorrect",
+      "error_new_same": "New password must be different from current password"
+      
     },
     "welcome_back": "Welcome back!",
     "login_button": "Log in",
@@ -268,7 +271,8 @@
       "notes": "Notes",
       "username": "Username",
       "new_password": "New Password",
-      "confirm_new_password": "Confirm New Password"
+      "confirm_new_password": "Confirm New Password",
+      "email_or_phone": "Email or Phone Number"
     },
     "placeholder": {
       "fullname": "Enter your full name",
@@ -285,7 +289,8 @@
       "operator_username": "operator001",
       "new_password": "Enter new password",
       "search_radius": "Search radius (Km)",
-      "address": " Enter address to search on map"
+      "address": " Enter address to search on map",
+      "email_or_phone": "Enter your email or phone number"
     },
     "usertype": {
       "customer": "Customer",
@@ -295,6 +300,8 @@
   "validation": {
     "email_required": "Please enter your email.",
     "email_invalid_format": "Invalid email format.",
+    "email_or_phone_required": "Please enter your email or phone number.",
+    "email_or_phone_invalid_format": "Invalid email or phone number format.",
     "password_required": "Please enter your password.",
     "password_min_length": "Password must be at least 8 characters!",
     "password_uppercase": "Password must contain at least one uppercase letter!",
@@ -369,7 +376,9 @@
     "fetch_home_failed_toast": "Error loading home list.",
     "fetch_items_failed": "Failed to load the item list.",
     "missing_home_id": "Missing home ID to view items.",
-    "add_item_unknown": "Unknown error while adding item."
+    "add_item_unknown": "Unknown error while adding item.",
+    "invalid_email_format": "Invalid email and phone number format.",
+    "invalid_password": "Invalid password. Please try again."
   },
   "feature": {
     "professional_worker": {
@@ -551,6 +560,15 @@
       "date_of_birth": "Date of Birth",
       "city": "City",
       "city_placeholder": "Select city",
+      "password_required": "Password *",
+      "password_placeholder": "Minimum 8 characters, with uppercase, number",
+      "confirm_password_required": "Confirm Password *",
+      "confirm_password_placeholder": "Re-enter password",
+      "avatar_required": "Upload Avatar",
+      "avatar_removed": "Avatar removed",
+      "avatar_uploaded": "Avatar uploaded: {{fileName}}",
+      "file_invalid_format": "invalid format (only JPEG, JPG, PNG, GIF accepted)",
+      "upload_prompt": "Add photo",
       "cities": {
         "hanoi": "Hanoi",
         "hcm": "Ho Chi Minh City", 
@@ -586,12 +604,13 @@
       },
       "certifications": "Upload Certifications & Qualifications",
       "upload_certificates": "Choose certificate files to upload",
-      "upload_certificates_desc": "PDF, DOC, DOCX, JPG, PNG (max 5MB per file)",
+      "upload_certificates_desc": "PDF, JPG, PNG (max 5MB per file)",
       "uploading": "Uploading...",
       "uploaded_files": "Uploaded files",
-      "remove_file": "Remove",
+      "file_removed": "Removed file",
+      "file_uploaded": "Uploaded file: {{fileName}}",
       "file_too_large": "too large (max 5MB)",
-      "file_invalid_format": "invalid format (only PDF, DOC, DOCX, JPG, PNG accepted)",
+      "file_invalid_format": "invalid format (only PDF,JPG, PNG accepted)",
       "upload_success": "{{count}} certificate files uploaded successfully!",
       "upload_failed": "Certificate upload failed",
       "upload_error": "An error occurred while uploading certificates",
@@ -634,7 +653,20 @@
       "fill_required_fields": "Please fill in all required fields!",
       "register_success": "Registration successful! Please wait for admin approval.",
       "register_failed": "Technician registration failed",
-      "error_occurred": "An error occurred. Please try again later."
+      "error_occurred": "An error occurred. Please try again later.",
+      "full_name_required_error": "Please enter your full name.",
+      "email_invalid_error": "Invalid email.",
+      "phone_invalid_error": "Please enter your phone number.",
+      "address_required_error": "Please enter your address.",
+      "experience_required_error": "Please select years of experience.",
+      "specialization_required_error": "Please select at least one area of specialization.",
+      "agree_terms_required_error": "You must agree to the terms of service and privacy policy to continue.",
+      "agree_background_check_required_error": "You must agree to allow background checks to continue.",
+      "certificates_required_error": "Please upload at least one certification or qualification document.",
+      "password_required_error": "Please enter your password.",
+      "avatar_required_error": "Please upload your avatar.",
+      "confirm_password_mismatch_error": "Password confirmation does not match.",
+      "password_strength_error": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character."
     }
   },
   "toast":{
@@ -651,7 +683,7 @@
       "stats": {
         "customers": "Customers",
         "technicians": "Technicians",
-        "services_completed": "Services Completed",
+        "services": "Services Completed",
         "satisfaction": "Satisfaction"
       }
     },

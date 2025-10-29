@@ -51,7 +51,7 @@ export default function HomeItemsInterface() {
 const fetchHomeItems = useCallback(
   async (page, search) => {
     if (!homeId) {
-      setError("error.missing_home_id"); // Dùng key thay vì t()
+      setError("error.missing_home_id"); 
       setLoading(false);
       return;
     }
@@ -66,16 +66,16 @@ const fetchHomeItems = useCallback(
         setTotalCount(res.data.totalCount ?? 0);
         setError(null);
       } else {
-        setError(res.message || "error.fetch_items_failed"); // Dùng key
+        setError(res.message || "error.fetch_items_failed"); 
       }
     } catch (err) {
       console.error("Error fetching home items:", err);
-      setError("error.fetch_items_failed"); // Dùng key
+      setError("error.fetch_items_failed"); 
     } finally {
       setLoading(false);
     }
   },
-  [homeId, pageSize] // Xóa t khỏi dependency
+  [homeId, pageSize] 
 );
 
   useEffect(() => {
@@ -293,15 +293,10 @@ const fetchHomeItems = useCallback(
             >
               <ChevronLeft size={16} />
             </button>
-
-            {/* 2. Title (Nằm sát bên phải nút Back) */}
             <h1 className="text-3xl font-bold text-gray-900">
               {t("ui.manage_items")}
             </h1>
           </div>
-          {/* END: Nhóm Nút Quay lại và Tiêu đề */}
-
-          {/* 3. Add Button (Bên phải) */}
           <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium shadow-sm"
@@ -311,9 +306,6 @@ const fetchHomeItems = useCallback(
             <span className="hidden sm:inline">{t("ui.add_item")}</span>
           </button>
         </div>
-        {/* END: Header mới */}
-
-        {/* Search and Filters */}
         <div className="flex flex-col lg:flex-row gap-4 mb-8">
           <div className="relative flex-1">
             <Search

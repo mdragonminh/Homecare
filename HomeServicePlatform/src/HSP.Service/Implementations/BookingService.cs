@@ -1,5 +1,4 @@
-﻿using HSP.Core.Constans;
-using HSP.Core.Dtos.BookingDto;
+﻿using HSP.Core.Dtos.BookingDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Enums;
@@ -15,12 +14,14 @@ namespace HSP.Service.Implementations
 	public class BookingService : BaseService, IBookingService
 	{
 		private readonly IRepository<Booking, Guid> _bookingRepository;
+		private readonly IRepository<BookingItem, Guid> _bookingItemRepository;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
 		private readonly IUserRepository _userRepository;
 		private readonly IRedisCacheService _redisCacheService;
 		public BookingService(
 				IRepository<Booking, Guid> bookingRepository,
+				IRepository<BookingItem, Guid> bookingItemRepository,
 				IRepository<TechnicianProfile, Guid> technicianRepository,
 				IRepository<Core.Entities.Service, Guid> serviceRepository,
 				IUserRepository userRepository,
@@ -29,6 +30,7 @@ namespace HSP.Service.Implementations
 				IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_bookingRepository = bookingRepository;
+			_bookingItemRepository = bookingItemRepository;
 			_technicianRepository = technicianRepository;
 			_serviceRepository = serviceRepository;
 			_userRepository = userRepository;
@@ -38,8 +40,8 @@ namespace HSP.Service.Implementations
 		public async Task<PagedList<BookingDto>> GetAllBookingsAsync(BookingInput input)
 		{
 			var query = _bookingRepository.GetAll(
-					b => b.Customer,
-					b => b.Service
+					b => b.Customer
+					//b => b.Service
 			);
 
 			// Apply filters
@@ -48,7 +50,7 @@ namespace HSP.Service.Implementations
 				query = query.Where(b =>
 						(b.Customer != null && b.Customer.UserName != null &&
 						 b.Customer.UserName.Contains(input.SearchTerm)) ||
-						b.Service.Name.Contains(input.SearchTerm) ||
+						//b.Service.Name.Contains(input.SearchTerm) ||
 						(b.ProblemDescription != null && b.ProblemDescription.Contains(input.SearchTerm)));
 			}
 
@@ -89,7 +91,7 @@ namespace HSP.Service.Implementations
 						Id = b.Id,
 						CustomerProfileId = b.CustomerId,
 						TechnicianId = b.TechnicianId,
-						ServiceId = b.ServiceId,
+						//ServiceId = b.ServiceId,
 						DesiredDate = b.DesiredDate.Value,
 						ProblemDescription = b.ProblemDescription,
 						Status = b.Status,
@@ -110,12 +112,12 @@ namespace HSP.Service.Implementations
 							Email = b.Technician.User != null ? b.Technician.User.Email : null,
 							PhoneNumber = b.Technician.User != null ? b.Technician.User.PhoneNumber : null
 						} : null,
-						Service = new HSP.Core.Dtos.ServiceDto.HomeServiceDto
-						{
-							Id = b.Service.Id,
-							Name = b.Service.Name,
-							//BasePrice = b.Service.BasePrice
-						},
+						//Service = new HSP.Core.Dtos.ServiceDto.HomeServiceDto
+						//{
+						//	//Id = b.Service.Id,
+						//	//Name = b.Service.Name,
+						//	//BasePrice = b.Service.BasePrice
+						//},
 						Feedback = b.Feedback != null ? new BookingFeedbackResponseDto
 						{
 							BookingId = b.Feedback.BookingId,
@@ -138,8 +140,8 @@ namespace HSP.Service.Implementations
 		public async Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId)
 		{
 			var booking = await _bookingRepository.GetAll(
-					b => b.Customer,
-					b => b.Service
+					b => b.Customer
+					//b => b.Service
 			).FirstOrDefaultAsync(b => b.Id == bookingId);
 
 			if (booking == null)
@@ -158,7 +160,7 @@ namespace HSP.Service.Implementations
 				Id = booking.Id,
 				CustomerProfileId = booking.CustomerId,
 				TechnicianId = booking.TechnicianId,
-				ServiceId = booking.ServiceId,
+				//ServiceId = booking.ServiceId,
 				DesiredDate = booking.DesiredDate.Value,
 				ProblemDescription = booking.ProblemDescription,
 				Status = booking.Status,
@@ -171,7 +173,7 @@ namespace HSP.Service.Implementations
 				TechnicianName = technician?.User?.UserName,
 				TechnicianEmail = technician?.User?.Email,
 				TechnicianPhone = technician?.User?.PhoneNumber,
-				ServiceName = booking.Service.Name,
+				//ServiceName = booking.Service.Name,
 				//ServiceBasePrice = booking.Service.BasePrice,
 				Feedback = booking.Feedback != null ? new BookingFeedbackResponseDto
 				{
@@ -252,7 +254,7 @@ namespace HSP.Service.Implementations
 			return true;
 		}
 
-		public async Task<BookingAcceptResultDto> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, Guid serviceId, string token, DateTime desiredDate)
+		public async Task<BookingAcceptResultDto> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, List<Guid> ServiceIds, string token, DateTime desiredDate)
 		{
 			var waiting = await _redisCacheService.GetAsync<string>($"waiting_{token}");
 			if (string.IsNullOrEmpty(waiting))
@@ -272,22 +274,29 @@ namespace HSP.Service.Implementations
 			await _redisCacheService.SetAsync($"accepted_{token}", technician.Id, TimeSpan.FromSeconds(60));
 
 			var customer = await _userRepository.FindByIdAsync(customerId);
-			var service = await _serviceRepository.GetByIdAsync(serviceId);
-
-			if (customer == null || service == null)
-				return new BookingAcceptResultDto { IsSuccess = false, Message = "Dữ liệu khách hàng hoặc dịch vụ không hợp lệ." };
-
+			if (customer == null )
+				return new BookingAcceptResultDto { IsSuccess = false, Message = "Dữ liệu khách hàng không hợp lệ." };
+			var services = await _serviceRepository.GetAll()
+				.Where(x=> ServiceIds.Contains(x.Id))
+				.ToListAsync();
+			if (services == null || !services.Any())
+				return new BookingAcceptResultDto { IsSuccess = false, Message = "Không tìm thấy dịch vụ hợp lệ." };
 			var newBooking = new Booking
 			{
 				CustomerId = customer.Id,
 				TechnicianId = technician.Id,
-				ServiceId = service.Id,
 				DesiredDate = desiredDate,
 				DateCreated = DateTime.UtcNow,
 				Status = BookingStatus.Confirmed
 			};
-
+			var bookingItems = services.Select(s => new BookingItem
+			{
+				Booking = newBooking,
+				ServiceId = s.Id,
+				Price = 0, 
+			}).ToList();
 			await _bookingRepository.AddAsync(newBooking);
+			await _bookingItemRepository.AddRangeAsync(bookingItems);
 			await _unitOfWork.SaveChangesAsync();
 
 			return new BookingAcceptResultDto { IsSuccess = true, Message = "Xác nhận thành công!" };

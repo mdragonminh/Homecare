@@ -1,12 +1,14 @@
-﻿using HSP.Core.Resources;
+﻿using HSP.Core.Dtos.AuthenticationDto;
+using HSP.Core.Resources;
 using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Dtos.AuthenticationDto
 {
 	public class LoginResponseDto
 	{
-		public string JwtToken { get; set; } = string.Empty;
+		public TokenResponseDto JwtToken { get; set; } = null!;
 		public bool RequirePasswordSetup { get; set; }
+		public bool MustChangePasswordOnLogin { get; set; }
 	}
 	public class LoginRequestDto
 	{

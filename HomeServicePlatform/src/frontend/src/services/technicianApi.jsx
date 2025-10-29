@@ -258,4 +258,38 @@ export const technicianApi = {
       };
     }
   },
+
+  getTechnicianListForSupport: async () => {
+    try {
+      const jwtToken = localStorage.getItem("jwtToken");
+      if (!jwtToken) {
+        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
+      }
+
+      const response = await axiosClient.get(
+        `/Technician`, 
+        {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        }
+      );
+
+      if (ENABLE_DEBUG)
+        console.log("Lấy danh sách KTV cho Supporter thành công:", response.data);
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error("Lấy danh sách KTV cho Supporter lỗi:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          error.message ||
+          "Lỗi khi lấy danh sách kỹ thuật viên",
+      };
+    }
+  },
 };
+
