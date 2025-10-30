@@ -35,8 +35,9 @@ namespace HSP.DAL.Data
 		public DbSet<ChatConversation> ChatConversations { get; set; }
 		public DbSet<ChatMessage> ChatMessages { get; set; }
 		public DbSet<ChatAttachment> ChatAttachments { get; set; }
+        public DbSet<ChatMessageHistory> ChatMessageHistories { get; set; }
 
-		protected override void OnModelCreating(ModelBuilder builder)
+        protected override void OnModelCreating(ModelBuilder builder)
 		{
 			base.OnModelCreating(builder);
 			builder.Entity<AppUser>().ToTable("AppUsers");

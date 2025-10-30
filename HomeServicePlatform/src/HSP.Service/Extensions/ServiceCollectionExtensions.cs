@@ -34,6 +34,7 @@ namespace HSP.Service.Extensions
 			services.AddScoped<IEquipmentService, EquipmentService>();
 			services.AddScoped<IBookingService, BookingService>();
 			services.AddScoped<ITechnicianLocationService, TechnicianLocationService>();
+			services.AddScoped<IChatbotService, ChatbotService>();
 			return services;
 		}
 	}
