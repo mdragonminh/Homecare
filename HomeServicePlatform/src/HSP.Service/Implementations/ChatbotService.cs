@@ -78,7 +78,7 @@ namespace HSP.Service.Implementations
             // System Prompt
             string systemPrompt = _localizer["ChatbotSystemPrompt", servicesJsonForPrompt];
 
-            List<ChatMessage> messages = new List<ChatMessage>
+            List<OpenAI.Chat.ChatMessage> messages = new List<OpenAI.Chat.ChatMessage>
             {
                 new SystemChatMessage(systemPrompt)
             };
