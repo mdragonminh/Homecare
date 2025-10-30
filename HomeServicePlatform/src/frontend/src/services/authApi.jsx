@@ -54,6 +54,32 @@ export const authApi = {
     }
   },
 
+  changePassword: async ({ currentPassword, newPassword, confirmNewPassword }) => {
+    try {
+      const res = await axiosClient.post("/Authentication/change-password", {
+        currentPassword,
+        newPassword,
+        confirmNewPassword,
+      });
+      return { success: true, data: res.data };
+    } catch (error) {
+      console.error("Change password error:", error);
+
+      const responseData = error.response?.data;
+
+      if (
+        responseData &&
+        typeof responseData === "object" &&
+        !Array.isArray(responseData)
+      ) {
+        return { success: false, validationErrors: responseData };
+      }
+
+      const message = responseData?.message || "Đổi mật khẩu thất bại";
+      return { success: false, message };
+    }
+  },
+
   registerTechnician: async (formData) => {
     try {
       console.log("Sending registerTechnician (FormData) payload");
