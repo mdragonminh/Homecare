@@ -6,7 +6,6 @@ using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
 
@@ -15,30 +14,27 @@ namespace HSP.Service.Implementations
     public class AccountManagementService : BaseService, IAccountManagementService
     {
         private readonly IUserRepository _userRepository;
-        private readonly UserManager<AppUser> _userManager;
         private readonly RoleManager<AppRole> _roleManager;
 
         public AccountManagementService(
             IUserRepository userRepository,
-            UserManager<AppUser> userManager,
             RoleManager<AppRole> roleManager,
             IUnitOfWork unitOfWork,
             IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
         {
             _userRepository = userRepository;
-            _userManager = userManager;
             _roleManager = roleManager;
         }
 
         public async Task<PagedList<AccountResponseDto>> GetAccountsAsync(AccountFilterDto filter)
         {
             // Get all users with management roles
-            var allUsers = await _userManager.Users.ToListAsync();
+            var allUsers = await _userRepository.GetAllUsersAsync();
             var accountDtos = new List<AccountResponseDto>();
 
             foreach (var user in allUsers)
             {
-                var roles = await _userManager.GetRolesAsync(user);
+                var roles = await _userRepository.GetRolesAsync(user);
                 var userRole = roles.FirstOrDefault();
 
                 // Only include management roles (exclude customer and technician)
@@ -103,10 +99,14 @@ namespace HSP.Service.Implementations
 
         public async Task<AccountResponseDto?> GetAccountByIdAsync(string accountId)
         {
-            var user = await _userManager.FindByIdAsync(accountId);
+            if (!Guid.TryParse(accountId, out var userId)) 
+            {
+                return null;
+            }
+            var user = await _userRepository.FindByIdAsync(userId); 
             if (user == null) return null;
 
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await _userRepository.GetRolesAsync(user); 
             var userRole = roles.FirstOrDefault();
 
             return new AccountResponseDto
@@ -135,21 +135,20 @@ namespace HSP.Service.Implementations
                 throw new ValidationException(_localizer["InvalidRoleSpecified"]);
             }
 
-            // Check if role exists
             if (!await _roleManager.RoleExistsAsync(input.Role))
             {
                 throw new ValidationException(_localizer["RoleDoesNotExist", input.Role]);
             }
 
             // Check if email already exists
-            var existingUserByEmail = await _userManager.FindByEmailAsync(input.Email);
+            var existingUserByEmail = await _userRepository.FindByEmailAsync(input.Email); 
             if (existingUserByEmail != null)
             {
                 throw new ValidationException(_localizer["EmailAlreadyExists"]);
             }
 
             // Check if username already exists
-            var existingUserByUsername = await _userManager.FindByNameAsync(input.Username);
+            var existingUserByUsername = await _userRepository.FindByNameAsync(input.Username); 
             if (existingUserByUsername != null)
             {
                 throw new ValidationException(_localizer["UsernameAlreadyExists"]);
@@ -162,17 +161,16 @@ namespace HSP.Service.Implementations
                 FullName = input.FullName ?? string.Empty,
                 PhoneNumber = input.PhoneNumber,
                 Department = input.Department,
-                EmailConfirmed = true, // Auto-confirm for admin created accounts
+                EmailConfirmed = true,
                 IsActive = true,
                 DateCreated = DateTime.UtcNow,
                 CreatedBy = Guid.Parse(createdById),
                 MustChangePasswordOnLogin = true
             };
 
-            var result = await _userManager.CreateAsync(user, input.Password);
+            var result = await _userRepository.CreateAsync(user, input.Password);
             if (!result.Succeeded)
             {
-
                 foreach (var error in result.Errors)
                 {
                     if (error.Code == "InvalidUserName")
@@ -188,14 +186,13 @@ namespace HSP.Service.Implementations
 
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 throw new ValidationException(_localizer["FailedToCreateAccount", errors]);
-
             }
 
             // Add role to user
-            var roleResult = await _userManager.AddToRoleAsync(user, input.Role);
+            var roleResult = await _userRepository.AddToRoleAsync(user, input.Role); 
             if (!roleResult.Succeeded)
             {
-                await _userManager.DeleteAsync(user); // Cleanup if role assignment fails
+                await _userRepository.DeleteAsync(user); 
                 var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
                 throw new ValidationException(_localizer["FailedToAssignRole", errors]);
             }
@@ -205,7 +202,11 @@ namespace HSP.Service.Implementations
 
         public async Task<bool> UpdateAccountAsync(string accountId, UpdateAccountRequestDto input, string updatedById)
         {
-            var user = await _userManager.FindByIdAsync(accountId);
+            if (!Guid.TryParse(accountId, out var userId)) 
+            {
+                return false;
+            }
+            var user = await _userRepository.FindByIdAsync(userId); 
             if (user == null) return false;
 
             var hasChanges = false;
@@ -239,7 +240,7 @@ namespace HSP.Service.Implementations
                 user.DateModified = DateTime.UtcNow;
                 user.ModifiedBy = Guid.Parse(updatedById);
 
-                var result = await _userManager.UpdateAsync(user);
+                var result = await _userRepository.UpdateAccount(user); 
                 return result.Succeeded;
             }
 
@@ -248,7 +249,11 @@ namespace HSP.Service.Implementations
 
         public async Task<bool> DisableAccountAsync(string accountId, DisableAccountRequestDto input, string disabledById)
         {
-            var user = await _userManager.FindByIdAsync(accountId);
+            if (!Guid.TryParse(accountId, out var userId)) 
+            {
+                return false;
+            }
+            var user = await _userRepository.FindByIdAsync(userId); 
             if (user == null) return false;
 
             user.IsActive = false;
@@ -257,13 +262,17 @@ namespace HSP.Service.Implementations
             user.DisabledReason = input.Reason;
             user.DisabledAt = DateTime.UtcNow;
 
-            var result = await _userManager.UpdateAsync(user);
+            var result = await _userRepository.UpdateAccount(user); 
             return result.Succeeded;
         }
 
         public async Task<bool> EnableAccountAsync(string accountId, string enabledById)
         {
-            var user = await _userManager.FindByIdAsync(accountId);
+            if (!Guid.TryParse(accountId, out var userId)) 
+            {
+                return false;
+            }
+            var user = await _userRepository.FindByIdAsync(userId); 
             if (user == null) return false;
 
             user.IsActive = true;
@@ -272,13 +281,17 @@ namespace HSP.Service.Implementations
             user.DisabledReason = null;
             user.DisabledAt = null;
 
-            var result = await _userManager.UpdateAsync(user);
+            var result = await _userRepository.UpdateAccount(user); 
             return result.Succeeded;
         }
 
         public async Task<bool> DeleteAccountAsync(string accountId, string deletedById)
         {
-            var user = await _userManager.FindByIdAsync(accountId);
+            if (!Guid.TryParse(accountId, out var userId)) 
+            {
+                return false;
+            }
+            var user = await _userRepository.FindByIdAsync(userId); 
             if (user == null) return false;
 
             // Soft delete by disabling the account
@@ -288,16 +301,16 @@ namespace HSP.Service.Implementations
             user.DisabledReason = "Account deleted by administrator";
             user.DisabledAt = DateTime.UtcNow;
 
-            var result = await _userManager.UpdateAsync(user);
+            var result = await _userRepository.UpdateAccount(user); 
             return result.Succeeded;
         }
 
         public async Task<IEnumerable<AccountResponseDto>> GetAccountsByRoleAsync(string role)
         {
-            var usersInRole = await _userManager.GetUsersInRoleAsync(role);
+            var usersInRole = await _userRepository.GetUsersInRoleAsync(role); 
             var accounts = new List<AccountResponseDto>();
 
-            foreach (var user in usersInRole.Where(u => true))
+            foreach (var user in usersInRole)
             {
                 accounts.Add(new AccountResponseDto
                 {

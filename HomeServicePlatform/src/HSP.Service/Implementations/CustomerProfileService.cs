@@ -1,9 +1,11 @@
 ﻿using HSP.Core.Dtos.AppUserDto;
 using HSP.Core.Dtos.FileDto;
+using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
+using HSP.DAL.Extensions;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -135,20 +137,13 @@ namespace HSP.Service.Implementations
             return await GetCustomerByUserIdAsync(userId);
         }
 
-        public async Task<object> GetCustomersAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
+        public async Task<PagedList<AppUserDto>> GetCustomersAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
         {
             // Lấy tất cả users có role Customer
             var customerRole = await _roleManager.FindByNameAsync("Customer");
             if (customerRole == null)
             {
-                return new
-                {
-                    Data = new List<AppUserDto>(),
-                    TotalCount = 0,
-                    PageNumber = pageNumber,
-                    PageSize = pageSize,
-                    TotalPages = 0
-                };
+                return new PagedList<AppUserDto>(new List<AppUserDto>(), 0, pageNumber, pageSize);
             }
 
             var query = _userManager.Users
@@ -169,41 +164,40 @@ namespace HSP.Service.Implementations
             var customerUserIds = userIds.Select(u => u.Id).ToList();
             query = query.Where(x => customerUserIds.Contains(x.Id));
 
-            // Get total count for pagination
-            var totalCount = await query.CountAsync();
-
-            // Apply pagination
-            var customers = await query
-                .OrderByDescending(x => x.DateCreated)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .Select(x => new AppUserDto
-                {
-                    Id = x.Id,
-                    FullName = x.FullName,
-                    Email = x.Email ?? string.Empty,
-                    PhoneNumber = x.PhoneNumber ?? string.Empty,
-                    DateCreated = x.DateCreated,
-                    DateModified = x.DateModified,
-                    TotalHomes = x.Homes.Count,
-                    IsActive = x.IsActive,
-                    LastLoginAt = x.LastLoginAt
-                }).ToListAsync();
-
-            // Load avatars for each customer
-            foreach (var customer in customers)
+            var paginationParams = new PaginationParams
             {
-                customer.AvatarUrl = await GetUserAvatarUrlAsync(customer.Id);
-            }
-
-            return new
-            {
-                Data = customers,
-                TotalCount = totalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
-                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                OrderBy = "DateCreated descending" 
             };
+
+            var pagedUsers = await query.ToPagedListAsync(paginationParams);
+
+            var customerDtos = new List<AppUserDto>();
+            foreach (var user in pagedUsers.Items)
+            {
+                var avatarUrl = await GetUserAvatarUrlAsync(user.Id);
+                customerDtos.Add(new AppUserDto
+                {
+                    Id = user.Id,
+                    FullName = user.FullName,
+                    Email = user.Email ?? string.Empty,
+                    PhoneNumber = user.PhoneNumber ?? string.Empty,
+                    DateCreated = user.DateCreated,
+                    DateModified = user.DateModified,
+                    TotalHomes = user.Homes.Count,
+                    IsActive = user.IsActive,
+                    LastLoginAt = user.LastLoginAt,
+                    AvatarUrl = avatarUrl
+                });
+            }
+
+            return new PagedList<AppUserDto>(
+            customerDtos,
+            pagedUsers.TotalCount,
+            pageNumber, 
+            pageSize    
+);
         }
 
         public async Task<object> GetDebugInfoAsync()

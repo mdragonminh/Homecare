@@ -19,7 +19,12 @@ namespace HSP.Core.Interfaces.DataAccess
 		Task<IdentityResult> AddToRoleAsync(AppUser user, string role);
 		Task<IdentityResult> UpdateAccount(AppUser user);
 
-		Task<IList<UserLoginInfo>> GetLoginsAsync(AppUser user);
+        Task<IEnumerable<AppUser>> GetAllUsersAsync();
+        Task<AppUser?> FindByNameAsync(string username);
+        Task<IdentityResult> DeleteAsync(AppUser user);
+        Task<IList<AppUser>> GetUsersInRoleAsync(string role);
+
+        Task<IList<UserLoginInfo>> GetLoginsAsync(AppUser user);
 		Task<IdentityResult> AddLoginAsync(AppUser user, UserLoginInfo login);
 
 		Task<AppUser?> FindByLoginAsync(string loginProvider, string providerKey);

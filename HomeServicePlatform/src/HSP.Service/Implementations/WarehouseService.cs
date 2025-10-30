@@ -4,6 +4,7 @@ using HSP.Core.Dtos.Shared;
 using HSP.Core.Dtos.WarehouseDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,23 +43,24 @@ namespace HSP.Service.Implementations
                                         (w.Address != null && w.Address.Contains(searchTerm)));
             }
 
-            var totalCount = await query.CountAsync();
+            var paginationParams = new PaginationParams
+            {
+                PageNumber = page,
+                PageSize = pageSize,
+                OrderBy = "DateCreated descending" 
+            };
 
-            var warehouses = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(w => new WarehouseListDto
-                {
-                    Id = w.Id,
-                    Name = w.Name,
-                    Address = w.Address,
-                    ManagerName = w.Manager != null ? w.Manager.FullName : null,
-                    TotalEquipments = w.Equipments.Count(e => !e.IsDeleted),
-                    DateCreated = w.DateCreated
-                })
-                .ToListAsync();
+            var dtoQuery = query.Select(w => new WarehouseListDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                Address = w.Address,
+                ManagerName = w.Manager != null ? w.Manager.FullName : null,
+                TotalEquipments = w.Equipments.Count(e => !e.IsDeleted),
+                DateCreated = w.DateCreated
+            });
 
-            return new PagedList<WarehouseListDto>(warehouses, totalCount, page, pageSize);
+            return await dtoQuery.ToPagedListAsync(paginationParams);
         }
 
         public async Task<WarehouseDetailDto?> GetWarehouseByIdAsync(Guid id)

@@ -2,6 +2,7 @@ using HSP.Core.Dtos.Shared;
 using HSP.Core.Dtos.WarehouseDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.DAL.Extensions;
 using HSP.DAL.Interfaces;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -39,23 +40,24 @@ namespace HSP.Service.Implementations
                 query = query.Where(e => e.WarehouseId == warehouseId.Value);
             }
 
-            var totalCount = await query.CountAsync();
+            var paginationParams = new PaginationParams
+            {
+                PageNumber = page,
+                PageSize = pageSize,
+                OrderBy = "DateCreated descending" 
+            };
 
-            var equipments = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(e => new EquipmentListDto
-                {
-                    Id = e.Id,
-                    Name = e.Name,
-                    EquipmentCode = e.EquipmentCode,
-                    Quantity = e.Quantity,
-                    WarehouseName = e.Warehouse.Name,
-                    DateCreated = e.DateCreated
-                })
-                .ToListAsync();
+            var dtoQuery = query.Select(e => new EquipmentListDto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                EquipmentCode = e.EquipmentCode,
+                Quantity = e.Quantity,
+                WarehouseName = e.Warehouse.Name,
+                DateCreated = e.DateCreated
+            });
 
-            return new PagedList<EquipmentListDto>(equipments, totalCount, page, pageSize);
+            return await dtoQuery.ToPagedListAsync(paginationParams);
         }
 
         public async Task<EquipmentDto?> GetEquipmentByIdAsync(Guid id)

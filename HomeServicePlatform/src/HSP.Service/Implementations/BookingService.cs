@@ -5,6 +5,7 @@ using HSP.Core.Enums;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
+using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -79,62 +80,62 @@ namespace HSP.Service.Implementations
 				query = query.Where(b => b.DesiredDate <= input.ToDate.Value);
 			}
 
-			// Order by created date descending
-			query = query.OrderByDescending(b => b.DateCreated);
+            // Order by created date descending
+            if (string.IsNullOrWhiteSpace(input.OrderBy))
+            {
+                query = query.OrderByDescending(b => b.DateCreated);
+            }
 
-			var totalCount = await query.CountAsync();
-			var items = await query
-					.Skip((input.PageNumber - 1) * input.PageSize)
-					.Take(input.PageSize)
-					.Select(b => new BookingDto
-					{
-						Id = b.Id,
-						CustomerProfileId = b.CustomerId,
-						TechnicianId = b.TechnicianId,
-						//ServiceId = b.ServiceId,
-						DesiredDate = b.DesiredDate.Value,
-						ProblemDescription = b.ProblemDescription,
-						Status = b.Status,
-						DateCompleted = b.DateCompleted,
-						DateCreated = b.DateCreated,
-						DateModified = b.DateModified,
-						Customer = b.Customer != null ? new HSP.Core.Dtos.CustomerProfileDto.CustomerProfileDto
-						{
-							Id = b.Customer.Id,
-							UserId = b.CustomerId,
-							Email = b.Customer.Email ?? "",
-							PhoneNumber = b.Customer.PhoneNumber ?? ""
-						} : null,
-						Technician = b.Technician != null ? new HSP.Core.Dtos.TechnicianProfileDto.TechnicianProfileResponseDto
-						{
-							Id = b.Technician.Id,
-							UserId = b.Technician.UserId,
-							Email = b.Technician.User != null ? b.Technician.User.Email : null,
-							PhoneNumber = b.Technician.User != null ? b.Technician.User.PhoneNumber : null
-						} : null,
-						//Service = new HSP.Core.Dtos.ServiceDto.HomeServiceDto
-						//{
-						//	//Id = b.Service.Id,
-						//	//Name = b.Service.Name,
-						//	//BasePrice = b.Service.BasePrice
-						//},
-						Feedback = b.Feedback != null ? new BookingFeedbackResponseDto
-						{
-							BookingId = b.Feedback.BookingId,
-							Rating = b.Feedback.Rating,
-							Comment = b.Feedback.Comment
-						} : null,
-						Cancellation = b.Cancellation != null ? new BookingCancellationResponseDto
-						{
-							BookingId = b.Cancellation.BookingId,
-							Reason = b.Cancellation.Reason,
-							CancelledBy = b.Cancellation.CancelledBy,
-							CancelledAt = b.Cancellation.CancelledAt
-						} : null
-					})
-					.ToListAsync();
+            var dtoQuery = query.Select(b => new BookingDto
+            {
+                Id = b.Id,
+                CustomerProfileId = b.CustomerId,
+                TechnicianId = b.TechnicianId,
+                //ServiceId = b.ServiceId,
+                DesiredDate = b.DesiredDate.Value,
+                ProblemDescription = b.ProblemDescription,
+                Status = b.Status,
+                DateCompleted = b.DateCompleted,
+                DateCreated = b.DateCreated,
+                DateModified = b.DateModified,
+                Customer = b.Customer != null ? new HSP.Core.Dtos.CustomerProfileDto.CustomerProfileDto
+                {
+                    Id = b.Customer.Id,
+                    UserId = b.CustomerId,
+                    Email = b.Customer.Email ?? "",
+                    PhoneNumber = b.Customer.PhoneNumber ?? ""
+                } : null,
+                Technician = b.Technician != null ? new HSP.Core.Dtos.TechnicianProfileDto.TechnicianProfileResponseDto
+                {
+                    Id = b.Technician.Id,
+                    UserId = b.Technician.UserId,
+                    Email = b.Technician.User != null ? b.Technician.User.Email : null,
+                    PhoneNumber = b.Technician.User != null ? b.Technician.User.PhoneNumber : null
+                } : null,
+                //Service = new HSP.Core.Dtos.ServiceDto.HomeServiceDto
+                //{
+                //	//Id = b.Service.Id,
+                //	//Name = b.Service.Name,
+                //	//BasePrice = b.Service.BasePrice
+                //},
+                Feedback = b.Feedback != null ? new BookingFeedbackResponseDto
+                {
+                    BookingId = b.Feedback.BookingId,
+                    Rating = b.Feedback.Rating,
+                    Comment = b.Feedback.Comment
+                } : null,
+                Cancellation = b.Cancellation != null ? new BookingCancellationResponseDto
+                {
+                    BookingId = b.Cancellation.BookingId,
+                    Reason = b.Cancellation.Reason,
+                    CancelledBy = b.Cancellation.CancelledBy,
+                    CancelledAt = b.Cancellation.CancelledAt
+                } : null
+            });
 
-			return new PagedList<BookingDto>(items, totalCount, input.PageNumber, input.PageSize);
+            var pagedResult = await dtoQuery.ToPagedListAsync(input);
+
+            return pagedResult;
 		}
 
 		public async Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId)
