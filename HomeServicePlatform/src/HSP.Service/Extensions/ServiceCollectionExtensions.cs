@@ -14,6 +14,7 @@ namespace HSP.Service.Extensions
 			services.AddScoped<IAuthenticationService, AuthenticationService>();
 			services.AddScoped<IAccountManagementService, AccountManagementService>();
 			services.AddScoped<IEmailService, EmailService>();
+			services.AddScoped<IAuthSignInService, AuthSignInService>();
 			services.AddScoped<IFileService, FileService>();
 			services.AddScoped<IHomeService, HomeService>();
 			services.AddScoped<IGeocodingService, GoogleMapsGeocodingService>();
