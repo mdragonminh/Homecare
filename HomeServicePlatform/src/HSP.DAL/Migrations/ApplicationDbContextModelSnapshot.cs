@@ -63,11 +63,14 @@ namespace HSP.DAL.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateModified")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Department")
                         .HasMaxLength(100)
@@ -125,9 +128,6 @@ namespace HSP.DAL.Migrations
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
@@ -221,7 +221,10 @@ namespace HSP.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("CustomerProfileId")
+                    b.Property<Guid?>("AppUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CustomerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("DateCompleted")
@@ -233,7 +236,7 @@ namespace HSP.DAL.Migrations
                     b.Property<DateTime>("DateModified")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("DesiredDate")
+                    b.Property<DateTime?>("DesiredDate")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
@@ -254,7 +257,9 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomerProfileId");
+                    b.HasIndex("AppUserId");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("ServiceId");
 
@@ -300,10 +305,19 @@ namespace HSP.DAL.Migrations
                     b.ToTable("BookingFeedbacks");
                 });
 
-            modelBuilder.Entity("HSP.Core.Entities.CustomerProfile", b =>
+            modelBuilder.Entity("HSP.Core.Entities.ChatMessageHistory", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CustomerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("DateCreated")
@@ -312,47 +326,23 @@ namespace HSP.DAL.Migrations
                     b.Property<DateTime>("DateModified")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                    b.Property<string>("FunctionArguments")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("FunctionName")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("CustomerProfiles");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.CustomerSupporter", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("DateCreated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DateModified")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("ToolCallId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("CustomerSupporters");
+                    b.ToTable("ChatMessageHistories");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.Equipment", b =>
@@ -493,7 +483,7 @@ namespace HSP.DAL.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<Guid>("CustomerProfileId")
+                    b.Property<Guid>("CustomerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("DateCreated")
@@ -518,7 +508,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomerProfileId");
+                    b.HasIndex("CustomerId");
 
                     b.ToTable("Homes");
                 });
@@ -600,12 +590,6 @@ namespace HSP.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("BasePrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("CategoryId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
@@ -632,44 +616,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CategoryId");
-
                     b.ToTable("Services");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.ServiceCategory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("DateCreated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DateModified")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid?>("ModifiedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ServiceCategories");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.SystemSetting", b =>
@@ -997,9 +944,13 @@ namespace HSP.DAL.Migrations
 
             modelBuilder.Entity("HSP.Core.Entities.Booking", b =>
                 {
-                    b.HasOne("HSP.Core.Entities.CustomerProfile", "Customer")
+                    b.HasOne("HSP.Core.Entities.AppUser", null)
+                        .WithMany("Bookings")
+                        .HasForeignKey("AppUserId");
+
+                    b.HasOne("HSP.Core.Entities.AppUser", "Customer")
                         .WithMany()
-                        .HasForeignKey("CustomerProfileId")
+                        .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1010,7 +961,7 @@ namespace HSP.DAL.Migrations
                         .IsRequired();
 
                     b.HasOne("HSP.Core.Entities.TechnicianProfile", "Technician")
-                        .WithMany()
+                        .WithMany("Bookings")
                         .HasForeignKey("TechnicianId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -1041,28 +992,6 @@ namespace HSP.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("Booking");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.CustomerProfile", b =>
-                {
-                    b.HasOne("HSP.Core.Entities.AppUser", "User")
-                        .WithOne("CustomerProfile")
-                        .HasForeignKey("HSP.Core.Entities.CustomerProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.CustomerSupporter", b =>
-                {
-                    b.HasOne("HSP.Core.Entities.AppUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.Equipment", b =>
@@ -1101,9 +1030,9 @@ namespace HSP.DAL.Migrations
 
             modelBuilder.Entity("HSP.Core.Entities.Home", b =>
                 {
-                    b.HasOne("HSP.Core.Entities.CustomerProfile", "CustomerProfile")
+                    b.HasOne("HSP.Core.Entities.AppUser", "CustomerProfile")
                         .WithMany("Homes")
-                        .HasForeignKey("CustomerProfileId")
+                        .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1119,17 +1048,6 @@ namespace HSP.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("Home");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.Service", b =>
-                {
-                    b.HasOne("HSP.Core.Entities.ServiceCategory", "Category")
-                        .WithMany("Services")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.TechnicianProfile", b =>
@@ -1151,7 +1069,7 @@ namespace HSP.DAL.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("HSP.Core.Entities.CustomerSupporter", "Supporter")
+                    b.HasOne("HSP.Core.Entities.AppUser", "Supporter")
                         .WithMany()
                         .HasForeignKey("SupporterId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1247,7 +1165,9 @@ namespace HSP.DAL.Migrations
 
             modelBuilder.Entity("HSP.Core.Entities.AppUser", b =>
                 {
-                    b.Navigation("CustomerProfile");
+                    b.Navigation("Bookings");
+
+                    b.Navigation("Homes");
 
                     b.Navigation("TechnicianProfile");
                 });
@@ -1257,11 +1177,6 @@ namespace HSP.DAL.Migrations
                     b.Navigation("Cancellation");
 
                     b.Navigation("Feedback");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.CustomerProfile", b =>
-                {
-                    b.Navigation("Homes");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.File", b =>
@@ -1284,13 +1199,10 @@ namespace HSP.DAL.Migrations
                     b.Navigation("Bookings");
                 });
 
-            modelBuilder.Entity("HSP.Core.Entities.ServiceCategory", b =>
-                {
-                    b.Navigation("Services");
-                });
-
             modelBuilder.Entity("HSP.Core.Entities.TechnicianProfile", b =>
                 {
+                    b.Navigation("Bookings");
+
                     b.Navigation("CertificateFiles");
                 });
 

@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Dtos.ServiceRequestDto;
+using HSP.Core.Entities; 
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -14,8 +15,7 @@ namespace HSP.API.Controllers
     public class ChatInputDto
     {
         public string Message { get; set; }
-        // lưu lịch sử chat
-        // public string ConversationId { get; set; } 
+        public Guid? ConversationId { get; set; }
     }
 
     public class GptBookingArgs
@@ -30,6 +30,65 @@ namespace HSP.API.Controllers
         public List<string> ServiceIds { get; set; }
     }
 
+    public class BookingToolParameters
+    {
+        [JsonPropertyName("type")]
+        public string Type { get; set; } = "object";
+
+        [JsonPropertyName("properties")]
+        public BookingToolProperties Properties { get; set; }
+
+        [JsonPropertyName("required")]
+        public List<string> Required { get; set; } = ["Address", "DesireDateTime", "ServiceIds"];
+    }
+
+    public class BookingToolProperties
+    {
+        [JsonPropertyName("Address")]
+        public ToolProperty Address { get; set; } = new("string", "Địa chỉ đầy đủ của khách hàng, ví dụ: '123 đường ABC, phường XYZ, quận 1, TPHCM'");
+
+        [JsonPropertyName("DesireDateTime")]
+        public ToolProperty DesireDateTime { get; set; } = new("string", "Ngày giờ mong muốn thực hiện dịch vụ, định dạng ISO 8601, ví dụ: '2025-10-30T14:30:00'") { Format = "date-time" };
+
+        [JsonPropertyName("ServiceIds")]
+        public ToolProperty ServiceIds { get; set; } 
+    }
+
+    public class ToolProperty
+    {
+        [JsonPropertyName("type")]
+        public string Type { get; set; }
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; }
+
+        [JsonPropertyName("format")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Format { get; set; }
+
+        [JsonPropertyName("items")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public ToolPropertyItems? Items { get; set; }
+
+        public ToolProperty(string type, string description)
+        {
+            Type = type;
+            Description = description;
+        }
+    }
+
+    public class ToolPropertyItems
+    {
+        [JsonPropertyName("type")]
+        public string Type { get; set; } = "string";
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = "ID (Guid) của một dịch vụ";
+
+        [JsonPropertyName("enum")]
+        public List<string> Enum { get; set; } 
+    }
+
 
     [Route("api/[controller]")]
     [ApiController]
@@ -39,88 +98,110 @@ namespace HSP.API.Controllers
         private readonly ChatClient _client;
         private readonly IServiceRequestService _serviceRequestService;
         private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
+        private readonly IRepository<ChatMessageHistory, Guid> _historyRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public ChatbotController(IConfiguration configuration,
                                  IServiceRequestService serviceRequestService,
-                                 IRepository<Core.Entities.Service, Guid> serviceRepository)
+                                 IRepository<Core.Entities.Service, Guid> serviceRepository,
+                                 IRepository<ChatMessageHistory, Guid> historyRepository,
+                                 IUnitOfWork unitOfWork)
         {
             var apiKey = configuration["OPENAI_API_KEY"];
             _client = new("gpt-4o", apiKey);
             _serviceRequestService = serviceRequestService;
             _serviceRepository = serviceRepository;
+            _historyRepository = historyRepository;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpPost("chat")]
         public async Task<IActionResult> PostChat([FromBody] ChatInputDto input)
         {
-            var customerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(customerId))
+            var customerIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(customerIdString) || !Guid.TryParse(customerIdString, out Guid customerId))
             {
                 return Unauthorized(new { message = "User is not authenticated" });
             }
 
+            Guid conversationId = input.ConversationId ?? Guid.NewGuid();
+
             var availableServices = await _serviceRepository.GetAll()
                 .Select(s => new { s.Id, s.Name })
                 .ToListAsync();
-
             var servicesJsonForPrompt = JsonSerializer.Serialize(availableServices);
-
-            string jsonSchema = $$"""
+            var toolProperties = new BookingToolProperties
             {
-                "type": "object",
-                "properties": {
-                    "Address": {
-                        "type": "string",
-                        "description": "Địa chỉ đầy đủ của khách hàng, ví dụ: '123 đường ABC, phường XYZ, quận 1, TPHCM'"
-                    },
-                    "DesireDateTime": {
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "Ngày giờ mong muốn thực hiện dịch vụ, định dạng ISO 8601, ví dụ: '2025-10-30T14:30:00'"
-                    },
-                    "ServiceIds": {
-                        "type": "array",
-                        "description": "Danh sách các ID của dịch vụ mà khách hàng muốn đặt. Lấy ID từ danh sách được cung cấp.",
-                        "items": {
-                            "type": "string",
-                            "description": "ID (Guid) của một dịch vụ",
-                            "enum": [ {{string.Join(",", availableServices.Select(s => $"\"{s.Id}\""))}} ]
-                        }
+                ServiceIds = new ToolProperty("array", "Danh sách các ID của dịch vụ mà khách hàng muốn đặt.")
+                {
+                    Items = new ToolPropertyItems
+                    {
+                        Enum = availableServices.Select(s => s.Id.ToString()).ToList()
                     }
-                },
-                "required": [ "Address", "DesireDateTime", "ServiceIds" ]
-            }
-            """;
+                }
+            };
 
-            byte[] schemaBytes = System.Text.Encoding.UTF8.GetBytes(jsonSchema);
+            var bookingSchema = new BookingToolParameters
+            {
+                Properties = toolProperties
+            };
+
+            var schemaBytes = JsonSerializer.SerializeToUtf8Bytes(bookingSchema);
 
             var createBookingTool = ChatTool.CreateFunctionTool(
                 functionName: "create_booking_request",
                 functionDescription: "Tạo một yêu cầu đặt dịch vụ (booking) mới cho người dùng. Chỉ gọi khi đã có ĐỦ 3 thông tin: Address, DesireDateTime, và ServiceIds.",
                 functionParameters: BinaryData.FromBytes(schemaBytes)
             );
+            string systemPrompt = $$""" ... """;
 
-            string systemPrompt = $$"""
-            Bạn LÀ trợ lý ảo của Home Service Platform. Vai trò DUY NHẤT của bạn là thu thập thông tin đặt lịch.
-            
-            ## Quy tắc BẮT BUỘC:
-            1.  Nhiệm vụ của bạn là lấy 3 thông tin: `Address` (Địa chỉ), `DesireDateTime` (Thời gian), và `ServiceIds` (Dịch vụ).
-            2.  **PHẢI HỎI LẠI** nếu thiếu bất kỳ thông tin nào. Ví dụ:
-                * Nếu user chỉ nói "dọn nhà", hãy hỏi: "Bạn muốn dọn nhà ở đâu và vào lúc nào ạ?"
-                * Nếu user nói "dọn nhà ở Hòa Lạc", hãy hỏi: "Bạn muốn dọn vào lúc nào?"
-            3.  **CHỈ** gọi hàm `create_booking_request` khi và CHỈ KHI bạn đã có CẢ 3 thông tin.
-            4.  **KHÔNG ĐƯỢC** tự trả lời lỗi. Nếu bạn không hiểu, hãy hỏi lại.
-            
-            ## Danh sách dịch vụ (Name và Id):
-            {{servicesJsonForPrompt}}
-            Hãy dùng đúng Id này khi gọi hàm.
-            """;
+            List<ChatMessage> messages = new List<ChatMessage>();
 
-            List<ChatMessage> messages =
-            [
-                new SystemChatMessage(systemPrompt),
-                new UserChatMessage(input.Message),
-            ];
+            messages.Add(new SystemChatMessage(systemPrompt));
+
+            var history = await _historyRepository.GetAll()
+                .Where(h => h.ConversationId == conversationId && h.CustomerId == customerId)
+                .OrderBy(h => h.DateCreated)
+                .ToListAsync();
+
+            foreach (var dbMsg in history)
+            {
+                if (dbMsg.Role == "User")
+                {
+                    messages.Add(new UserChatMessage(dbMsg.Content));
+                }
+                else if (dbMsg.Role == "Assistant")
+                {
+                    if (!string.IsNullOrEmpty(dbMsg.FunctionName))
+                    {
+                        messages.Add(new AssistantChatMessage(
+                            dbMsg.ToolCallId,
+                            dbMsg.FunctionName,
+                            dbMsg.FunctionArguments));
+                    }
+                    else
+                    {
+                        messages.Add(new AssistantChatMessage(dbMsg.Content));
+                    }
+                }
+                else if (dbMsg.Role == "Tool")
+                {
+                    messages.Add(new ToolChatMessage(dbMsg.ToolCallId, dbMsg.Content));
+                }
+            }
+
+            messages.Add(new UserChatMessage(input.Message));
+
+            List<ChatMessageHistory> newMessagesToSave = new List<ChatMessageHistory>();
+            newMessagesToSave.Add(new ChatMessageHistory
+            {
+                ConversationId = conversationId,
+                CustomerId = customerId,
+                Role = "User",
+                Content = input.Message,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow
+            });
 
             ChatCompletionOptions options = new()
             {
@@ -145,6 +226,16 @@ namespace HSP.API.Controllers
                             {
                                 finalAssistantResponse = completion.Content[0].Text;
                             }
+
+                            newMessagesToSave.Add(new ChatMessageHistory
+                            {
+                                ConversationId = conversationId,
+                                CustomerId = customerId,
+                                Role = "Assistant",
+                                Content = finalAssistantResponse,
+                                DateCreated = DateTime.UtcNow,
+                                DateModified = DateTime.UtcNow
+                            });
                             break;
                         }
 
@@ -154,25 +245,32 @@ namespace HSP.API.Controllers
 
                             foreach (ChatToolCall toolCall in completion.ToolCalls)
                             {
+                                newMessagesToSave.Add(new ChatMessageHistory
+                                {
+                                    ConversationId = conversationId,
+                                    CustomerId = customerId,
+                                    Role = "Assistant",
+                                    ToolCallId = toolCall.Id,
+                                    FunctionName = toolCall.FunctionName,
+                                    FunctionArguments = toolCall.FunctionArguments.ToString(),
+                                    DateCreated = DateTime.UtcNow,
+                                    DateModified = DateTime.UtcNow
+                                });
+
                                 if (toolCall.FunctionName == "create_booking_request")
                                 {
                                     using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
                                     var gptArgs = argumentsJson.RootElement.Deserialize<GptBookingArgs>();
-
-                                    var bookingDto = new CustomerCreateBookingDto
-                                    {
-                                        Address = gptArgs.Address,
-                                        DesireDateTime = gptArgs.DesireDateTime,
-                                        ServiceIds = gptArgs.ServiceIds.Select(Guid.Parse).ToList(),
-                                        CustomerId = customerId,
-                                        DistanceKm = 50
-                                    };
+                                    var bookingDto = new CustomerCreateBookingDto { /* ... */ };
+                                    bookingDto.Address = gptArgs.Address;
+                                    bookingDto.DesireDateTime = gptArgs.DesireDateTime;
+                                    bookingDto.ServiceIds = gptArgs.ServiceIds.Select(Guid.Parse).ToList();
+                                    bookingDto.CustomerId = customerIdString;
 
                                     string toolResultString;
                                     try
                                     {
                                         MatchedBookingResultDto matchResult = await _serviceRequestService.CreateAndMatchBookingAsync(bookingDto);
-
                                         toolResultString = JsonSerializer.Serialize(matchResult);
                                     }
                                     catch (Exception ex)
@@ -182,6 +280,17 @@ namespace HSP.API.Controllers
 
                                     messages.Add(new ToolChatMessage(toolCall.Id, toolResultString));
                                     requiresAction = true;
+
+                                    newMessagesToSave.Add(new ChatMessageHistory
+                                    {
+                                        ConversationId = conversationId,
+                                        CustomerId = customerId,
+                                        Role = "Tool",
+                                        Content = toolResultString,
+                                        ToolCallId = toolCall.Id, 
+                                        DateCreated = DateTime.UtcNow,
+                                        DateModified = DateTime.UtcNow
+                                    });
                                 }
                             }
                             break;
@@ -192,7 +301,17 @@ namespace HSP.API.Controllers
                 }
             } while (requiresAction);
 
-            return Ok(new { response = finalAssistantResponse });
+            if (newMessagesToSave.Any())
+            {
+                await _historyRepository.AddRangeAsync(newMessagesToSave);
+                await _unitOfWork.SaveChangesAsync(); 
+            }
+
+            return Ok(new
+            {
+                response = finalAssistantResponse,
+                conversationId = conversationId 
+            });
         }
     }
 }
