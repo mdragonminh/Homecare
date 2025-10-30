@@ -22,7 +22,9 @@ import EquipmentManagerEquipmentPage from "../pages/equipmentmanager/EquipmentMa
 import EquipmentManagerWarehousePage from "../pages/equipmentmanager/EquipmentManagerWarehousePage";
 import TechnicianLayout from "../pages/technician/TechnicianLayout";
 import TechnicianBookingsPage from "../pages/technician/TechnicianBookingsPage";
+import TechnicianChat from "../pages/technician/TechnicianChat";
 import BookingDetailPage from "../pages/technician/BookingDetailPage";
+import CustomerChat from "../pages/client/CustomerChat";
 
 function ProtectedRoleLayout({ loggedInUser, allowedRoles, children }) {
   const location = useLocation();
@@ -100,6 +102,21 @@ export default function AppRoutes({
           }
         />
       </Route>
+
+      {/* Customer Chat Route */}
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoleLayout 
+            loggedInUser={loggedInUser} 
+            allowedRoles={["customer"]}
+          >
+            <div className="min-h-screen">
+              <CustomerChat />
+            </div>
+          </ProtectedRoleLayout>
+        }
+      />
 
       {/* ---- Auth routes ---- */}
       <Route
@@ -226,6 +243,7 @@ export default function AppRoutes({
         <Route path="/technician" element={<Navigate to="/technician/bookings" replace />} />
         <Route path="/technician/bookings" element={<TechnicianBookingsPage />} />
         <Route path="/technician/bookings/:id" element={<BookingDetailPage />} />
+        <Route path="/technician/chat" element={<TechnicianChat />} />
       </Route>
 
     </Routes>

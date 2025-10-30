@@ -5,6 +5,7 @@ import {
   ClipboardDocumentListIcon,
   ArrowRightOnRectangleIcon,
   HomeIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import { UserCircleIcon } from "lucide-react";
 
@@ -23,6 +24,12 @@ const TechnicianLayout = () => {
       name: "Quản lý Booking",
       href: "/technician/bookings",
       icon: ClipboardDocumentListIcon,
+      end: false,
+    },
+    {
+      name: "Chat",
+      href: "/technician/chat",
+      icon: ChatBubbleLeftRightIcon,
       end: false,
     },
   ];
