@@ -27,7 +27,7 @@ namespace HSP.Service.Implementations
 	{
 		private readonly IUserRepository _userRepository;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
-		private readonly SignInManager<AppUser> _signInManager;
+		private readonly IAuthSignInService _signInService;
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly IJwtService _jwtService;
 		private readonly IEmailService _emailService;
@@ -38,7 +38,7 @@ namespace HSP.Service.Implementations
 		public AuthenticationService(IUserRepository userRepository,
 			IOptions<UrlSettingsDto> urlOptions,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
-			SignInManager<AppUser> signInManager,
+			IAuthSignInService signInService,
 			IJwtService jwtService,
 			IEmailService emailService,
 			IEmailTemplateService emailTemplateService,
@@ -49,7 +49,7 @@ namespace HSP.Service.Implementations
 			_userRepository = userRepository;
 			_urlSettings = urlOptions.Value;
 			_technicianRepository = technicianRepository;
-			_signInManager = signInManager;
+			_signInService = signInService;
 			_jwtService = jwtService;
 			_emailService = emailService;
 			_emailTemplateService = emailTemplateService;
@@ -131,7 +131,7 @@ namespace HSP.Service.Implementations
 		}
 		public async Task<LoginResponseDto> GoogleLogin()
 		{
-			var info = await _signInManager.GetExternalLoginInfoAsync();
+			var info = await _signInService.GetExternalLoginInfoAsync();
 			if (info == null)
 			{
 				throw new Exception(_localizer["ErrorLoadingGoogleLogin"]);

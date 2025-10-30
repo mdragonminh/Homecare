@@ -1,14 +1,11 @@
 ﻿using HSP.Core.Constans;
 using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Core.Dtos.ConfigurationDto;
-using HSP.Core.Entities;
 using HSP.Core.Interfaces.External;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Razor.Templating.Core;
 using System.ComponentModel.DataAnnotations;
@@ -24,7 +21,7 @@ namespace HSP.API.Controllers
 	{
 		private readonly IAuthenticationService _authenticationService;
 		private readonly UrlSettingsDto _urlSettings;
-		private readonly SignInManager<AppUser> _signInManager;
+		private readonly IAuthSignInService _signInService;
 		private readonly IJwtService _jwtService;
 		private readonly IRedisCacheService _redisCacheService;
 
@@ -32,13 +29,13 @@ namespace HSP.API.Controllers
 			IOptions<UrlSettingsDto> urlOptions,
 			IJwtService jwtService,
 			IRedisCacheService redisCacheService,
-			SignInManager<AppUser> signInManager)
+			IAuthSignInService signInService)
 		{
 			_authenticationService = authenticationService;
 			_urlSettings = urlOptions.Value;
 			_jwtService = jwtService;
 			_redisCacheService = redisCacheService;
-			_signInManager = signInManager;
+			_signInService = signInService;
 		}
 
 		[HttpPost("register")]
@@ -158,10 +155,14 @@ namespace HSP.API.Controllers
 		}
 		[HttpGet("google-login")]
 		[AllowAnonymous]
-		public IActionResult GoogleLogin()
+		public async Task<IActionResult> GoogleLogin()
 		{
 			var redirectUrl = Url.Action(nameof(GoogleCallback), "Authentication");
-			var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
+			if (redirectUrl == null)
+			{
+				return Problem("Failed to generate redirect url: " + StatusCode(500));
+			}
+			var properties = _signInService.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
 			return new ChallengeResult("Google", properties);
 		}
 
@@ -171,8 +172,8 @@ namespace HSP.API.Controllers
 		{
 			var loginResponse = await _authenticationService.GoogleLogin();
 			var code = Guid.NewGuid().ToString("N");
-			await _redisCacheService.SetAsync($"auth:{code}", 
-				JsonSerializer.Serialize(loginResponse), 
+			await _redisCacheService.SetAsync($"auth:{code}",
+				JsonSerializer.Serialize(loginResponse),
 				TimeSpan.FromMinutes(3));
 			var redirectUrl = $"{_urlSettings.FrontendLoginSuccess}?code={code}";
 			return Redirect(redirectUrl);
