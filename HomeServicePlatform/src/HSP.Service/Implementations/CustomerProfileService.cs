@@ -18,29 +18,30 @@ namespace HSP.Service.Implementations
 {
     public class CustomerProfileService : BaseService, ICustomerProfileService
     {
-        private readonly UserManager<AppUser> _userManager;
         private readonly RoleManager<AppRole> _roleManager;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
         private readonly IRepository<HSP.Core.Entities.File, Guid> _fileRepository;
         private readonly IRepository<FileRelation, Guid> _fileRelationRepository;
         private readonly IRepository<ObjectType, Guid> _objectTypeRepository;
+        private readonly IUserRepository _userRepository;
 
         public CustomerProfileService(
             IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer,
-            UserManager<AppUser> userManager, RoleManager<AppRole> roleManager,
+            RoleManager<AppRole> roleManager,
             IEmailService emailService, IConfiguration configuration,
             IRepository<HSP.Core.Entities.File, Guid> fileRepository,
             IRepository<FileRelation, Guid> fileRelationRepository,
-            IRepository<ObjectType, Guid> objectTypeRepository) : base(unitOfWork, localizer)
+            IRepository<ObjectType, Guid> objectTypeRepository, 
+            IUserRepository userRepository) : base(unitOfWork, localizer)
         {
-            _userManager = userManager;
             _roleManager = roleManager;
             _emailService = emailService;
             _configuration = configuration;
             _fileRepository = fileRepository;
             _fileRelationRepository = fileRelationRepository;
             _objectTypeRepository = objectTypeRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<AppUserDto> GetCustomerByUserIdAsync(string userId)
@@ -50,7 +51,7 @@ namespace HSP.Service.Implementations
                 throw new ArgumentException("Invalid user ID format");
             }
 
-            var user = await _userManager.Users
+            var user = await _userRepository.GetUsersAsQueryable()
                 .Include(x => x.Homes.Where(h => !h.IsDeleted))
                 .Where(x => x.Id == userGuid && x.IsActive)
                 .FirstOrDefaultAsync();
@@ -80,7 +81,7 @@ namespace HSP.Service.Implementations
 
         public async Task<AppUserDto> GetCustomerByIdAsync(Guid userId)
         {
-            var user = await _userManager.Users
+            var user = await _userRepository.GetUsersAsQueryable() 
                 .Include(x => x.Homes.Where(h => !h.IsDeleted))
                 .Where(x => x.Id == userId && x.IsActive)
                 .FirstOrDefaultAsync();
@@ -115,7 +116,7 @@ namespace HSP.Service.Implementations
                 throw new ArgumentException("Invalid user ID format");
             }
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userRepository.FindByIdAsync(userGuid);
             if (user == null)
             {
                 throw new KeyNotFoundException($"User not found for ID: {userId}");
@@ -127,7 +128,7 @@ namespace HSP.Service.Implementations
             user.PhoneNumber = updateDto.PhoneNumber;
             user.DateModified = DateTime.UtcNow;
 
-            var result = await _userManager.UpdateAsync(user);
+            var result = await _userRepository.UpdateAccount(user);
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
@@ -146,7 +147,7 @@ namespace HSP.Service.Implementations
                 return new PagedList<AppUserDto>(new List<AppUserDto>(), 0, pageNumber, pageSize);
             }
 
-            var query = _userManager.Users
+            var query = _userRepository.GetUsersAsQueryable()
                 .Include(x => x.Homes.Where(h => !h.IsDeleted))
                 .Where(x => x.IsActive);
 
@@ -160,7 +161,7 @@ namespace HSP.Service.Implementations
             }
 
             // Filter by Customer role
-            var userIds = await _userManager.GetUsersInRoleAsync("Customer");
+            var userIds = await _userRepository.GetUsersInRoleAsync("Customer");
             var customerUserIds = userIds.Select(u => u.Id).ToList();
             query = query.Where(x => customerUserIds.Contains(x.Id));
 
@@ -197,7 +198,7 @@ namespace HSP.Service.Implementations
             pagedUsers.TotalCount,
             pageNumber, 
             pageSize    
-);
+            );
         }
 
         public async Task<object> GetDebugInfoAsync()
@@ -215,7 +216,7 @@ namespace HSP.Service.Implementations
                     };
                 }
 
-                var customers = await _userManager.GetUsersInRoleAsync("Customer");
+                var customers = await _userRepository.GetUsersInRoleAsync("Customer");
                 var customersInfo = customers.Where(x => x.IsActive).Select(x => new
                 {
                     Id = x.Id,
@@ -256,7 +257,7 @@ namespace HSP.Service.Implementations
                     };
                 }
 
-                var user = await _userManager.FindByIdAsync(userId);
+                var user = await _userRepository.FindByIdAsync(userGuid);
                 if (user == null)
                 {
                     return new EmailChangeResponseDto
@@ -277,7 +278,7 @@ namespace HSP.Service.Implementations
                 }
 
                 // Kiểm tra email mới có bị trùng với user khác không
-                var existingUser = await _userManager.FindByEmailAsync(newEmail);
+                var existingUser = await _userRepository.FindByEmailAsync(newEmail);
                 if (existingUser != null)
                 {
                     return new EmailChangeResponseDto
@@ -288,7 +289,7 @@ namespace HSP.Service.Implementations
                 }
 
                 // Tạo token để xác thực email
-                var token = await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+                var token = await _userRepository.GenerateChangeEmailTokenAsync(user, newEmail);
 
                 // Tạo link xác thực
                 var tokenBytes = Encoding.UTF8.GetBytes($"{userId}:{newEmail}:{token}");
@@ -375,7 +376,16 @@ namespace HSP.Service.Implementations
                     };
                 }
 
-                var user = await _userManager.FindByIdAsync(userId);
+                if (!Guid.TryParse(userId, out var userGuid))
+                {
+                    return new EmailChangeResponseDto
+                    {
+                        Success = false,
+                        Message = "User ID không hợp lệ"
+                    };
+                }
+
+                var user = await _userRepository.FindByIdAsync(userGuid);
                 if (user == null)
                 {
                     return new EmailChangeResponseDto
@@ -386,7 +396,7 @@ namespace HSP.Service.Implementations
                 }
 
                 // Kiểm tra email mới có bị trùng không (trước khi thay đổi)
-                var existingUser = await _userManager.FindByEmailAsync(newEmail);
+                var existingUser = await _userRepository.FindByEmailAsync(newEmail);
                 if (existingUser != null && existingUser.Id != user.Id)
                 {
                     return new EmailChangeResponseDto
@@ -397,7 +407,7 @@ namespace HSP.Service.Implementations
                 }
 
                 // Xác thực token và thay đổi email
-                var result = await _userManager.ChangeEmailAsync(user, newEmail, changeEmailToken);
+                var result = await _userRepository.ChangeEmailAsync(user, newEmail, changeEmailToken);
                 if (!result.Succeeded)
                 {
                     var errors = string.Join(", ", result.Errors.Select(e => e.Description));
@@ -412,7 +422,7 @@ namespace HSP.Service.Implementations
                 if (user.UserName == user.Email)
                 {
                     user.UserName = newEmail;
-                    await _userManager.UpdateAsync(user);
+                    await _userRepository.UpdateAccount(user);
                 }
 
                 return new EmailChangeResponseDto

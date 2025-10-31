@@ -168,5 +168,20 @@ namespace HSP.DAL.Repositories
 
 			return await _userManager.FindByIdAsync(tokenEntry.UserId.ToString());
 		}
-	}
+
+        public IQueryable<AppUser> GetUsersAsQueryable()
+        {
+            return _userManager.Users;
+        }
+
+        public async Task<string> GenerateChangeEmailTokenAsync(AppUser user, string newEmail)
+        {
+            return await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+        }
+
+        public async Task<IdentityResult> ChangeEmailAsync(AppUser user, string newEmail, string token)
+        {
+            return await _userManager.ChangeEmailAsync(user, newEmail, token);
+        }
+    }
 }

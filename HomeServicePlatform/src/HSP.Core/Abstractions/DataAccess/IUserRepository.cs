@@ -36,5 +36,9 @@ namespace HSP.Core.Interfaces.DataAccess
 		Task SetAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName, string tokenValue);
 		Task<string?> GetAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName);
 		Task<AppUser?> FindByTokenAsync(string tokenValue, string tokenName = "RefreshToken", string loginProvider = "Default");
-	}
+
+        IQueryable<AppUser> GetUsersAsQueryable();
+        Task<string> GenerateChangeEmailTokenAsync(AppUser user, string newEmail);
+        Task<IdentityResult> ChangeEmailAsync(AppUser user, string newEmail, string token);
+    }
 }
