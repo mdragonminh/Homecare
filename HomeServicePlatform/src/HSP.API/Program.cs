@@ -67,6 +67,9 @@ namespace HSP.API
 			builder.Services.AddDALServices(builder.Configuration);
 			builder.Services.AddServiceServices();
 			builder.Services.AddUserAuthentication(builder.Configuration);
+			
+			// Add HttpClient for internal API calls
+			builder.Services.AddHttpClient();
 
 			var app = builder.Build();
 
@@ -90,7 +93,11 @@ namespace HSP.API
 
 			app.UseStaticFiles();
 
+			app.UseRouting();
+			
 			app.UseCors(CorsConstants.AllowFrontendPolicy);
+			
+			app.UseWebSockets();
 
 			app.UseRequestLocalization();
 
