@@ -1,5 +1,4 @@
 ﻿using HSP.API.Extensions;
-using HSP.API.Hubs;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Resources;
@@ -69,8 +68,8 @@ namespace HSP.API
 			builder.Services.AddServiceServices();
 			builder.Services.AddUserAuthentication(builder.Configuration);
 			
-			// Add SignalR
-			builder.Services.AddSignalR();
+			// Add HttpClient for internal API calls
+			builder.Services.AddHttpClient();
 
 			var app = builder.Build();
 
@@ -106,7 +105,6 @@ namespace HSP.API
 			app.UseAuthorization();
 
 			app.MapControllers();
-			app.MapHub<ChatHub>("/chathub");
 
 			app.Run();
 		}
