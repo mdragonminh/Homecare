@@ -1,9 +1,8 @@
-using HSP.API.Hubs;
 using HSP.Core.Dtos.ChatDto;
+using HSP.Core.Dtos.Shared;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
 namespace HSP.API.Controllers
@@ -14,12 +13,12 @@ namespace HSP.API.Controllers
 	public class ChatController : ControllerBase
 	{
 		private readonly IChatService _chatService;
-		private readonly IHubContext<ChatHub> _hubContext;
+		private readonly IHttpClientFactory _httpClientFactory;
 
-		public ChatController(IChatService chatService, IHubContext<ChatHub> hubContext)
+		public ChatController(IChatService chatService, IHttpClientFactory httpClientFactory)
 		{
 			_chatService = chatService;
-			_hubContext = hubContext;
+			_httpClientFactory = httpClientFactory;
 		}
 
 		private Guid GetCurrentUserId()
@@ -81,13 +80,20 @@ namespace HSP.API.Controllers
 		[HttpGet("conversations/{conversationId}/messages")]
 		public async Task<ActionResult<List<ChatMessageDto>>> GetConversationMessages(
 			Guid conversationId, 
-			[FromQuery] int skip = 0, 
-			[FromQuery] int take = 50)
+			[FromQuery] int pageNumber = 1, 
+			[FromQuery] int pageSize = 50,
+			[FromQuery] string? orderBy = "SentAt")
 		{
 			try
 			{
 				var userId = GetCurrentUserId();
-				var messages = await _chatService.GetConversationMessagesAsync(conversationId, userId, skip, take);
+				var paginationParams = new PaginationParams 
+				{ 
+					PageNumber = pageNumber, 
+					PageSize = pageSize, 
+					OrderBy = orderBy 
+				};
+				var messages = await _chatService.GetConversationMessagesAsync(conversationId, userId, paginationParams);
 				return Ok(messages);
 			}
 			catch (Exception ex)
@@ -104,13 +110,20 @@ namespace HSP.API.Controllers
 				var senderId = GetCurrentUserId();
 				var message = await _chatService.SendMessageAsync(sendDto, senderId);
 
-				// Send real-time notification via SignalR
-				await _hubContext.Clients.Group($"conversation_{sendDto.ConversationId}")
-					.SendAsync("ReceiveMessage", message);
-
-				// Also send to specific user in case they're not in the conversation group
-				await _hubContext.Clients.Group($"user_{sendDto.ReceiverId}")
-					.SendAsync("NewMessage", message);
+				// Trigger real-time notification via internal API call
+				try
+				{
+					var httpClient = _httpClientFactory.CreateClient();
+					var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "");
+					httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+					
+					await httpClient.PostAsJsonAsync($"{Request.Scheme}://{Request.Host}/api/ChatRealtime/notify/{sendDto.ConversationId}", message);
+				}
+				catch (Exception notifyEx)
+				{
+					// Log notification error but don't fail the message send
+					Console.WriteLine($"Failed to notify clients: {notifyEx.Message}");
+				}
 
 				return Ok(message);
 			}
@@ -127,10 +140,6 @@ namespace HSP.API.Controllers
 			{
 				var userId = GetCurrentUserId();
 				await _chatService.MarkMessageAsReadAsync(conversationId, messageId, userId);
-
-				// Notify via SignalR that message was read
-				await _hubContext.Clients.Group($"conversation_{conversationId}")
-					.SendAsync("MessageRead", messageId);
 
 				return Ok(new { message = "Message marked as read" });
 			}

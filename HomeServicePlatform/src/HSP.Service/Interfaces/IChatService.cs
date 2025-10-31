@@ -1,4 +1,5 @@
 using HSP.Core.Dtos.ChatDto;
+using HSP.Core.Dtos.Shared;
 
 namespace HSP.Service.Interfaces
 {
@@ -6,7 +7,7 @@ namespace HSP.Service.Interfaces
 	{
 		Task<ChatConversationDto> CreateOrGetConversationAsync(CreateChatConversationDto createDto);
 		Task<List<ChatConversationDto>> GetUserConversationsAsync(Guid userId);
-		Task<List<ChatMessageDto>> GetConversationMessagesAsync(Guid conversationId, Guid currentUserId, int skip = 0, int take = 50);
+		Task<List<ChatMessageDto>> GetConversationMessagesAsync(Guid conversationId, Guid currentUserId, PaginationParams? paginationParams = null);
 		Task<ChatMessageDto> SendMessageAsync(SendChatMessageDto sendDto, Guid senderId);
 		Task MarkMessageAsReadAsync(Guid conversationId, Guid messageId, Guid userId);
 		Task<ChatConversationDto?> GetConversationAsync(Guid conversationId, Guid userId);

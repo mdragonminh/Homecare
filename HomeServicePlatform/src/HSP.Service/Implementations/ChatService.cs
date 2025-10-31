@@ -1,6 +1,8 @@
 using HSP.Core.Dtos.ChatDto;
+using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -84,22 +86,23 @@ namespace HSP.Service.Implementations
 			return conversationDtos;
 		}
 
-		public async Task<List<ChatMessageDto>> GetConversationMessagesAsync(Guid conversationId, Guid currentUserId, int skip = 0, int take = 50)
+		public async Task<List<ChatMessageDto>> GetConversationMessagesAsync(Guid conversationId, Guid currentUserId, PaginationParams? paginationParams = null)
 		{
-			var messages = await _messageRepository.GetAll()
+			var pagination = paginationParams ?? new PaginationParams { PageSize = 50, OrderBy = "SentAt" };
+			
+			var query = _messageRepository.GetAll()
 				.Where(m => m.ConversationId == conversationId)
 				.Include(m => m.Sender)
-				.Include(m => m.Attachments)
-				.OrderByDescending(m => m.SentAt)
-				.Skip(skip)
-				.Take(take)
-				.ToListAsync();
-			
-			return messages.Select(m => MapMessageToDto(m)).ToList();
+				.Include(m => m.Attachments);
+
+			var pagedResult = await query.ToPagedListAsync(pagination);
+			return pagedResult.Items.Select(m => MapMessageToDto(m, currentUserId)).ToList();
 		}
 
 		public async Task<ChatMessageDto> SendMessageAsync(SendChatMessageDto sendDto, Guid senderId)
 		{
+			Console.WriteLine($"🏪 ChatService: Creating message - ConvId={sendDto.ConversationId}, SenderId={senderId}, ReceiverId={sendDto.ReceiverId}");
+			
 			var message = new ChatMessage
 			{
 				Id = Guid.NewGuid(),
@@ -111,10 +114,12 @@ namespace HSP.Service.Implementations
 				IsRead = false
 			};
 
+			Console.WriteLine($"💾 Adding message to repository: {message.Id}");
 			await _messageRepository.AddAsync(message);
 
 			if (sendDto.Attachments?.Any() == true)
 			{
+				Console.WriteLine($"📎 Adding {sendDto.Attachments.Count} attachments");
 				foreach (var attachmentDto in sendDto.Attachments)
 				{
 					var attachment = new ChatAttachment
@@ -130,15 +135,25 @@ namespace HSP.Service.Implementations
 				}
 			}
 
+			Console.WriteLine($"💾 Saving changes to database...");
 			await _unitOfWork.SaveChangesAsync();
+			Console.WriteLine($"✅ Changes saved successfully");
 
+			Console.WriteLine($"🔍 Retrieving saved message from database...");
 			var savedMessage = await _messageRepository.GetAll()
 				.Where(m => m.Id == message.Id)
 				.Include(m => m.Sender)
 				.Include(m => m.Attachments)
 				.FirstOrDefaultAsync();
 
-			return MapMessageToDto(savedMessage!);
+			if (savedMessage == null)
+			{
+				Console.WriteLine($"❌ Failed to retrieve saved message from database!");
+				throw new Exception("Failed to retrieve saved message");
+			}
+
+			Console.WriteLine($"✅ Message retrieved successfully: {savedMessage.Id}");
+			return MapMessageToDto(savedMessage!, senderId);
 		}
 
 		public async Task MarkMessageAsReadAsync(Guid conversationId, Guid messageId, Guid userId)
@@ -179,12 +194,12 @@ namespace HSP.Service.Implementations
 				TechnicianName = conversation.Technician?.FullName ?? "",
 				BookingDescription = conversation.Booking?.ProblemDescription ?? "",
 				LastMessage = null,
-				CreatedAt = DateTime.UtcNow,
+				CreatedAt = conversation.CreatedAt,
 				UnreadCount = 0
 			};
 		}
 
-		private ChatMessageDto MapMessageToDto(ChatMessage message)
+		private ChatMessageDto MapMessageToDto(ChatMessage message, Guid currentUserId)
 		{
 			return new ChatMessageDto
 			{
@@ -196,6 +211,7 @@ namespace HSP.Service.Implementations
 				Content = message.Content ?? "",
 				SentAt = message.SentAt,
 				IsRead = message.IsRead,
+				IsSentByCurrentUser = message.SenderId == currentUserId,
 				Attachments = message.Attachments?.Select(a => new ChatAttachmentDto
 				{
 					Id = a.Id,
