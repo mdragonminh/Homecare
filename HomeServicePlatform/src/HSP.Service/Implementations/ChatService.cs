@@ -2,32 +2,33 @@ using HSP.Core.Dtos.ChatDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 
 namespace HSP.Service.Implementations
 {
-	public class ChatService : IChatService
+	public class ChatService : BaseService, IChatService
 	{
 		private readonly IRepository<ChatConversation, Guid> _conversationRepository;
 		private readonly IRepository<ChatMessage, Guid> _messageRepository;
 		private readonly IRepository<ChatAttachment, Guid> _attachmentRepository;
 		private readonly IUserRepository _userRepository;
-		private readonly IUnitOfWork _unitOfWork;
 
 		public ChatService(
 			IRepository<ChatConversation, Guid> conversationRepository,
 			IRepository<ChatMessage, Guid> messageRepository, 
 			IRepository<ChatAttachment, Guid> attachmentRepository,
 			IUserRepository userRepository,
-			IUnitOfWork unitOfWork)
+			IUnitOfWork unitOfWork,
+			IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_conversationRepository = conversationRepository;
 			_messageRepository = messageRepository;
 			_attachmentRepository = attachmentRepository;
 			_userRepository = userRepository;
-			_unitOfWork = unitOfWork;
 		}
 
 		public async Task<ChatConversationDto> CreateOrGetConversationAsync(CreateChatConversationDto createDto)
@@ -74,16 +75,8 @@ namespace HSP.Service.Implementations
 				.Include(c => c.Technician)
 				.Include(c => c.Booking)
 				.ToListAsync();
-				
-			var conversationDtos = new List<ChatConversationDto>();
 
-			foreach (var conversation in conversations)
-			{
-				var dto = MapConversationToDto(conversation, userId);
-				conversationDtos.Add(dto);
-			}
-
-			return conversationDtos;
+			return conversations.Select(conversation => MapConversationToDto(conversation, userId)).ToList();
 		}
 
 		public async Task<List<ChatMessageDto>> GetConversationMessagesAsync(Guid conversationId, Guid currentUserId, PaginationParams? paginationParams = null)
@@ -101,8 +94,6 @@ namespace HSP.Service.Implementations
 
 		public async Task<ChatMessageDto> SendMessageAsync(SendChatMessageDto sendDto, Guid senderId)
 		{
-			Console.WriteLine($"🏪 ChatService: Creating message - ConvId={sendDto.ConversationId}, SenderId={senderId}, ReceiverId={sendDto.ReceiverId}");
-			
 			var message = new ChatMessage
 			{
 				Id = Guid.NewGuid(),
@@ -114,12 +105,10 @@ namespace HSP.Service.Implementations
 				IsRead = false
 			};
 
-			Console.WriteLine($"💾 Adding message to repository: {message.Id}");
 			await _messageRepository.AddAsync(message);
 
 			if (sendDto.Attachments?.Any() == true)
 			{
-				Console.WriteLine($"📎 Adding {sendDto.Attachments.Count} attachments");
 				foreach (var attachmentDto in sendDto.Attachments)
 				{
 					var attachment = new ChatAttachment
@@ -135,11 +124,8 @@ namespace HSP.Service.Implementations
 				}
 			}
 
-			Console.WriteLine($"💾 Saving changes to database...");
 			await _unitOfWork.SaveChangesAsync();
-			Console.WriteLine($"✅ Changes saved successfully");
 
-			Console.WriteLine($"🔍 Retrieving saved message from database...");
 			var savedMessage = await _messageRepository.GetAll()
 				.Where(m => m.Id == message.Id)
 				.Include(m => m.Sender)
@@ -148,11 +134,9 @@ namespace HSP.Service.Implementations
 
 			if (savedMessage == null)
 			{
-				Console.WriteLine($"❌ Failed to retrieve saved message from database!");
-				throw new Exception("Failed to retrieve saved message");
+				throw new Exception(_localizer["FailedToRetrieveSavedMessage"] ?? "Failed to retrieve saved message");
 			}
 
-			Console.WriteLine($"✅ Message retrieved successfully: {savedMessage.Id}");
 			return MapMessageToDto(savedMessage!, senderId);
 		}
 
