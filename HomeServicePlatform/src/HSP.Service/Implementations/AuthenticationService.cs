@@ -259,7 +259,7 @@ namespace HSP.Service.Implementations
 		public async Task<RegisterResponseDto> Register(RegisterRequestDto input)
 		{
 			if (input == null)
-				throw new ArgumentException(_localizer["InputCannotBeNull"]);
+				throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
 
 			if (input.Password != input.ConfirmPassword)
 				throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
@@ -275,7 +275,7 @@ namespace HSP.Service.Implementations
 		public async Task<RegisterResponseDto> RegisterTechnician(RegisterTechnicianRequestDto input)
 		{
 			if (input == null)
-				throw new ArgumentException(_localizer["InputCannotBeNull"]);
+				throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
 
 			if (input.Password != input.ConfirmPassword)
 				throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
@@ -336,8 +336,7 @@ namespace HSP.Service.Implementations
 			var result = await _userRepository.CreateAsync(user, password);
 			if (!result.Succeeded)
 			{
-				var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-				throw new ValidationException($"{_localizer["UserCreationFailed"]}: {errors}");
+				throw new ValidationException(_localizer["UserCreationFailed"]);
 			}
 
 			return user;
@@ -348,7 +347,6 @@ namespace HSP.Service.Implementations
 			{
 				throw new ValidationException(_localizer["EmailAlreadyExists"]);
 			}
-
 			var newToken = await _userRepository.GenerateEmailConfirmationTokenAsync(userExisting);
 			await SendConfirmationEmailAsync(userExisting, newToken);
 

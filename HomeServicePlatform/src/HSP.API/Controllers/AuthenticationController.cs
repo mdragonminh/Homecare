@@ -63,7 +63,7 @@ namespace HSP.API.Controllers
 
 		[HttpPost("register-technician")]
 		[AllowAnonymous]
-		public async Task<IActionResult> RegisterTechnician([FromBody] RegisterTechnicianRequestDto input)
+		public async Task<IActionResult> RegisterTechnician([FromForm] RegisterTechnicianRequestDto input)
 		{
 			if (!ModelState.IsValid)
 			{
