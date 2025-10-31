@@ -1,119 +1,160 @@
-import { useState, useEffect, useRef } from "react"
-import { chatApi } from "../../services/chatApi.jsx"
-import signalRService from "../../services/signalRService.jsx"
-import { toast } from "sonner"
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { chatApi } from "../../services/chatApi.jsx";
+import chatRealtimeService from "../../services/chatRealtimeService.jsx";
+import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   Send,
   Phone,
   MapPin,
   Clock,
-  ImageIcon,
   MoreVertical,
   Search,
   Plus,
   CheckCircle,
   AlertCircle,
-} from "lucide-react"
-import { format, isToday, isYesterday } from "date-fns"
+  ArrowLeft,
+} from "lucide-react";
+import { format, isToday, isYesterday } from "date-fns";
 
 export const TechnicianChat = () => {
-  const [conversations, setConversations] = useState([])
-  const [selectedConversation, setSelectedConversation] = useState(null)
-  const [messages, setMessages] = useState([])
-  const [newMessage, setNewMessage] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [messagesLoading, setMessagesLoading] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [showConversationList, setShowConversationList] = useState(true)
-  const messagesEndRef = useRef(null)
-  const currentUserId = localStorage.getItem("userId")
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showConversationList, setShowConversationList] = useState(true);
+  const messagesEndRef = useRef(null);
+  const currentUserId = localStorage.getItem("userId");
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-      setShowConversationList(window.innerWidth >= 768)
-    }
+      setIsMobile(window.innerWidth < 768);
+      setShowConversationList(window.innerWidth >= 768);
+    };
 
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
 
-    loadConversations()
-    initializeSignalR()
+    loadConversations();
+    initializeChatRealtime();
 
     return () => {
-      window.removeEventListener("resize", checkMobile)
-      signalRService.stopConnection()
-    }
-  }, [])
+      window.removeEventListener("resize", checkMobile);
+      chatRealtimeService.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     if (selectedConversation) {
-      loadMessages()
-      signalRService.joinConversation(selectedConversation.id)
+      loadMessages();
+      connectToConversation(selectedConversation.id);
       if (isMobile) {
-        setShowConversationList(false)
+        setShowConversationList(false);
       }
     }
-  }, [selectedConversation, isMobile])
+  }, [selectedConversation, isMobile]);
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    scrollToBottom();
+  }, [messages]);
 
-  const initializeSignalR = async () => {
+  const initializeChatRealtime = async () => {
     try {
-      await signalRService.startConnection()
+      chatRealtimeService.onMessage((message) => {
+        setSelectedConversation((currentSelected) => {
+          setMessages((prevMessages) => {
+            if (
+              currentSelected &&
+              message.conversationId === currentSelected.id
+            ) {
+              const existingMessage = prevMessages.find(
+                (m) => m.id === message.id
+              );
+              if (existingMessage) {
+                return prevMessages;
+              }
+              return [...prevMessages, message];
+            }
+            return prevMessages;
+          });
 
-      signalRService.onReceiveMessage((message) => {
-        if (selectedConversation && message.conversationId === selectedConversation.id) {
-          setMessages((prev) => [...prev, message])
-        }
-        updateConversationLastMessage(message)
-      })
+          // Show notification
+          if (
+            !currentSelected ||
+            message.conversationId !== currentSelected.id
+          ) {
+            // Only show notification if message is not from current user
+            if (message.senderId !== currentUserId) {
+              toast.info(
+                `Tin nhắn mới từ ${message.senderName || "Người dùng"}`
+              );
+            }
+          }
 
-      signalRService.onNewMessage((message) => {
-        updateConversationLastMessage(message)
-        if (!selectedConversation || message.conversationId !== selectedConversation.id) {
-          toast.info(`Tin nhắn mới từ ${message.senderName}`)
-        }
-      })
+          return currentSelected;
+        });
 
-      signalRService.onMessageRead((messageId) => {
-        setMessages((prev) => prev.map((msg) => (msg.id === messageId ? { ...msg, isRead: true } : msg)))
-      })
+        updateConversationLastMessage(message);
+      });
+
+      chatRealtimeService.onConnection((data) => {
+        toast.success("Kết nối chat thành công");
+      });
+
+      chatRealtimeService.onError((error) => {
+        console.error("Chat realtime error:", error);
+        toast.error("Lỗi kết nối chat");
+      });
     } catch (error) {
-      console.error("SignalR initialization error:", error)
-      toast.error("Không thể kết nối real-time chat")
+      console.error("Chat realtime initialization error:", error);
+      toast.error("Không thể khởi tạo chat real-time");
     }
-  }
+  };
+
+  const connectToConversation = async (conversationId) => {
+    try {
+      await chatRealtimeService.connectToConversation(conversationId);
+    } catch (error) {
+      console.error("Failed to connect to conversation:", error);
+      toast.error("Không thể kết nối đến cuộc trò chuyện");
+    }
+  };
 
   const loadConversations = async () => {
     try {
-      setLoading(true)
-      const data = await chatApi.getUserConversations()
-      setConversations(data)
+      setLoading(true);
+      const data = await chatApi.getUserConversations();
+      setConversations(data);
     } catch (error) {
-      console.error("Error loading conversations:", error)
-      toast.error("Không thể tải danh sách hội thoại")
+      console.error("Error loading conversations:", error);
+      toast.error("Không thể tải danh sách hội thoại");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const loadMessages = async () => {
-    if (!selectedConversation) return
+    if (!selectedConversation) return;
 
     try {
-      setMessagesLoading(true)
-      const data = await chatApi.getConversationMessages(selectedConversation.id)
-      setMessages(data)
+      setMessagesLoading(true);
+      const data = await chatApi.getConversationMessages(
+        selectedConversation.id
+      );
+      setMessages(data);
     } catch (error) {
-      console.error("Error loading messages:", error)
-      toast.error("Không thể tải tin nhắn")
+      console.error("Error loading messages:", error);
+      toast.error("Không thể tải tin nhắn");
     } finally {
-      setMessagesLoading(false)
+      setMessagesLoading(false);
     }
-  }
+  };
 
   const updateConversationLastMessage = (message) => {
     setConversations((prev) =>
@@ -123,68 +164,81 @@ export const TechnicianChat = () => {
             ? {
                 ...conv,
                 lastMessage: message,
-                unreadCount: message.senderId !== currentUserId ? conv.unreadCount + 1 : conv.unreadCount,
+                unreadCount:
+                  message.senderId !== currentUserId
+                    ? conv.unreadCount + 1
+                    : conv.unreadCount,
               }
-            : conv,
+            : conv
         )
         .sort((a, b) => {
-          const aTime = a.lastMessage?.sentAt || a.createdAt
-          const bTime = b.lastMessage?.sentAt || b.createdAt
-          return new Date(bTime) - new Date(aTime)
-        }),
-    )
-  }
+          const aTime = a.lastMessage?.sentAt || a.createdAt;
+          const bTime = b.lastMessage?.sentAt || b.createdAt;
+          return new Date(bTime) - new Date(aTime);
+        })
+    );
+  };
 
   const handleSendMessage = async (e) => {
-    e.preventDefault()
-    if (!newMessage.trim() || !selectedConversation) return
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedConversation) return;
 
     const receiverId =
       selectedConversation.customerId === currentUserId
         ? selectedConversation.technicianId
-        : selectedConversation.customerId
+        : selectedConversation.customerId;
+
+    const messageContent = newMessage.trim();
+
+    setNewMessage("");
 
     try {
-      await chatApi.sendMessage(selectedConversation.id, receiverId, newMessage.trim())
-      setNewMessage("")
+      const result = await chatRealtimeService.sendMessage(
+        selectedConversation.id,
+        receiverId,
+        messageContent
+      );
     } catch (error) {
-      console.error("Error sending message:", error)
-      toast.error("Không thể gửi tin nhắn")
+      console.error("❌ Error sending message:", error);
+      setNewMessage(messageContent);
+      toast.error("Không thể gửi tin nhắn");
     }
-  }
+  };
 
   const handleConversationSelect = (conversation) => {
-    if (selectedConversation) {
-      signalRService.leaveConversation(selectedConversation.id)
-    }
-    setSelectedConversation(conversation)
-
-    setConversations((prev) => prev.map((conv) => (conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv)))
-  }
+    setSelectedConversation(conversation);
+    setConversations((prev) =>
+      prev.map((conv) =>
+        conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv
+      )
+    );
+  };
 
   const handleBackToList = () => {
-    setShowConversationList(true)
-    setSelectedConversation(null)
-  }
+    setShowConversationList(true);
+    setSelectedConversation(null);
+  };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const formatMessageTime = (timestamp) => {
-    const date = new Date(timestamp)
+    const date = new Date(timestamp);
     if (isToday(date)) {
-      return format(date, "HH:mm")
+      return format(date, "HH:mm");
     } else if (isYesterday(date)) {
-      return `Hôm qua ${format(date, "HH:mm")}`
+      return `Hôm qua ${format(date, "HH:mm")}`;
     } else {
-      return format(date, "dd/MM/yyyy HH:mm")
+      return format(date, "dd/MM/yyyy HH:mm");
     }
-  }
+  };
 
   const getOtherUserName = (conversation) => {
-    return conversation.customerId === currentUserId ? conversation.technicianName : conversation.customerName
-  }
+    return conversation.customerId === currentUserId
+      ? conversation.technicianName
+      : conversation.customerName;
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -208,14 +262,18 @@ export const TechnicianChat = () => {
           {loading ? (
             <div className="p-4 text-center text-gray-500">Đang tải...</div>
           ) : conversations.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">Chưa có hội thoại nào</div>
+            <div className="p-4 text-center text-gray-500">
+              Chưa có hội thoại nào
+            </div>
           ) : (
             conversations.map((conversation) => (
               <button
                 key={conversation.id}
                 onClick={() => handleConversationSelect(conversation)}
                 className={`w-full px-4 py-4 border-b border-slate-100 text-left transition-all duration-200 hover:bg-slate-50 ${
-                  selectedConversation?.id === conversation.id ? "bg-purple-50 border-l-4 border-l-purple-500" : ""
+                  selectedConversation?.id === conversation.id
+                    ? "bg-purple-50 border-l-4 border-l-purple-500"
+                    : ""
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -224,7 +282,9 @@ export const TechnicianChat = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-slate-900 truncate">{getOtherUserName(conversation)}</h3>
+                      <h3 className="font-semibold text-slate-900 truncate">
+                        {getOtherUserName(conversation)}
+                      </h3>
                       {conversation.unreadCount > 0 && (
                         <span className="bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
                           {conversation.unreadCount}
@@ -233,25 +293,20 @@ export const TechnicianChat = () => {
                     </div>
                     {conversation.lastMessage && (
                       <p className="text-sm text-slate-500 truncate">
-                        {conversation.lastMessage.content || "Đã gửi file đính kèm"}
+                        {conversation.lastMessage.content ||
+                          "Đã gửi file đính kèm"}
                       </p>
                     )}
                     {conversation.lastMessage && (
-                      <p className="text-xs text-slate-400">{formatMessageTime(conversation.lastMessage.sentAt)}</p>
+                      <p className="text-xs text-slate-400">
+                        {formatMessageTime(conversation.lastMessage.sentAt)}
+                      </p>
                     )}
                   </div>
                 </div>
               </button>
             ))
           )}
-        </div>
-
-        {/* New Chat Button */}
-        <div className="p-4 border-t border-slate-200">
-          <button className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-200 transform hover:scale-105">
-            <Plus className="w-5 h-5" />
-            Cuộc trò chuyện mới
-          </button>
         </div>
       </div>
 
@@ -261,10 +316,14 @@ export const TechnicianChat = () => {
         <div className="px-8 py-6 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">
-              {selectedConversation ? getOtherUserName(selectedConversation) : "Chọn cuộc trò chuyện"}
+              {selectedConversation
+                ? getOtherUserName(selectedConversation)
+                : "Chọn cuộc trò chuyện"}
             </h2>
             {selectedConversation?.bookingDescription && (
-              <p className="text-sm text-slate-500 mt-1">Booking: {selectedConversation.bookingDescription}</p>
+              <p className="text-sm text-slate-500 mt-1">
+                Booking: {selectedConversation.bookingDescription}
+              </p>
             )}
           </div>
           <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
@@ -275,27 +334,53 @@ export const TechnicianChat = () => {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-8 space-y-6">
           {messagesLoading ? (
-            <div className="text-center text-gray-500">Đang tải tin nhắn...</div>
+            <div className="text-center text-gray-500">
+              Đang tải tin nhắn...
+            </div>
           ) : messages.length === 0 ? (
-            <div className="text-center text-gray-500">Chưa có tin nhắn nào</div>
+            <div className="text-center text-gray-500">
+              Chưa có tin nhắn nào
+            </div>
           ) : (
-            messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.isSentByCurrentUser ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl shadow-sm transition-all duration-200 ${
-                    msg.isSentByCurrentUser
-                      ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-br-none"
-                      : "bg-slate-100 text-slate-900 rounded-bl-none"
-                  }`}
-                >
-                  <p className="text-base leading-relaxed">{msg.content}</p>
-                  <p className={`text-xs mt-2 ${msg.isSentByCurrentUser ? "text-purple-100" : "text-slate-500"}`}>
-                    {formatMessageTime(msg.sentAt)}
-                    {msg.isSentByCurrentUser && msg.isRead && <span className="ml-1">✓✓</span>}
-                  </p>
-                </div>
-              </div>
-            ))
+            messages
+              .filter((msg) => {
+                // Filter out messages without content
+                const content = msg.content || msg.Content;
+                return content && content.trim().length > 0;
+              })
+              .map((msg) => {
+                const content = msg.content || msg.Content || "";
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex ${
+                      msg.isSentByCurrentUser ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-xs lg:max-w-md px-5 py-3 rounded-2xl shadow-sm transition-all duration-200 ${
+                        msg.isSentByCurrentUser
+                          ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-br-none"
+                          : "bg-slate-100 text-slate-900 rounded-bl-none"
+                      }`}
+                    >
+                      <p className="text-base leading-relaxed">{content}</p>
+                      <p
+                        className={`text-xs mt-2 ${
+                          msg.isSentByCurrentUser
+                            ? "text-purple-100"
+                            : "text-slate-500"
+                        }`}
+                      >
+                        {formatMessageTime(msg.sentAt)}
+                        {msg.isSentByCurrentUser && msg.isRead && (
+                          <span className="ml-1">✓✓</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
           )}
           <div ref={messagesEndRef} />
         </div>
@@ -303,12 +388,6 @@ export const TechnicianChat = () => {
         {/* Input Area */}
         <div className="px-8 py-6 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-white">
           <form onSubmit={handleSendMessage} className="flex items-end gap-3">
-            <button
-              type="button"
-              className="p-3 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 hover:text-slate-900"
-            >
-              <ImageIcon className="w-6 h-6" />
-            </button>
             <input
               type="text"
               value={newMessage}
@@ -333,7 +412,9 @@ export const TechnicianChat = () => {
           <div className="p-8 space-y-8">
             {/* Header */}
             <div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Chi tiết công việc</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                Chi tiết công việc
+              </h3>
               <div className="flex items-center gap-2 text-sm text-green-600 font-semibold">
                 <CheckCircle className="w-5 h-5" />
                 Đã xác nhận
@@ -343,9 +424,12 @@ export const TechnicianChat = () => {
             {/* Service Info */}
             <div className="space-y-4">
               <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 hover:shadow-md transition-all">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Loại dịch vụ</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                  Loại dịch vụ
+                </p>
                 <p className="text-lg font-bold text-slate-900">
-                  {selectedConversation.bookingDescription || "Chưa có thông tin"}
+                  {selectedConversation.bookingDescription ||
+                    "Chưa có thông tin"}
                 </p>
               </div>
 
@@ -353,10 +437,15 @@ export const TechnicianChat = () => {
                 <div className="flex items-start gap-3">
                   <Clock className="w-5 h-5 text-purple-500 mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Thời gian</p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                      Thời gian
+                    </p>
                     <p className="text-base font-semibold text-slate-900">
                       {selectedConversation.createdAt
-                        ? format(new Date(selectedConversation.createdAt), "dd/MM/yyyy HH:mm")
+                        ? format(
+                            new Date(selectedConversation.createdAt),
+                            "dd/MM/yyyy HH:mm"
+                          )
                         : "Chưa có thông tin"}
                     </p>
                   </div>
@@ -407,8 +496,12 @@ export const TechnicianChat = () => {
 
             {/* Action Buttons */}
             <div className="space-y-3 pt-4 border-t border-slate-200">
-              <button className="w-full py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-200 transform hover:scale-105">
-                Gọi khách hàng
+              <button
+                onClick={() => navigate("/")}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-200 transform hover:scale-105"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                {t("ui.back_to_home")}
               </button>
               <button className="w-full py-3 border-2 border-slate-300 text-slate-900 rounded-lg font-semibold hover:bg-slate-50 transition-all duration-200">
                 Hoàn thành công việc
@@ -424,7 +517,7 @@ export const TechnicianChat = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TechnicianChat
+export default TechnicianChat;
