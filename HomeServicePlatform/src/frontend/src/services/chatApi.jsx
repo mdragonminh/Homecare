@@ -52,10 +52,10 @@ export const chatApi = {
   },
 
   // Get messages for a conversation
-  getConversationMessages: async (conversationId, skip = 0, take = 50) => {
+  getConversationMessages: async (conversationId, pageNumber = 1, pageSize = 50, orderBy = "SentAt") => {
     try {
       const response = await api.get(
-        `/chat/conversations/${conversationId}/messages?skip=${skip}&take=${take}`
+        `/chat/conversations/${conversationId}/messages?pageNumber=${pageNumber}&pageSize=${pageSize}&orderBy=${orderBy}`
       );
       return response.data;
     } catch (error) {
