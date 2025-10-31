@@ -40,27 +40,56 @@ const ChangePasswordModal = ({ isOpen, onClose, onSubmit, isCancellable = true }
     }));
   };
 
+  const validateNewPassword = (password) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    const errors = [];
+    if (password.length < minLength) {
+      errors.push(t("ui.change_password_modal.error_min_length"));
+    }
+    if (!hasUpperCase) {
+      errors.push(t("ui.change_password_modal.error_uppercase"));
+    }
+    if (!hasLowerCase) {
+      errors.push(t("ui.change_password_modal.error_lowercase"));
+    }
+    if (!hasNumber) {
+      errors.push(t("ui.change_password_modal.error_number"));
+    }
+    if (!hasSpecialChar) {
+      errors.push(t("ui.change_password_modal.error_special_char"));
+    }
+    return errors;
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
     if (!formData.currentPassword.trim()) {
-  newErrors.currentPassword = t("ui.change_password_modal.error_current_required");
+      newErrors.currentPassword = t("ui.change_password_modal.error_current_required");
     }
     
     if (!formData.newPassword.trim()) {
-  newErrors.newPassword = t("ui.change_password_modal.error_new_required");
-    } else if (formData.newPassword.length < 6) {
-  newErrors.newPassword = t("ui.change_password_modal.error_new_length");
+      newErrors.newPassword = t("ui.change_password_modal.error_new_required");
+    } else {
+      const passwordErrors = validateNewPassword(formData.newPassword);
+      if (passwordErrors.length > 0) {
+        newErrors.newPassword = passwordErrors.join(" ");
+      }
     }
     
     if (!formData.confirmPassword.trim()) {
-  newErrors.confirmPassword = t("ui.change_password_modal.error_confirm_required");
+      newErrors.confirmPassword = t("ui.change_password_modal.error_confirm_required");
     } else if (formData.newPassword !== formData.confirmPassword) {
-  newErrors.confirmPassword = t("ui.change_password_modal.error_confirm_mismatch");
+      newErrors.confirmPassword = t("ui.change_password_modal.error_confirm_mismatch");
     }
 
     if (formData.currentPassword === formData.newPassword) {
-  newErrors.newPassword = t("ui.change_password_modal.error_new_same");
+      newErrors.newPassword = t("ui.change_password_modal.error_new_same");
     }
 
     setErrors(newErrors);
