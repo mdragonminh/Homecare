@@ -19,7 +19,12 @@ namespace HSP.Core.Interfaces.DataAccess
 		Task<IdentityResult> AddToRoleAsync(AppUser user, string role);
 		Task<IdentityResult> UpdateAccount(AppUser user);
 
-		Task<IList<UserLoginInfo>> GetLoginsAsync(AppUser user);
+        Task<IEnumerable<AppUser>> GetAllUsersAsync();
+        Task<AppUser?> FindByNameAsync(string username);
+        Task<IdentityResult> DeleteAsync(AppUser user);
+        Task<IList<AppUser>> GetUsersInRoleAsync(string role);
+
+        Task<IList<UserLoginInfo>> GetLoginsAsync(AppUser user);
 		Task<IdentityResult> AddLoginAsync(AppUser user, UserLoginInfo login);
 
 		Task<AppUser?> FindByLoginAsync(string loginProvider, string providerKey);
@@ -31,5 +36,9 @@ namespace HSP.Core.Interfaces.DataAccess
 		Task SetAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName, string tokenValue);
 		Task<string?> GetAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName);
 		Task<AppUser?> FindByTokenAsync(string tokenValue, string tokenName = "RefreshToken", string loginProvider = "Default");
-	}
+
+        IQueryable<AppUser> GetUsersAsQueryable();
+        Task<string> GenerateChangeEmailTokenAsync(AppUser user, string newEmail);
+        Task<IdentityResult> ChangeEmailAsync(AppUser user, string newEmail, string token);
+    }
 }

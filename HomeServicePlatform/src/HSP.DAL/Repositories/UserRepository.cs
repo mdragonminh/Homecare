@@ -117,7 +117,27 @@ namespace HSP.DAL.Repositories
 			return await _userManager.UpdateAsync(user);
 		}
 
-		public async Task RemoveAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName)
+        public async Task<IEnumerable<AppUser>> GetAllUsersAsync()
+        {
+            return await _userManager.Users.ToListAsync();
+        }
+
+        public async Task<AppUser?> FindByNameAsync(string username)
+        {
+            return await _userManager.FindByNameAsync(username);
+        }
+
+        public async Task<IdentityResult> DeleteAsync(AppUser user)
+        {
+            return await _userManager.DeleteAsync(user);
+        }
+
+        public async Task<IList<AppUser>> GetUsersInRoleAsync(string role)
+        {
+            return await _userManager.GetUsersInRoleAsync(role);
+        }
+
+        public async Task RemoveAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName)
 		{
 			await _userManager.RemoveAuthenticationTokenAsync(user, loginProvider, tokenName);
 		}
@@ -148,5 +168,20 @@ namespace HSP.DAL.Repositories
 
 			return await _userManager.FindByIdAsync(tokenEntry.UserId.ToString());
 		}
-	}
+
+        public IQueryable<AppUser> GetUsersAsQueryable()
+        {
+            return _userManager.Users;
+        }
+
+        public async Task<string> GenerateChangeEmailTokenAsync(AppUser user, string newEmail)
+        {
+            return await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+        }
+
+        public async Task<IdentityResult> ChangeEmailAsync(AppUser user, string newEmail, string token)
+        {
+            return await _userManager.ChangeEmailAsync(user, newEmail, token);
+        }
+    }
 }

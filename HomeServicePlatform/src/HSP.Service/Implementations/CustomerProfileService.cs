@@ -1,9 +1,11 @@
 ﻿using HSP.Core.Dtos.AppUserDto;
 using HSP.Core.Dtos.FileDto;
+using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
+using HSP.DAL.Extensions;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -16,29 +18,30 @@ namespace HSP.Service.Implementations
 {
     public class CustomerProfileService : BaseService, ICustomerProfileService
     {
-        private readonly UserManager<AppUser> _userManager;
         private readonly RoleManager<AppRole> _roleManager;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
         private readonly IRepository<HSP.Core.Entities.File, Guid> _fileRepository;
         private readonly IRepository<FileRelation, Guid> _fileRelationRepository;
         private readonly IRepository<ObjectType, Guid> _objectTypeRepository;
+        private readonly IUserRepository _userRepository;
 
         public CustomerProfileService(
             IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer,
-            UserManager<AppUser> userManager, RoleManager<AppRole> roleManager,
+            RoleManager<AppRole> roleManager,
             IEmailService emailService, IConfiguration configuration,
             IRepository<HSP.Core.Entities.File, Guid> fileRepository,
             IRepository<FileRelation, Guid> fileRelationRepository,
-            IRepository<ObjectType, Guid> objectTypeRepository) : base(unitOfWork, localizer)
+            IRepository<ObjectType, Guid> objectTypeRepository, 
+            IUserRepository userRepository) : base(unitOfWork, localizer)
         {
-            _userManager = userManager;
             _roleManager = roleManager;
             _emailService = emailService;
             _configuration = configuration;
             _fileRepository = fileRepository;
             _fileRelationRepository = fileRelationRepository;
             _objectTypeRepository = objectTypeRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<AppUserDto> GetCustomerByUserIdAsync(string userId)
@@ -48,7 +51,7 @@ namespace HSP.Service.Implementations
                 throw new ArgumentException("Invalid user ID format");
             }
 
-            var user = await _userManager.Users
+            var user = await _userRepository.GetUsersAsQueryable()
                 .Include(x => x.Homes.Where(h => !h.IsDeleted))
                 .Where(x => x.Id == userGuid && x.IsActive)
                 .FirstOrDefaultAsync();
@@ -78,7 +81,7 @@ namespace HSP.Service.Implementations
 
         public async Task<AppUserDto> GetCustomerByIdAsync(Guid userId)
         {
-            var user = await _userManager.Users
+            var user = await _userRepository.GetUsersAsQueryable() 
                 .Include(x => x.Homes.Where(h => !h.IsDeleted))
                 .Where(x => x.Id == userId && x.IsActive)
                 .FirstOrDefaultAsync();
@@ -113,7 +116,7 @@ namespace HSP.Service.Implementations
                 throw new ArgumentException("Invalid user ID format");
             }
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userRepository.FindByIdAsync(userGuid);
             if (user == null)
             {
                 throw new KeyNotFoundException($"User not found for ID: {userId}");
@@ -125,7 +128,7 @@ namespace HSP.Service.Implementations
             user.PhoneNumber = updateDto.PhoneNumber;
             user.DateModified = DateTime.UtcNow;
 
-            var result = await _userManager.UpdateAsync(user);
+            var result = await _userRepository.UpdateAccount(user);
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
@@ -135,23 +138,16 @@ namespace HSP.Service.Implementations
             return await GetCustomerByUserIdAsync(userId);
         }
 
-        public async Task<object> GetCustomersAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
+        public async Task<PagedList<AppUserDto>> GetCustomersAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
         {
             // Lấy tất cả users có role Customer
             var customerRole = await _roleManager.FindByNameAsync("Customer");
             if (customerRole == null)
             {
-                return new
-                {
-                    Data = new List<AppUserDto>(),
-                    TotalCount = 0,
-                    PageNumber = pageNumber,
-                    PageSize = pageSize,
-                    TotalPages = 0
-                };
+                return new PagedList<AppUserDto>(new List<AppUserDto>(), 0, pageNumber, pageSize);
             }
 
-            var query = _userManager.Users
+            var query = _userRepository.GetUsersAsQueryable()
                 .Include(x => x.Homes.Where(h => !h.IsDeleted))
                 .Where(x => x.IsActive);
 
@@ -165,45 +161,44 @@ namespace HSP.Service.Implementations
             }
 
             // Filter by Customer role
-            var userIds = await _userManager.GetUsersInRoleAsync("Customer");
+            var userIds = await _userRepository.GetUsersInRoleAsync("Customer");
             var customerUserIds = userIds.Select(u => u.Id).ToList();
             query = query.Where(x => customerUserIds.Contains(x.Id));
 
-            // Get total count for pagination
-            var totalCount = await query.CountAsync();
-
-            // Apply pagination
-            var customers = await query
-                .OrderByDescending(x => x.DateCreated)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .Select(x => new AppUserDto
-                {
-                    Id = x.Id,
-                    FullName = x.FullName,
-                    Email = x.Email ?? string.Empty,
-                    PhoneNumber = x.PhoneNumber ?? string.Empty,
-                    DateCreated = x.DateCreated,
-                    DateModified = x.DateModified,
-                    TotalHomes = x.Homes.Count,
-                    IsActive = x.IsActive,
-                    LastLoginAt = x.LastLoginAt
-                }).ToListAsync();
-
-            // Load avatars for each customer
-            foreach (var customer in customers)
+            var paginationParams = new PaginationParams
             {
-                customer.AvatarUrl = await GetUserAvatarUrlAsync(customer.Id);
-            }
-
-            return new
-            {
-                Data = customers,
-                TotalCount = totalCount,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
-                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                OrderBy = "DateCreated descending" 
             };
+
+            var pagedUsers = await query.ToPagedListAsync(paginationParams);
+
+            var customerDtos = new List<AppUserDto>();
+            foreach (var user in pagedUsers.Items)
+            {
+                var avatarUrl = await GetUserAvatarUrlAsync(user.Id);
+                customerDtos.Add(new AppUserDto
+                {
+                    Id = user.Id,
+                    FullName = user.FullName,
+                    Email = user.Email ?? string.Empty,
+                    PhoneNumber = user.PhoneNumber ?? string.Empty,
+                    DateCreated = user.DateCreated,
+                    DateModified = user.DateModified,
+                    TotalHomes = user.Homes.Count,
+                    IsActive = user.IsActive,
+                    LastLoginAt = user.LastLoginAt,
+                    AvatarUrl = avatarUrl
+                });
+            }
+
+            return new PagedList<AppUserDto>(
+            customerDtos,
+            pagedUsers.TotalCount,
+            pageNumber, 
+            pageSize    
+            );
         }
 
         public async Task<object> GetDebugInfoAsync()
@@ -221,7 +216,7 @@ namespace HSP.Service.Implementations
                     };
                 }
 
-                var customers = await _userManager.GetUsersInRoleAsync("Customer");
+                var customers = await _userRepository.GetUsersInRoleAsync("Customer");
                 var customersInfo = customers.Where(x => x.IsActive).Select(x => new
                 {
                     Id = x.Id,
@@ -262,7 +257,7 @@ namespace HSP.Service.Implementations
                     };
                 }
 
-                var user = await _userManager.FindByIdAsync(userId);
+                var user = await _userRepository.FindByIdAsync(userGuid);
                 if (user == null)
                 {
                     return new EmailChangeResponseDto
@@ -283,7 +278,7 @@ namespace HSP.Service.Implementations
                 }
 
                 // Kiểm tra email mới có bị trùng với user khác không
-                var existingUser = await _userManager.FindByEmailAsync(newEmail);
+                var existingUser = await _userRepository.FindByEmailAsync(newEmail);
                 if (existingUser != null)
                 {
                     return new EmailChangeResponseDto
@@ -294,7 +289,7 @@ namespace HSP.Service.Implementations
                 }
 
                 // Tạo token để xác thực email
-                var token = await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+                var token = await _userRepository.GenerateChangeEmailTokenAsync(user, newEmail);
 
                 // Tạo link xác thực
                 var tokenBytes = Encoding.UTF8.GetBytes($"{userId}:{newEmail}:{token}");
@@ -381,7 +376,16 @@ namespace HSP.Service.Implementations
                     };
                 }
 
-                var user = await _userManager.FindByIdAsync(userId);
+                if (!Guid.TryParse(userId, out var userGuid))
+                {
+                    return new EmailChangeResponseDto
+                    {
+                        Success = false,
+                        Message = "User ID không hợp lệ"
+                    };
+                }
+
+                var user = await _userRepository.FindByIdAsync(userGuid);
                 if (user == null)
                 {
                     return new EmailChangeResponseDto
@@ -392,7 +396,7 @@ namespace HSP.Service.Implementations
                 }
 
                 // Kiểm tra email mới có bị trùng không (trước khi thay đổi)
-                var existingUser = await _userManager.FindByEmailAsync(newEmail);
+                var existingUser = await _userRepository.FindByEmailAsync(newEmail);
                 if (existingUser != null && existingUser.Id != user.Id)
                 {
                     return new EmailChangeResponseDto
@@ -403,7 +407,7 @@ namespace HSP.Service.Implementations
                 }
 
                 // Xác thực token và thay đổi email
-                var result = await _userManager.ChangeEmailAsync(user, newEmail, changeEmailToken);
+                var result = await _userRepository.ChangeEmailAsync(user, newEmail, changeEmailToken);
                 if (!result.Succeeded)
                 {
                     var errors = string.Join(", ", result.Errors.Select(e => e.Description));
@@ -418,7 +422,7 @@ namespace HSP.Service.Implementations
                 if (user.UserName == user.Email)
                 {
                     user.UserName = newEmail;
-                    await _userManager.UpdateAsync(user);
+                    await _userRepository.UpdateAccount(user);
                 }
 
                 return new EmailChangeResponseDto
