@@ -78,9 +78,29 @@ namespace HSP.Service.Implementations
             // System Prompt
             string systemPrompt = _localizer["ChatbotSystemPrompt", servicesJsonForPrompt];
 
+            TimeZoneInfo vietnamZone;
+            try
+            {
+                // Windows
+                vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                // Linux/MacOS
+                vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+            }
+
+            DateTime vietnamTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamZone);
+
+            string currentDateContext = $"\n## Current Time Context\n" +
+                                        $"Current Date (Hôm nay là): {vietnamTime:dddd, dd MMMM yyyy, HH:mm} (Vietnam Time, UTC+7)." +
+                                        $"Use this as the 'current date' for all time-related inferences.";
+
+            systemPrompt += currentDateContext;
+
             List<OpenAI.Chat.ChatMessage> messages = new List<OpenAI.Chat.ChatMessage>
             {
-                new SystemChatMessage(systemPrompt)
+                new SystemChatMessage(systemPrompt) 
             };
 
             var history = await _historyRepository.GetAll()

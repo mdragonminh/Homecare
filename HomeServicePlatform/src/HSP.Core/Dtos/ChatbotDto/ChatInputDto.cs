@@ -48,7 +48,7 @@ namespace HSP.Core.Dtos.ChatbotDto
         public ToolProperty Address { get; set; } = new("string", "Địa chỉ đầy đủ của khách hàng, ví dụ: '123 đường ABC, phường XYZ, quận 1, TPHCM'");
 
         [JsonPropertyName("DesireDateTime")]
-        public ToolProperty DesireDateTime { get; set; } = new("string", "Ngày giờ mong muốn thực hiện dịch vụ, định dạng ISO 8601, ví dụ: '2025-10-30T14:30:00'") { Format = "date-time" };
+        public ToolProperty DesireDateTime { get; set; } = new("string", "Ngày giờ mong muốn thực hiện dịch vụ. Hãy diễn giải ngôn ngữ tự nhiên của người dùng (ví dụ: 'ngày mai lúc 2h chiều', '9h sáng chủ nhật', 'ngày 1 tháng 2') sang định dạng ISO 8601. Luôn tự suy luận năm (ví dụ: nếu hôm nay là tháng 11 và người dùng nói 'ngày 1 tháng 2', hãy hiểu là năm sau).") { Format = "date-time" };
 
         [JsonPropertyName("ServiceIds")]
         public ToolProperty ServiceIds { get; set; }
