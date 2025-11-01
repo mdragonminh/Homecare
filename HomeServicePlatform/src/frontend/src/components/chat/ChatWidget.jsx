@@ -97,7 +97,7 @@ export const ChatWidget = ({ onClose }) => {
       <div className="flex flex-col h-full bg-white rounded-lg shadow-xl border border-gray-300">
         
         <div className="flex items-center justify-between p-4 bg-blue-600 text-white rounded-t-lg">
-          <h3 className="font-semibold text-lg">Hỗ trợ đặt lịch</h3>
+          <h3 className="font-semibold text-lg">HomeService</h3>
           <button
             onClick={onClose}
             disabled={isLoading}

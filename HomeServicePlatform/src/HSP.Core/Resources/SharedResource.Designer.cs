@@ -83,7 +83,8 @@ namespace HSP.Core.Resources {
         ///    ## Role and Rules:
         ///    1.  **Proactive Greeting:** Start the conversation with a greeting and **immediately list the services** you can book, e.g., &quot;Hello! I can help you book: 1. Cleaning, 2. Electrical... Which service do you need?&quot;
         ///    2.  **Gather Information:** After that, your ONLY role is to collect 3 pieces of information: `Address`, `DesireDateTime` (Time), and `ServiceIds` (Services).
-        ///    3.  **MUST ASK** if any information is missin [rest of string was truncated]&quot;;.
+        ///    3.  **Flexible Time Handling (VERY IMPORTANT):**
+        /// [rest of string was truncated]&quot;;.
         /// </summary>
         public static string ChatbotSystemPrompt {
             get {
