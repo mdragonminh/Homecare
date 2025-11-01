@@ -1,6 +1,7 @@
 using HSP.Core.Dtos.FileDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 
 namespace HSP.API.Controllers
@@ -11,7 +12,7 @@ namespace HSP.API.Controllers
 	{
 		private readonly IFileService _fileService;
 
-		public FileController(IFileService fileService)
+        public FileController(IFileService fileService)
 		{
 			_fileService = fileService;
 		}
@@ -98,5 +99,43 @@ namespace HSP.API.Controllers
 				return StatusCode(500, ex.Message);
 			}
 		}
-	}
+
+        [HttpGet("preview")]
+        public async Task<IActionResult> Preview([FromQuery] string filePath)
+        {
+            try
+            {
+                var fileData = await _fileService.GetFileForDownload(filePath);
+
+                return PhysicalFile(fileData.PhysicalPath, fileData.ContentType, enableRangeProcessing: true);
+            }
+            catch (FileNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi máy chủ: {ex.Message}");
+            }
+        }
+
+        [HttpGet("download")]
+        public async Task<IActionResult> Download([FromQuery] string filePath)
+        {
+            try
+            {
+                var fileData = await _fileService.GetFileForDownload(filePath);
+
+                return PhysicalFile(fileData.PhysicalPath, fileData.ContentType, fileData.FileName);
+            }
+            catch (FileNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi máy chủ: {ex.Message}");
+            }
+        }
+    }
 }

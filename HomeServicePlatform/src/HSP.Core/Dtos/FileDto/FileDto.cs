@@ -50,4 +50,11 @@ namespace HSP.Core.Dtos.FileDto
 		public string FileType { get; set; }
 		public long FileSize { get; set; }
 	}
+
+    public class FileDownloadResult
+    {
+        public string PhysicalPath { get; set; }
+        public string ContentType { get; set; }
+        public string FileName { get; set; }
+    }
 }

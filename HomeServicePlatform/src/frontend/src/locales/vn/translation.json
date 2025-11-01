@@ -608,7 +608,7 @@
       "file_removed": "Đã xóa file",
       "file_uploaded": "Đã upload file: {{fileName}}",
       "file_too_large": "quá lớn (tối đa 5MB)",
-      "file_invalid_format": "không đúng định dạng (chỉ chấp nhận PDFJPG, PNG)",
+      "file_invalid_format": "không đúng định dạng (chỉ chấp nhận PDF,JPG, PNG)",
       "upload_success": "Đã upload {{count}} file chứng chỉ thành công!",
       "upload_failed": "Upload chứng chỉ thất bại",
       "upload_error": "Có lỗi xảy ra khi upload chứng chỉ",

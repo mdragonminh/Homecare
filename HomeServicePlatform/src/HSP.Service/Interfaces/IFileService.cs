@@ -16,5 +16,6 @@ namespace HSP.Service.Interfaces
 		Task<IEnumerable<FileDto>> UploadManyAsync(IEnumerable<FileUploadDto> inputs);
 		Task<IEnumerable<FileDto>> GetFilesAsync(Guid objectId, string objectTypeName);
 		Task DeleteAsync(Guid fileId);
-	}
+        Task<FileDownloadResult> GetFileForDownload(string relativePath);
+    }
 }

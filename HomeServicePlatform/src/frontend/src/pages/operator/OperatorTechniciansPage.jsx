@@ -61,7 +61,6 @@ export default function OperatorTechniciansPage() {
             name: tech.fullName || tech.name,
             email: tech.email,
             phone: tech.phoneNumber || tech.phone,
-            skills: tech.specialties || tech.skills || [],
             experience: tech.yearsOfExperience
               ? `${tech.yearsOfExperience} năm`
               : tech.experience || "Chưa xác định",
@@ -101,10 +100,7 @@ export default function OperatorTechniciansPage() {
         (tech) =>
           tech.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           tech.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tech.phone.includes(searchTerm) ||
-          tech.skills.some((skill) =>
-            skill.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+          tech.phone.includes(searchTerm)
       );
     }
 
@@ -118,29 +114,25 @@ export default function OperatorTechniciansPage() {
   }, [searchTerm, statusFilter, technicians]);
 
   const handleViewDetails = async (technician) => {
-    // Nếu cần thông tin chi tiết hơn, gọi API getTechnicianById
-    try {
-      const response = await technicianApi.getTechnicianById(technician.id);
-      if (response.success) {
-        // Merge dữ liệu từ API với dữ liệu hiện tại
-        const detailedTechnician = {
-          ...technician,
-          ...response.data,
-          name: response.data.fullName || technician.name,
-          phone: response.data.phoneNumber || technician.phone,
-          skills: response.data.specialties || technician.skills,
-        };
-        setTechnicianDetail(detailedTechnician);
-      } else {
-        setTechnicianDetail(technician);
-      }
-    } catch (error) {
-      console.error("Error getting technician details:", error);
-      setTechnicianDetail(technician);
+  // Nếu cần thông tin chi tiết hơn, gọi API getTechnicianById
+  try {
+    const response = await technicianApi.getTechnicianById(technician.id);
+    if (response.success) {
+      // response.data đã là dữ liệu đầy đủ, chứa:
+      // { id, fullName, email, experienceYears, services: [...], certificateFiles: [...] }
+      setTechnicianDetail(response.data); // <-- CHỈ CẦN SET TRỰC TIẾP
+    } else {
+      message.error(response.message || "Không thể tải chi tiết");
+      setTechnicianDetail(technician); // Fallback
     }
-    // Force re-render by setting to false first then true
-    setDetailModalVisible(false);
-    setTimeout(() => setDetailModalVisible(true), 10);
+  } catch (error) {
+    console.error("Error getting technician details:", error);
+    message.error("Lỗi khi tải chi tiết kỹ thuật viên");
+    setTechnicianDetail(technician); // Fallback
+  }
+  // Force re-render by setting to false first then true
+  setDetailModalVisible(false);
+  setTimeout(() => setDetailModalVisible(true), 10);
   };
 
   const handleApprove = (technicianId) => {
@@ -226,23 +218,6 @@ export default function OperatorTechniciansPage() {
       title: "Số điện thoại",
       dataIndex: "phone",
       key: "phone",
-    },
-    {
-      title: "Kỹ năng",
-      dataIndex: "skills",
-      key: "skills",
-      render: (skills) => (
-        <div>
-          {skills?.slice(0, 2).map((skill, index) => (
-            <Tag key={index} color="blue" style={{ marginBottom: 4 }}>
-              {skill}
-            </Tag>
-          ))}
-          {skills?.length > 2 && (
-            <Tag color="default">+{skills.length - 2}</Tag>
-          )}
-        </div>
-      ),
     },
     {
       title: "Trạng thái",
@@ -340,7 +315,7 @@ export default function OperatorTechniciansPage() {
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <Search
-            placeholder="Tìm kiếm theo tên, email, số điện thoại hoặc kỹ năng"
+            placeholder="Tìm kiếm theo tên, email, số điện thoại"
             allowClear
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: 400 }}
@@ -399,7 +374,7 @@ export default function OperatorTechniciansPage() {
         {technicianDetail && (
           <div>
             <div style={{ marginBottom: 16 }}>
-              <strong>Tên:</strong> {technicianDetail.name}
+              <strong>Tên:</strong> {technicianDetail.fullName}
             </div>
             <div style={{ marginBottom: 16 }}>
               <strong>Email:</strong> {technicianDetail.email}
@@ -414,9 +389,8 @@ export default function OperatorTechniciansPage() {
               {dayjs(technicianDetail.dateCreated).format("DD/MM/YYYY")}
             </div>
 
-            {/* Certificate Files */}
-            {technicianDetail.certificatePaths &&
-              technicianDetail.certificatePaths.length > 0 && (
+            {technicianDetail.services &&
+              technicianDetail.services.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
                   <div
                     style={{
@@ -429,7 +403,47 @@ export default function OperatorTechniciansPage() {
                       gap: 6,
                     }}
                   >
-                    🏆 Chứng chỉ
+                    Kỹ năng đăng ký
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 8,
+                    }}
+                  >
+                    {technicianDetail.services.map((service) => (
+                      <Tag
+                        key={service.id}
+                        color="blue"
+                        style={{
+                          fontSize: 13,
+                          padding: "4px 8px",
+                        }}
+                      >
+                        {service.name}
+                      </Tag>
+                    ))}
+                  </div>
+                </div>
+            )}
+
+            {/* Certificate Files */}
+            {technicianDetail.certificateFiles &&
+              technicianDetail.certificateFiles.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      color: "#1890ff",
+                      marginBottom: 12,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    Chứng chỉ
                   </div>
                   <div
                     style={{
@@ -438,14 +452,11 @@ export default function OperatorTechniciansPage() {
                       gap: 10,
                     }}
                   >
-                    {technicianDetail.certificatePaths.map(
-                      (certPath, index) => {
-                        const fileName =
-                          certPath.split("/").pop() ||
-                          `Certificate ${index + 1}`;
+                    {technicianDetail.certificateFiles.map(
+                      (file, index) => {
                         return (
                           <div
-                            key={index}
+                            key={file.id}
                             style={{
                               display: "flex",
                               alignItems: "center",
@@ -498,7 +509,7 @@ export default function OperatorTechniciansPage() {
                                   marginBottom: 2,
                                 }}
                               >
-                                {fileName}
+                                {file.fileName}
                               </div>
                               <div
                                 style={{
@@ -513,10 +524,9 @@ export default function OperatorTechniciansPage() {
                               <Button
                                 size="small"
                                 type="text"
-                                icon={<span style={{ fontSize: 14 }}>👁️</span>}
                                 onClick={() => {
                                   const previewUrl =
-                                    adminApi.previewFile(certPath);
+                                    adminApi.previewFile(file.filePath);
                                   window.open(previewUrl, "_blank");
                                 }}
                                 style={{
@@ -533,11 +543,10 @@ export default function OperatorTechniciansPage() {
                               <Button
                                 size="small"
                                 type="primary"
-                                icon={<span style={{ fontSize: 12 }}>⬇️</span>}
                                 onClick={async () => {
                                   try {
                                     const result = await adminApi.downloadFile(
-                                      certPath
+                                      file.filePath
                                     );
                                     if (result.success) {
                                       toast.success("Tải xuống thành công!");
