@@ -373,150 +373,67 @@ export default function OperatorTechniciansPage() {
       >
         {technicianDetail && (
           <div>
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <strong>Tên:</strong> {technicianDetail.fullName}
             </div>
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <strong>Email:</strong> {technicianDetail.email}
             </div>
 
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <strong>Kinh nghiệm:</strong> {technicianDetail.experienceYears}
             </div>
 
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <strong>Ngày tham gia:</strong>{" "}
               {dayjs(technicianDetail.dateCreated).format("DD/MM/YYYY")}
             </div>
 
             {technicianDetail.services &&
               technicianDetail.services.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      color: "#1890ff",
-                      marginBottom: 12,
-                      fontWeight: 600,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    Kỹ năng đăng ký
+                <div className="mb-5">
+                  <div className="text-sm mb-3 font-bold flex items-center gap-1.5">
+                    Kỹ năng đăng ký:
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 8,
-                    }}
-                  >
+                  <div className="flex flex-wrap gap-2">
                     {technicianDetail.services.map((service) => (
                       <Tag
                         key={service.id}
                         color="blue"
-                        style={{
-                          fontSize: 13,
-                          padding: "4px 8px",
-                        }}
+                        className="text-[13px] px-2 py-1" 
                       >
                         {service.name}
                       </Tag>
                     ))}
                   </div>
                 </div>
-            )}
+              )}
 
             {/* Certificate Files */}
             {technicianDetail.certificateFiles &&
               technicianDetail.certificateFiles.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      color: "#1890ff",
-                      marginBottom: 12,
-                      fontWeight: 600,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
+                <div className="mb-5">
+                  <div className="text-sm mb-3 font-bold flex items-center gap-1.5">
                     Chứng chỉ
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 10,
-                    }}
-                  >
+                  <div className="flex flex-col gap-2.5">
                     {technicianDetail.certificateFiles.map(
                       (file, index) => {
                         return (
                           <div
                             key={file.id}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 12,
-                              padding: "12px 16px",
-                              border: "1px solid #e8f4fd",
-                              borderRadius: 8,
-                              backgroundColor: "#f9fcff",
-                              transition: "all 0.3s ease",
-                              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#e8f4fd";
-                              e.currentTarget.style.borderColor = "#1890ff";
-                              e.currentTarget.style.boxShadow =
-                                "0 2px 8px rgba(24,144,255,0.15)";
-                              e.currentTarget.style.transform =
-                                "translateY(-1px)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "#f9fcff";
-                              e.currentTarget.style.borderColor = "#e8f4fd";
-                              e.currentTarget.style.boxShadow =
-                                "0 1px 3px rgba(0,0,0,0.05)";
-                              e.currentTarget.style.transform = "translateY(0)";
-                            }}
+                            className="flex items-center gap-3 px-4 py-3 border border-sky-100 rounded-lg bg-sky-50 transition-all duration-300 ease-in-out shadow-sm hover:bg-sky-100 hover:border-blue-500 hover:shadow-md hover:-translate-y-px"
                           >
                             <div
-                              style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 8,
-                                background:
-                                  "linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 16,
-                                boxShadow: "0 2px 4px rgba(24,144,255,0.3)",
-                              }}
+                              className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center text-base shadow-md shadow-blue-500/30"
                             >
                               📜
                             </div>
-                            <div style={{ flex: 1 }}>
-                              <div
-                                style={{
-                                  fontSize: 14,
-                                  color: "#333",
-                                  fontWeight: 500,
-                                  marginBottom: 2,
-                                }}
-                              >
+                            <div className="flex-1">
+                              <div className="text-sm text-gray-800 font-medium mb-0.5">
                                 {file.fileName}
                               </div>
-                              <div
-                                style={{
-                                  fontSize: 12,
-                                  color: "#999",
-                                }}
-                              >
+                              <div className="text-xs text-gray-400">
                                 Chứng chỉ #{index + 1}
                               </div>
                             </div>
@@ -582,7 +499,7 @@ export default function OperatorTechniciansPage() {
                 </div>
               )}
 
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <strong>Trạng thái: </strong>
               <Tag
                 color={
