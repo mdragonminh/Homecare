@@ -1,3 +1,5 @@
+using HSP.Core.Constans;
+using HSP.Core.Constants;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Dtos.TechnicianProfileDto;
 using HSP.Core.Entities;
@@ -18,16 +20,22 @@ namespace HSP.Service.Implementations
 	{
 		private readonly IRepository<TechnicianProfile, Guid> _technicianProfileRepository;
 		private readonly IEmailService _emailService;
+        private readonly IRepository<FileRelation, Guid> _fileRelationRepository;
+        private readonly IRepository<ObjectType, Guid> _objectTypeRepository;
 
-		public TechnicianProfileService(
+        public TechnicianProfileService(
 				IRepository<TechnicianProfile, Guid> technicianProfileRepository,
 				IEmailService emailService,
-				IUnitOfWork unitOfWork,
+                IRepository<FileRelation, Guid> fileRelationRepository, 
+                IRepository<ObjectType, Guid> objectTypeRepository,
+                IUnitOfWork unitOfWork,
 				IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_technicianProfileRepository = technicianProfileRepository;
 			_emailService = emailService;
-		}
+            _fileRelationRepository = fileRelationRepository; 
+            _objectTypeRepository = objectTypeRepository;
+        }
 
 		public async Task<PagedList<TechnicianProfileResponseDto>> GetTechniciansAsync(TechnicianProfileFilterParams filterParams)
 		{
@@ -65,8 +73,7 @@ namespace HSP.Service.Implementations
 				ApprovedBy = x.ApprovedBy,
 				DateCreated = x.DateCreated,
 				DateModified = x.DateModified,
-				// Note: CertificatePaths will be parsed after pagination due to JSON deserialization limitation in LINQ to SQL
-				CertificatePaths = null
+                // Note: CertificatePaths will be parsed after pagination due to JSON deserialization limitation in LINQ to SQL
 			});
 
 			var pagedTechnicians = await technicianDtosQuery.ToPagedListAsync(filterParams);
@@ -94,50 +101,57 @@ namespace HSP.Service.Implementations
 			return pagedTechnicians;
 		}
 
-		public async Task<TechnicianProfileResponseDto?> GetTechnicianByIdAsync(Guid id)
-		{
-			var technician = await _technicianProfileRepository.GetAll()
-					.Include(x => x.User)
-					.FirstOrDefaultAsync(x => x.Id == id);
+        public async Task<TechnicianProfileResponseDto?> GetTechnicianByIdAsync(Guid id)
+        {
+            var technician = await _technicianProfileRepository.GetAll()
+                    .Include(x => x.User)
+                    .Include(x => x.Services) 
+                    .FirstOrDefaultAsync(x => x.Id == id);
 
-			if (technician == null)
-				return null;
+            if (technician == null)
+                return null;
 
-			// Parse certificate paths from JSON string
-			List<string>? certificatePaths = null;
-			//if (!string.IsNullOrEmpty(technician.CertificatePaths))
-			//{
-			//	try
-			//	{
-			//		certificatePaths = System.Text.Json.JsonSerializer.Deserialize<List<string>>(technician.CertificatePaths);
-			//	}
-			//	catch
-			//	{
-			//		// If parsing fails, leave as null
-			//		certificatePaths = null;
-			//	}
-			//}
+            var objectType = await _objectTypeRepository.GetAll()
+                .FirstOrDefaultAsync(x => x.Name == RoleNames.Technician); 
 
-			return new TechnicianProfileResponseDto
-			{
-				Id = technician.Id,
-				UserId = technician.UserId,
-				UserName = technician.User?.UserName ?? string.Empty,
-				Email = technician.User?.Email ?? string.Empty,
-				PhoneNumber = technician.User?.PhoneNumber ?? string.Empty,
-				FullName = technician.User?.FullName ?? string.Empty,
-				//SkillSet = technician.SkillSet,
-				ExperienceYears = technician.ExperienceYears,
-				ApprovalStatus = technician.ApprovalStatus,
-				ApprovedAt = technician.ApprovedAt,
-				ApprovedBy = technician.ApprovedBy,
-				DateCreated = technician.DateCreated,
-				DateModified = technician.DateModified,
-				CertificatePaths = certificatePaths
-			};
-		}
+            List<TechnicianFileDto> certificateFiles = new List<TechnicianFileDto>();
+            if (objectType != null)
+            {
+                certificateFiles = await _fileRelationRepository.GetAll()
+                    .Include(fr => fr.File)
+                    .Where(fr => fr.ObjectId == technician.Id &&
+                                 fr.ObjectTypeId == objectType.Id &&
+                                 fr.RelationType == FileConstants.TechnicianCertificate) 
+                    .Select(fr => new TechnicianFileDto
+                    {
+                        Id = fr.File.Id,
+                        FileName = fr.File.FileName,
+                        FilePath = fr.File.FilePath, 
+                        FileType = fr.File.FileType
+                    })
+                    .ToListAsync();
+            }
 
-		public async Task<bool> ApproveTechnicianAsync(Guid technicianProfileId, string approvedBy)
+            return new TechnicianProfileResponseDto
+            {
+                Id = technician.Id,
+                UserId = technician.UserId,
+                UserName = technician.User?.UserName ?? string.Empty,
+                Email = technician.User?.Email ?? string.Empty,
+                PhoneNumber = technician.User?.PhoneNumber ?? string.Empty,
+                FullName = technician.User?.FullName ?? string.Empty,
+                ExperienceYears = technician.ExperienceYears,
+                ApprovalStatus = technician.ApprovalStatus,
+                ApprovedAt = technician.ApprovedAt,
+                ApprovedBy = technician.ApprovedBy,
+                DateCreated = technician.DateCreated,
+                DateModified = technician.DateModified,
+                Services = technician.Services.Select(s => new TechnicianServiceDto { Id = s.Id, Name = s.Name }).ToList(),
+                CertificateFiles = certificateFiles
+            };
+        }
+
+        public async Task<bool> ApproveTechnicianAsync(Guid technicianProfileId, string approvedBy)
 		{
 			var technician = await _technicianProfileRepository.GetAll()
 					.FirstOrDefaultAsync(x => x.Id == technicianProfileId);

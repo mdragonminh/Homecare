@@ -1,10 +1,11 @@
-using HSP.Core.Constants;
+﻿using HSP.Core.Constants;
 using HSP.Core.Dtos.FileDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 
@@ -136,5 +137,48 @@ namespace HSP.Service.Implementations
 			_fileRepository.HardDelete(file);
 			await _unitOfWork.SaveChangesAsync();
 		}
-	}
+
+        public Task<FileDownloadResult> GetFileForDownload(string relativePath)
+        {
+            try
+            {
+                var fullPath = GetPhysicalPath(relativePath);
+                if (!System.IO.File.Exists(fullPath))
+                {
+                    throw new FileNotFoundException("Không tìm thấy file", fullPath);
+                }
+
+                var contentType = GetMimeType(fullPath);
+                var fileName = Path.GetFileName(fullPath);
+
+                var result = new FileDownloadResult
+                {
+                    PhysicalPath = fullPath,
+                    ContentType = contentType,
+                    FileName = fileName
+                };
+                return Task.FromResult(result);
+            }
+            catch (Exception ex)
+            {
+                return Task.FromException<FileDownloadResult>(ex);
+            }
+        }
+
+        private string GetPhysicalPath(string relativePath)
+        {
+            var cleanPath = relativePath.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return Path.Combine(_environment.WebRootPath ?? "wwwroot", cleanPath);
+        }
+
+        private string GetMimeType(string filePath)
+        {
+            var provider = new FileExtensionContentTypeProvider();
+            if (!provider.TryGetContentType(filePath, out var contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+            return contentType;
+        }
+    }
 }
