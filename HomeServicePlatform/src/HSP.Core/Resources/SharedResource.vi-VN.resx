@@ -236,6 +236,6 @@
     <value>Tạo một yêu cầu đặt dịch vụ (booking) mới cho người dùng. Chỉ gọi khi đã có ĐỦ 3 thông tin: Address, DesireDateTime, và ServiceIds.</value>
   </data>
   <data name="NoAvailableTechnicianFound" xml:space="preserve">
-    <value>No available technician found</value>
+    <value>Không tìm thấy kỹ thuật viên</value>
   </data>
 </root>

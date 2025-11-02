@@ -236,4 +236,7 @@
   <data name="ChatbotToolDescription" xml:space="preserve">
     <value>Create a new service request (booking) for the user. Only call this when you have ALL 3 pieces of info: Address, DesireDateTime, and ServiceIds.</value>
   </data>
+  <data name="NoAvailableTechnicianFound" xml:space="preserve">
+    <value>No available technician found</value>
+  </data>
 </root>
