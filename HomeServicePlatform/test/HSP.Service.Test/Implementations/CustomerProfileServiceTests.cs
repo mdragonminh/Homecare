@@ -15,6 +15,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -207,5 +208,216 @@ namespace HSP.Service.Test.Implementations
             Assert.False(result.Success);
             Assert.Contains("Lỗi khi xác nhận", result.Message);
         }
+        // ============================================================
+        // ✅ TEST: RequestEmailChangeAsync (bổ sung)
+        // ============================================================
+
+        [Fact]
+        public async Task RequestEmailChangeAsync_ShouldReturnError_WhenNewEmailSameAsOld()
+        {
+            // Arrange
+            var user = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "old@example.com",
+                FullName = "John Doe"
+            };
+
+            _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
+
+            // Act
+            var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "old@example.com");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("Email mới không được trùng với email hiện tại", result.Message);
+        }
+
+        [Fact]
+        public async Task RequestEmailChangeAsync_ShouldReturnError_WhenNewEmailAlreadyExists()
+        {
+            // Arrange
+            var user = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "user1@example.com",
+                FullName = "John Doe"
+            };
+
+            var existingUser = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "new@example.com"
+            };
+
+            _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
+            _userRepoMock.Setup(x => x.FindByEmailAsync("new@example.com")).ReturnsAsync(existingUser);
+
+            // Act
+            var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "new@example.com");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("Email này đã được sử dụng bởi tài khoản khác", result.Message);
+        }
+
+        // ============================================================
+        // ✅ TEST: ConfirmEmailChangeAsync (bổ sung)
+        // ============================================================
+
+        [Fact]
+        public async Task ConfirmEmailChangeAsync_ShouldReturnSuccess_WhenTokenValid()
+        {
+            // Arrange
+            var user = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "old@example.com",
+                FullName = "John Doe",
+                UserName = "old@example.com"
+            };
+
+            string newEmail = "new@example.com";
+            string fakeToken = "VALID_TOKEN";
+
+            // Token = userId:newEmail:token
+            string tokenString = $"{user.Id}:{newEmail}:{fakeToken}";
+            string base64Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(tokenString));
+
+            _userRepoMock.Setup(x => x.FindByIdAsync(user.Id))
+                         .ReturnsAsync(user);
+
+            _userRepoMock.Setup(x => x.FindByEmailAsync(newEmail))
+                         .ReturnsAsync((AppUser?)null);
+
+            _userRepoMock.Setup(x => x.ChangeEmailAsync(user, newEmail, fakeToken))
+                         .ReturnsAsync(IdentityResult.Success);
+
+            // ✅ Vì UpdateAccount trả về Task<IdentityResult>
+            _userRepoMock.Setup(x => x.UpdateAccount(It.IsAny<AppUser>()))
+                         .ReturnsAsync(IdentityResult.Success);
+
+            // Act
+            var result = await _service.ConfirmEmailChangeAsync(user.Id.ToString(), base64Token);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal("Email đã được thay đổi thành công", result.Message);
+            Assert.Equal(newEmail, result.NewEmail);
+        }
+
+
+
+        [Fact]
+        public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenChangeEmailFails()
+        {
+            // Arrange
+            var user = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                Email = "old@example.com",
+                FullName = "John Doe"
+            };
+
+            string newEmail = "new@example.com";
+            string fakeToken = "INVALID_TOKEN";
+
+            string tokenString = $"{user.Id}:{newEmail}:{fakeToken}";
+            string base64Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(tokenString));
+
+            _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
+            _userRepoMock.Setup(x => x.FindByEmailAsync(newEmail)).ReturnsAsync((AppUser?)null);
+            _userRepoMock.Setup(x => x.ChangeEmailAsync(user, newEmail, fakeToken))
+                         .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Invalid token" }));
+
+            // Act
+            var result = await _service.ConfirmEmailChangeAsync(user.Id.ToString(), base64Token);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("Không thể thay đổi email", result.Message);
+        }
+
+        [Fact]
+        public async Task GetCustomerByUserIdAsync_ShouldThrow_WhenUserInactive()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Nguyen Van B",
+                Email = "inactive@example.com",
+                IsActive = false
+            };
+
+            var mockUsers = new List<AppUser> { user }.BuildMock();
+            _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
+
+            // Act + Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _service.GetCustomerByUserIdAsync(userId.ToString()));
+        }
+
+
+        [Fact]
+        public async Task RequestEmailChangeAsync_ShouldReturnError_WhenSendEmailFails()
+        {
+            // Arrange
+            var user = new AppUser { Id = Guid.NewGuid(), Email = "old@example.com", FullName = "John Doe" };
+            _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
+            _userRepoMock.Setup(x => x.FindByEmailAsync("new@example.com")).ReturnsAsync((AppUser?)null);
+            _userRepoMock.Setup(x => x.GenerateChangeEmailTokenAsync(user, "new@example.com")).ReturnsAsync("FAKE_TOKEN");
+            _configMock.Setup(x => x["UrlSettings:FrontendEmailChange"]).Returns("https://example.com/confirm");
+
+            // 🔴 Giả lập lỗi gửi email
+            _emailServiceMock.Setup(x => x.SendEmailAsync(It.IsAny<EmailDto>()))
+                             .ThrowsAsync(new Exception("SMTP error"));
+
+            // Act
+            var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "new@example.com");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("Lỗi khi gửi email xác thực", result.Message);
+
+        }
+
+
+        [Fact]
+        public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenUserNotFound()
+        {
+            var userId = Guid.NewGuid();
+            string newEmail = "new@example.com";
+            string fakeToken = "VALID_TOKEN";
+            string base64Token = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{userId}:{newEmail}:{fakeToken}"));
+
+            _userRepoMock.Setup(x => x.FindByIdAsync(userId)).ReturnsAsync((AppUser?)null);
+
+            var result = await _service.ConfirmEmailChangeAsync(userId.ToString(), base64Token);
+
+            Assert.False(result.Success);
+            Assert.Contains("Không tìm thấy người dùng", result.Message);
+        }
+
+        [Fact]
+        public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenEmailAlreadyInUse()
+        {
+            var user = new AppUser { Id = Guid.NewGuid(), Email = "old@example.com" };
+            var otherUser = new AppUser { Id = Guid.NewGuid(), Email = "new@example.com" };
+            string fakeToken = "VALID_TOKEN";
+            string base64Token = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{user.Id}:{otherUser.Email}:{fakeToken}"));
+
+            _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
+            _userRepoMock.Setup(x => x.FindByEmailAsync(otherUser.Email)).ReturnsAsync(otherUser);
+
+            var result = await _service.ConfirmEmailChangeAsync(user.Id.ToString(), base64Token);
+
+            Assert.False(result.Success);
+            Assert.Contains("Email này đã được sử dụng", result.Message);
+        }
+
+
+
     }
 }
