@@ -1,11 +1,11 @@
-﻿using HSP.Core.Constans;
+﻿using HSP.API.Extensions;
+using HSP.Core.Constans;
 using HSP.Core.Dtos.HomeDto;
 using HSP.Service.Dtos.HomeDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 
 namespace HSP.API.Controllers
 {
@@ -15,11 +15,9 @@ namespace HSP.API.Controllers
 	public class HomeController : ControllerBase
 	{
 		private readonly IHomeService _homeService;
-		//private readonly ICustomerProfileService _customerProfileService;
-		public HomeController(IHomeService homeService/*, ICustomerProfileService customerProfileService*/)
+		public HomeController(IHomeService homeService)
 		{
 			_homeService = homeService;
-			//_customerProfileService = customerProfileService;
 		}
 		[HttpPost("create-home")]
 		public async Task<IActionResult> CreateHome([FromBody] CreateHomeDto input)
@@ -30,9 +28,8 @@ namespace HSP.API.Controllers
 				{
 					return BadRequest(ModelState);
 				}
-				var userIdString = GetUserId();
-				//var customerProfile = await _customerProfileService.GetCustomerProfileByUserIdAsync(userIdString);
-				var homeId = await _homeService.CreateHomeAsync(input, Guid.Parse(userIdString));
+				var userId = User.GetUserId();
+				var homeId = await _homeService.CreateHomeAsync(input, userId);
 				return Ok(new { HomeId = homeId });
 			}
 			catch (ArgumentException ex)
@@ -47,8 +44,8 @@ namespace HSP.API.Controllers
 		[HttpGet("list-home")]
 		public async Task<IActionResult> GetAllHomes([FromQuery] HomeInput input)
 		{
-			var userIdString = GetUserId();
-			var homes = await _homeService.GetAllHomesAsync(input, userIdString);
+			var userId = User.GetUserId();
+			var homes = await _homeService.GetAllHomesAsync(input, userId);
 			return Ok(homes);
 		}
 		[HttpDelete("{homeId}")]
@@ -56,8 +53,8 @@ namespace HSP.API.Controllers
 		{
 			try
 			{
-				var userIdString = GetUserId();
-				await _homeService.DeleteHomeAsynce(homeId, userIdString);
+				var userId = User.GetUserId();
+				await _homeService.DeleteHomeAsynce(homeId, userId);
 				return NoContent();
 			}
 			catch (ValidationException ex)
@@ -70,7 +67,7 @@ namespace HSP.API.Controllers
 			}
 		}
 		[HttpPut("{homeId}")]
-		public async Task<IActionResult> UpdateHome(Guid homeId,[FromBody] UpdateHomeDto input)
+		public async Task<IActionResult> UpdateHome(Guid homeId, [FromBody] UpdateHomeDto input)
 		{
 			try
 			{
@@ -78,8 +75,8 @@ namespace HSP.API.Controllers
 				{
 					return BadRequest(ModelState);
 				}
-				var userIdString = GetUserId();
-				await _homeService.UpdateHomeAsync(homeId, input, userIdString);
+				var userId = User.GetUserId();
+				await _homeService.UpdateHomeAsync(homeId, input, userId);
 				return NoContent();
 			}
 			catch (ValidationException ex)
@@ -96,11 +93,12 @@ namespace HSP.API.Controllers
 			}
 		}
 		[HttpGet("{homeId}")]
-		public async Task<IActionResult> GetHomeById(Guid homeId) { 			
+		public async Task<IActionResult> GetHomeById(Guid homeId)
+		{
 			try
 			{
-				var userIdString = GetUserId();
-				var home = await _homeService.GetHomeByIdAsync(homeId, userIdString);
+				var userId = User.GetUserId();
+				var home = await _homeService.GetHomeByIdAsync(homeId, userId);
 				return Ok(home);
 			}
 			catch (ValidationException ex)
@@ -112,14 +110,5 @@ namespace HSP.API.Controllers
 				return StatusCode(500);
 			}
 		}
-		private string GetUserId()
-		{
-			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-			if (string.IsNullOrEmpty(userIdString))
-			{
-				throw new UnauthorizedAccessException("User is not authenticated.");
-			}
-			return userIdString;
-		} 
 	}
 }

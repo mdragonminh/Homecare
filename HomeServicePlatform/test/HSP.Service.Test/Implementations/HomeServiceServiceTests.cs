@@ -29,6 +29,7 @@ namespace HSP.Service.Test.Implementations
 		[Fact]
 		public async Task CreateHomeServiceAsync_WithValidInput_ShouldCreateServiceAndReturnId()
 		{
+			var userId = Guid.NewGuid();
 			var input = new Core.Dtos.ServiceDto.CreateHomeServiceDto
 			{
 				Name = "Cleaning",
@@ -42,7 +43,7 @@ namespace HSP.Service.Test.Implementations
 				.Setup(uow => uow.SaveChangesAsync())
 				.ReturnsAsync(1);
 
-			var result = await _homeServiceService.CreateHomeServiceAsync(input);
+			var result = await _homeServiceService.CreateHomeServiceAsync(userId, input);
 
 			Assert.NotEqual(Guid.Empty, result);
 			_mockHomeServiceRepository.Verify(repo => repo.AddAsync(It.IsAny<Core.Entities.Service>()), Times.Once);
@@ -51,7 +52,8 @@ namespace HSP.Service.Test.Implementations
 		[Fact]
 		public async Task CreateHomeServiceAsync_WithNullInput_ShouldThrowArgumentNullException()
 		{
-			await Assert.ThrowsAsync<ArgumentNullException>(() => _homeServiceService.CreateHomeServiceAsync(null));
+			var userId = Guid.NewGuid();
+			await Assert.ThrowsAsync<ArgumentNullException>(() => _homeServiceService.CreateHomeServiceAsync(userId, null));
 		}
 		[Fact]
 		public async Task GetAllServiceHomePageAsync_ShouldReturnListOfHomeServiceDto()

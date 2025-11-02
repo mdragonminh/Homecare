@@ -81,7 +81,7 @@ namespace HSP.Service.Test.Implementations
 					new Home
 					{
 							Id = homeId,
-							CustomerProfile = new AppUser { Id = userId }
+							CustomerId = userId,
 					}
 			};
 			var mockQueryable = homes.BuildMock();
@@ -90,7 +90,7 @@ namespace HSP.Service.Test.Implementations
 				.Setup(r => r.GetAll())
 				.Returns(mockQueryable);
 
-			var result = await _homeService.DeleteHomeAsynce(homeId, userId.ToString());
+			var result = await _homeService.DeleteHomeAsynce(homeId, userId);
 
 			Assert.True(result);
 			_mockHomeRepository.Verify(r => r.DeleteAsync(homeId), Times.Once);
@@ -107,7 +107,7 @@ namespace HSP.Service.Test.Implementations
 				.Setup(r => r.GetAll())
 				.Returns(mockQueryable);
 
-			await Assert.ThrowsAsync<ValidationException>(() => _homeService.DeleteHomeAsynce(homeId, userId.ToString()));
+			await Assert.ThrowsAsync<ValidationException>(() => _homeService.DeleteHomeAsynce(homeId, userId));
 			_mockHomeRepository.Verify(r => r.DeleteAsync(It.IsAny<Guid>()), Times.Never);
 			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
 		}
@@ -135,7 +135,7 @@ namespace HSP.Service.Test.Implementations
 				.Setup(r => r.GetAll())
 				.Returns(mockQueryable);
 			
-			var result = await _homeService.UpdateHomeAsync(homeId, input, userId.ToString());
+			var result = await _homeService.UpdateHomeAsync(homeId, input, userId);
 			
 			Assert.True(result);
 			Assert.Equal("Updated Home", homeToUpdate.Name);
@@ -155,7 +155,7 @@ namespace HSP.Service.Test.Implementations
 			_mockHomeRepository
 				.Setup(r => r.GetAll())
 				.Returns(mockQueryable);
-			await Assert.ThrowsAsync<ValidationException>(() => _homeService.UpdateHomeAsync(homeId, input, userId.ToString()));
+			await Assert.ThrowsAsync<ValidationException>(() => _homeService.UpdateHomeAsync(homeId, input, userId));
 			_mockGeocodingService.Verify(s => s.GetCoordinatesForAddressAsync(It.IsAny<string>()), Times.Never);
 			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
 			_mockHomeRepository.Verify(r => r.GetAll(), Times.Once);
@@ -184,7 +184,7 @@ namespace HSP.Service.Test.Implementations
 				.Returns(mockQueryable);
 			_mockGeocodingService.Setup(s => s.GetCoordinatesForAddressAsync(input.Address))
 						.ReturnsAsync((CoordinatesDto?)null);
-			await Assert.ThrowsAsync<ValidationException>(() => _homeService.UpdateHomeAsync(homeId, input, userId.ToString()));
+			await Assert.ThrowsAsync<ValidationException>(() => _homeService.UpdateHomeAsync(homeId, input, userId));
 			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
 			_mockHomeRepository.Verify(r => r.GetAll(), Times.Once);
 			_mockGeocodingService.Verify(s => s.GetCoordinatesForAddressAsync(input.Address), Times.Once);
@@ -194,7 +194,7 @@ namespace HSP.Service.Test.Implementations
 		{
 			var homeId = Guid.NewGuid();
 			var userId = Guid.NewGuid();
-			await Assert.ThrowsAsync<ArgumentException>(() => _homeService.UpdateHomeAsync(homeId, null!, userId.ToString()));
+			await Assert.ThrowsAsync<ArgumentException>(() => _homeService.UpdateHomeAsync(homeId, null!, userId));
 			_mockHomeRepository.Verify(r => r.GetAll(), Times.Never);
 			_mockGeocodingService.Verify(s => s.GetCoordinatesForAddressAsync(It.IsAny<string>()), Times.Never);
 			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
@@ -221,7 +221,7 @@ namespace HSP.Service.Test.Implementations
 			_mockHomeRepository
 				.Setup(r => r.GetAll())
 				.Returns(mockQueryable);
-			var result = await _homeService.GetHomeByIdAsync(homeId, userId.ToString());
+			var result = await _homeService.GetHomeByIdAsync(homeId, userId);
 			Assert.NotNull(result);
 			Assert.Equal(homeId, result.Id);
 			Assert.Equal("My Home", result.Name);
@@ -241,7 +241,7 @@ namespace HSP.Service.Test.Implementations
 			_mockHomeRepository
 				.Setup(r => r.GetAll())
 				.Returns(mockQueryable);
-			await Assert.ThrowsAsync<ValidationException>(() => _homeService.GetHomeByIdAsync(homeId, userId.ToString()));
+			await Assert.ThrowsAsync<ValidationException>(() => _homeService.GetHomeByIdAsync(homeId, userId));
 			_mockHomeRepository.Verify(r => r.GetAll(), Times.Once);
 		}
 		[Fact]
@@ -258,7 +258,7 @@ namespace HSP.Service.Test.Implementations
 
 			_mockHomeRepository.Setup(r => r.GetAll()).Returns(mockQueryable);
 
-			var result = await _homeService.GetAllHomesAsync(input, userId.ToString());
+			var result = await _homeService.GetAllHomesAsync(input, userId);
 
 			Assert.All(result.Items, h => Assert.Contains("home", h.Name, StringComparison.OrdinalIgnoreCase));
 		}

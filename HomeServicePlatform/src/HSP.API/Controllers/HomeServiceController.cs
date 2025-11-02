@@ -1,8 +1,10 @@
-﻿using HSP.Core.Constans;
+﻿using HSP.API.Extensions;
+using HSP.Core.Constans;
 using HSP.Core.Dtos.ServiceDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HSP.API.Controllers
 {
@@ -19,8 +21,20 @@ namespace HSP.API.Controllers
 		[Authorize(Roles = RoleNames.Admin)]
 		public async Task<IActionResult> CreateHomeService([FromBody] CreateHomeServiceDto input)
 		{
-			var serviceId =  await _homeServiceService.CreateHomeServiceAsync(input);
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+			var userId = User.GetUserId();
+			var serviceId =  await _homeServiceService.CreateHomeServiceAsync(userId, input);
 			return Ok(serviceId);
+		}
+		[HttpGet]
+		[Authorize(Roles = RoleNames.Admin)]
+		public async Task<IActionResult> GetAllHomeServices([FromQuery] HomeServiceInput input)
+		{
+			var services = await _homeServiceService.GetAllAsync(input);
+			return Ok(services);
 		}
 		#region Home Page
 		[HttpGet("services-homepage")]
