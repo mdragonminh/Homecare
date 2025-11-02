@@ -1,5 +1,7 @@
 ﻿using HSP.Core.Constans;
 using HSP.Core.Constants;
+using HSP.Core.Dtos.AccountDto;
+using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Dtos.FileDto;
 using HSP.Core.Entities;
@@ -12,13 +14,15 @@ using HSP.Service.Implementations;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
+using MockQueryable;
 using Moq;
 using System.ComponentModel.DataAnnotations;
-using MockQueryable.Moq;
-using MockQueryable;
+using System.Security.Claims;
+using System.Text;
 
 namespace HSP.Service.Test.Implementations
 {
@@ -472,7 +476,7 @@ namespace HSP.Service.Test.Implementations
 					.Returns(Task.CompletedTask);
 			mockTransaction.Setup(x => x.RollbackAsync(It.IsAny<CancellationToken>()))
 					.Returns(Task.CompletedTask)
-					.Verifiable(); 
+					.Verifiable();
 
 			_mockUnitOfWork.Setup(x => x.BeginTransactionAsync())
 					.ReturnsAsync(mockTransaction.Object);
@@ -485,5 +489,1057 @@ namespace HSP.Service.Test.Implementations
 			mockTransaction.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
 			mockTransaction.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
 		}
+		[Fact]
+		public async Task ConfirmEmail_SuccessfulConfirmation_ReturnConfirmEmailResultDto()
+		{
+			var userId = Guid.NewGuid();
+			var token = "valid_token";
+			var existingUser = new AppUser
+			{
+				Id = userId,
+				Email = "exmaple@gmail.com"
+			};
+			_mockUserRepository
+				.Setup(x => x.FindByIdAsync(userId))
+				.ReturnsAsync(existingUser);
+			_mockUserRepository.Setup(x => x.ConfirmEmailAsync(existingUser, token))
+				.ReturnsAsync(IdentityResult.Success);
+			var result = await _authenticationService.ConfirmEmail(userId, token);
+			Assert.NotNull(result);
+			Assert.IsType<ConfirmEmailResultDto>(result);
+			Assert.True(result.Success);
+			Assert.Equal("Email confirmed", result.Message);
+			Assert.Null(result.Error);
+			_mockUserRepository.Verify(x => x.FindByIdAsync(userId), Times.Once);
+			_mockUserRepository.Verify(x => x.ConfirmEmailAsync(It.IsAny<AppUser>(), token), Times.Once);
+		}
+		[Fact]
+		public async Task ConfirmEmail_UserNotFound_ReturnConfirmEmailResultDto()
+		{
+			var userId = Guid.NewGuid();
+			var token = "invalid_token";
+			_mockUserRepository
+				.Setup(x => x.FindByIdAsync(userId))
+				.ReturnsAsync((AppUser?)null);
+			var result = await _authenticationService.ConfirmEmail(userId, token);
+			Assert.NotNull(result);
+			Assert.IsType<ConfirmEmailResultDto>(result);
+			Assert.False(result.Success);
+			Assert.Equal("UserNotFound", result.Error);
+			Assert.Equal("User not found", result.Message);
+			_mockUserRepository.Verify(x => x.FindByIdAsync(userId), Times.Once);
+			_mockUserRepository.Verify(x => x.ConfirmEmailAsync(It.IsAny<AppUser>(), token), Times.Never);
+		}
+		[Fact]
+		public async Task ConfirmEmail_TokenExpired_ReturnConfirmEmailResultDto()
+		{
+			var userId = Guid.NewGuid();
+			var token = "expired_token";
+			var existingUser = new AppUser
+			{
+				Id = userId,
+				Email = "example@gmail.com",
+				EmailConfirmed = false
+			};
+			_mockUserRepository
+				.Setup(x => x.FindByIdAsync(userId))
+				.ReturnsAsync(existingUser);
+			_mockUserRepository.Setup(x => x.ConfirmEmailAsync(existingUser, token))
+				.ReturnsAsync(IdentityResult.Failed(new IdentityError
+				{
+					Code = "TokenExpired",
+					Description = "The token is invalid or has expired."
+				}));
+			var result = await _authenticationService.ConfirmEmail(userId, token);
+			Assert.NotNull(result);
+			Assert.IsType<ConfirmEmailResultDto>(result);
+			Assert.False(result.Success);
+			Assert.Equal("TokenExpired", result.Error);
+			Assert.Equal("Token expired", result.Message);
+			_mockUserRepository.Verify(x => x.FindByIdAsync(userId), Times.Once);
+			_mockUserRepository.Verify(x => x.ConfirmEmailAsync(It.IsAny<AppUser>(), token), Times.Once);
+		}
+		[Fact]
+		public async Task ConfirmEmail_TokenInvalid_ReturnConfirmEmailResultDto()
+		{
+			var userId = Guid.NewGuid();
+			var token = "invalid_token";
+			var existingUser = new AppUser
+			{
+				Id = userId,
+				Email = "example@gmail.com",
+				EmailConfirmed = false
+			};
+			_mockUserRepository
+				.Setup(x => x.FindByIdAsync(userId))
+				.ReturnsAsync(existingUser);
+			_mockUserRepository.Setup(x => x.ConfirmEmailAsync(existingUser, token))
+				.ReturnsAsync(IdentityResult.Failed(new IdentityError
+				{
+					Code = "InvalidToken",
+					Description = "The token is invalid"
+				}));
+			var result = await _authenticationService.ConfirmEmail(userId, token);
+			Assert.NotNull(result);
+			Assert.IsType<ConfirmEmailResultDto>(result);
+			Assert.False(result.Success);
+			Assert.Equal("InvalidToken", result.Error);
+			Assert.Equal("Invalid token", result.Message);
+			_mockUserRepository.Verify(x => x.FindByIdAsync(userId), Times.Once);
+			_mockUserRepository.Verify(x => x.ConfirmEmailAsync(It.IsAny<AppUser>(), token), Times.Once);
+		}
+		[Fact]
+		public async Task ConfirmEmail_UnknownError_ReturnConfirmEmailResultDto()
+		{
+			var userId = Guid.NewGuid();
+			var token = "some_token";
+			var existingUser = new AppUser
+			{
+				Id = userId,
+				Email = "example@gmail.com",
+				EmailConfirmed = false
+			};
+			var identityError = new IdentityError
+			{
+				Code = "SomeOtherError",
+				Description = "Unexpected failure in confirmation"
+			};
+			_mockUserRepository
+					.Setup(x => x.FindByIdAsync(userId))
+					.ReturnsAsync(existingUser);
+			_mockUserRepository
+					.Setup(x => x.ConfirmEmailAsync(existingUser, token))
+					.ReturnsAsync(IdentityResult.Failed(identityError));
+
+			var result = await _authenticationService.ConfirmEmail(userId, token);
+
+			Assert.NotNull(result);
+			Assert.IsType<ConfirmEmailResultDto>(result);
+			Assert.False(result.Success);
+			Assert.Equal("UnknownError", result.Error);
+			Assert.Equal("Email confirmation failed", result.Message);
+			_mockUserRepository.Verify(x => x.FindByIdAsync(userId), Times.Once);
+			_mockUserRepository.Verify(x => x.ConfirmEmailAsync(existingUser, token), Times.Once);
+		}
+		[Fact]
+		public async Task Login_ValidInputFindByEmail_ReturnLoginResponseDto()
+		{
+			var input = new LoginRequestDto
+			{
+				EmailOrPhone = "example@gmail.com",
+				Password = "Password123!"
+			};
+			var existingUser = new AppUser
+			{
+				Id = Guid.NewGuid(),
+				Email = input.EmailOrPhone,
+				UserName = input.EmailOrPhone,
+				FullName = "Example User",
+				PhoneNumber = "0888777222",
+				EmailConfirmed = true,
+				IsActive = true
+			};
+			_mockUserRepository
+				.Setup(x => x.FindByEmailAsync(input.EmailOrPhone))
+				.ReturnsAsync(existingUser);
+			_mockUserRepository.Setup(x => x.CheckPasswordAsync(existingUser, input.Password))
+				.ReturnsAsync(true);
+			_mockJwtService.Setup(x => x.GenerateTokenPairAsync(It.IsAny<Core.Dtos.AccountDto.UserDto>()))
+				.ReturnsAsync(new TokenResponseDto
+				{
+					AccessToken = "access",
+					RefreshToken = "refresh",
+					AccessTokenExpiresAt = DateTime.UtcNow.AddHours(1),
+					RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7)
+				});
+			var result = await _authenticationService.Login(input);
+			Assert.NotNull(result);
+			Assert.NotNull(result.JwtToken);
+		}
+		[Fact]
+		public async Task Login_ValidInputFindByPhoneNumber_ReturnLoginResponseDto()
+		{
+			var input = new LoginRequestDto
+			{
+				EmailOrPhone = "0888777222",
+				Password = "Password123!"
+			};
+			var existingUser = new AppUser
+			{
+				Id = Guid.NewGuid(),
+				Email = "example@gmail.com",
+				UserName = "example@gmail.com",
+				FullName = "Example User",
+				PhoneNumber = input.EmailOrPhone,
+				EmailConfirmed = true,
+				IsActive = true
+			};
+			_mockUserRepository
+				.Setup(x => x.FindByPhoneNumberAsync(input.EmailOrPhone))
+				.ReturnsAsync(existingUser);
+			_mockUserRepository.Setup(x => x.CheckPasswordAsync(existingUser, input.Password))
+				.ReturnsAsync(true);
+			_mockJwtService.Setup(x => x.GenerateTokenPairAsync(It.IsAny<Core.Dtos.AccountDto.UserDto>()))
+				.ReturnsAsync(new TokenResponseDto
+				{
+					AccessToken = "access",
+					RefreshToken = "refresh",
+					AccessTokenExpiresAt = DateTime.UtcNow.AddHours(1),
+					RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7)
+				});
+			var result = await _authenticationService.Login(input);
+			Assert.NotNull(result);
+			Assert.NotNull(result.JwtToken);
+		}
+		[Fact]
+		public async Task Login_NullArgumentInput_ThrowArgumentNullException()
+		{
+			await Assert.ThrowsAsync<ArgumentNullException>(() => _authenticationService.Login(null!));
+			_mockUserRepository.Verify(x => x.FindByEmailAsync(It.IsAny<string>()), Times.Never);
+			_mockUserRepository.Verify(x => x.FindByPhoneNumberAsync(It.IsAny<string>()), Times.Never);
+			_mockUserRepository.Verify(x => x.CheckPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
+			_mockJwtService.Verify(x => x.GenerateTokenPairAsync(It.IsAny<Core.Dtos.AccountDto.UserDto>()), Times.Never);
+		}
+		[Fact]
+		public async Task Login_UserNotFound_ThrowValidationException()
+		{
+			var input = new LoginRequestDto
+			{
+				EmailOrPhone = "example@gmail.com",
+				Password = "Password123!"
+			};
+			var existingUser = new AppUser
+			{
+				Id = Guid.NewGuid(),
+				Email = input.EmailOrPhone,
+				UserName = input.EmailOrPhone,
+				FullName = "Example User",
+				PhoneNumber = "0888777222",
+				EmailConfirmed = true,
+				IsActive = true
+			};
+			_mockUserRepository
+				.Setup(x => x.FindByEmailAsync(input.EmailOrPhone))
+				.ReturnsAsync((AppUser?)null);
+			var result = await Assert.ThrowsAsync<ValidationException>(() => _authenticationService.Login(input));
+			_mockUserRepository.Verify(x => x.FindByEmailAsync(input.EmailOrPhone), Times.Once);
+			_mockUserRepository.Verify(x => x.CheckPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
+			_mockJwtService.Verify(x => x.GenerateTokenPairAsync(It.IsAny<Core.Dtos.AccountDto.UserDto>()), Times.Never);
+		}
+		[Fact]
+		public async Task Login_EmailNotConfirm_ThrowUnauthorizedAccessException()
+		{
+			var input = new LoginRequestDto
+			{
+				EmailOrPhone = "example@gmail.com",
+				Password = "Password123!"
+			};
+			var existingUser = new AppUser
+			{
+				Id = Guid.NewGuid(),
+				Email = input.EmailOrPhone,
+				UserName = input.EmailOrPhone,
+				FullName = "Example User",
+				PhoneNumber = "0888777222",
+				EmailConfirmed = false,
+				IsActive = true
+			};
+			_mockUserRepository
+				.Setup(x => x.FindByEmailAsync(input.EmailOrPhone))
+				.ReturnsAsync(existingUser);
+			var result = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authenticationService.Login(input));
+			_mockUserRepository.Verify(x => x.FindByEmailAsync(input.EmailOrPhone), Times.Once);
+			_mockUserRepository.Verify(x => x.CheckPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
+			_mockJwtService.Verify(x => x.GenerateTokenPairAsync(It.IsAny<Core.Dtos.AccountDto.UserDto>()), Times.Never);
+		}
+		[Fact]
+		public async Task Login_IncorrectPassword_ThrowUnauthorizedAccessException()
+		{
+			var input = new LoginRequestDto
+			{
+				EmailOrPhone = "example@gmail.com",
+				Password = "Password123!"
+			};
+			var existingUser = new AppUser
+			{
+				Id = Guid.NewGuid(),
+				Email = input.EmailOrPhone,
+				UserName = input.EmailOrPhone,
+				FullName = "Example User",
+				PhoneNumber = "0888777222",
+				EmailConfirmed = true,
+				IsActive = true,
+				PasswordHash = "hashed_password"
+			};
+			_mockUserRepository
+				.Setup(x => x.FindByEmailAsync(input.EmailOrPhone))
+				.ReturnsAsync(existingUser);
+			_mockUserRepository.Setup(x => x.CheckPasswordAsync(existingUser, input.Password))
+				.ReturnsAsync(false);
+			var result = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authenticationService.Login(input));
+			_mockUserRepository.Verify(x => x.FindByEmailAsync(input.EmailOrPhone), Times.Once);
+			_mockUserRepository.Verify(x => x.CheckPasswordAsync(existingUser, input.Password), Times.Once);
+			_mockJwtService.Verify(x => x.GenerateTokenPairAsync(It.IsAny<Core.Dtos.AccountDto.UserDto>()), Times.Never);
+		}
+		[Fact]
+		public async Task GoogleLogin_ExistingUSer_ReturnLoginResponseDto()
+		{
+			var email = "example@gmail.com";
+			var user = new AppUser
+			{
+				Id = Guid.NewGuid(),
+				Email = email,
+				UserName = email,
+				FullName = "Example User",
+				PhoneNumber = "0888777222",
+				EmailConfirmed = true,
+				IsActive = true
+			};
+			var claims = new List<Claim>
+			{
+				new Claim(ClaimTypes.Email, email),
+				new Claim(ClaimTypes.Name, "Example User")
+			};
+			var principle = new ClaimsPrincipal(new ClaimsIdentity(claims, "Google"));
+			var externalInfo = new ExternalLoginInfo(principle, "Google", "google_id", "Google")
+			{
+				Principal = principle
+			};
+			_mockAuthSignInService.Setup(x => x.GetExternalLoginInfoAsync())
+				.ReturnsAsync(externalInfo);
+			_mockUserRepository.Setup(x => x.FindByLoginAsync("Google", "google_id"))
+				.ReturnsAsync(user);
+			_mockJwtService.Setup(x => x.GenerateTokenPairAsync(It.IsAny<UserDto>()))
+				.ReturnsAsync(new TokenResponseDto
+				{
+					AccessToken = "access",
+					RefreshToken = "refresh",
+					AccessTokenExpiresAt = DateTime.UtcNow.AddHours(1),
+					RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7)
+				});
+			var result = await _authenticationService.GoogleLogin();
+			Assert.NotNull(result);
+			Assert.IsType<LoginResponseDto>(result);
+			Assert.NotNull(result.JwtToken);
+			Assert.Equal("access", result.JwtToken.AccessToken);
+			Assert.Equal("refresh", result.JwtToken.RefreshToken);
+			_mockAuthSignInService.Verify(x => x.GetExternalLoginInfoAsync(), Times.Once);
+			_mockUserRepository.Verify(x => x.FindByLoginAsync("Google", "google_id"), Times.Once);
+			_mockUserRepository.Verify(x => x.CreateAsync(It.IsAny<AppUser>()), Times.Never);
+			_mockUserRepository.Verify(x => x.AddLoginAsync(It.IsAny<AppUser>(), It.IsAny<ExternalLoginInfo>()), Times.Never);
+		}
+		[Fact]
+		public async Task GoogleLogin_LoginInfoIsNull_ThrowsInvalidOperationException()
+		{
+			_mockAuthSignInService.Setup(x => x.GetExternalLoginInfoAsync())
+				.ReturnsAsync((ExternalLoginInfo?)null);
+			await Assert.ThrowsAsync<InvalidOperationException>(() => _authenticationService.GoogleLogin());
+			_mockAuthSignInService.Verify(x => x.GetExternalLoginInfoAsync(), Times.Once);
+			_mockUserRepository.Verify(x => x.FindByLoginAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+			_mockUserRepository.Verify(x => x.CreateAsync(It.IsAny<AppUser>()), Times.Never);
+			_mockUserRepository.Verify(x => x.AddLoginAsync(It.IsAny<AppUser>(), It.IsAny<ExternalLoginInfo>()), Times.Never);
+		}
+		[Fact]
+		public async Task GoogleLogin_CannotFindOrCreateUser_ThrowsException()
+		{
+			var email = "cannotcreate@gmail.com";
+			var claims = new List<Claim>
+			{
+				new Claim(ClaimTypes.Email, email),
+				new Claim(ClaimTypes.Name, "Cannot Create")
+			};
+			var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Google"));
+			var externalInfo = new ExternalLoginInfo(principal, "Google", "google_cannotcreate", "Google");
+			_mockAuthSignInService.Setup(x => x.GetExternalLoginInfoAsync())
+					.ReturnsAsync(externalInfo);
+			_mockUserRepository.Setup(x => x.FindByLoginAsync("Google", "google_cannotcreate"))
+					.ReturnsAsync((AppUser?)null);
+			_mockUserRepository.Setup(x => x.FindByEmailAsync(email))
+					.ReturnsAsync((AppUser?)null);
+			_mockUserRepository.Setup(x => x.CreateAsync(It.IsAny<AppUser>()))
+					.ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "UserCreationFailed" }));
+
+			await Assert.ThrowsAsync<Exception>(() => _authenticationService.GoogleLogin());
+			_mockAuthSignInService.Verify(x => x.GetExternalLoginInfoAsync(), Times.Once);
+			_mockUserRepository.Verify(x => x.FindByLoginAsync("Google", "google_cannotcreate"), Times.Once);
+		}
+
+		[Fact]
+		public async Task GoogleLogin_NewUserCreated_ReturnLoginResponseDto()
+		{
+			var email = "newuser@gmail.com";
+			var claims = new List<Claim>
+		{
+				new Claim(ClaimTypes.Email, email),
+				new Claim(ClaimTypes.Name, "New User")
+		};
+			var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Google"));
+			var externalInfo = new ExternalLoginInfo(principal, "Google", "google_999", "Google");
+
+			var newUser = new AppUser
+			{
+				Id = Guid.NewGuid(),
+				Email = email,
+				FullName = "New User",
+				EmailConfirmed = true
+			};
+
+			_mockAuthSignInService.Setup(x => x.GetExternalLoginInfoAsync())
+					.ReturnsAsync(externalInfo);
+
+			_mockUserRepository.Setup(x => x.FindByLoginAsync("Google", "google_999"))
+					.ReturnsAsync((AppUser?)null);
+
+			_mockUserRepository.Setup(x => x.FindByEmailAsync(email))
+					.ReturnsAsync((AppUser?)null);
+
+			_mockUserRepository.Setup(x => x.CreateAsync(It.IsAny<AppUser>()))
+					.ReturnsAsync(IdentityResult.Success);
+
+			_mockUserRepository.Setup(x => x.AddToRoleAsync(It.IsAny<AppUser>(), RoleNames.Customer))
+					.ReturnsAsync(IdentityResult.Success);
+
+			_mockUserRepository.Setup(x => x.AddLoginAsync(It.IsAny<AppUser>(), externalInfo))
+					.ReturnsAsync(IdentityResult.Success);
+
+			_mockJwtService.Setup(x => x.GenerateTokenPairAsync(It.IsAny<UserDto>()))
+					.ReturnsAsync(new TokenResponseDto
+					{
+						AccessToken = "access_new",
+						RefreshToken = "refresh_new"
+					});
+
+			var result = await _authenticationService.GoogleLogin();
+
+			Assert.NotNull(result);
+			Assert.IsType<LoginResponseDto>(result);
+			Assert.Equal("access_new", result.JwtToken.AccessToken);
+			Assert.Equal("refresh_new", result.JwtToken.RefreshToken);
+
+			_mockUserRepository.Verify(x => x.CreateAsync(It.IsAny<AppUser>()), Times.Once);
+			_mockUserRepository.Verify(x => x.AddLoginAsync(It.IsAny<AppUser>(), externalInfo), Times.Once);
+		}
+		[Fact]
+		public async Task GoogleLogin_EmailNotFoundFromProvider_ThrowsException()
+		{
+			var principal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>(), "Google"));
+			var externalInfo = new ExternalLoginInfo(principal, "Google", "google_id", "Google");
+
+			_mockAuthSignInService.Setup(x => x.GetExternalLoginInfoAsync())
+					.ReturnsAsync(externalInfo);
+
+			_mockUserRepository.Setup(x => x.FindByLoginAsync("Google", "google_id"))
+					.ReturnsAsync((AppUser?)null);
+
+			await Assert.ThrowsAsync<Exception>(() => _authenticationService.GoogleLogin());
+		}
+		[Fact]
+		public async Task GoogleLogin_AddLoginFails_ThrowsException()
+		{
+			var email = "failuser@gmail.com";
+			var claims = new List<Claim>
+		{
+				new Claim(ClaimTypes.Email, email),
+				new Claim(ClaimTypes.Name, "Fail User")
+		};
+			var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Google"));
+			var externalInfo = new ExternalLoginInfo(principal, "Google", "google_id_fail", "Google");
+
+			var user = new AppUser { Id = Guid.NewGuid(), Email = email, FullName = "Fail User" };
+
+			_mockAuthSignInService.Setup(x => x.GetExternalLoginInfoAsync())
+					.ReturnsAsync(externalInfo);
+
+			_mockUserRepository.Setup(x => x.FindByLoginAsync("Google", "google_id_fail"))
+					.ReturnsAsync((AppUser?)null);
+
+			_mockUserRepository.Setup(x => x.FindByEmailAsync(email))
+					.ReturnsAsync(user);
+
+			_mockUserRepository.Setup(x => x.AddLoginAsync(user, externalInfo))
+					.ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "GoogleLinkFailed" }));
+
+			await Assert.ThrowsAsync<Exception>(() => _authenticationService.GoogleLogin());
+		}
+		[Fact]
+		public async Task GoogleLogin_UserCreationFails_ThrowsException()
+		{
+			var email = "failcreate@gmail.com";
+			var claims = new List<Claim>
+		{
+				new Claim(ClaimTypes.Email, email),
+				new Claim(ClaimTypes.Name, "Fail Create")
+		};
+			var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Google"));
+			var externalInfo = new ExternalLoginInfo(principal, "Google", "google_create_fail", "Google");
+
+			_mockAuthSignInService.Setup(x => x.GetExternalLoginInfoAsync())
+					.ReturnsAsync(externalInfo);
+
+			_mockUserRepository.Setup(x => x.FindByLoginAsync("Google", "google_create_fail"))
+					.ReturnsAsync((AppUser?)null);
+
+			_mockUserRepository.Setup(x => x.FindByEmailAsync(email))
+					.ReturnsAsync((AppUser?)null);
+
+			_mockUserRepository.Setup(x => x.CreateAsync(It.IsAny<AppUser>()))
+					.ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "UserCreationFailed" }));
+
+			await Assert.ThrowsAsync<Exception>(() => _authenticationService.GoogleLogin());
+		}
+		[Fact]
+		public async Task GoogleLogin_AddToRoleFails_ThrowsException()
+		{
+			var email = "failrole@gmail.com";
+			var claims = new List<Claim>
+		{
+				new Claim(ClaimTypes.Email, email),
+				new Claim(ClaimTypes.Name, "Fail Role")
+		};
+			var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "Google"));
+			var externalInfo = new ExternalLoginInfo(principal, "Google", "google_role_fail", "Google");
+
+			_mockAuthSignInService.Setup(x => x.GetExternalLoginInfoAsync())
+					.ReturnsAsync(externalInfo);
+
+			_mockUserRepository.Setup(x => x.FindByLoginAsync("Google", "google_role_fail"))
+					.ReturnsAsync((AppUser?)null);
+
+			_mockUserRepository.Setup(x => x.FindByEmailAsync(email))
+					.ReturnsAsync((AppUser?)null);
+
+			_mockUserRepository.Setup(x => x.CreateAsync(It.IsAny<AppUser>()))
+					.ReturnsAsync(IdentityResult.Success);
+
+			_mockUserRepository.Setup(x => x.AddToRoleAsync(It.IsAny<AppUser>(), RoleNames.Customer))
+					.ReturnsAsync(IdentityResult.Failed(new IdentityError { Code = "AddToRoleFailed" }));
+
+			await Assert.ThrowsAsync<Exception>(() => _authenticationService.GoogleLogin());
+		}
+		[Fact]
+		public async Task AddPasswordAsync_ValidInput_ReturnsTrue()
+		{
+			var userId = Guid.NewGuid();
+			var password = "NewPassword123!";
+			var secondInput = new AddPasswordDto
+			{
+				NewPassword = password,
+				ConfirmPassword = password
+			};
+			var user = new AppUser
+			{
+				Id = userId,
+				Email = "example@gmail.com",
+				PasswordHash = null
+			};
+			_mockUserRepository.Setup(x => x.FindByIdAsync(userId))
+				.ReturnsAsync(user);
+			_mockUserRepository.Setup(x => x.AddPasswordAsync(user, secondInput.NewPassword))
+				.ReturnsAsync(IdentityResult.Success);
+			var result = await _authenticationService.AddPasswordAsync(userId, secondInput);
+			Assert.True(result);
+		}
+		[Fact]
+		public async Task AddPasswordAsync_UserNotFound_ThrowValidationException()
+		{
+			var userId = Guid.NewGuid();
+			var password = "NewPassword123!";
+			var secondInput = new AddPasswordDto
+			{
+				NewPassword = password,
+				ConfirmPassword = password
+			};
+			_mockUserRepository.Setup(x => x.FindByIdAsync(userId))
+				.ReturnsAsync((AppUser?)null);
+			await Assert.ThrowsAsync<ValidationException>(() => _authenticationService.AddPasswordAsync(userId, secondInput));
+			_mockUserRepository.Verify(x => x.AddPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
+		}
+		[Fact]
+		public async Task AddPasswordAsync_ArgumentNull_ThrowArgumentNullException()
+		{
+			var userId = Guid.Empty;
+			AddPasswordDto? input = null;
+
+			var ex = await Assert.ThrowsAsync<ArgumentNullException>(
+					() => _authenticationService.AddPasswordAsync(userId, input)
+			);
+		}
+		[Fact]
+		public async Task AddPasswordAsync_PasswordsDoNotMatch_ThrowValidationException()
+		{
+			var userId = Guid.NewGuid();
+			var secondInput = new AddPasswordDto
+			{
+				NewPassword = "NewPassword123!",
+				ConfirmPassword = "DifferentPassword123!"
+			};
+			await Assert.ThrowsAsync<ValidationException>(() => _authenticationService.AddPasswordAsync(userId, secondInput));
+			_mockUserRepository.Verify(x => x.FindByIdAsync(It.IsAny<Guid>()), Times.Never);
+			_mockUserRepository.Verify(x => x.AddPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
+		}
+		[Fact]
+		public async Task AddPasswordAsync_UserAlreadyHasAPassword_ThrowValidationException()
+		{
+			var userId = Guid.NewGuid();
+			var secondInput = new AddPasswordDto
+			{
+				NewPassword = "NewPassword123!",
+				ConfirmPassword = "NewPassword123!"
+			};
+			var existingUser = new AppUser
+			{
+				Id = userId,
+				Email = "example@gmail.com",
+				UserName = "example@gmail.com",
+				PasswordHash = "hashed_password"
+			};
+			_mockUserRepository
+				.Setup(x => x.FindByIdAsync(userId))
+				.ReturnsAsync(existingUser);
+
+			var ex = await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.AddPasswordAsync(userId, secondInput)
+			);
+			_mockUserRepository.Verify(x => x.FindByIdAsync(userId), Times.Once);
+			_mockUserRepository.Verify(x => x.AddPasswordAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
+		}
+		[Fact]
+		public async Task AddPasswordAsync_AddPasswordFailed_ThrowException()
+		{
+			var userId = Guid.NewGuid();
+			var password = "NewPassword123!";
+			var secondInput = new AddPasswordDto
+			{
+				NewPassword = password,
+				ConfirmPassword = password
+			};
+			var user = new AppUser
+			{
+				Id = userId,
+				Email = "example@gmail.com",
+				PasswordHash = null
+			};
+			_mockUserRepository.Setup(x => x.FindByIdAsync(userId))
+				.ReturnsAsync(user);
+			_mockUserRepository.Setup(x => x.AddPasswordAsync(user, secondInput.NewPassword))
+				.ReturnsAsync(IdentityResult.Failed(new IdentityError
+				{
+					Code = "Failed",
+					Description = "Add password failed"
+				}));
+			await Assert.ThrowsAsync<Exception>(() => _authenticationService.AddPasswordAsync(userId, secondInput));
+			_mockUserRepository.Verify(x => x.FindByIdAsync(userId), Times.Once);
+			_mockUserRepository.Verify(x => x.AddPasswordAsync(user, secondInput.NewPassword), Times.Once);
+		}
+		[Fact]
+		public async Task CreateOperatorAsync_InputIsNull_ThrowArgumentException()
+		{
+			await Assert.ThrowsAsync<ArgumentException>(
+					() => _authenticationService.CreateOperatorAsync(null!)
+			);
+		}
+
+		[Fact]
+		public async Task CreateOperatorAsync_EmailAlreadyExists_ThrowValidationException()
+		{
+			var input = new CreateOperatorRequestDto
+			{
+				Email = "example@gmail.com",
+				Username = "example",
+				Password = "Password123!"
+			};
+
+			_mockUserRepository
+					.Setup(x => x.FindByEmailAsync(input.Email))
+					.ReturnsAsync(new AppUser());
+
+			await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.CreateOperatorAsync(input)
+			);
+
+			_mockUserRepository.Verify(x => x.FindByEmailAsync(input.Email), Times.Once);
+		}
+
+		[Fact]
+		public async Task CreateOperatorAsync_UserCreationFailed_ThrowValidationException()
+		{
+			var input = new CreateOperatorRequestDto
+			{
+				Email = "example@gmail.com",
+				Username = "example",
+				Password = "Password123!"
+			};
+
+			_mockUserRepository.Setup(x => x.FindByEmailAsync(input.Email))
+					.ReturnsAsync((AppUser?)null);
+
+			_mockUserRepository.Setup(x => x.CreateAsync(It.IsAny<AppUser>(), input.Password))
+					.ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Error" }));
+
+			await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.CreateOperatorAsync(input)
+			);
+
+			_mockUserRepository.Verify(x => x.CreateAsync(It.IsAny<AppUser>(), input.Password), Times.Once);
+		}
+
+		[Fact]
+		public async Task CreateOperatorAsync_AddToRoleFailed_ThrowValidationException()
+		{
+			var input = new CreateOperatorRequestDto
+			{
+				Email = "example@gmail.com",
+				Username = "example",
+				Password = "Password123!"
+			};
+
+			_mockUserRepository.Setup(x => x.FindByEmailAsync(input.Email))
+					.ReturnsAsync((AppUser?)null);
+
+			_mockUserRepository.Setup(x => x.CreateAsync(It.IsAny<AppUser>(), input.Password))
+					.ReturnsAsync(IdentityResult.Success);
+
+			_mockUserRepository.Setup(x => x.AddToRoleAsync(It.IsAny<AppUser>(), RoleNames.Operator))
+					.ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Add role failed" }));
+
+			await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.CreateOperatorAsync(input)
+			);
+
+			_mockUserRepository.Verify(x => x.AddToRoleAsync(It.IsAny<AppUser>(), RoleNames.Operator), Times.Once);
+		}
+
+		[Fact]
+		public async Task CreateOperatorAsync_Success_ReturnUserId()
+		{
+			var input = new CreateOperatorRequestDto
+			{
+				Email = "example@gmail.com",
+				Username = "example",
+				Password = "Password123!"
+			};
+
+			var createdUser = new AppUser { Id = Guid.NewGuid(), Email = input.Email };
+
+			_mockUserRepository.Setup(x => x.FindByEmailAsync(input.Email))
+					.ReturnsAsync((AppUser?)null);
+
+			_mockUserRepository.Setup(x => x.CreateAsync(It.IsAny<AppUser>(), input.Password))
+					.Callback<AppUser, string>((u, p) => u.Id = createdUser.Id)
+					.ReturnsAsync(IdentityResult.Success);
+
+			_mockUserRepository.Setup(x => x.AddToRoleAsync(It.IsAny<AppUser>(), RoleNames.Operator))
+					.ReturnsAsync(IdentityResult.Success);
+			var mockTransaction = new Mock<IDbContextTransaction>();
+			_mockUnitOfWork
+				.Setup(x => x.BeginTransactionAsync())
+				.ReturnsAsync(mockTransaction.Object);
+			_mockUnitOfWork
+				.Setup(x => x.CommitTransactionAsync())
+				.Returns(Task.CompletedTask);
+			_mockUnitOfWork
+					.Setup(x => x.SaveChangesAsync())
+					.ReturnsAsync(1);
+
+			var result = await _authenticationService.CreateOperatorAsync(input);
+
+			Assert.Equal(createdUser.Id, result);
+			_mockUserRepository.Verify(x => x.CreateAsync(It.IsAny<AppUser>(), input.Password), Times.Once);
+			_mockUserRepository.Verify(x => x.AddToRoleAsync(It.IsAny<AppUser>(), RoleNames.Operator), Times.Once);
+			_mockUnitOfWork.Verify(x => x.CommitTransactionAsync(), Times.Once);
+		}
+		#region RequestPasswordResetAsync
+
+		[Fact]
+		public async Task RequestPasswordResetAsync_InputIsNull_ThrowArgumentException()
+		{
+			await Assert.ThrowsAsync<ArgumentException>(
+					() => _authenticationService.RequestPasswordResetAsync(null!)
+			);
+		}
+
+		[Fact]
+		public async Task RequestPasswordResetAsync_UserNotFound_ThrowValidationException()
+		{
+			var input = new ForgetPasswordDto { Email = "notfound@gmail.com" };
+
+			_mockUserRepository.Setup(x => x.FindByEmailAsync(input.Email))
+					.ReturnsAsync((AppUser?)null);
+
+			await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.RequestPasswordResetAsync(input)
+			);
+		}
+
+		[Fact]
+		public async Task RequestPasswordResetAsync_Success_ReturnTrue()
+		{
+			var input = new ForgetPasswordDto { Email = "example@gmail.com" };
+			var user = new AppUser { Id = Guid.NewGuid(), Email = input.Email, FullName = "Test" };
+
+			_mockUserRepository.Setup(x => x.FindByEmailAsync(input.Email))
+					.ReturnsAsync(user);
+
+			_mockUserRepository.Setup(x => x.GeneratePasswordResetTokenAsync(user))
+					.ReturnsAsync("reset_token");
+
+			_mockEmailTemplateService.Setup(x => x.RenderAsync(
+					"/Views/Emails/ResetPassword.cshtml",
+					It.IsAny<Dtos.EmailDto.ResetPasswordDto>()))
+					.ReturnsAsync("<html>Email</html>");
+
+			_mockEmailService.Setup(x => x.SendEmailAsync(It.IsAny<EmailDto>()))
+					.Returns(Task.CompletedTask);
+
+			var result = await _authenticationService.RequestPasswordResetAsync(input);
+
+			Assert.True(result);
+			_mockEmailService.Verify(x => x.SendEmailAsync(It.IsAny<EmailDto>()), Times.Once);
+		}
+
+		#endregion
+		#region ResetPasswordAsync
+
+		[Fact]
+		public async Task ResetPasswordAsync_InputIsNull_ThrowArgumentException()
+		{
+			await Assert.ThrowsAsync<ArgumentException>(
+					() => _authenticationService.ResetPasswordAsync(null!)
+			);
+		}
+
+		[Fact]
+		public async Task ResetPasswordAsync_PasswordsDoNotMatch_ThrowValidationException()
+		{
+			var input = new Core.Dtos.AuthenticationDto.ResetPasswordDto
+			{
+				NewPassword = "Password1!",
+				ConfirmPassword = "Different!"
+			};
+
+			await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.ResetPasswordAsync(input)
+			);
+		}
+
+		[Fact]
+		public async Task ResetPasswordAsync_UserNotFound_ThrowValidationException()
+		{
+			var input = new Core.Dtos.AuthenticationDto.ResetPasswordDto
+			{
+				UserId = Guid.NewGuid(),
+				Token = "token",
+				NewPassword = "Password123!",
+				ConfirmPassword = "Password123!"
+			};
+
+			_mockUserRepository.Setup(x => x.FindByIdAsync(input.UserId))
+					.ReturnsAsync((AppUser?)null);
+
+			await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.ResetPasswordAsync(input)
+			);
+		}
+
+		[Fact]
+		public async Task ResetPasswordAsync_ResetPasswordFailed_ThrowValidationException()
+		{
+			var token = "token";
+			var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+			var input = new Core.Dtos.AuthenticationDto.ResetPasswordDto
+			{
+				UserId = Guid.NewGuid(),
+				Token = encoded,
+				NewPassword = "Password123!",
+				ConfirmPassword = "Password123!"
+			};
+
+			var user = new AppUser { Id = input.UserId };
+
+			_mockUserRepository.Setup(x => x.FindByIdAsync(input.UserId))
+					.ReturnsAsync(user);
+
+			_mockUserRepository.Setup(x => x.ResetPasswordAsync(user, token, input.NewPassword))
+					.ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Error" }));
+
+			await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.ResetPasswordAsync(input)
+			);
+
+			_mockUserRepository.Verify(x => x.ResetPasswordAsync(user, token, input.NewPassword), Times.Once);
+		}
+
+		[Fact]
+		public async Task ResetPasswordAsync_Success_ReturnTrue()
+		{
+			var token = "token";
+			var encoded = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+			var input = new Core.Dtos.AuthenticationDto.ResetPasswordDto
+			{
+				UserId = Guid.NewGuid(),
+				Token = encoded,
+				NewPassword = "Password123!",
+				ConfirmPassword = "Password123!"
+			};
+
+			var user = new AppUser { Id = input.UserId };
+
+			_mockUserRepository.Setup(x => x.FindByIdAsync(input.UserId))
+					.ReturnsAsync(user);
+
+			_mockUserRepository.Setup(x => x.ResetPasswordAsync(user, token, input.NewPassword))
+					.ReturnsAsync(IdentityResult.Success);
+
+			var result = await _authenticationService.ResetPasswordAsync(input);
+
+			Assert.True(result);
+			_mockUserRepository.Verify(x => x.ResetPasswordAsync(user, token, input.NewPassword), Times.Once);
+		}
+
+		#endregion
+		[Fact]
+		public async Task ChangePassword_Success_ReturnsSuccessResponse()
+		{
+			var userId = Guid.NewGuid();
+			var input = new ChangePasswordRequestDto
+			{
+				CurrentPassword = "oldpass123!",
+				NewPassword = "newpass123!",
+				ConfirmNewPassword = "newpass123!"
+			};
+
+			var user = new AppUser
+			{
+				Id = userId,
+				Email = "example@gmail.com",
+				MustChangePasswordOnLogin = false
+			};
+
+			_mockUserRepository.Setup(x => x.FindByIdAsync(userId)).ReturnsAsync(user);
+			_mockUserRepository.Setup(x => x.CheckPasswordAsync(user, input.CurrentPassword)).ReturnsAsync(true);
+			_mockUserRepository.Setup(x => x.ChangePasswordAsync(user, input.CurrentPassword, input.NewPassword))
+					.ReturnsAsync(IdentityResult.Success);
+
+			var result = await _authenticationService.ChangePassword(userId, input);
+
+			Assert.NotNull(result);
+			Assert.IsType<ChangePasswordResponseDto>(result);
+			_mockUnitOfWork.Verify(x => x.SaveChangesAsync(), Times.Never);
+		}
+		[Fact]
+		public async Task ChangePassword_InputIsNull_ThrowArgumentException()
+		{
+			var userId = Guid.NewGuid();
+
+			await Assert.ThrowsAsync<ArgumentException>(
+					() => _authenticationService.ChangePassword(userId, null!)
+			);
+		}
+		[Fact]
+		public async Task ChangePassword_MustChangePasswordOnLogin_UpdatesFlagAndSaves()
+		{
+			var userId = Guid.NewGuid();
+			var input = new ChangePasswordRequestDto
+			{
+				CurrentPassword = "oldpass123!",
+				NewPassword = "newpass123!",
+				ConfirmNewPassword = "newpass123!"
+			};
+
+			var user = new AppUser
+			{
+				Id = userId,
+				Email = "example@gmail.com",
+				MustChangePasswordOnLogin = true
+			};
+
+			_mockUserRepository.Setup(x => x.FindByIdAsync(userId)).ReturnsAsync(user);
+			_mockUserRepository.Setup(x => x.CheckPasswordAsync(user, input.CurrentPassword)).ReturnsAsync(true);
+			_mockUserRepository.Setup(x => x.ChangePasswordAsync(user, input.CurrentPassword, input.NewPassword))
+					.ReturnsAsync(IdentityResult.Success);
+
+			_mockUnitOfWork.Setup(x => x.SaveChangesAsync()).ReturnsAsync(1);
+
+			var result = await _authenticationService.ChangePassword(userId, input);
+
+			Assert.NotNull(result);
+			Assert.False(user.MustChangePasswordOnLogin);
+
+			_mockUnitOfWork.Verify(x => x.SaveChangesAsync(), Times.Once);
+		}
+		[Fact]
+		public async Task ChangePassword_ChangePasswordFailed_ThrowValidationException()
+		{
+			var userId = Guid.NewGuid();
+			var input = new ChangePasswordRequestDto
+			{
+				CurrentPassword = "oldpass123!",
+				NewPassword = "newpass123!",
+				ConfirmNewPassword = "newpass123!"
+			};
+
+			var user = new AppUser { Id = userId, Email = "example@gmail.com" };
+
+			_mockUserRepository.Setup(x => x.FindByIdAsync(userId))
+					.ReturnsAsync(user);
+
+			_mockUserRepository.Setup(x => x.CheckPasswordAsync(user, input.CurrentPassword))
+					.ReturnsAsync(true);
+
+			_mockUserRepository.Setup(x => x.ChangePasswordAsync(user, input.CurrentPassword, input.NewPassword))
+					.ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Password policy failed" }));
+
+			var ex = await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.ChangePassword(userId, input)
+			);
+		}
+		[Fact]
+		public async Task ChangePassword_CurrentPasswordIncorrect_ThrowValidationException()
+		{
+			var userId = Guid.NewGuid();
+			var input = new ChangePasswordRequestDto
+			{
+				CurrentPassword = "wrongpass",
+				NewPassword = "newpass123!",
+				ConfirmNewPassword = "newpass123!"
+			};
+
+			var user = new AppUser { Id = userId, Email = "example@gmail.com" };
+
+			_mockUserRepository.Setup(x => x.FindByIdAsync(userId))
+					.ReturnsAsync(user);
+
+			_mockUserRepository.Setup(x => x.CheckPasswordAsync(user, input.CurrentPassword))
+					.ReturnsAsync(false);
+
+			await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.ChangePassword(userId, input)
+			);
+
+			_mockUserRepository.Verify(x => x.CheckPasswordAsync(user, input.CurrentPassword), Times.Once);
+		}
+		[Fact]
+		public async Task ChangePassword_UserNotFound_ThrowValidationException()
+		{
+			var userId = Guid.NewGuid();
+			var input = new ChangePasswordRequestDto
+			{
+				CurrentPassword = "old123",
+				NewPassword = "new123",
+				ConfirmNewPassword = "new123"
+			};
+
+			_mockUserRepository.Setup(x => x.FindByIdAsync(userId))
+					.ReturnsAsync((AppUser?)null);
+
+			await Assert.ThrowsAsync<ValidationException>(
+					() => _authenticationService.ChangePassword(userId, input)
+			);
+
+			_mockUserRepository.Verify(x => x.FindByIdAsync(userId), Times.Once);
+		}
+
 	}
 }

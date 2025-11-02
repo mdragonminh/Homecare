@@ -86,7 +86,7 @@ namespace HSP.Service.Implementations
 		{
 			if (input == null)
 			{
-				throw new ArgumentException(_localizer["InputCannotBeNull"]);
+				throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
 			}
 
 			// Tìm user bằng email hoặc số điện thoại
@@ -134,7 +134,7 @@ namespace HSP.Service.Implementations
 			var info = await _signInService.GetExternalLoginInfoAsync();
 			if (info == null)
 			{
-				throw new Exception(_localizer["ErrorLoadingGoogleLogin"]);
+				throw new InvalidOperationException(_localizer["ErrorLoadingGoogleLogin"]);
 			}
 
 			var user = await FindOrCreateUserAsync(info);
@@ -406,15 +406,19 @@ namespace HSP.Service.Implementations
 
 		public async Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input)
 		{
-			var user = _userRepository.FindByIdAsync(userId).Result;
-			if (user == null) throw new ValidationException("User not found");
-			if (!string.IsNullOrEmpty(user.PasswordHash))
+			if(userId == Guid.Empty || input == null)
 			{
-				throw new ValidationException("User already has a password");
+				throw new ArgumentNullException("input is null");
 			}
 			if (input.NewPassword != input.ConfirmPassword)
 			{
 				throw new ValidationException("Password and Confirm Password do not match");
+			}
+			var user = await _userRepository.FindByIdAsync(userId);
+			if (user == null) throw new ValidationException("User not found");
+			if (!string.IsNullOrEmpty(user.PasswordHash))
+			{
+				throw new ValidationException("User already has a password");
 			}
 			var result = await _userRepository.AddPasswordAsync(user, input.NewPassword);
 			if (!result.Succeeded) throw new Exception("Add password failed");
