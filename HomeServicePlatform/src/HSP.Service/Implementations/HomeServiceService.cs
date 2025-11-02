@@ -16,9 +16,9 @@ namespace HSP.Service.Implementations
 			_homeServiceRepository = homeServiceRepository;
 		}
 
-		public async Task<Guid> CreateHomeService(CreateHomeServiceDto input)
+		public async Task<Guid> CreateHomeServiceAsync(CreateHomeServiceDto input)
 		{
-			if(input.Name == null)
+			if(input == null)
 			{
 				throw new ArgumentNullException(nameof(input));
 			}

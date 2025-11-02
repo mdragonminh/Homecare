@@ -4,7 +4,7 @@ namespace HSP.Service.Interfaces
 {
 	public interface IHomeServiceService
 	{
-		Task<Guid> CreateHomeService(CreateHomeServiceDto input);
+		Task<Guid> CreateHomeServiceAsync(CreateHomeServiceDto input);
 		#region Home Page
 		Task<IEnumerable<HomeServiceDto>> GetAllServiceHomePageAsync();
 		#endregion

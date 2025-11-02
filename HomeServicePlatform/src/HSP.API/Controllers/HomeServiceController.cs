@@ -19,7 +19,7 @@ namespace HSP.API.Controllers
 		[Authorize(Roles = RoleNames.Admin)]
 		public async Task<IActionResult> CreateHomeService([FromBody] CreateHomeServiceDto input)
 		{
-			var serviceId =  await _homeServiceService.CreateHomeService(input);
+			var serviceId =  await _homeServiceService.CreateHomeServiceAsync(input);
 			return Ok(serviceId);
 		}
 		#region Home Page
