@@ -38,12 +38,12 @@ namespace HSP.Service.Test.Implementations
 		public async Task CreateHomeItemAsync_WithValidOwnership_ShouldCreateAndReturnId()
 		{
 			var homeId = Guid.NewGuid();
-			var userId = Guid.NewGuid().ToString();
+			var userId = Guid.NewGuid();
 			var input = new CreateHomeItemDto { HomeId = homeId, Name = "TV" };
 
 			var homes = new List<Home>
 						{
-								new Home { Id = homeId, CustomerProfile = new AppUser { Id = Guid.Parse(userId) } }
+								new Home { Id = homeId, CustomerProfile = new AppUser { Id = userId } }
 						}.BuildMock();
 
 			_homeRepoMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Home, object>>[]>()))
@@ -64,7 +64,7 @@ namespace HSP.Service.Test.Implementations
 		public async Task CreateHomeItemAsync_WithInvalidOwnership_ShouldThrowUnauthorizedAccessException()
 		{
 			var homeId = Guid.NewGuid();
-			var userId = Guid.NewGuid().ToString();
+			var userId = Guid.NewGuid();
 
 			var homes = new List<Home>().BuildMock();
 			_homeRepoMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Home, object>>[]>()))
@@ -78,7 +78,7 @@ namespace HSP.Service.Test.Implementations
 		public async Task CreateHomeItemAsync_WithNullInput_ShouldThrowArgumentException()
 		{
 			await Assert.ThrowsAsync<ArgumentException>(() =>
-				_service.CreateHomeItemAsync(null!, Guid.NewGuid().ToString()));
+				_service.CreateHomeItemAsync(null!, Guid.NewGuid()));
 		}
 
 
@@ -86,11 +86,11 @@ namespace HSP.Service.Test.Implementations
 		public async Task DeleteHomeItemAsync_WithValidOwnership_ShouldDeleteAndReturnTrue()
 		{
 			var id = Guid.NewGuid();
-			var userId = Guid.NewGuid().ToString();
+			var userId = Guid.NewGuid();
 			var item = new HomeItem
 			{
 				Id = id,
-				Home = new Home { CustomerProfile = new AppUser { Id = Guid.Parse(userId) } }
+				Home = new Home { CustomerProfile = new AppUser { Id = userId } }
 			};
 
 			var items = new List<HomeItem> { item }.BuildMock();
@@ -111,7 +111,7 @@ namespace HSP.Service.Test.Implementations
 		public async Task DeleteHomeItemAsync_WithInvalidOwnership_ShouldThrowValidationException()
 		{
 			var id = Guid.NewGuid();
-			var userId = Guid.NewGuid().ToString();
+			var userId = Guid.NewGuid();
 
 			var item = new HomeItem
 			{
@@ -131,13 +131,13 @@ namespace HSP.Service.Test.Implementations
 		public async Task UpdateHomeItemAsync_WithValidOwnership_ShouldUpdateAndReturnTrue()
 		{
 			var id = Guid.NewGuid();
-			var userId = Guid.NewGuid().ToString();
+			var userId = Guid.NewGuid();
 
 			var item = new HomeItem
 			{
 				Id = id,
 				Name = "Old TV",
-				Home = new Home { CustomerProfile = new AppUser { Id = Guid.Parse(userId) } }
+				Home = new Home { CustomerProfile = new AppUser { Id = userId } }
 			};
 
 			var input = new UpdateHomeItemDto
@@ -163,7 +163,7 @@ namespace HSP.Service.Test.Implementations
 		public async Task UpdateHomeItemAsync_WithInvalidOwnership_ShouldThrowValidationException()
 		{
 			var id = Guid.NewGuid();
-			var userId = Guid.NewGuid().ToString();
+			var userId = Guid.NewGuid();
 
 			var item = new HomeItem
 			{
@@ -183,14 +183,14 @@ namespace HSP.Service.Test.Implementations
 		public async Task GetHomeItemByIdAsync_WithValidOwnership_ShouldReturnHomeItemDto()
 		{
 			var id = Guid.NewGuid();
-			var userId = Guid.NewGuid().ToString();
+			var userId = Guid.NewGuid();
 
 			var item = new HomeItem
 			{
 				Id = id,
 				Name = "TV",
 				HomeId = Guid.NewGuid(),
-				Home = new Home { CustomerProfile = new AppUser { Id = Guid.Parse(userId) } }
+				Home = new Home { CustomerProfile = new AppUser { Id = userId } }
 			};
 
 			var items = new List<HomeItem> { item }.BuildMock();
@@ -207,7 +207,7 @@ namespace HSP.Service.Test.Implementations
 		public async Task GetHomeItemByIdAsync_WithInvalidOwnership_ShouldThrowValidationException()
 		{
 			var id = Guid.NewGuid();
-			var userId = Guid.NewGuid().ToString();
+			var userId = Guid.NewGuid();
 
 			var item = new HomeItem
 			{
@@ -227,7 +227,7 @@ namespace HSP.Service.Test.Implementations
 		public async Task GetAllHomeItemsAsync_WithValidOwnership_ShouldReturnPagedList()
 		{
 			var homeId = Guid.NewGuid();
-			var userId = Guid.NewGuid().ToString();
+			var userId = Guid.NewGuid();
 
 			var items = new List<HomeItem>
 						{
@@ -237,7 +237,7 @@ namespace HSP.Service.Test.Implementations
 										Name = "TV",
 										Brand = "LG",
 										HomeId = homeId,
-										Home = new Home { CustomerProfile = new AppUser { Id = Guid.Parse(userId) } }
+										Home = new Home { CustomerProfile = new AppUser { Id = userId } }
 								},
 								new HomeItem
 								{
@@ -245,7 +245,7 @@ namespace HSP.Service.Test.Implementations
 										Name = "Fridge",
 										Brand = "Samsung",
 										HomeId = homeId,
-										Home = new Home { CustomerProfile = new AppUser { Id = Guid.Parse(userId) } }
+										Home = new Home { CustomerProfile = new AppUser { Id = userId } }
 								}
 						}.BuildMock();
 

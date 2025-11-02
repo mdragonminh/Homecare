@@ -1,4 +1,5 @@
-﻿using HSP.Core.Constans;
+﻿using HSP.API.Extensions;
+using HSP.Core.Constans;
 using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Interfaces.External;
@@ -111,14 +112,8 @@ namespace HSP.API.Controllers
 		{
 			try
 			{
-				var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-				if (string.IsNullOrEmpty(userIdClaim))
-					return Unauthorized(new { message = "Invalid user identity." });
-
-				var userId = Guid.Parse(userIdClaim);
-
+				var userId = User.GetUserId();
 				await _jwtService.RevokeRefreshTokenAsync(userId);
-
 				return Ok(new { message = "Logout successful." });
 			}
 			catch (Exception ex)
@@ -238,13 +233,7 @@ namespace HSP.API.Controllers
 
 			try
 			{
-				// Lấy user ID từ JWT token
-				var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-				if (!Guid.TryParse(userIdClaim, out var userId))
-				{
-					return Unauthorized(new { message = "Invalid user token" });
-				}
-
+				var userId = User.GetUserId();
 				var result = await _authenticationService.ChangePassword(userId, input);
 				return Ok(result);
 			}
@@ -265,11 +254,7 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest();
 			}
-			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-			if (userIdString == null || !Guid.TryParse(userIdString, out var userId))
-			{
-				return Unauthorized();
-			}
+			var userId = User.GetUserId();
 			try
 			{
 				var result = await _authenticationService.AddPasswordAsync(userId, input);

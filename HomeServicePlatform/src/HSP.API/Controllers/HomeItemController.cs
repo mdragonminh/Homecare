@@ -1,4 +1,5 @@
-﻿using HSP.Core.Constans;
+﻿using HSP.API.Extensions;
+using HSP.Core.Constans;
 using HSP.Core.Dtos.HomeItemDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -27,7 +28,7 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest();
 			}
-			var userId = GetUserId();
+			var userId = User.GetUserId();
 			try
 			{
 				var homeItemId = await _homeItemService.CreateHomeItemAsync(input, userId);
@@ -45,14 +46,14 @@ namespace HSP.API.Controllers
 		[HttpGet("list-home-item")]
 		public async Task<IActionResult> ListHomeItem([FromQuery] HomeItemInput input, [FromQuery] Guid homeId)
 		{
-			var userId = GetUserId();
+			var userId = User.GetUserId();
 			var result = await _homeItemService.GetAllHomeItemsAsync(input, homeId, userId);
 			return Ok(result);
 		}
 		[HttpDelete("{homeItemId}")]
 		public async Task<IActionResult> DeleteHomeItem(Guid homeItemId)
 		{
-			var userId = GetUserId();
+			var userId = User.GetUserId();
 			try
 			{
 				var result = await _homeItemService.DeleteHomeItemAsync(homeItemId, userId);
@@ -70,7 +71,7 @@ namespace HSP.API.Controllers
 		[HttpGet("{homeItemId}")]
 		public async Task<IActionResult> GetHomeItemById(Guid homeItemId)
 		{
-			var userId = GetUserId();
+			var userId = User.GetUserId();
 			try
 			{
 				var result = await _homeItemService.GetHomeItemByIdAsync(homeItemId, userId);
@@ -92,7 +93,7 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(ModelState);
 			}
-			var userId = GetUserId();
+			var userId = User.GetUserId();
 			try
 			{
 				var result = await _homeItemService.UpdateHomeItemAsync(homeItemId, input, userId);
@@ -106,15 +107,6 @@ namespace HSP.API.Controllers
 			{
 				return StatusCode(500, ex.Message);
 			}
-		}
-		private string GetUserId()
-		{
-			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-			if (string.IsNullOrEmpty(userIdString))
-			{
-				throw new UnauthorizedAccessException("User is not authenticated.");
-			}
-			return userIdString;
 		}
 	}
 }

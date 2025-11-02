@@ -1,4 +1,5 @@
-﻿using HSP.Core.Constans;
+﻿using HSP.API.Extensions;
+using HSP.Core.Constans;
 using HSP.Core.Dtos.TechnicianProfileDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +25,7 @@ namespace HSP.API.Controllers
 		{
 			try
 			{
-				Guid CurrentTechId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("User ID not found"));
+				Guid CurrentTechId = User.GetUserId();
 				await _technicianLocationService.UpdateLocationAsync(input, CurrentTechId);
 				return Ok(new { message = "Update location success"});
 			}
