@@ -73,5 +73,29 @@ namespace HSP.Service.Test.Implementations
 			Assert.Contains(result, s => s.Name == "Cleaning");
 			Assert.Contains(result, s => s.Name == "Plumbing");
 		}
+		[Fact]
+		public async Task GetAllAsync_WithSearchInput_ShouldReturnFilteredPagedList()
+		{
+			var services = new List<Core.Entities.Service>
+			{
+				new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Cleaning" },
+				new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Plumbing" },
+				new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Electrical" }
+			};
+			var queryableServices = services.BuildMock();
+			_mockHomeServiceRepository
+				.Setup(repo => repo.GetAll())
+				.Returns(queryableServices);
+			var input = new Core.Dtos.ServiceDto.HomeServiceInput
+			{
+				Search = "Clean",
+				PageNumber = 1,
+				PageSize = 10
+			};
+			var result = await _homeServiceService.GetAllAsync(input);
+			Assert.NotNull(result);
+			Assert.Single(result.Items);
+			Assert.Equal("Cleaning", result.Items.First().Name);
+		}
 	}
 }
