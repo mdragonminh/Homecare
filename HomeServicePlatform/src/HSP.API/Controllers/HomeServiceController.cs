@@ -1,4 +1,7 @@
-﻿using HSP.Service.Interfaces;
+﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.ServiceDto;
+using HSP.Service.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HSP.API.Controllers
@@ -12,25 +15,20 @@ namespace HSP.API.Controllers
 		{
 			_homeServiceService = homeServiceService;
 		}
-		//[HttpGet("services")]
-		//public async Task<IActionResult> GetAllServices([FromQuery] HomeServiceInput input)
-		//{
-		//	var services = await _homeServiceService.GetAllServicesAsync(input);
-		//	return Ok(services);
-		//}
+		[HttpPost]
+		[Authorize(Roles = RoleNames.Admin)]
+		public async Task<IActionResult> CreateHomeService([FromBody] CreateHomeServiceDto input)
+		{
+			var serviceId =  await _homeServiceService.CreateHomeService(input);
+			return Ok(serviceId);
+		}
+		#region Home Page
 		[HttpGet("services-homepage")]
 		public async Task<IActionResult> GetAllServiceHomePage()
 		{
 			var services = await _homeServiceService.GetAllServiceHomePageAsync();
 			return Ok(services);
 		}
-		#region service category
-		//[HttpGet("service-categories")]
-		//public async Task<IActionResult> GetAllServiceCategories()
-		//{
-		//	var categories = await _homeServiceService.GetAllServicesCategoryAsync();
-		//	return Ok(categories);
-		//}
 		#endregion
 	}
 }
