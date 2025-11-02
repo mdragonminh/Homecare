@@ -16,6 +16,23 @@ namespace HSP.Service.Implementations
 			_homeServiceRepository = homeServiceRepository;
 		}
 
+		public async Task<Guid> CreateHomeService(CreateHomeServiceDto input)
+		{
+			if(input.Name == null)
+			{
+				throw new ArgumentNullException(nameof(input));
+			}
+			var newService = new Core.Entities.Service
+			{
+				Name = input.Name,
+				Description = input.Description,
+				DateCreated = input.DateCreated,
+			};
+			await _homeServiceRepository.AddAsync(newService);
+			await _unitOfWork.SaveChangesAsync();
+			return newService.Id;
+		}
+		#region Home Page
 		public async Task<IEnumerable<HomeServiceDto>> GetAllServiceHomePageAsync()
 		{
 			var services = await _homeServiceRepository.GetAll()
@@ -27,6 +44,6 @@ namespace HSP.Service.Implementations
 				}).ToListAsync();
 			return services;
 		}
-
+		#endregion
 	}
 }
