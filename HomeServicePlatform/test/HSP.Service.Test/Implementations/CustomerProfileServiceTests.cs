@@ -1,4 +1,5 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Dtos.AppUserDto;
+using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
@@ -23,9 +24,6 @@ using Xunit;
 
 namespace HSP.Service.Test.Implementations
 {
-    // ============================================================
-    //  ✅ TESTS FOR: CustomerProfileService
-    // ============================================================
 
     public class CustomerProfileServiceTests
     {
@@ -90,6 +88,7 @@ namespace HSP.Service.Test.Implementations
         // ============================================================
 
         [Fact]
+        //  Kiểm tra khi truyền vào userId không hợp lệ (không phải Guid)
         public async Task GetCustomerByUserIdAsync_ShouldThrow_WhenInvalidGuid()
         {
             string invalidUserId = "abc123";
@@ -98,6 +97,7 @@ namespace HSP.Service.Test.Implementations
         }
 
         [Fact]
+        //  Kiểm tra khi userId hợp lệ nhưng không tìm thấy user trong hệ thống
         public async Task GetCustomerByUserIdAsync_ShouldThrow_WhenUserNotFound()
         {
             // Arrange
@@ -155,6 +155,7 @@ namespace HSP.Service.Test.Implementations
         // ============================================================
 
         [Fact]
+        //  Kiểm tra khi userId không hợp lệ (RequestEmailChangeAsync)
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenInvalidUserId()
         {
             var result = await _service.RequestEmailChangeAsync("not-guid", "new@example.com");
@@ -162,7 +163,8 @@ namespace HSP.Service.Test.Implementations
             Assert.Contains("User ID", result.Message);
         }
 
-        [Fact]      
+        [Fact]
+        //  Kiểm tra khi không tìm thấy user theo userId (RequestEmailChangeAsync)
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenUserNotFound()
         {
             string userId = Guid.NewGuid().ToString();
@@ -175,6 +177,7 @@ namespace HSP.Service.Test.Implementations
         }
 
         [Fact]
+        //  Kiểm tra khi yêu cầu đổi email hợp lệ → trả về thành công
         public async Task RequestEmailChangeAsync_ShouldReturnSuccess_WhenValid()
         {
             var user = new AppUser { Id = Guid.NewGuid(), Email = "old@example.com", FullName = "John Doe" };
@@ -201,6 +204,7 @@ namespace HSP.Service.Test.Implementations
         // ============================================================
 
         [Fact]
+        // Kiểm tra khi token xác nhận email không hợp lệ (ConfirmEmailChangeAsync)
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenInvalidToken()
         {
             var result = await _service.ConfirmEmailChangeAsync(Guid.NewGuid().ToString(), "INVALID_BASE64");
@@ -213,6 +217,7 @@ namespace HSP.Service.Test.Implementations
         // ============================================================
 
         [Fact]
+        // Kiểm tra khi email mới trùng với email hiện tại
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenNewEmailSameAsOld()
         {
             // Arrange
@@ -234,6 +239,7 @@ namespace HSP.Service.Test.Implementations
         }
 
         [Fact]
+        // Kiểm tra khi email mới đã được sử dụng bởi tài khoản khác
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenNewEmailAlreadyExists()
         {
             // Arrange
@@ -266,6 +272,7 @@ namespace HSP.Service.Test.Implementations
         // ============================================================
 
         [Fact]
+        // Kiểm tra khi token xác nhận email hợp lệ và đổi email thành công
         public async Task ConfirmEmailChangeAsync_ShouldReturnSuccess_WhenTokenValid()
         {
             // Arrange
@@ -309,6 +316,7 @@ namespace HSP.Service.Test.Implementations
 
 
         [Fact]
+        // Kiểm tra khi đổi email thất bại do token không hợp lệ
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenChangeEmailFails()
         {
             // Arrange
@@ -339,6 +347,7 @@ namespace HSP.Service.Test.Implementations
         }
 
         [Fact]
+        // Kiểm tra khi user tồn tại nhưng trạng thái không hoạt động (IsActive = false)
         public async Task GetCustomerByUserIdAsync_ShouldThrow_WhenUserInactive()
         {
             // Arrange
@@ -361,6 +370,7 @@ namespace HSP.Service.Test.Implementations
 
 
         [Fact]
+        // Kiểm tra khi gửi email xác thực đổi email thất bại
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenSendEmailFails()
         {
             // Arrange
@@ -385,6 +395,7 @@ namespace HSP.Service.Test.Implementations
 
 
         [Fact]
+        // Kiểm tra khi không tìm thấy user theo userId (ConfirmEmailChangeAsync)
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenUserNotFound()
         {
             var userId = Guid.NewGuid();
@@ -401,6 +412,7 @@ namespace HSP.Service.Test.Implementations
         }
 
         [Fact]
+        // Kiểm tra khi email mới đã được sử dụng bởi tài khoản khác (ConfirmEmailChangeAsync)
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenEmailAlreadyInUse()
         {
             var user = new AppUser { Id = Guid.NewGuid(), Email = "old@example.com" };
@@ -416,6 +428,98 @@ namespace HSP.Service.Test.Implementations
             Assert.False(result.Success);
             Assert.Contains("Email này đã được sử dụng", result.Message);
         }
+
+        [Fact]
+        // Kiểm tra khi userId không hợp lệ (UpdateCustomerAsync)
+        public async Task UpdateCustomerAsync_ShouldThrow_WhenInvalidUserId()
+        {
+            // Arrange
+            string invalidUserId = "not-a-guid";
+            var updateDto = new UpdateAppUserDto { FullName = "New Name", PhoneNumber = "0123456789" };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.UpdateCustomerAsync(invalidUserId, updateDto));
+        }
+
+        [Fact]
+        // Kiểm tra khi không tìm thấy người dùng theo userId
+        public async Task UpdateCustomerAsync_ShouldThrow_WhenUserNotFound()
+        {
+            // Arrange
+            string validUserId = Guid.NewGuid().ToString();
+            var updateDto = new UpdateAppUserDto { FullName = "New Name", PhoneNumber = "0123456789" };
+
+            _userRepoMock.Setup(r => r.FindByIdAsync(It.IsAny<Guid>()))
+                         .ReturnsAsync((AppUser?)null);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _service.UpdateCustomerAsync(validUserId, updateDto));
+        }
+
+        [Fact]
+        // Kiểm tra khi cập nhật thông tin người dùng thất bại
+        public async Task UpdateCustomerAsync_ShouldThrow_WhenUpdateFails()
+        {
+            // Arrange
+            var user = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Old Name",
+                PhoneNumber = "0000000000"
+            };
+
+            var updateDto = new UpdateAppUserDto
+            {
+                FullName = "New Name",
+                PhoneNumber = "0123456789"
+            };
+
+            _userRepoMock.Setup(r => r.FindByIdAsync(user.Id)).ReturnsAsync(user);
+            _userRepoMock.Setup(r => r.UpdateAccount(user))
+                         .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "DB error" }));
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _service.UpdateCustomerAsync(user.Id.ToString(), updateDto));
+
+            Assert.Contains("Failed to update user", ex.Message);
+        }
+        //[Fact]
+        //public async Task UpdateCustomerAsync_ShouldReturnUpdatedUser_WhenSuccess()
+        //{
+        //    // Arrange
+        //    var user = new AppUser
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        FullName = "Old Name",
+        //        PhoneNumber = "0000000000"
+        //    };
+
+        //    var updateDto = new UpdateAppUserDto
+        //    {
+        //        FullName = "New Name",
+        //        PhoneNumber = "0123456789"
+        //    };
+
+        //    _userRepoMock.Setup(r => r.FindByIdAsync(user.Id)).ReturnsAsync(user);
+        //    _userRepoMock.Setup(r => r.UpdateAccount(It.IsAny<AppUser>()))
+        //                 .ReturnsAsync(IdentityResult.Success);
+
+        //    // ✅ Sử dụng BuildMockDbSet() để hỗ trợ async
+        //    var mockUsers = new List<AppUser> { user }.BuildMockDbSet();
+        //    _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers.Object);
+
+        //    // Act
+        //    var result = await _service.UpdateCustomerAsync(user.Id.ToString(), updateDto);
+
+        //    // Assert
+        //    Assert.NotNull(result);
+        //    Assert.Equal(user.Id, result.Id);
+        //    Assert.Equal("New Name", result.FullName);
+        //    Assert.Equal("0123456789", result.PhoneNumber);
+        //}
 
 
 
