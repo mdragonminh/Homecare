@@ -6,7 +6,7 @@ namespace HSP.Core.Dtos.ServiceDto
 	{
 		public string Name { get; set; }
 	}
-	public class HomePagedServiceDto : BaseEntity<Guid>
+	public class AdminHomeServiceDto : BaseEntity<Guid>
 	{
 		public string? Name { get; set; }
 		public decimal Price { get; set; }

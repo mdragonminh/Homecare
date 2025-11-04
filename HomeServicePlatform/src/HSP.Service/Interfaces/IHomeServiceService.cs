@@ -6,7 +6,8 @@ namespace HSP.Service.Interfaces
 	public interface IHomeServiceService
 	{
 		Task<Guid> CreateHomeServiceAsync(Guid userId, CreateHomeServiceDto input);
-		Task<PagedList<HomePagedServiceDto>> GetAllAsync(HomeServiceInput input);
+		Task<PagedList<AdminHomeServiceDto>> GetAllAsync(HomeServiceInput input);
+		Task<AdminHomeServiceDto> GetHomeServiceByIdAsync(Guid id);
 		Task<bool> UpdateHomeServiceAsync(Guid userId, Guid id, UpdateHomeServiceDto input);
 		Task<bool> DeleteHomeServiceAsync(Guid userId, Guid id);
 		#region Home Page

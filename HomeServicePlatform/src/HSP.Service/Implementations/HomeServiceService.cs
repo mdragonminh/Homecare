@@ -19,7 +19,7 @@ namespace HSP.Service.Implementations
 
 		public async Task<Guid> CreateHomeServiceAsync(Guid userId, CreateHomeServiceDto input)
 		{
-			if(input == null)
+			if (input == null)
 			{
 				throw new ArgumentNullException(nameof(input));
 			}
@@ -36,12 +36,12 @@ namespace HSP.Service.Implementations
 			return newService.Id;
 		}
 
-		public async Task<PagedList<HomePagedServiceDto>> GetAllAsync(HomeServiceInput input)
+		public async Task<PagedList<AdminHomeServiceDto>> GetAllAsync(HomeServiceInput input)
 		{
 			var query = _homeServiceRepository.GetAll()
 				.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()));
 			var homeServiceDto = query
-				.Select(s => new HomePagedServiceDto
+				.Select(s => new AdminHomeServiceDto
 				{
 					Id = s.Id,
 					Name = s.Name,
@@ -52,35 +52,52 @@ namespace HSP.Service.Implementations
 			return pagedHomeService;
 		}
 
+		public async Task<AdminHomeServiceDto> GetHomeServiceByIdAsync(Guid id)
+		{
+			var service = await _homeServiceRepository.GetByIdAsync(id);
+			if (service == null)
+			{
+				throw new KeyNotFoundException("home service not found");
+			}
+			var serviceDto = new AdminHomeServiceDto
+			{
+				Id = service.Id,
+				Name = service.Name,
+				Description = service.Description,
+				Price = service.Price
+			};
+			return serviceDto;
+		}
+
 		public async Task<bool> UpdateHomeServiceAsync(Guid userId, Guid id, UpdateHomeServiceDto input)
 		{
-			if(input == null)
+			if (input == null)
 			{
 				throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
 			}
 			var existingService = await _homeServiceRepository.GetAll()
-				.FirstOrDefaultAsync(x=>x.Id.Equals(id));
-			if(existingService == null)
+				.FirstOrDefaultAsync(x => x.Id.Equals(id));
+			if (existingService == null)
 			{
 				throw new KeyNotFoundException("Service not found");
 			}
 			var flag = false;
-			if(existingService.Name != input.Name)
+			if (existingService.Name != input.Name)
 			{
 				existingService.Name = input.Name;
 				flag = true;
 			}
-			if(existingService.Price != input.Price)
+			if (existingService.Price != input.Price)
 			{
 				existingService.Price = input.Price;
 				flag = true;
 			}
-			if(existingService.Description != input.Description)
+			if (existingService.Description != input.Description)
 			{
 				existingService.Description = input.Description;
 				flag = true;
 			}
-			if(flag == true)
+			if (flag == true)
 			{
 				existingService.DateModified = DateTime.UtcNow;
 				existingService.ModifiedBy = userId;
@@ -91,7 +108,7 @@ namespace HSP.Service.Implementations
 		public async Task<bool> DeleteHomeServiceAsync(Guid userId, Guid id)
 		{
 			var homeService = await _homeServiceRepository.GetByIdAsync(id);
-			if(homeService == null)
+			if (homeService == null)
 			{
 				throw new KeyNotFoundException("Service not found");
 			}
