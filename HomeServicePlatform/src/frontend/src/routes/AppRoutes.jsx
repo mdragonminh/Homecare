@@ -8,6 +8,7 @@ import AdminLayout from "../pages/admin/AdminLayout";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminSettingsPage from "../pages/admin/AdminSettingsPage";
 import AccountsPage from "../pages/admin/AccountsPage";
+import HomeServicePage from "../pages/admin/HomeServicePage";
 import OperatorLayout from "../pages/operator/OperatorLayout";
 import OperatorCustomersPage from "../pages/operator/OperatorCustomersPage";
 import OperatorTechniciansPage from "../pages/operator/OperatorTechniciansPage";
@@ -194,6 +195,7 @@ export default function AppRoutes({
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/accounts" element={<AccountsPage />} />
+        <Route path="/admin/home-services" element={<HomeServicePage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
       </Route>
 

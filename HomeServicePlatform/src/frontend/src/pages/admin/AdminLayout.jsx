@@ -22,6 +22,7 @@ export default function AdminLayout({ loggedInUser }) {
   const selectedKeys = useMemo(() => {
     if (location.pathname.startsWith("/admin/dashboard")) return ["dashboard"];
     if (location.pathname.startsWith("/admin/accounts")) return ["accounts"];
+    if (location.pathname.startsWith("/admin/home-service")) return ["homeService"];
     if (location.pathname.startsWith("/admin/settings")) return ["settings"];
     return ["dashboard"];
   }, [location.pathname]);
@@ -84,6 +85,7 @@ export default function AdminLayout({ loggedInUser }) {
           onClick={({ key }) => {
             if (key === "dashboard") navigate("/admin/dashboard");
             if (key === "accounts") navigate("/admin/accounts");
+            if (key === "homeservices") navigate("/admin/home-services");
             if (key === "settings") navigate("/admin/settings");
           }}
           items={[
@@ -97,6 +99,12 @@ export default function AdminLayout({ loggedInUser }) {
               key: "accounts",
               icon: <TeamOutlined />,
               label: t("admin.menu.manage_accounts", "Manager Accounts"),
+              style: { marginBottom: 4 },
+            },
+            {
+              key: "homeservices",
+              icon: <HomeOutlined  />,
+              label: t("admin.menu.home_service_manage", "Manager Home Services"),
               style: { marginBottom: 4 },
             },
             {
