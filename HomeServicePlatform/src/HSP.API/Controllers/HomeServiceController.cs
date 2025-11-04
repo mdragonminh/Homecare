@@ -4,7 +4,6 @@ using HSP.Core.Dtos.ServiceDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace HSP.API.Controllers
 {
@@ -26,7 +25,7 @@ namespace HSP.API.Controllers
 				return BadRequest(ModelState);
 			}
 			var userId = User.GetUserId();
-			var serviceId =  await _homeServiceService.CreateHomeServiceAsync(userId, input);
+			var serviceId = await _homeServiceService.CreateHomeServiceAsync(userId, input);
 			return Ok(serviceId);
 		}
 		[HttpGet]
@@ -35,6 +34,31 @@ namespace HSP.API.Controllers
 		{
 			var services = await _homeServiceService.GetAllAsync(input);
 			return Ok(services);
+		}
+		[HttpPut("{id}")]
+		[Authorize(Roles = RoleNames.Admin)]
+		public async Task<IActionResult> UpdateHomeService([FromRoute] Guid id, [FromBody] UpdateHomeServiceDto input)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+			var userId = User.GetUserId();
+			try {
+				await _homeServiceService.UpdateHomeServiceAsync(userId, id, input);
+				return NoContent();
+			}
+			catch(KeyNotFoundException ex) { 
+				return NotFound(ex.Message);
+			}
+			catch (ArgumentNullException ex)
+			{
+				return BadRequest(ex.Message);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
 		}
 		#region Home Page
 		[HttpGet("services-homepage")]
