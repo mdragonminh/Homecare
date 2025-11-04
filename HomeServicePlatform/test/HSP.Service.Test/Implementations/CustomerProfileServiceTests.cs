@@ -10,7 +10,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using MockQueryable;
-using MockQueryable.Core;
 using MockQueryable.Moq;          // <-- bắt buộc cho BuildMock()
 using Moq;
 using System;
@@ -158,7 +157,7 @@ namespace HSP.Service.Test.Implementations
         //  Kiểm tra khi userId không hợp lệ (RequestEmailChangeAsync)
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenInvalidUserId()
         {
-            var result = await _service.RequestEmailChangeAsync("not-guid", "new@example.com");
+            var result = await _service.RequestEmailChangeAsync("not-guid", "long@gmail.com");
             Assert.False(result.Success);
             Assert.Contains("User ID", result.Message);
         }
@@ -170,7 +169,7 @@ namespace HSP.Service.Test.Implementations
             string userId = Guid.NewGuid().ToString();
             _userRepoMock.Setup(x => x.FindByIdAsync(It.IsAny<Guid>())).ReturnsAsync((AppUser?)null);
 
-            var result = await _service.RequestEmailChangeAsync(userId, "new@example.com");
+            var result = await _service.RequestEmailChangeAsync(userId, "long@gmail.com");
 
             Assert.False(result.Success);
             Assert.Contains("Không tìm thấy người dùng", result.Message);
@@ -180,8 +179,8 @@ namespace HSP.Service.Test.Implementations
         //  Kiểm tra khi yêu cầu đổi email hợp lệ → trả về thành công
         public async Task RequestEmailChangeAsync_ShouldReturnSuccess_WhenValid()
         {
-            var user = new AppUser { Id = Guid.NewGuid(), Email = "old@example.com", FullName = "John Doe" };
-            string newEmail = "new@example.com";
+            var user = new AppUser { Id = Guid.NewGuid(), Email = "thanhlongnguyen@gmail.com", FullName = "Nguyen Thanh Long" };
+            string newEmail = "long@gmail.com";
 
             _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
             _userRepoMock.Setup(x => x.FindByEmailAsync(newEmail)).ReturnsAsync((AppUser?)null);
@@ -224,14 +223,14 @@ namespace HSP.Service.Test.Implementations
             var user = new AppUser
             {
                 Id = Guid.NewGuid(),
-                Email = "old@example.com",
-                FullName = "John Doe"
+                Email = "thanhlongnguyen@gmail.com",
+                FullName = "Nguyen Thanh Long"
             };
 
             _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
             // Act
-            var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "old@example.com");
+            var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "thanhlongnguyen@gmail.com");
 
             // Assert
             Assert.False(result.Success);
@@ -245,22 +244,23 @@ namespace HSP.Service.Test.Implementations
             // Arrange
             var user = new AppUser
             {
+
                 Id = Guid.NewGuid(),
-                Email = "user1@example.com",
-                FullName = "John Doe"
+                Email = "thanhlongnguyen@gmail.com",
+                FullName = "Nguyen Thanh Long"
             };
 
             var existingUser = new AppUser
             {
                 Id = Guid.NewGuid(),
-                Email = "new@example.com"
+                Email = "thanhlong@gmail.com"
             };
 
             _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
-            _userRepoMock.Setup(x => x.FindByEmailAsync("new@example.com")).ReturnsAsync(existingUser);
+            _userRepoMock.Setup(x => x.FindByEmailAsync("thanhlong@gmail.com")).ReturnsAsync(existingUser);
 
             // Act
-            var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "new@example.com");
+            var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "thanhlong@gmail.com");
 
             // Assert
             Assert.False(result.Success);
@@ -374,10 +374,10 @@ namespace HSP.Service.Test.Implementations
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenSendEmailFails()
         {
             // Arrange
-            var user = new AppUser { Id = Guid.NewGuid(), Email = "old@example.com", FullName = "John Doe" };
+            var user = new AppUser { Id = Guid.NewGuid(), Email = "thanhlongnguyen@gmail.com", FullName = "Nguyen Thanh Long" };
             _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
-            _userRepoMock.Setup(x => x.FindByEmailAsync("new@example.com")).ReturnsAsync((AppUser?)null);
-            _userRepoMock.Setup(x => x.GenerateChangeEmailTokenAsync(user, "new@example.com")).ReturnsAsync("FAKE_TOKEN");
+            _userRepoMock.Setup(x => x.FindByEmailAsync("long@gmail.com")).ReturnsAsync((AppUser?)null);
+            _userRepoMock.Setup(x => x.GenerateChangeEmailTokenAsync(user, "thanhlong@gmail.com")).ReturnsAsync("FAKE_TOKEN");
             _configMock.Setup(x => x["UrlSettings:FrontendEmailChange"]).Returns("https://example.com/confirm");
 
             // 🔴 Giả lập lỗi gửi email
@@ -385,7 +385,7 @@ namespace HSP.Service.Test.Implementations
                              .ThrowsAsync(new Exception("SMTP error"));
 
             // Act
-            var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "new@example.com");
+            var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "thanhlong@gmail.com");
 
             // Assert
             Assert.False(result.Success);
@@ -494,7 +494,9 @@ namespace HSP.Service.Test.Implementations
         //    {
         //        Id = Guid.NewGuid(),
         //        FullName = "Old Name",
-        //        PhoneNumber = "0000000000"
+        //        PhoneNumber = "0000000000",
+        //        Email = "old@example.com",
+        //        UserName = "old@example.com"
         //    };
 
         //    var updateDto = new UpdateAppUserDto
@@ -507,9 +509,9 @@ namespace HSP.Service.Test.Implementations
         //    _userRepoMock.Setup(r => r.UpdateAccount(It.IsAny<AppUser>()))
         //                 .ReturnsAsync(IdentityResult.Success);
 
-        //    // ✅ Sử dụng BuildMockDbSet() để hỗ trợ async
-        //    var mockUsers = new List<AppUser> { user }.BuildMockDbSet();
-        //    _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers.Object);
+        //    // IMPORTANT: tạo IQueryable hỗ trợ async bằng BuildMock()
+        //    var mockUsers = new List<AppUser> { user }.BuildMock();
+        //    _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
 
         //    // Act
         //    var result = await _service.UpdateCustomerAsync(user.Id.ToString(), updateDto);
@@ -520,8 +522,10 @@ namespace HSP.Service.Test.Implementations
         //    Assert.Equal("New Name", result.FullName);
         //    Assert.Equal("0123456789", result.PhoneNumber);
         //}
-
-
-
     }
+
+
+
+
 }
+
