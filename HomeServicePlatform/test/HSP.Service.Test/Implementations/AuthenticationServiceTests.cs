@@ -79,11 +79,11 @@ namespace HSP.Service.Test.Implementations
 		{
 			var input = new RegisterRequestDto
 			{
-				Email = "email@gmail.com",
-				FullName = "fullName",
+				Email = "quanhqhe173484@fpt.edu.vn",
+				FullName = "Hoàng Quốc Quân",
 				PhoneNumber = "0888777222",
-				Password = "Password123!",
-				ConfirmPassword = "Password123!"
+				Password = "123Qwe@@",
+				ConfirmPassword = "123Qwe@@"
 			};
 
 			var createdUser = new AppUser
@@ -141,11 +141,11 @@ namespace HSP.Service.Test.Implementations
 		{
 			var input = new RegisterRequestDto
 			{
-				Email = "email@gmail.com",
-				FullName = "fullName",
+				Email = "quanhqhe173484@fpt.edu.vn",
+				FullName = "Hoàng Quốc Quân",
 				PhoneNumber = "0888777222",
-				Password = "Password123!",
-				ConfirmPassword = "Password123@"
+				Password = "123Qwe@@",
+				ConfirmPassword = "123Qwe!!"
 			};
 			await Assert.ThrowsAsync<ValidationException>(() => _authenticationService.Register(input));
 			_mockUserRepository.Verify(x => x.CreateAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
@@ -155,25 +155,25 @@ namespace HSP.Service.Test.Implementations
 		[Fact]
 		public async Task Register_WhenEmailAlreadyExistsWithEmailConfirmed_ThrowsException()
 		{
-			string ExistingEmail = "email@gmail.com";
+			string ExistingEmail = "quan@gmail.com";
 			_mockUserRepository
 			 .Setup(x => x.FindByEmailAsync(ExistingEmail))
 			 .ReturnsAsync(new AppUser
 			 {
 				 Id = Guid.NewGuid(),
-				 Email = "email@gmail.com",
-				 UserName = "email@gmail.com",
+				 Email = "quan@gmail.com",
+				 UserName = "quan@gmail.com",
 				 FullName = "fullName",
 				 PhoneNumber = "0888777222",
 				 EmailConfirmed = true
 			 });
 			var input = new RegisterRequestDto
 			{
-				Email = "email@gmail.com",
+				Email = "quan@gmail.com",
 				FullName = "fullName",
 				PhoneNumber = "0888777222",
-				Password = "Password123!",
-				ConfirmPassword = "Password123!"
+				Password = "123Qwe@@",
+				ConfirmPassword = "123Qwe@@"
 			};
 			await Assert.ThrowsAsync<ValidationException>(() => _authenticationService.Register(input));
 			_mockUserRepository.Verify(x => x.CreateAsync(It.IsAny<AppUser>(), input.Password), Times.Never);
@@ -183,25 +183,25 @@ namespace HSP.Service.Test.Implementations
 		[Fact]
 		public async Task Register_WhenEmailAlreadyExistsWithEmailNotConfirmed_ReturnsNewTokenAndSendsEmail()
 		{
-			string ExistingEmail = "email@gmail.com";
+			string ExistingEmail = "quanhoang@gmail.com";
 			_mockUserRepository
 			 .Setup(x => x.FindByEmailAsync(ExistingEmail))
 			 .ReturnsAsync(new AppUser
 			 {
 				 Id = Guid.NewGuid(),
-				 Email = "email@gmail.com",
-				 UserName = "email@gmail.com",
-				 FullName = "fullName",
+				 Email = "quanhoang@gmail.com",
+				 UserName = "quanhoang@gmail.com",
+				 FullName = "Hoàng Quốc Quân",
 				 PhoneNumber = "0888777222",
 				 EmailConfirmed = false
 			 });
 			var input = new RegisterRequestDto
 			{
-				Email = "email@gmail.com",
-				FullName = "fullName",
+				Email = "quanhoang@gmail.com",
+				FullName = "Hoàng Quốc Quân",
 				PhoneNumber = "0888777222",
-				Password = "Password123!",
-				ConfirmPassword = "Password123!"
+				Password = "123Qwe@@",
+				ConfirmPassword = "123Qwe@@"
 			};
 			_mockUserRepository
 					.Setup(x => x.GenerateEmailConfirmationTokenAsync(It.IsAny<AppUser>()))
@@ -626,15 +626,15 @@ namespace HSP.Service.Test.Implementations
 		{
 			var input = new LoginRequestDto
 			{
-				EmailOrPhone = "example@gmail.com",
-				Password = "Password123!"
+				EmailOrPhone = "quanhqhe173484@fpt.edu.vn",
+				Password = "123Qwe@@"
 			};
 			var existingUser = new AppUser
 			{
 				Id = Guid.NewGuid(),
 				Email = input.EmailOrPhone,
 				UserName = input.EmailOrPhone,
-				FullName = "Example User",
+				FullName = "Hoàng Quốc Quân",
 				PhoneNumber = "0888777222",
 				EmailConfirmed = true,
 				IsActive = true
@@ -662,7 +662,7 @@ namespace HSP.Service.Test.Implementations
 			var input = new LoginRequestDto
 			{
 				EmailOrPhone = "0888777222",
-				Password = "Password123!"
+				Password = "123Qwe@@"
 			};
 			var existingUser = new AppUser
 			{
@@ -706,7 +706,7 @@ namespace HSP.Service.Test.Implementations
 			var input = new LoginRequestDto
 			{
 				EmailOrPhone = "example@gmail.com",
-				Password = "Password123!"
+				Password = "123Qwe@@"
 			};
 			var existingUser = new AppUser
 			{
@@ -731,8 +731,8 @@ namespace HSP.Service.Test.Implementations
 		{
 			var input = new LoginRequestDto
 			{
-				EmailOrPhone = "example@gmail.com",
-				Password = "Password123!"
+				EmailOrPhone = "example1@gmail.com",
+				Password = "123Qwe@@"
 			};
 			var existingUser = new AppUser
 			{
@@ -757,8 +757,8 @@ namespace HSP.Service.Test.Implementations
 		{
 			var input = new LoginRequestDto
 			{
-				EmailOrPhone = "example@gmail.com",
-				Password = "Password123!"
+				EmailOrPhone = "quanhqhe173484@fpt.edu.vn",
+				Password = "123Qwe!!"
 			};
 			var existingUser = new AppUser
 			{
