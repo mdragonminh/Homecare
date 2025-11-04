@@ -60,6 +60,32 @@ namespace HSP.API.Controllers
 				return StatusCode(500, ex.Message);
 			}
 		}
+		[HttpDelete("{id}")]
+		[Authorize(Roles = RoleNames.Admin)]
+		public async Task<IActionResult> DeleteHomeService([FromRoute] Guid id)
+		{
+			var userId = User.GetUserId();
+			try
+			{
+				var result = await _homeServiceService.DeleteHomeServiceAsync(userId, id);
+				if (result)
+				{
+					return NoContent();
+				}
+				else
+				{
+					return NotFound();
+				}
+			}
+			catch (UnauthorizedAccessException ex)
+			{
+				return Forbid(ex.Message);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+		}
 		#region Home Page
 		[HttpGet("services-homepage")]
 		public async Task<IActionResult> GetAllServiceHomePage()
