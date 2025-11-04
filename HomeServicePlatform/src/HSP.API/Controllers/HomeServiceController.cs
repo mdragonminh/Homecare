@@ -28,12 +28,30 @@ namespace HSP.API.Controllers
 			var serviceId = await _homeServiceService.CreateHomeServiceAsync(userId, input);
 			return Ok(serviceId);
 		}
-		[HttpGet]
+		[HttpGet("services")]
 		[Authorize(Roles = RoleNames.Admin)]
 		public async Task<IActionResult> GetAllHomeServices([FromQuery] HomeServiceInput input)
 		{
 			var services = await _homeServiceService.GetAllAsync(input);
 			return Ok(services);
+		}
+		[HttpGet]
+		[Authorize(Roles = RoleNames.Admin)]
+		public async Task<IActionResult> GetHomeServiceById([FromQuery] Guid id)
+		{
+			try
+			{
+				var service = await _homeServiceService.GetHomeServiceByIdAsync(id);
+				return Ok(service);
+			}
+			catch (KeyNotFoundException ex)
+			{
+				return NotFound(ex.Message);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
 		}
 		[HttpPut("{id}")]
 		[Authorize(Roles = RoleNames.Admin)]
