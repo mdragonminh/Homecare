@@ -88,6 +88,17 @@ namespace HSP.Service.Implementations
 			}
 			return true;
 		}
+		public async Task<bool> DeleteHomeServiceAsync(Guid userId, Guid id)
+		{
+			var homeService = await _homeServiceRepository.GetByIdAsync(id);
+			if(homeService == null)
+			{
+				throw new KeyNotFoundException("Service not found");
+			}
+			await _homeServiceRepository.DeleteAsync(id);
+			await _unitOfWork.SaveChangesAsync();
+			return true;
+		}
 		#region Home Page
 		public async Task<IEnumerable<HomeServiceDto>> GetAllServiceHomePageAsync()
 		{
