@@ -1,6 +1,7 @@
 ﻿using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
 using HSP.Service.Implementations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using MockQueryable;
 using Moq;
@@ -96,6 +97,58 @@ namespace HSP.Service.Test.Implementations
 			Assert.NotNull(result);
 			Assert.Single(result.Items);
 			Assert.Equal("Cleaning", result.Items.First().Name);
+		}
+		[Fact]
+		public async Task UpdateHomeServiceAsync_WithValidInput_ShouldUpdateServiceAndReturnTrue()
+		{
+			var userId = Guid.NewGuid();
+			var serviceId = Guid.NewGuid();
+			var existingService = new Core.Entities.Service
+			{
+				Id = serviceId,
+				Name = "Old Name",
+				Description = "Old Description",
+				Price = 5000,
+				DateCreated = DateTime.UtcNow.AddDays(-1),
+				CreatedBy = userId
+			};
+			_mockHomeServiceRepository
+				.Setup(repo => repo.GetAll())
+				.Returns(new List<Core.Entities.Service> { existingService }.BuildMock());
+			var input = new Core.Dtos.ServiceDto.UpdateHomeServiceDto
+			{
+				Name = "New Name",
+				Description = "New Description",
+				Price = 10000
+			};
+			var result = await _homeServiceService.UpdateHomeServiceAsync(userId, serviceId, input);
+			Assert.True(result);
+			Assert.Equal("New Name", existingService.Name);
+			Assert.Equal("New Description", existingService.Description);
+			_mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(), Times.Once);
+		}
+		[Fact]
+		public async Task UpdateHomeServiceAsync_WithNullInput_ShouldThrowArgumentNullException()
+		{
+			var userId = Guid.NewGuid();
+			var serviceId = Guid.NewGuid();
+			await Assert.ThrowsAsync<ArgumentNullException>(() => _homeServiceService.UpdateHomeServiceAsync(userId, serviceId, null));
+		}
+		[Fact]
+		public async Task UpdateHomeServiceAsync_WithInvalidHomeServiceId_ShouldThrowKeyNotFoundException()
+		{
+			var userId = Guid.NewGuid();
+			var serviceId = Guid.NewGuid();
+			_mockHomeServiceRepository
+				.Setup(repo => repo.GetAll())
+				.Returns(new List<Core.Entities.Service>().BuildMock());
+			var input = new Core.Dtos.ServiceDto.UpdateHomeServiceDto
+			{
+				Name = "New Name",
+				Description = "New Description",
+				Price = 100000,
+			};
+			await Assert.ThrowsAsync<KeyNotFoundException>(() => _homeServiceService.UpdateHomeServiceAsync(userId, serviceId, input));
 		}
 	}
 }
