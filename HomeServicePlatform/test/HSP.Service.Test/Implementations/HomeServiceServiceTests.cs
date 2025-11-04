@@ -99,6 +99,33 @@ namespace HSP.Service.Test.Implementations
 			Assert.Equal("Cleaning", result.Items.First().Name);
 		}
 		[Fact]
+		public async Task GetHomeServiceByIdAsync_WithValidId_ShouldReturnHomeServiceDto()
+		{
+			var serviceId = Guid.NewGuid();
+			var existingService = new Core.Entities.Service
+			{
+				Id = serviceId,
+				Name = "Cleaning",
+				Description = "House cleaning service",
+				Price = 5000
+			};
+			_mockHomeServiceRepository
+				.Setup(repo => repo.GetByIdAsync(serviceId))
+				.ReturnsAsync(existingService);
+			var result = await _homeServiceService.GetHomeServiceByIdAsync(serviceId);
+			Assert.NotNull(result);
+			Assert.Equal(serviceId, result.Id);
+			Assert.Equal("Cleaning", result.Name);
+		}
+		[Fact]
+		public async Task GetHomeServiceByIdAsync_WithInvalidId_ShouldThrowKeyNotFoundException()
+		{
+			var serviceId = Guid.NewGuid();
+			_mockHomeServiceRepository.Setup(repo => repo.GetByIdAsync(serviceId))
+				.ReturnsAsync((Core.Entities.Service)null);
+			await Assert.ThrowsAsync<KeyNotFoundException>(() => _homeServiceService.GetHomeServiceByIdAsync(serviceId));
+		}
+		[Fact]
 		public async Task UpdateHomeServiceAsync_WithValidInput_ShouldUpdateServiceAndReturnTrue()
 		{
 			var userId = Guid.NewGuid();
