@@ -150,5 +150,37 @@ namespace HSP.Service.Test.Implementations
 			};
 			await Assert.ThrowsAsync<KeyNotFoundException>(() => _homeServiceService.UpdateHomeServiceAsync(userId, serviceId, input));
 		}
+		[Fact]
+		public async Task DeleteHomeServiceAsync_DeleteSuccess_ShouldDeleteAndReturnTrue()
+		{
+			var userId = Guid.NewGuid();
+			var existingService = new Core.Entities.Service
+			{
+				Id = Guid.NewGuid(),
+				Name = "Service to Delete",
+				Description = "Description",
+				Price = 5000
+			};
+			_mockHomeServiceRepository
+				.Setup(repo => repo.GetByIdAsync(existingService.Id))
+				.ReturnsAsync(existingService);
+			_mockUnitOfWork
+				.Setup(uow => uow.SaveChangesAsync())
+				.ReturnsAsync(1);
+			var result = await _homeServiceService.DeleteHomeServiceAsync(userId, existingService.Id);
+			Assert.True(result);
+			_mockHomeServiceRepository.Verify(repo => repo.DeleteAsync(existingService.Id), Times.Once);
+			_mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(), Times.Once);
+		}
+		[Fact]
+		public async Task DeleteHomeServiceAsync_NonExistentService_ShouldThrowKeyNotFoundException()
+		{
+			var userId = Guid.NewGuid();
+			var nonExistentServiceId = Guid.NewGuid();
+			_mockHomeServiceRepository
+				.Setup(repo => repo.GetByIdAsync(nonExistentServiceId))
+				.ReturnsAsync((Core.Entities.Service)null);
+			await Assert.ThrowsAsync<KeyNotFoundException>(() => _homeServiceService.DeleteHomeServiceAsync(userId, nonExistentServiceId));
+		}
 	}
 }
