@@ -52,6 +52,42 @@ namespace HSP.Service.Implementations
 			return pagedHomeService;
 		}
 
+		public async Task<bool> UpdateHomeServiceAsync(Guid userId, Guid id, UpdateHomeServiceDto input)
+		{
+			if(input == null)
+			{
+				throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
+			}
+			var existingService = await _homeServiceRepository.GetAll()
+				.FirstOrDefaultAsync(x=>x.Id.Equals(id));
+			if(existingService == null)
+			{
+				throw new KeyNotFoundException("Service not found");
+			}
+			var flag = false;
+			if(existingService.Name != input.Name)
+			{
+				existingService.Name = input.Name;
+				flag = true;
+			}
+			if(existingService.Price != input.Price)
+			{
+				existingService.Price = input.Price;
+				flag = true;
+			}
+			if(existingService.Description != input.Description)
+			{
+				existingService.Description = input.Description;
+				flag = true;
+			}
+			if(flag == true)
+			{
+				existingService.DateModified = DateTime.UtcNow;
+				existingService.ModifiedBy = userId;
+				await _unitOfWork.SaveChangesAsync();
+			}
+			return true;
+		}
 		#region Home Page
 		public async Task<IEnumerable<HomeServiceDto>> GetAllServiceHomePageAsync()
 		{
