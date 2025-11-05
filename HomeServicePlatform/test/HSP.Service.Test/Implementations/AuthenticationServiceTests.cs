@@ -19,6 +19,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using MockQueryable;
+using MockQueryable.Moq;
 using Moq;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
@@ -1405,10 +1406,10 @@ namespace HSP.Service.Test.Implementations
 			var userId = Guid.NewGuid();
 			var input = new ChangePasswordRequestDto
 			{
-				CurrentPassword = "oldpass123!",
-				NewPassword = "newpass123!",
-				ConfirmNewPassword = "newpass123!"
-			};
+				CurrentPassword = "Ntl0979735203@@",
+				NewPassword = "Ntl0979735203@@@",
+				ConfirmNewPassword = "Ntl0979735203@@@"
+            };
 
 			var user = new AppUser
 			{
@@ -1443,10 +1444,10 @@ namespace HSP.Service.Test.Implementations
 			var userId = Guid.NewGuid();
 			var input = new ChangePasswordRequestDto
 			{
-				CurrentPassword = "oldpass123!",
-				NewPassword = "newpass123!",
-				ConfirmNewPassword = "newpass123!"
-			};
+                CurrentPassword = "Ntl0979735203@@",
+                NewPassword = "Ntl0979735203@@@",
+                ConfirmNewPassword = "Ntl0979735203@@@"
+            };
 
 			var user = new AppUser
 			{
@@ -1475,10 +1476,10 @@ namespace HSP.Service.Test.Implementations
 			var userId = Guid.NewGuid();
 			var input = new ChangePasswordRequestDto
 			{
-				CurrentPassword = "oldpass123!",
-				NewPassword = "newpass123!",
-				ConfirmNewPassword = "newpass123!"
-			};
+                CurrentPassword = "Ntl0979735203@@",
+                NewPassword = "Ntl0979735203@@@",
+                ConfirmNewPassword = "Ntl0979735203@@@"
+            };
 
 			var user = new AppUser { Id = userId, Email = "example@gmail.com" };
 
@@ -1501,10 +1502,10 @@ namespace HSP.Service.Test.Implementations
 			var userId = Guid.NewGuid();
 			var input = new ChangePasswordRequestDto
 			{
-				CurrentPassword = "wrongpass",
-				NewPassword = "newpass123!",
-				ConfirmNewPassword = "newpass123!"
-			};
+                CurrentPassword = "123456789@",
+                NewPassword = "Ntl0979735203@@@",
+                ConfirmNewPassword = "Ntl0979735203@@@"
+            };
 
 			var user = new AppUser { Id = userId, Email = "example@gmail.com" };
 
@@ -1526,10 +1527,10 @@ namespace HSP.Service.Test.Implementations
 			var userId = Guid.NewGuid();
 			var input = new ChangePasswordRequestDto
 			{
-				CurrentPassword = "old123",
-				NewPassword = "new123",
-				ConfirmNewPassword = "new123"
-			};
+                CurrentPassword = "Ntl0979735203@@",
+                NewPassword = "Ntl0979735203@@@",
+                ConfirmNewPassword = "Ntl0979735203@@@"
+            };
 
 			_mockUserRepository.Setup(x => x.FindByIdAsync(userId))
 					.ReturnsAsync((AppUser?)null);

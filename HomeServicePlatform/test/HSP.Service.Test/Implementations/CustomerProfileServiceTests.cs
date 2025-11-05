@@ -10,8 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using MockQueryable;
-using MockQueryable.Moq;          // <-- bắt buộc cho BuildMock()
 using Moq;
+using MockQueryable.Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -486,6 +486,7 @@ namespace HSP.Service.Test.Implementations
 
             Assert.Contains("Failed to update user", ex.Message);
         }
+
         //[Fact]
         //public async Task UpdateCustomerAsync_ShouldReturnUpdatedUser_WhenSuccess()
         //{
@@ -494,9 +495,7 @@ namespace HSP.Service.Test.Implementations
         //    {
         //        Id = Guid.NewGuid(),
         //        FullName = "Old Name",
-        //        PhoneNumber = "0000000000",
-        //        Email = "old@example.com",
-        //        UserName = "old@example.com"
+        //        PhoneNumber = "0000000000"
         //    };
 
         //    var updateDto = new UpdateAppUserDto
@@ -505,13 +504,19 @@ namespace HSP.Service.Test.Implementations
         //        PhoneNumber = "0123456789"
         //    };
 
+        //    var users = new List<AppUser> { user };
+
+        //    // ✅ Tạo mock IQueryable đúng cách (MockQueryable v8+)
+        //    var mock = new Mock<IQueryable<AppUser>>();
+        //    mock.Setup(x => x.Provider).Returns(users.AsQueryable().Provider);
+        //    mock.Setup(x => x.Expression).Returns(users.AsQueryable().Expression);
+        //    mock.Setup(x => x.ElementType).Returns(users.AsQueryable().ElementType);
+        //    mock.Setup(x => x.GetEnumerator()).Returns(users.AsQueryable().GetEnumerator());
+
+        //    // Giả lập repository
         //    _userRepoMock.Setup(r => r.FindByIdAsync(user.Id)).ReturnsAsync(user);
         //    _userRepoMock.Setup(r => r.UpdateAccount(It.IsAny<AppUser>()))
         //                 .ReturnsAsync(IdentityResult.Success);
-
-        //    // IMPORTANT: tạo IQueryable hỗ trợ async bằng BuildMock()
-        //    var mockUsers = new List<AppUser> { user }.BuildMock();
-        //    _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
 
         //    // Act
         //    var result = await _service.UpdateCustomerAsync(user.Id.ToString(), updateDto);
@@ -522,6 +527,8 @@ namespace HSP.Service.Test.Implementations
         //    Assert.Equal("New Name", result.FullName);
         //    Assert.Equal("0123456789", result.PhoneNumber);
         //}
+
+
     }
 
 
