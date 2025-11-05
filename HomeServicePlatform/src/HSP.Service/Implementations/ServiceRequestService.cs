@@ -67,7 +67,7 @@ namespace HSP.Service.Implementations
 			var customer = await _userRepository.FindByIdAsync(Guid.Parse(input.CustomerId));
 			if (customer == null)
 			{
-				throw new Exception("customer is null");
+				throw new InvalidOperationException("customer is null");
 			}
 			var (minLat, maxLat, minLon, maxLon) = GetBoundingBox(coordinates.Latitude, coordinates.Longitude, input.DistanceKm);
 			var potentialTechnicians = await _technicianRepository.GetAll()
@@ -95,7 +95,7 @@ namespace HSP.Service.Implementations
 				.ToList();
 			if (!sorted.Any())
 			{
-				throw new Exception(_localizer["NoAvailableTechniciansFound"]);
+				throw new InvalidOperationException(_localizer["NoAvailableTechniciansFound"]);
 			}
 
 			var matchResult = await NotifyTechniciansAndAwaitResponseAsync(sorted, customer, input);
