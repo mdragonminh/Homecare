@@ -1,4 +1,5 @@
-﻿using HSP.Core.Interfaces.DataAccess;
+﻿using HSP.Core.Entities;
+using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
 using HSP.Service.Implementations;
 using Microsoft.EntityFrameworkCore;
@@ -188,9 +189,11 @@ namespace HSP.Service.Test.Implementations
 				Description = "Description",
 				Price = 5000
 			};
+			var services = new List<Core.Entities.Service> { existingService }.BuildMock();
+
 			_mockHomeServiceRepository
-				.Setup(repo => repo.GetByIdAsync(existingService.Id))
-				.ReturnsAsync(existingService);
+					.Setup(repo => repo.GetAll())
+					.Returns(services);
 			_mockUnitOfWork
 				.Setup(uow => uow.SaveChangesAsync())
 				.ReturnsAsync(1);
@@ -204,10 +207,39 @@ namespace HSP.Service.Test.Implementations
 		{
 			var userId = Guid.NewGuid();
 			var nonExistentServiceId = Guid.NewGuid();
+			var emptyServices = new List<Core.Entities.Service>().BuildMock();
 			_mockHomeServiceRepository
-				.Setup(repo => repo.GetByIdAsync(nonExistentServiceId))
-				.ReturnsAsync((Core.Entities.Service)null);
+					.Setup(repo => repo.GetAll())
+					.Returns(emptyServices);
 			await Assert.ThrowsAsync<KeyNotFoundException>(() => _homeServiceService.DeleteHomeServiceAsync(userId, nonExistentServiceId));
+		}
+		[Fact]
+		public async Task DeleteHomeServiceAsync_ServiceInUse_ThrowInvalidOperationException()
+		{
+			var userId = Guid.NewGuid();
+			var serviceId = Guid.NewGuid();
+
+			var existingService = new Core.Entities.Service
+			{
+				Id = serviceId,
+				Name = "In-use Service",
+				Technicians = new List<TechnicianProfile>
+				{
+						new TechnicianProfile { ApprovalStatus = Core.Enums.TechnicianApprovalStatus.Approved }
+				}
+			};
+
+			var services = new List<Core.Entities.Service> { existingService }
+					.BuildMock();
+
+			_mockHomeServiceRepository.Setup(r => r.GetAll())
+					.Returns(services);
+
+			await Assert.ThrowsAsync<InvalidOperationException>(() =>
+					_homeServiceService.DeleteHomeServiceAsync(userId, serviceId));
+
+			_mockHomeServiceRepository.Verify(r => r.DeleteAsync(It.IsAny<Guid>()), Times.Never);
+			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);
 		}
 	}
 }
