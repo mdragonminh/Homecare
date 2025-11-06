@@ -107,10 +107,17 @@ namespace HSP.Service.Implementations
 		}
 		public async Task<bool> DeleteHomeServiceAsync(Guid userId, Guid id)
 		{
-			var homeService = await _homeServiceRepository.GetByIdAsync(id);
+			var homeService = await _homeServiceRepository.GetAll()
+				.Include(x => x.Technicians)
+				.FirstOrDefaultAsync(hs => hs.Id.Equals(id));
 			if (homeService == null)
 			{
 				throw new KeyNotFoundException("Service not found");
+			}
+			var isInUse = homeService.Technicians?.Where(x => x.ApprovalStatus == Core.Enums.TechnicianApprovalStatus.Approved).Any() ?? false;
+			if (isInUse)
+			{
+				throw new InvalidOperationException(_localizer["ServiceIsCurrentlyInUse"]);
 			}
 			await _homeServiceRepository.DeleteAsync(id);
 			await _unitOfWork.SaveChangesAsync();

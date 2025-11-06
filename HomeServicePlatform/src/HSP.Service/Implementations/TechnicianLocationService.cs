@@ -23,10 +23,6 @@ namespace HSP.Service.Implementations
 			{
 				throw new ArgumentNullException("input parameter cannot be null");
 			}
-			if (input.Latitude < -90 || input.Latitude > 90 || input.Longitude < -180 || input.Longitude > 180)
-			{
-				throw new ArgumentException(_localizer["InvalidCoordinates"]);
-			}
 			var technician = await _technicianProfileRepository.GetAll()
 				.FirstOrDefaultAsync(x => x.UserId == CurrentTechId && x.ApprovalStatus == TechnicianApprovalStatus.Approved);
 			if (technician == null)
@@ -39,10 +35,22 @@ namespace HSP.Service.Implementations
 			{
 				return; 
 			}
-			technician.Latitude = input.Latitude;
-			technician.Longitude = input.Longitude;
-			technician.DateModified = DateTime.UtcNow;
-			await _unitOfWork.SaveChangesAsync();
+			var flag = false;
+			if(technician.Latitude != input.Latitude)
+			{
+				technician.Latitude = input.Latitude;
+				flag = true;
+			}
+			if(technician.Longitude != input.Longitude)
+			{
+				technician.Longitude = input.Longitude;
+				flag = true;
+			}
+			if(flag == true)
+			{
+				technician.DateModified = DateTime.UtcNow;
+				await _unitOfWork.SaveChangesAsync();
+			}
 		}
 	}
 }

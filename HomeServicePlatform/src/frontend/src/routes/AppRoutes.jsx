@@ -46,6 +46,7 @@ export default function AppRoutes({
   onLoginSuccess,
   onLogout,
   onPasswordSetSuccess,
+  onProfileUpdate,
 }) {
   const navigate = useNavigate();
 
@@ -88,6 +89,7 @@ export default function AppRoutes({
               onLogout={handleLogoutAndNavigate}
               onShowLogin={handleShowLogin}
               onShowRegister={handleShowRegister}
+              onProfileUpdate={onProfileUpdate}
             />
           }
         />

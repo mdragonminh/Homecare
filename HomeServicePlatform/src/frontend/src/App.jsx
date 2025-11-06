@@ -107,6 +107,21 @@ export default function App() {
     }
   }, []);
 
+  const handleProfileUpdate = useCallback((updatedProfileData) => {
+    if (updatedProfileData && updatedProfileData.fullName) {
+      
+      localStorage.setItem("name", updatedProfileData.fullName);
+
+      setLoggedInUser(prevUser => {
+          if (!prevUser) return null; 
+          return {
+              ...prevUser,
+              name: updatedProfileData.fullName, 
+          };
+      });
+    }
+  }, []);
+
   const handleLogout = useCallback(() => {
     authApi.logout();
     setLoggedInUser(null);
@@ -177,6 +192,7 @@ export default function App() {
             onLoginSuccess={handleLoginSuccess}
             onLogout={handleLogout}
             onPasswordSetSuccess={handlePasswordSetSuccess}
+            onProfileUpdate={handleProfileUpdate}
           />
         ) : (
           <div className="flex justify-center items-center h-screen">

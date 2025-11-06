@@ -120,14 +120,23 @@ export default function HomeServicePage() {
       onOk: async () => {
         try {
           await homeApi.deleteHomeService(record.id);
-          toast.success("🗑️ Đã xóa thành công!");
+          toast.success("Đã xóa thành công!");
           fetchData(pagination.current, pagination.pageSize);
-        } catch {
-          toast.error("Xóa thất bại!");
+        } catch (err) {
+          const message =
+            err?.response?.data?.message ||
+            err?.response?.data ||
+            err?.message ||
+            "Xóa thất bại!";
+
+          toast.error("Không thể xóa dịch vụ!", {
+            description: message,
+          });
         }
       },
     });
   };
+
 
   const columns = [
     {
@@ -269,8 +278,8 @@ export default function HomeServicePage() {
           >
             <InputNumber
               min={0}
-              className="w-full"
               placeholder="Nhập giá (VNĐ)"
+              style={{ width: "100%" }}
               formatter={(value) =>
                 `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
               }

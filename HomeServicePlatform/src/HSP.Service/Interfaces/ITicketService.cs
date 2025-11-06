@@ -13,5 +13,6 @@ namespace HSP.Service.Interfaces
         Task<bool> AssignTechnicianAsync(AssignTechnicianDto assignDto, string supporterId);
 
         Task<bool> UpdateTicketStatusAsync(UpdateTicketStatusDto updateDto, string supporterId);
+        Task<TicketDto> CreateTicketAsync(CreateTicketDto createDto, string supporterId);
     }
 }
