@@ -566,7 +566,7 @@ if ((domainParts.match(/\./g) || []).length < 1) {
                             accept="image/jpeg,image/jpg,image/png,image/gif"
                             onChange={handleAvatarFileChange}
                             className="hidden"
-                            disabled={uploadingAvatar}
+                            disabled
                           />
                           <Camera className="w-5 h-5 text-white hover:text-blue-300 transition-colors duration-200" />
                         </label>

@@ -86,5 +86,29 @@ namespace HSP.API.Controllers
 
             return Ok(new { message = "Cập nhật trạng thái thành công." });
         }
+
+        [HttpPost] 
+        public async Task<IActionResult> CreateTicket([FromBody] CreateTicketDto createDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var supporterId = GetCurrentSupporterId();
+            if (string.IsNullOrEmpty(supporterId))
+            {
+                return Unauthorized("Không tìm thấy thông tin người dùng.");
+            }
+
+            var resultDto = await _ticketService.CreateTicketAsync(createDto, supporterId);
+
+            if (resultDto == null)
+            {
+                return BadRequest(new { message = "Không thể tạo ticket. (Thiết bị có thể không tồn tại)." });
+            }
+
+            return Ok(resultDto);
+        }
     }
 }
