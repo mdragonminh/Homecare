@@ -22,7 +22,7 @@ import DeleteAvatarModal from "../components/DeleteAvatarModal";
 import { Footer } from "../components/Footer";
 import { profileApi } from "../services/profileApi";
 
-const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
+const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister, onProfileUpdate }) => {
   const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -313,14 +313,20 @@ if ((domainParts.match(/\./g) || []).length < 1) {
           throw new Error(updateResult.message);
         }
 
-        setProfile((prev) => ({
-          ...prev,
+      const updatedProfileData = {
+          ...profile,
           fullName: editForm.fullName,
           phoneNumber: editForm.phoneNumber,
-        }));
+        };
+        
+        setProfile(updatedProfileData);
 
-        setEditingField(null);
-        toast.success(t("success.profile_updated"));
+        if (onProfileUpdate) {
+          onProfileUpdate(updatedProfileData); 
+        }
+
+      setEditingField(null);
+      toast.success(t("success.profile_updated"));
       } else if (fieldToUpdate === "email") {
         if (editForm.email !== profile.email) {
           const emailResult = await profileApi.requestEmailChange(
@@ -566,7 +572,7 @@ if ((domainParts.match(/\./g) || []).length < 1) {
                             accept="image/jpeg,image/jpg,image/png,image/gif"
                             onChange={handleAvatarFileChange}
                             className="hidden"
-                            disabled={uploadingAvatar}
+                            disabled
                           />
                           <Camera className="w-5 h-5 text-white hover:text-blue-300 transition-colors duration-200" />
                         </label>

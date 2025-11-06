@@ -1,6 +1,7 @@
 ﻿namespace HSP.Service.DTOs.Ticket
 {
     using HSP.Core.Enums;
+    using System.ComponentModel.DataAnnotations;
 
     public class TicketDto
     {
@@ -26,6 +27,15 @@
     public class UpdateTicketStatusDto
     {
         public Guid TicketId { get; set; } 
-        public TicketStatus NewStatus { get; set; } 
+        public TicketStatus NewStatus { get; set; }     
+    }
+
+    public class CreateTicketDto
+    {
+        [Required]
+        public Guid EquipmentId { get; set; }
+
+        [MaxLength(500)]
+        public string? IssueDescription { get; set; }
     }
 }

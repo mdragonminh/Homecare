@@ -170,6 +170,61 @@ namespace HSP.Service.Implementations
 
             return true;
         }
+
+        public async Task<TicketDto> CreateTicketAsync(CreateTicketDto createDto, string supporterId)
+        {
+            if (!Guid.TryParse(supporterId, out Guid supporterGuid))
+            {
+                throw new ArgumentException("Invalid supporterId", nameof(supporterId));
+            }
+
+            var equipment = await _equipmentRepository.GetByIdAsync(createDto.EquipmentId);
+            if (equipment == null)
+            {
+                throw new InvalidOperationException("Equipment not found");
+            }
+
+            var newTicket = new Ticket
+            {
+                Id = Guid.NewGuid(),
+                EquipmentId = createDto.EquipmentId,
+                SupporterId = supporterGuid,
+                IssueDescription = createDto.IssueDescription,
+                Status = TicketStatus.NotAccepted, 
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                IsDeleted = false
+            };
+
+            await _ticketRepository.AddAsync(newTicket);
+            await _unitOfWork.SaveChangesAsync();
+
+            var supporterUser = await _userRepository.FindByIdAsync(supporterGuid);
+
+            var ticketDto = new TicketDto
+            {
+                Id = newTicket.Id,
+                EquipmentId = newTicket.EquipmentId,
+                SupporterId = newTicket.SupporterId,
+                IssueDescription = newTicket.IssueDescription,
+                Status = newTicket.Status.ToString(),
+                DateCreated = newTicket.DateCreated,
+                EquipmentName = equipment.EquipmentCode ?? equipment.Name
+            };
+
+            if (supporterUser != null && !string.IsNullOrEmpty(supporterUser.Email))
+            {
+                var emailDto = new Dtos.EmailDto.EmailDto
+                {
+                    ToEmail = supporterUser.Email,
+                    Subject = $"Tạo thành công Ticket #{ticketDto.Id}",
+                    HtmlBody = $"<p>Bạn đã tạo thành công ticket #{ticketDto.Id} cho thiết bị '{ticketDto.EquipmentName}'.</p>"
+                };
+                _ = _emailService.SendEmailAsync(emailDto);
+            }
+
+            return ticketDto;
+        }
     }
 }
 
