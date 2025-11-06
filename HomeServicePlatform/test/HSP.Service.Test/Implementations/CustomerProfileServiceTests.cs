@@ -487,52 +487,85 @@ namespace HSP.Service.Test.Implementations
             Assert.Contains("Failed to update user", ex.Message);
         }
 
-        //[Fact]
-        //public async Task UpdateCustomerAsync_ShouldReturnUpdatedUser_WhenSuccess()
-        //{
-        //    // Arrange
-        //    var user = new AppUser
-        //    {
-        //        Id = Guid.NewGuid(),
-        //        FullName = "Old Name",
-        //        PhoneNumber = "0000000000"
-        //    };
+        [Fact]
+        // Kiểm tra khi cập nhật thông tin người dùng thành công → trả về user đã cập nhật
+        public async Task UpdateCustomerAsync_ShouldReturnUpdatedUser_WhenSuccess()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Old Name",
+                PhoneNumber = "0000000000",
+                Email = "test@example.com",
+                IsActive = true,
+                DateCreated = DateTime.UtcNow.AddDays(-10),
+                DateModified = DateTime.UtcNow.AddDays(-5),
+                Homes = new List<Home>
+                {
+                    new Home { Id = Guid.NewGuid(), IsDeleted = false }
+                }
+            };
+            var updateDto = new UpdateAppUserDto
+            {
+                FullName = "New Name",
+                PhoneNumber = "0123456789"
+            };
 
-        //    var updateDto = new UpdateAppUserDto
-        //    {
-        //        FullName = "New Name",
-        //        PhoneNumber = "0123456789"
-        //    };
+            // Mock FindByIdAsync cho UpdateCustomerAsync
+            _userRepoMock.Setup(r => r.FindByIdAsync(userId))
+                         .ReturnsAsync(user);
 
-        //    var users = new List<AppUser> { user };
+            // Mock UpdateAccount thành công
+            _userRepoMock.Setup(r => r.UpdateAccount(It.IsAny<AppUser>()))
+                         .ReturnsAsync(IdentityResult.Success);
 
-        //    // ✅ Tạo mock IQueryable đúng cách (MockQueryable v8+)
-        //    var mock = new Mock<IQueryable<AppUser>>();
-        //    mock.Setup(x => x.Provider).Returns(users.AsQueryable().Provider);
-        //    mock.Setup(x => x.Expression).Returns(users.AsQueryable().Expression);
-        //    mock.Setup(x => x.ElementType).Returns(users.AsQueryable().ElementType);
-        //    mock.Setup(x => x.GetEnumerator()).Returns(users.AsQueryable().GetEnumerator());
+            // Mock GetUsersAsQueryable cho GetCustomerByUserIdAsync (được gọi ở cuối)
+            var usersList = new List<AppUser> { user };
+            var usersMock = usersList.BuildMock();
+            _userRepoMock.Setup(r => r.GetUsersAsQueryable())
+                         .Returns(usersMock);
 
-        //    // Giả lập repository
-        //    _userRepoMock.Setup(r => r.FindByIdAsync(user.Id)).ReturnsAsync(user);
-        //    _userRepoMock.Setup(r => r.UpdateAccount(It.IsAny<AppUser>()))
-        //                 .ReturnsAsync(IdentityResult.Success);
+            // Mock GetUserAvatarUrlAsync - ObjectType repository
+            var objectTypes = new List<ObjectType>
+            {
+                new ObjectType { Id = Guid.NewGuid(), Name = "User" }
+            };
+            var objectTypesMock = objectTypes.BuildMock();
+            _objTypeRepoMock.Setup(r => r.GetAll())
+                           .Returns(objectTypesMock);
 
-        //    // Act
-        //    var result = await _service.UpdateCustomerAsync(user.Id.ToString(), updateDto);
+            // Mock GetUserAvatarUrlAsync - FileRelation repository (không có avatar)
+            var fileRelations = new List<FileRelation>();
+            var fileRelationsMock = fileRelations.BuildMock();
+            _fileRelRepoMock.Setup(r => r.GetAll())
+                           .Returns(fileRelationsMock);
 
-        //    // Assert
-        //    Assert.NotNull(result);
-        //    Assert.Equal(user.Id, result.Id);
-        //    Assert.Equal("New Name", result.FullName);
-        //    Assert.Equal("0123456789", result.PhoneNumber);
-        //}
+            var result = await _service.UpdateCustomerAsync(userId.ToString(), updateDto);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(userId, result.Id);
+            Assert.Equal("New Name", result.FullName); // Đã được cập nhật
+            Assert.Equal("0123456789", result.PhoneNumber); // Đã được cập nhật
+            Assert.Equal("test@example.com", result.Email);
+            Assert.True(result.IsActive);
+            Assert.Equal(1, result.TotalHomes);
+
+            // Verify các method đã được gọi
+            _userRepoMock.Verify(r => r.FindByIdAsync(userId), Times.Once);
+            _userRepoMock.Verify(r => r.UpdateAccount(It.Is<AppUser>(u =>
+                u.Id == userId &&
+                u.FullName == "New Name" &&
+                u.PhoneNumber == "0123456789")), Times.Once);
+            _userRepoMock.Verify(r => r.GetUsersAsQueryable(), Times.Once);
+
+        }
+
+
 
 
     }
-
-
-
-
 }
 

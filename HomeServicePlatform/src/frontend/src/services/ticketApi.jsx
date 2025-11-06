@@ -30,3 +30,13 @@ export const updateTicketStatus = async (updateDto) => {
     return { success: false, message: error.response?.data?.message || "Lỗi khi cập nhật trạng thái." };
   }
 };
+
+export const createTicket = async (createDto) => {
+  try {
+    const res = await axiosClient.post("/Ticket", createDto);
+    return { success: true, data: res.data };
+  } catch (error) {
+    console.error("Create Ticket Error:", error);
+    return { success: false, message: error.response?.data?.message || "Lỗi khi tạo ticket." };
+  }
+};

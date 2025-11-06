@@ -51,6 +51,7 @@ export default function ClientRoutes({
   onLogout,
   onShowLogin,
   onShowRegister,
+  onProfileUpdate,
 }) {
   return (
     <Routes>
@@ -98,6 +99,7 @@ export default function ClientRoutes({
                 onLogout={onLogout}
                 onShowLogin={onShowLogin}
                 onShowRegister={onShowRegister}
+                onProfileUpdate={onProfileUpdate}
               />
             }
           />
