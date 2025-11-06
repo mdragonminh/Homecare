@@ -99,6 +99,10 @@ namespace HSP.API.Controllers
 			{
 				return Forbid(ex.Message);
 			}
+			catch (InvalidOperationException ex)
+			{
+				return Conflict(new { message = ex.Message });
+			}
 			catch (Exception ex)
 			{
 				return StatusCode(500, ex.Message);
