@@ -98,9 +98,8 @@ namespace HSP.Service.Implementations
 
 		public async Task<IEnumerable<FileDto>> UploadManyAsync(IEnumerable<FileUploadDto> inputs)
 		{
-			var results = new List<FileDto>();
-			foreach (var input in inputs)
-				results.Add(await UploadAsync(input));
+			var uploadTasks = inputs.Select(input => UploadAsync(input));
+			var results = await Task.WhenAll(uploadTasks);
 			return results;
 		}
 

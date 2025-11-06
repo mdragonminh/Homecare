@@ -1,6 +1,5 @@
 ﻿using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
-using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
 using HSP.Service.Implementations;
 using Microsoft.Extensions.Localization;
@@ -43,9 +42,9 @@ namespace HSP.Service.Test.Implementations
 			};
 			_mockTechnicianProfileRepository.Setup(repo => repo.GetAll())
 				.Returns(new List<TechnicianProfile> { technicianProfile }.BuildMock());
-			
+
 			await _technicianLocationService.UpdateLocationAsync(input, currentTechId);
-			
+
 			Assert.Equal(input.Latitude, technicianProfile.Latitude);
 			Assert.Equal(input.Longitude, technicianProfile.Longitude);
 			_mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(), Times.Once);
@@ -67,10 +66,10 @@ namespace HSP.Service.Test.Implementations
 			};
 			_mockTechnicianProfileRepository.Setup(repo => repo.GetAll())
 				.Returns(new List<TechnicianProfile>().BuildMock());
-			
+
 			_mockLocalizer.Setup(loc => loc["TechnicianNotFound"])
 				.Returns(new Microsoft.Extensions.Localization.LocalizedString("TechnicianNotFound", "Technician not found."));
-			
+
 			var exception = await Assert.ThrowsAsync<ArgumentException>(() => _technicianLocationService.UpdateLocationAsync(input, currentTechId));
 			Assert.Equal("Technician not found.", exception.Message);
 		}
@@ -87,8 +86,8 @@ namespace HSP.Service.Test.Implementations
 			{
 				UserId = currentTechId,
 				ApprovalStatus = Core.Enums.TechnicianApprovalStatus.Approved,
-				Latitude = 40.7126,  
-				Longitude = -74.0057 
+				Latitude = 40.7126,
+				Longitude = -74.0057
 			};
 
 			_mockTechnicianProfileRepository.Setup(repo => repo.GetAll())
@@ -96,9 +95,9 @@ namespace HSP.Service.Test.Implementations
 
 			await _technicianLocationService.UpdateLocationAsync(input, currentTechId);
 
-			Assert.Equal(40.7126, technicianProfile.Latitude); 
-			Assert.Equal(-74.0057, technicianProfile.Longitude); 
-			_mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(), Times.Never); 
+			Assert.Equal(40.7126, technicianProfile.Latitude);
+			Assert.Equal(-74.0057, technicianProfile.Longitude);
+			_mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(), Times.Never);
 		}
 	}
 }
