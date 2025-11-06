@@ -353,6 +353,15 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Service is currently in use.
+        /// </summary>
+        public static string ServiceIsCurrentlyInUse {
+            get {
+                return ResourceManager.GetString("ServiceIsCurrentlyInUse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The SkillSet field is required.
         /// </summary>
         public static string SkillSetIsRequired {

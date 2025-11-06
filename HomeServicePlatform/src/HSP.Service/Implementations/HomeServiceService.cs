@@ -1,5 +1,6 @@
 ﻿using HSP.Core.Dtos.ServiceDto;
 using HSP.Core.Dtos.Shared;
+using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
 using HSP.DAL.Extensions;
@@ -11,10 +12,13 @@ namespace HSP.Service.Implementations
 	public class HomeServiceService : BaseService, IHomeServiceService
 	{
 		private readonly IRepository<Core.Entities.Service, Guid> _homeServiceRepository;
+		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 		public HomeServiceService(IRepository<Core.Entities.Service, Guid> homeServiceRepository,
+			IRepository<TechnicianProfile, Guid> technicianRepository,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_homeServiceRepository = homeServiceRepository;
+			_technicianRepository = technicianRepository;
 		}
 
 		public async Task<Guid> CreateHomeServiceAsync(Guid userId, CreateHomeServiceDto input)
@@ -107,10 +111,17 @@ namespace HSP.Service.Implementations
 		}
 		public async Task<bool> DeleteHomeServiceAsync(Guid userId, Guid id)
 		{
-			var homeService = await _homeServiceRepository.GetByIdAsync(id);
+			var homeService = await _homeServiceRepository.GetAll()
+				.Include(x=>x.Technicians)
+				.FirstOrDefaultAsync(hs=>hs.Id.Equals(id));
 			if (homeService == null)
 			{
 				throw new KeyNotFoundException("Service not found");
+			}
+			var isInUse = homeService.Technicians?.Where(x=>x.ApprovalStatus == Core.Enums.TechnicianApprovalStatus.Approved).Any() ?? false;
+			if (isInUse)
+			{
+				throw new InvalidOperationException(_localizer["ServiceIsCurrentlyInUse"]);
 			}
 			await _homeServiceRepository.DeleteAsync(id);
 			await _unitOfWork.SaveChangesAsync();

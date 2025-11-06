@@ -239,4 +239,7 @@
   <data name="NoAvailableTechnicianFound" xml:space="preserve">
     <value>No available technician found</value>
   </data>
+  <data name="ServiceIsCurrentlyInUse" xml:space="preserve">
+    <value>Service is currently in use</value>
+  </data>
 </root>
