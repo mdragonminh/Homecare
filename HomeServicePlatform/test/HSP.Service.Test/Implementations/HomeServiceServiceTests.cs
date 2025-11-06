@@ -1,4 +1,5 @@
-﻿using HSP.Core.Interfaces.DataAccess;
+﻿using HSP.Core.Entities;
+using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
 using HSP.Service.Implementations;
 using Microsoft.EntityFrameworkCore;
@@ -10,23 +11,27 @@ namespace HSP.Service.Test.Implementations
 {
 	public class HomeServiceServiceTests
 	{
-		private readonly Mock<IRepository<Core.Entities.Service, Guid>> _mockHomeServiceRepository;
-		private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-		private readonly Mock<IStringLocalizer<SharedResource>> _mockLocalizer;
-		private readonly HomeServiceService _homeServiceService;
+        // Khai báo thêm mock cho technician
+        private readonly Mock<IRepository<TechnicianProfile, Guid>> _mockTechnicianRepo;
+        private readonly Mock<IRepository<Core.Entities.Service, Guid>> _mockHomeServiceRepository;
+        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
+        private readonly Mock<IStringLocalizer<SharedResource>> _mockLocalizer;
+        private readonly HomeServiceService _homeServiceService;
 
-		public HomeServiceServiceTests()
+        public HomeServiceServiceTests()
 		{
 			_mockHomeServiceRepository = new Mock<IRepository<Core.Entities.Service, Guid>>();
 			_mockUnitOfWork = new Mock<IUnitOfWork>();
 			_mockLocalizer = new Mock<IStringLocalizer<SharedResource>>();
-			_homeServiceService = new HomeServiceService
-			(
-				_mockHomeServiceRepository.Object,
-				_mockUnitOfWork.Object,
-				_mockLocalizer.Object
-			);
-		}
+            // Truyền 4 tham số theo đúng thứ tự
+            _homeServiceService = new HomeServiceService
+            (
+                _mockHomeServiceRepository.Object,
+                _mockTechnicianRepo.Object,  // <-- Thêm tham số còn thiếu vào đây
+                _mockUnitOfWork.Object,
+                _mockLocalizer.Object
+            );
+        }
 		[Fact]
 		public async Task CreateHomeServiceAsync_WithValidInput_ShouldCreateServiceAndReturnId()
 		{
