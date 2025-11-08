@@ -82,30 +82,28 @@ namespace HSP.Service.Implementations
 					functionParameters: BinaryData.FromBytes(schemaBytes)
 			);
 
-            TimeZoneInfo vietnamZone;
-            try
-            {
-                // Windows
-                vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-            }
-            catch (TimeZoneNotFoundException)
-            {
-                // Linux/MacOS
-                vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
-            }
+			// System Prompt
+			string systemPrompt = _localizer["ChatbotSystemPrompt", servicesJsonForPrompt];
 
-            DateTime vietnamTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamZone);
+			TimeZoneInfo vietnamZone;
+			try
+			{
+				// Windows
+				vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+			}
+			catch (TimeZoneNotFoundException)
+			{
+				// Linux/MacOS
+				vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+			}
 
-            string currentDateContext = $"\n## Current Time Context\n" +
-                                        $"Current Date (Hôm nay là): {vietnamTime:dddd, dd MMMM yyyy, HH:mm} (Vietnam Time, UTC+7)." +
-                                        $"Use this as the 'current date' for all time-related inferences.";
+			DateTime vietnamTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamZone);
 
-            systemPrompt += currentDateContext;
+			string currentDateContext = $"\n## Current Time Context\n" +
+																	$"Current Date (Hôm nay là): {vietnamTime:dddd, dd MMMM yyyy, HH:mm} (Vietnam Time, UTC+7)." +
+																	$"Use this as the 'current date' for all time-related inferences.";
 
-            List<OpenAI.Chat.ChatMessage> messages = new List<OpenAI.Chat.ChatMessage>
-            {
-                new SystemChatMessage(systemPrompt) 
-            };
+			systemPrompt += currentDateContext;
 
 			List<OpenAI.Chat.ChatMessage> messages = new List<OpenAI.Chat.ChatMessage>
 						{

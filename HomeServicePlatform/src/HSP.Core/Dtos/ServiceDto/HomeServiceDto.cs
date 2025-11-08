@@ -2,7 +2,7 @@
 
 namespace HSP.Core.Dtos.ServiceDto
 {
-	public class HomePageServiceDto : BaseEntity<Guid>
+	public class HomeServiceDto : BaseEntity<Guid>
 	{
 		public string Name { get; set; }
 	}

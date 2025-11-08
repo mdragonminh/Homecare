@@ -21,7 +21,7 @@ namespace HSP.Core.Dtos.BookingDto
         // Navigation properties
         public HSP.Core.Dtos.CustomerProfileDto.CustomerProfileDto? Customer { get; set; }
         public TechnicianProfileResponseDto? Technician { get; set; }
-        public HomePageServiceDto? Service { get; set; }
+        public HomeServiceDto? Service { get; set; }
         public BookingFeedbackResponseDto? Feedback { get; set; }
         public BookingCancellationResponseDto? Cancellation { get; set; }
     }
