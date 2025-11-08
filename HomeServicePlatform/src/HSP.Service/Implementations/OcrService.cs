@@ -54,28 +54,21 @@ namespace HSP.Service.Implementations
 		private async Task<CccdDataDto> AskGptForCccdDataAsync(string ocrText)
 		{
 			var prompt = $@"
-				Dưới đây là nội dung OCR đọc được từ căn cước công dân Việt Nam (có thể có lỗi chính tả):
-				{ocrText}
+		Dưới đây là nội dung OCR đọc được từ căn cước công dân Việt Nam (có thể có lỗi chính tả):
+		{ocrText}
 
-				Hãy chỉ trích xuất **họ và tên đầy đủ của người được cấp căn cước công dân**.
+		Hãy chỉ trích xuất **họ và tên đầy đủ của người được cấp căn cước công dân**.
 
-				Trả về JSON đúng định dạng:
-				{{ ""FullName"": ""HOANG QUOC QUAN"" }}";
+		Trả về JSON đúng định dạng:
+		{{ ""FullName"": ""HOANG QUOC QUAN"" }}";
 
-			var chatInput = new HSP.Core.Dtos.ChatbotDto.ChatInputDto
-			{
-				Message = prompt
-			};
+			var response = await _chatbotService.GetChatResponseAsync(prompt);
 
-			var response = await _chatbotService.ProcessMessageAsync(chatInput, Guid.Empty);
-
-			var json = response.Response?.Trim() ?? "";
-
-			json = json.Replace("```json", "").Replace("```", "").Trim();
+			response = response.Replace("```json", "").Replace("```", "").Trim();
 
 			try
 			{
-				var result = JsonSerializer.Deserialize<CccdDataDto>(json,
+				var result = JsonSerializer.Deserialize<CccdDataDto>(response,
 					new JsonSerializerOptions
 					{
 						PropertyNameCaseInsensitive = true
