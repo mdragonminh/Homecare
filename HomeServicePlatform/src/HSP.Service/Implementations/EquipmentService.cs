@@ -2,6 +2,7 @@
 using HSP.Core.Dtos.WarehouseDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.DAL.Extensions;
 using HSP.DAL.Interfaces;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -31,45 +32,41 @@ namespace HSP.Service.Implementations
         {
             var query = _equipmentRepository.GetAll(e => e.Warehouse, e => e.Supplier);
 
-			if (!string.IsNullOrWhiteSpace(searchTerm))
-			{
-				query = query.Where(e => e.Name.Contains(searchTerm) ||
-																(e.EquipmentCode != null && e.EquipmentCode.Contains(searchTerm)));
-			}
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                query = query.Where(e => e.Name.Contains(searchTerm) ||
+                                        (e.EquipmentCode != null && e.EquipmentCode.Contains(searchTerm)));
+            }
 
-			if (warehouseId.HasValue)
-			{
-				query = query.Where(e => e.WarehouseId == warehouseId.Value);
-			}
+            if (warehouseId.HasValue)
+            {
+                query = query.Where(e => e.WarehouseId == warehouseId.Value);
+            }
 
-			var paginationParams = new PaginationParams
-			{
-				PageNumber = page,
-				PageSize = pageSize,
-				OrderBy = "DateCreated descending"
-			};
+            var paginationParams = new PaginationParams
+            {
+                PageNumber = page,
+                PageSize = pageSize,
+                OrderBy = "DateCreated descending" 
+            };
 
-            var equipments = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(e => new EquipmentListDto
-                {
-                    Id = e.Id,
-                    Name = e.Name,
-                    EquipmentCode = e.EquipmentCode,
-                    Quantity = e.Quantity,
-                    WarehouseName = e.Warehouse.Name,
-                    DateCreated = e.DateCreated,
-                    Brand = e.Brand,
-                    ModelNumber = e.ModelNumber,
-                    UnitPrice = e.UnitPrice,
-                    SupplierName = e.Supplier != null ? e.Supplier.Name : string.Empty,
-                    IsActive = e.IsActive
-                })
-                .ToListAsync();
+            var dtoQuery = query.Select(e => new EquipmentListDto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                EquipmentCode = e.EquipmentCode,
+                Quantity = e.Quantity,
+                WarehouseName = e.Warehouse.Name,
+                DateCreated = e.DateCreated,
+                Brand = e.Brand,
+                ModelNumber = e.ModelNumber,
+                UnitPrice = e.UnitPrice,
+                SupplierName = e.Supplier != null ? e.Supplier.Name : string.Empty,
+                IsActive = e.IsActive
+            });
 
-			return await dtoQuery.ToPagedListAsync(paginationParams);
-		}
+            return await dtoQuery.ToPagedListAsync(paginationParams);
+        }
 
         public async Task<EquipmentDto?> GetEquipmentByIdAsync(Guid id)
         {

@@ -1,4 +1,5 @@
-﻿using HSP.Core.Interfaces.Entity;
+﻿using HSP.Core.Abstractions.Entity;
+using HSP.Core.Interfaces.Entity;
 using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Core.Entities

@@ -123,7 +123,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = RoleNames.Admin)]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
         public async Task<IActionResult> DeleteWarehouse(Guid id)
         {
             try
