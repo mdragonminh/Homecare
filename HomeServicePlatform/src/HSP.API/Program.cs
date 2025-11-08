@@ -57,6 +57,7 @@ namespace HSP.API
 			builder.Services.Configure<GoogleMapConfigurationDto>(builder.Configuration.GetSection("GoogleMaps"));
 			builder.Services.Configure<LocalizationSettingsDto>(builder.Configuration.GetSection("LocalizationSettings"));
 			builder.Services.Configure<UrlSettingsDto>(builder.Configuration.GetSection("UrlSettings"));
+			builder.Services.Configure<OpenAISettingsDto>(builder.Configuration.GetSection("OpenAI"));
 			builder.Services.AddRazorTemplating();
 			builder.Services.AddStackExchangeRedisCache(options =>
 			{

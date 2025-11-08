@@ -128,7 +128,7 @@ namespace HSP.Service.Implementations
 		{
 			var services = await _homeServiceRepository.GetAll()
 				.OrderBy(x => x.Name)
-				.Select(s => new HomeServiceDto
+				.Select(s => new HomePageServiceDto
 				{
 					Id = s.Id,
 					Name = s.Name,

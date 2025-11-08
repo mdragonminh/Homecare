@@ -13,6 +13,7 @@ using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Net;
 
@@ -60,6 +61,8 @@ namespace HSP.Service.Implementations
 		{
 			if (input == null)
 				throw new ArgumentNullException(nameof(input));
+			if (input.DesireDateTime < DateTime.UtcNow)
+				throw new ValidationException(_localizer["CannotSelectPastDate"]);
 			var coordinates = !string.IsNullOrEmpty(input.Address)
 					? await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
 							?? throw new Exception(_localizer["CannotFoundcoordinates."])
@@ -174,7 +177,7 @@ namespace HSP.Service.Implementations
 			string htmlBody = await _emailTemplateService.RenderAsync("/Views/Emails/TechnicianInvitation.cshtml", emailModel);
 			var email = new EmailDto
 			{
-				ToEmail = tech.Technician.User.Email,
+				ToEmail = tech.Technician?.User?.Email ?? string.Empty,
 				Subject = $"Yêu cầu dịch vụ mới gần bạn lúc {DateTime.Now:HH:mm:ss}",
 				HtmlBody = htmlBody
 			};
@@ -183,8 +186,8 @@ namespace HSP.Service.Implementations
 
 		private (double minLat, double maxLat, double minLon, double maxLon) GetBoundingBox(double lat, double lon, double distanceKm)
 		{
-			const double latDegreesPerKm = 1 / 111.0;
-			var lonDegreesPerKm = 1 / (111.0 * Math.Cos(lat * GeoConstants.DegreeToRadian));
+			const double latDegreesPerKm = 1 / GeoConstants.KmPerDegreeLatitude;
+			var lonDegreesPerKm = 1 / (GeoConstants.KmPerDegreeLatitude * Math.Cos(lat * GeoConstants.DegreeToRadian));
 
 			var latDelta = distanceKm * latDegreesPerKm;
 			var lonDelta = distanceKm * lonDegreesPerKm;

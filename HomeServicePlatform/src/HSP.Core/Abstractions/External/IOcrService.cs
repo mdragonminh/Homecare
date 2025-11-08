@@ -1,0 +1,9 @@
+﻿using HSP.Core.Dtos.OcrDto;
+
+namespace HSP.Service.Interfaces
+{
+	public interface IOcrService
+	{
+		Task<CccdDataDto> ScanCccdAsync(byte[] imageData);
+	}
+}
