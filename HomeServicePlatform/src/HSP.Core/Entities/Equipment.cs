@@ -5,29 +5,57 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HSP.Core.Entities
 {
-	public class Equipment : BaseEntity<Guid>, IDateTracking, IHasSoftedDelete, IUserTracking
-	{
-		[Required, MaxLength(100)]
-		public string Name { get; set; } = null!;
+    public class Equipment : BaseEntity<Guid>, IDateTracking, IHasSoftedDelete, IUserTracking
+    {
+        [Required, MaxLength(100)]
+        public string Name { get; set; } = null!;
 
-		[MaxLength(100)]
-		public string? EquipmentCode { get; set; }
+        [Required, MaxLength(100)]
+        public string? EquipmentCode { get; set; }
 
-		public int Quantity { get; set; } = 0;
+        public int Quantity { get; set; } = 0; 
 
-		[Required]
-		public Guid WarehouseId { get; set; }
+        [Required]
+        public Guid WarehouseId { get; set; }
 
-		[ForeignKey("WarehouseId")]
-		public Warehouse Warehouse { get; set; } = null!;
+        [ForeignKey("WarehouseId")]
+        public Warehouse Warehouse { get; set; } = null!;
 
-		[MaxLength(255)]
-		public string? Description { get; set; }
+        [MaxLength(255)]
+        public string? Description { get; set; }
 
-		public DateTime DateCreated { get; set; }
-		public DateTime DateModified { get; set; }
-		public bool IsDeleted { get; set; }
-		public Guid? CreatedBy { get; set; }
-		public Guid? ModifiedBy { get; set; }
-	}
+        [MaxLength(100)]
+        public string? Brand { get; set; } 
+
+        [MaxLength(100)]
+        public string? ModelNumber { get; set; } 
+
+        [Required, MaxLength(50)]
+        public string UnitOfMeasure { get; set; } = "Cái"; 
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal UnitPrice { get; set; } = 0; 
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CostPrice { get; set; } = 0; 
+
+        public int WarrantyDurationMonths { get; set; } = 0; 
+
+        public Guid? SupplierId { get; set; }
+
+        [ForeignKey("SupplierId")] 
+        public virtual Supplier? Supplier { get; set; }
+
+        public bool IsActive { get; set; } = true; 
+
+        public DateTime DateCreated { get; set; }
+
+        public DateTime DateModified { get; set; }
+
+        public bool IsDeleted { get; set; }
+
+        public Guid? CreatedBy { get; set; }
+
+        public Guid? ModifiedBy { get; set; }
+    }
 }
