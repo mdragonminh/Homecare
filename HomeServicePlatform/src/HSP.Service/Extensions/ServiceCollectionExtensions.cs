@@ -14,14 +14,15 @@ namespace HSP.Service.Extensions
 			services.AddScoped<IAuthenticationService, AuthenticationService>();
 			services.AddScoped<IAccountManagementService, AccountManagementService>();
 			services.AddScoped<IEmailService, EmailService>();
+			services.AddScoped<IAuthSignInService, AuthSignInService>();
 			services.AddScoped<IFileService, FileService>();
 			services.AddScoped<IHomeService, HomeService>();
 			services.AddScoped<IGeocodingService, GoogleMapsGeocodingService>();
 			services.AddScoped<IHomeItemService, HomeItemService>();
 			services.AddScoped<ICustomerProfileService, CustomerProfileService>();
 			services.AddScoped<ITechnicianProfileService, TechnicianProfileService>();
-            services.AddScoped<ITicketService, TicketService>();
-            services.AddHttpClient("GoogleMaps", client =>
+			services.AddScoped<ITicketService, TicketService>();
+			services.AddHttpClient("GoogleMaps", client =>
 			{
 				client.BaseAddress = new Uri("https://maps.googleapis.com/maps/api/");
 			});
@@ -34,6 +35,8 @@ namespace HSP.Service.Extensions
 			services.AddScoped<ISupplierService, SupplierService>();
 			services.AddScoped<IBookingService, BookingService>();
 			services.AddScoped<ITechnicianLocationService, TechnicianLocationService>();
+			services.AddScoped<IChatbotService, ChatbotService>();
+			services.AddScoped<IChatService, ChatService>();
 			return services;
 		}
 	}

@@ -23,7 +23,7 @@ namespace HSP.Service.Implementations
 			_homeRepository = homeRepository;
 		}
 
-		public async Task<Guid> CreateHomeItemAsync(CreateHomeItemDto input, string userId)
+		public async Task<Guid> CreateHomeItemAsync(CreateHomeItemDto input, Guid userId)
 		{
 			if (input == null)
 			{
@@ -45,18 +45,18 @@ namespace HSP.Service.Implementations
 			await _unitOfWork.SaveChangesAsync();
 			return newHomeItem.Id;
 		}
-		public async Task<bool> DeleteHomeItemAsync(Guid homeItemId, string userId)
+		public async Task<bool> DeleteHomeItemAsync(Guid homeItemId, Guid userId)
 		{
 			var itemToDelete = await GetOwnedHomeItemAsync(homeItemId, userId);
 			await _homeItemRepository.DeleteAsync(homeItemId);
 			await _unitOfWork.SaveChangesAsync();
 			return true;
 		}
-		public async Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input, Guid homeId, string userId)
+		public async Task<PagedList<HomeItemDto>> GetAllHomeItemsAsync(HomeItemInput input, Guid homeId, Guid userId)
 		{
 			var query = _homeItemRepository.GetAll()
 				.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
-				.Where(x => x.HomeId == homeId && x.Home.CustomerProfile.Id.ToString().Equals(userId));
+				.Where(x => x.HomeId == homeId && x.Home.CustomerProfile.Id.Equals(userId));
 
 			var homeItemDto = query.Select(x => new HomeItemDto
 			{
@@ -72,7 +72,7 @@ namespace HSP.Service.Implementations
 			var pageHomeItems = await homeItemDto.ToPagedListAsync(input);
 			return pageHomeItems;
 		}
-		public async Task<HomeItemDto> GetHomeItemByIdAsync(Guid homeItemId, string userId)
+		public async Task<HomeItemDto> GetHomeItemByIdAsync(Guid homeItemId, Guid userId)
 		{
 			var homeItem = await GetOwnedHomeItemAsync(homeItemId, userId);
 			var homeItemDto = new HomeItemDto
@@ -88,7 +88,7 @@ namespace HSP.Service.Implementations
 			};
 			return homeItemDto;
 		}
-		public async Task<bool> UpdateHomeItemAsync(Guid homeItemId, UpdateHomeItemDto input, string userId)
+		public async Task<bool> UpdateHomeItemAsync(Guid homeItemId, UpdateHomeItemDto input, Guid userId)
 		{
 			var homeItem = await GetOwnedHomeItemAsync(homeItemId, userId);
 			homeItem.Name = input.Name;
@@ -101,22 +101,22 @@ namespace HSP.Service.Implementations
 			await _unitOfWork.SaveChangesAsync();
 			return true;
 		}
-		private async Task VerifyHomeOwnershipAsync(Guid homeId, string userId)
+		private async Task VerifyHomeOwnershipAsync(Guid homeId, Guid userId)
 		{
 			var isOwner = await _homeRepository.GetAll()
 					.Include(h => h.CustomerProfile)
-					.AnyAsync(h => h.Id == homeId && h.CustomerProfile.Id.ToString() == userId);
+					.AnyAsync(h => h.Id == homeId && h.CustomerProfile.Id.Equals(userId));
 			if (!isOwner)
 			{
 				throw new UnauthorizedAccessException("User does not have access to these home items.");
 			}
 		}
-		private async Task<HomeItem> GetOwnedHomeItemAsync(Guid itemId, string userId)
+		private async Task<HomeItem> GetOwnedHomeItemAsync(Guid itemId, Guid userId)
 		{
 			var homeItem = await _homeItemRepository.GetAll()
 					.Include(x => x.Home)
 					.ThenInclude(h => h.CustomerProfile)
-					.FirstOrDefaultAsync(i => i.Id == itemId && i.Home.CustomerProfile.Id.ToString() == userId);
+					.FirstOrDefaultAsync(i => i.Id == itemId && i.Home.CustomerProfile.Id.Equals(userId));
 
 			if (homeItem == null)
 			{

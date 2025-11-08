@@ -61,7 +61,6 @@ export default function OperatorTechniciansPage() {
             name: tech.fullName || tech.name,
             email: tech.email,
             phone: tech.phoneNumber || tech.phone,
-            skills: tech.specialties || tech.skills || [],
             experience: tech.yearsOfExperience
               ? `${tech.yearsOfExperience} năm`
               : tech.experience || "Chưa xác định",
@@ -101,10 +100,7 @@ export default function OperatorTechniciansPage() {
         (tech) =>
           tech.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           tech.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tech.phone.includes(searchTerm) ||
-          tech.skills.some((skill) =>
-            skill.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+          tech.phone.includes(searchTerm)
       );
     }
 
@@ -118,29 +114,25 @@ export default function OperatorTechniciansPage() {
   }, [searchTerm, statusFilter, technicians]);
 
   const handleViewDetails = async (technician) => {
-    // Nếu cần thông tin chi tiết hơn, gọi API getTechnicianById
-    try {
-      const response = await technicianApi.getTechnicianById(technician.id);
-      if (response.success) {
-        // Merge dữ liệu từ API với dữ liệu hiện tại
-        const detailedTechnician = {
-          ...technician,
-          ...response.data,
-          name: response.data.fullName || technician.name,
-          phone: response.data.phoneNumber || technician.phone,
-          skills: response.data.specialties || technician.skills,
-        };
-        setTechnicianDetail(detailedTechnician);
-      } else {
-        setTechnicianDetail(technician);
-      }
-    } catch (error) {
-      console.error("Error getting technician details:", error);
-      setTechnicianDetail(technician);
+  // Nếu cần thông tin chi tiết hơn, gọi API getTechnicianById
+  try {
+    const response = await technicianApi.getTechnicianById(technician.id);
+    if (response.success) {
+      // response.data đã là dữ liệu đầy đủ, chứa:
+      // { id, fullName, email, experienceYears, services: [...], certificateFiles: [...] }
+      setTechnicianDetail(response.data); // <-- CHỈ CẦN SET TRỰC TIẾP
+    } else {
+      message.error(response.message || "Không thể tải chi tiết");
+      setTechnicianDetail(technician); // Fallback
     }
-    // Force re-render by setting to false first then true
-    setDetailModalVisible(false);
-    setTimeout(() => setDetailModalVisible(true), 10);
+  } catch (error) {
+    console.error("Error getting technician details:", error);
+    message.error("Lỗi khi tải chi tiết kỹ thuật viên");
+    setTechnicianDetail(technician); // Fallback
+  }
+  // Force re-render by setting to false first then true
+  setDetailModalVisible(false);
+  setTimeout(() => setDetailModalVisible(true), 10);
   };
 
   const handleApprove = (technicianId) => {
@@ -226,23 +218,6 @@ export default function OperatorTechniciansPage() {
       title: "Số điện thoại",
       dataIndex: "phone",
       key: "phone",
-    },
-    {
-      title: "Kỹ năng",
-      dataIndex: "skills",
-      key: "skills",
-      render: (skills) => (
-        <div>
-          {skills?.slice(0, 2).map((skill, index) => (
-            <Tag key={index} color="blue" style={{ marginBottom: 4 }}>
-              {skill}
-            </Tag>
-          ))}
-          {skills?.length > 2 && (
-            <Tag color="default">+{skills.length - 2}</Tag>
-          )}
-        </div>
-      ),
     },
     {
       title: "Trạng thái",
@@ -340,7 +315,7 @@ export default function OperatorTechniciansPage() {
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <Search
-            placeholder="Tìm kiếm theo tên, email, số điện thoại hoặc kỹ năng"
+            placeholder="Tìm kiếm theo tên, email, số điện thoại"
             allowClear
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: 400 }}
@@ -398,114 +373,67 @@ export default function OperatorTechniciansPage() {
       >
         {technicianDetail && (
           <div>
-            <div style={{ marginBottom: 16 }}>
-              <strong>Tên:</strong> {technicianDetail.name}
+            <div className="mb-4">
+              <strong>Tên:</strong> {technicianDetail.fullName}
             </div>
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <strong>Email:</strong> {technicianDetail.email}
             </div>
 
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <strong>Kinh nghiệm:</strong> {technicianDetail.experienceYears}
             </div>
 
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <strong>Ngày tham gia:</strong>{" "}
               {dayjs(technicianDetail.dateCreated).format("DD/MM/YYYY")}
             </div>
 
-            {/* Certificate Files */}
-            {technicianDetail.certificatePaths &&
-              technicianDetail.certificatePaths.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      color: "#1890ff",
-                      marginBottom: 12,
-                      fontWeight: 600,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    🏆 Chứng chỉ
+            {technicianDetail.services &&
+              technicianDetail.services.length > 0 && (
+                <div className="mb-5">
+                  <div className="text-sm mb-3 font-bold flex items-center gap-1.5">
+                    Kỹ năng đăng ký:
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 10,
-                    }}
-                  >
-                    {technicianDetail.certificatePaths.map(
-                      (certPath, index) => {
-                        const fileName =
-                          certPath.split("/").pop() ||
-                          `Certificate ${index + 1}`;
+                  <div className="flex flex-wrap gap-2">
+                    {technicianDetail.services.map((service) => (
+                      <Tag
+                        key={service.id}
+                        color="blue"
+                        className="text-[13px] px-2 py-1" 
+                      >
+                        {service.name}
+                      </Tag>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* Certificate Files */}
+            {technicianDetail.certificateFiles &&
+              technicianDetail.certificateFiles.length > 0 && (
+                <div className="mb-5">
+                  <div className="text-sm mb-3 font-bold flex items-center gap-1.5">
+                    Chứng chỉ
+                  </div>
+                  <div className="flex flex-col gap-2.5">
+                    {technicianDetail.certificateFiles.map(
+                      (file, index) => {
                         return (
                           <div
-                            key={index}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 12,
-                              padding: "12px 16px",
-                              border: "1px solid #e8f4fd",
-                              borderRadius: 8,
-                              backgroundColor: "#f9fcff",
-                              transition: "all 0.3s ease",
-                              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#e8f4fd";
-                              e.currentTarget.style.borderColor = "#1890ff";
-                              e.currentTarget.style.boxShadow =
-                                "0 2px 8px rgba(24,144,255,0.15)";
-                              e.currentTarget.style.transform =
-                                "translateY(-1px)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "#f9fcff";
-                              e.currentTarget.style.borderColor = "#e8f4fd";
-                              e.currentTarget.style.boxShadow =
-                                "0 1px 3px rgba(0,0,0,0.05)";
-                              e.currentTarget.style.transform = "translateY(0)";
-                            }}
+                            key={file.id}
+                            className="flex items-center gap-3 px-4 py-3 border border-sky-100 rounded-lg bg-sky-50 transition-all duration-300 ease-in-out shadow-sm hover:bg-sky-100 hover:border-blue-500 hover:shadow-md hover:-translate-y-px"
                           >
                             <div
-                              style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 8,
-                                background:
-                                  "linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 16,
-                                boxShadow: "0 2px 4px rgba(24,144,255,0.3)",
-                              }}
+                              className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center text-base shadow-md shadow-blue-500/30"
                             >
                               📜
                             </div>
-                            <div style={{ flex: 1 }}>
-                              <div
-                                style={{
-                                  fontSize: 14,
-                                  color: "#333",
-                                  fontWeight: 500,
-                                  marginBottom: 2,
-                                }}
-                              >
-                                {fileName}
+                            <div className="flex-1">
+                              <div className="text-sm text-gray-800 font-medium mb-0.5">
+                                {file.fileName}
                               </div>
-                              <div
-                                style={{
-                                  fontSize: 12,
-                                  color: "#999",
-                                }}
-                              >
+                              <div className="text-xs text-gray-400">
                                 Chứng chỉ #{index + 1}
                               </div>
                             </div>
@@ -513,10 +441,9 @@ export default function OperatorTechniciansPage() {
                               <Button
                                 size="small"
                                 type="text"
-                                icon={<span style={{ fontSize: 14 }}>👁️</span>}
                                 onClick={() => {
                                   const previewUrl =
-                                    adminApi.previewFile(certPath);
+                                    adminApi.previewFile(file.filePath);
                                   window.open(previewUrl, "_blank");
                                 }}
                                 style={{
@@ -533,11 +460,10 @@ export default function OperatorTechniciansPage() {
                               <Button
                                 size="small"
                                 type="primary"
-                                icon={<span style={{ fontSize: 12 }}>⬇️</span>}
                                 onClick={async () => {
                                   try {
                                     const result = await adminApi.downloadFile(
-                                      certPath
+                                      file.filePath
                                     );
                                     if (result.success) {
                                       toast.success("Tải xuống thành công!");
@@ -573,7 +499,7 @@ export default function OperatorTechniciansPage() {
                 </div>
               )}
 
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <strong>Trạng thái: </strong>
               <Tag
                 color={

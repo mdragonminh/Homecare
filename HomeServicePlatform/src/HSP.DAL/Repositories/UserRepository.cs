@@ -1,16 +1,20 @@
 ﻿using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.DAL.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace HSP.DAL.Repositories
 {
 	public class UserRepository : IUserRepository
 	{
 		private readonly UserManager<AppUser> _userManager;
+		private readonly ApplicationDbContext _context;
 
-		public UserRepository(UserManager<AppUser> userManager)
+		public UserRepository(UserManager<AppUser> userManager, ApplicationDbContext context)
 		{
 			_userManager = userManager;
+			_context = context;
 		}
 
 		public async Task<IdentityResult> AddLoginAsync(AppUser user, UserLoginInfo login)
@@ -112,5 +116,72 @@ namespace HSP.DAL.Repositories
 		{
 			return await _userManager.UpdateAsync(user);
 		}
-	}
+
+        public async Task<IEnumerable<AppUser>> GetAllUsersAsync()
+        {
+            return await _userManager.Users.ToListAsync();
+        }
+
+        public async Task<AppUser?> FindByNameAsync(string username)
+        {
+            return await _userManager.FindByNameAsync(username);
+        }
+
+        public async Task<IdentityResult> DeleteAsync(AppUser user)
+        {
+            return await _userManager.DeleteAsync(user);
+        }
+
+        public async Task<IList<AppUser>> GetUsersInRoleAsync(string role)
+        {
+            return await _userManager.GetUsersInRoleAsync(role);
+        }
+
+        public async Task RemoveAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName)
+		{
+			await _userManager.RemoveAuthenticationTokenAsync(user, loginProvider, tokenName);
+		}
+
+		public async Task SetAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName, string tokenValue)
+		{
+			await _userManager.SetAuthenticationTokenAsync(user, loginProvider, tokenName, tokenValue);
+		}
+
+		public async Task<string?> GetAuthenticationTokenAsync(AppUser user, string loginProvider, string tokenName)
+		{
+			return await _userManager.GetAuthenticationTokenAsync(user, loginProvider, tokenName);
+		}
+
+		public async Task<AppUser?> FindByTokenAsync(string tokenValue, string tokenName = "RefreshToken", string loginProvider = "Default")
+		{
+			if (string.IsNullOrWhiteSpace(tokenValue))
+				return null;
+
+			var tokenEntry = await _context.UserTokens
+					.FirstOrDefaultAsync(t =>
+							t.LoginProvider == loginProvider &&
+							t.Name == tokenName &&
+							t.Value == tokenValue);
+
+			if (tokenEntry == null)
+				return null;
+
+			return await _userManager.FindByIdAsync(tokenEntry.UserId.ToString());
+		}
+
+        public IQueryable<AppUser> GetUsersAsQueryable()
+        {
+            return _userManager.Users;
+        }
+
+        public async Task<string> GenerateChangeEmailTokenAsync(AppUser user, string newEmail)
+        {
+            return await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+        }
+
+        public async Task<IdentityResult> ChangeEmailAsync(AppUser user, string newEmail, string token)
+        {
+            return await _userManager.ChangeEmailAsync(user, newEmail, token);
+        }
+    }
 }

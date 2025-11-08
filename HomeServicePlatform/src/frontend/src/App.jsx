@@ -2,23 +2,29 @@ import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 import { authApi } from "./services/authApi";
-import { Toaster, toast } from "sonner"; 
+import { Toaster, toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { LoadScript } from "@react-google-maps/api";
+import { loadGoogleMapsAPI } from "./utils/googleMapsLoader";
 
-import ChangePasswordModal from "./components/ChangePasswordModal"; 
+import ChangePasswordModal from "./components/ChangePasswordModal";
 
-const defaultLibraries = ["places"];
 export default function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [showLoginToast, setShowLoginToast] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-
   const [isForceModalVisible, setIsForceModalVisible] = useState(false);
 
   const { t } = useTranslation();
-  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+  useEffect(() => {
+    loadGoogleMapsAPI()
+      .then(() => {
+        console.log(" Google Maps API loaded successfully");
+      })
+      .catch((error) => {
+        console.error(" Error loading Google Maps API:", error);
+      });
+  }, []);
 
   const updateLoggedInUserFromStorage = useCallback(() => {
     const jwtToken = localStorage.getItem("jwtToken");
@@ -26,7 +32,7 @@ export default function App() {
     const email = localStorage.getItem("email");
     const name = localStorage.getItem("name");
     const role = localStorage.getItem("role");
-    
+
     const requirePasswordSetup =
       localStorage.getItem("requirePasswordSetup") === "true";
     const mustChangePasswordOnLogin =
@@ -39,17 +45,16 @@ export default function App() {
         jwtToken,
         name: name || "",
         role: role || "",
-        requirePasswordSetup, 
+        requirePasswordSetup,
         mustChangePasswordOnLogin,
       });
 
       if (mustChangePasswordOnLogin) {
         setIsForceModalVisible(true);
       }
-
     } else {
       setLoggedInUser(null);
-      setIsForceModalVisible(false); 
+      setIsForceModalVisible(false);
     }
     setIsInitialized(true);
   }, []);
@@ -65,6 +70,10 @@ export default function App() {
     const token = data.jwtToken || data.token;
     if (token) {
       localStorage.setItem("jwtToken", token);
+      if (data.refreshToken) {
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
+
       localStorage.setItem("userId", data.userId);
       localStorage.setItem("email", data.email);
       localStorage.setItem("name", data.name || "");
@@ -88,6 +97,7 @@ export default function App() {
           requirePasswordSetup: data.requirePasswordSetup,
           mustChangePasswordOnLogin: data.mustChangePasswordOnLogin,
         });
+
         setShowLoginToast(true);
 
         if (data.mustChangePasswordOnLogin) {
@@ -97,8 +107,23 @@ export default function App() {
     }
   }, []);
 
+  const handleProfileUpdate = useCallback((updatedProfileData) => {
+    if (updatedProfileData && updatedProfileData.fullName) {
+      
+      localStorage.setItem("name", updatedProfileData.fullName);
+
+      setLoggedInUser(prevUser => {
+          if (!prevUser) return null; 
+          return {
+              ...prevUser,
+              name: updatedProfileData.fullName, 
+          };
+      });
+    }
+  }, []);
+
   const handleLogout = useCallback(() => {
-    authApi.logout(); 
+    authApi.logout();
     setLoggedInUser(null);
     setIsForceModalVisible(false);
     toast.info(t("toast.logout_success") || "Đăng xuất thành công 👋", {
@@ -108,15 +133,18 @@ export default function App() {
 
   const handlePasswordSetSuccess = useCallback(() => {
     localStorage.setItem("requirePasswordSetup", "false");
-    localStorage.setItem("mustChangePasswordOnLogin", "false"); 
-    
-    setIsForceModalVisible(false);
+    localStorage.setItem("mustChangePasswordOnLogin", "false");
 
-    updateLoggedInUserFromStorage(); 
+    setIsForceModalVisible(false);
+    updateLoggedInUserFromStorage();
     setShowLoginToast(false);
   }, [updateLoggedInUserFromStorage]);
 
-  const handleForceSubmit = async (currentPassword, newPassword, confirmNewPassword) => {
+  const handleForceSubmit = async (
+    currentPassword,
+    newPassword,
+    confirmNewPassword
+  ) => {
     const result = await authApi.changePassword({
       currentPassword,
       newPassword,
@@ -137,13 +165,13 @@ export default function App() {
   useEffect(() => {
     if (isForceModalVisible) {
       toast.warning("Yêu cầu đổi mật khẩu", {
-        description: "Vì lý do bảo mật, bạn cần đổi mật khẩu trước khi tiếp tục.",
-        duration: 10000, 
+        description:
+          "Vì lý do bảo mật, bạn cần đổi mật khẩu trước khi tiếp tục.",
+        duration: 10000,
         dismissible: false,
       });
     }
   }, [isForceModalVisible]);
-
 
   useEffect(() => {
     if (showLoginToast) {
@@ -155,33 +183,31 @@ export default function App() {
     }
   }, [showLoginToast, t]);
 
-
   return (
     <BrowserRouter>
-     <LoadScript googleMapsApiKey={googleMapsApiKey} libraries={defaultLibraries}>
-        <div className="min-h-screen flex flex-col">
-          {isInitialized ? (
-            <AppRoutes
-              loggedInUser={loggedInUser}
-              onLoginSuccess={handleLoginSuccess}
-              onLogout={handleLogout}
-              onPasswordSetSuccess={handlePasswordSetSuccess}
-            />
-          ) : (
-            <div className="flex justify-center items-center h-screen">
-              <span className="loading loading-spinner loading-lg"></span>
-            </div>
-          )}
-        </div>
-        <Toaster position="top-right" richColors duration={500} />
+      <div className="min-h-screen flex flex-col">
+        {isInitialized ? (
+          <AppRoutes
+            loggedInUser={loggedInUser}
+            onLoginSuccess={handleLoginSuccess}
+            onLogout={handleLogout}
+            onPasswordSetSuccess={handlePasswordSetSuccess}
+            onProfileUpdate={handleProfileUpdate}
+          />
+        ) : (
+          <div className="flex justify-center items-center h-screen">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        )}
+      </div>
+      <Toaster position="top-right" richColors duration={1000} />
 
-        <ChangePasswordModal
-          isOpen={isForceModalVisible}
-          onClose={() => {}} 
-          onSubmit={handleForceSubmit}
-          isCancellable={false} 
-        />
-      </LoadScript>
+      <ChangePasswordModal
+        isOpen={isForceModalVisible}
+        onClose={() => {}}
+        onSubmit={handleForceSubmit}
+        isCancellable={false}
+      />
     </BrowserRouter>
   );
 }

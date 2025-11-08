@@ -2,6 +2,7 @@
 using HSP.Core.Dtos.WarehouseDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.DAL.Interfaces;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,18 +31,23 @@ namespace HSP.Service.Implementations
         {
             var query = _equipmentRepository.GetAll(e => e.Warehouse, e => e.Supplier);
 
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-            {
-                query = query.Where(e => e.Name.Contains(searchTerm) ||
-                                        (e.EquipmentCode != null && e.EquipmentCode.Contains(searchTerm)));
-            }
+			if (!string.IsNullOrWhiteSpace(searchTerm))
+			{
+				query = query.Where(e => e.Name.Contains(searchTerm) ||
+																(e.EquipmentCode != null && e.EquipmentCode.Contains(searchTerm)));
+			}
 
-            if (warehouseId.HasValue)
-            {
-                query = query.Where(e => e.WarehouseId == warehouseId.Value);
-            }
+			if (warehouseId.HasValue)
+			{
+				query = query.Where(e => e.WarehouseId == warehouseId.Value);
+			}
 
-            var totalCount = await query.CountAsync();
+			var paginationParams = new PaginationParams
+			{
+				PageNumber = page,
+				PageSize = pageSize,
+				OrderBy = "DateCreated descending"
+			};
 
             var equipments = await query
                 .Skip((page - 1) * pageSize)
@@ -62,16 +68,16 @@ namespace HSP.Service.Implementations
                 })
                 .ToListAsync();
 
-            return new PagedList<EquipmentListDto>(equipments, totalCount, page, pageSize);
-        }
+			return await dtoQuery.ToPagedListAsync(paginationParams);
+		}
 
         public async Task<EquipmentDto?> GetEquipmentByIdAsync(Guid id)
         {
             var equipment = await _equipmentRepository.GetAll(e => e.Warehouse, e => e.Supplier)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
-            if (equipment == null)
-                return null;
+			if (equipment == null)
+				return null;
 
             return new EquipmentDto
             {
@@ -139,8 +145,8 @@ namespace HSP.Service.Implementations
                 IsActive = input.IsActive
             };
 
-            await _equipmentRepository.AddAsync(equipment);
-            await _unitOfWork.SaveChangesAsync();
+			await _equipmentRepository.AddAsync(equipment);
+			await _unitOfWork.SaveChangesAsync();
 
             var warehouse = await _warehouseRepository.GetByIdAsync(input.WarehouseId);
             var supplier = input.SupplierId.HasValue ? await _supplierRepository.GetByIdAsync(input.SupplierId.Value) : null;
@@ -168,13 +174,13 @@ namespace HSP.Service.Implementations
             };
         }
 
-        public async Task<EquipmentDto> UpdateEquipmentAsync(Guid id, UpdateEquipmentDto input, Guid modifiedBy)
-        {
-            var equipment = await _equipmentRepository.GetByIdAsync(id);
-            if (equipment == null)
-            {
-                throw new ArgumentException("Equipment not found");
-            }
+		public async Task<EquipmentDto> UpdateEquipmentAsync(Guid id, UpdateEquipmentDto input, Guid modifiedBy)
+		{
+			var equipment = await _equipmentRepository.GetByIdAsync(id);
+			if (equipment == null)
+			{
+				throw new ArgumentException("Equipment not found");
+			}
 
             if (!await _warehouseRepository.AnyAsync(w => w.Id == input.WarehouseId))
             {
@@ -210,8 +216,8 @@ namespace HSP.Service.Implementations
             equipment.SupplierId = input.SupplierId;
             equipment.IsActive = input.IsActive;
 
-            _equipmentRepository.Update(equipment);
-            await _unitOfWork.SaveChangesAsync();
+			_equipmentRepository.Update(equipment);
+			await _unitOfWork.SaveChangesAsync();
 
             var warehouse = await _warehouseRepository.GetByIdAsync(input.WarehouseId);
             var supplier = input.SupplierId.HasValue ? await _supplierRepository.GetByIdAsync(input.SupplierId.Value) : null;
@@ -239,33 +245,33 @@ namespace HSP.Service.Implementations
             };
         }
 
-        public async Task<bool> DeleteEquipmentAsync(Guid id)
-        {
-            var equipment = await _equipmentRepository.GetByIdAsync(id);
-            if (equipment == null)
-                return false;
+		public async Task<bool> DeleteEquipmentAsync(Guid id)
+		{
+			var equipment = await _equipmentRepository.GetByIdAsync(id);
+			if (equipment == null)
+				return false;
 
-            _equipmentRepository.SoftDelete(equipment);
-            await _unitOfWork.SaveChangesAsync();
-            return true;
-        }
+			_equipmentRepository.SoftDelete(equipment);
+			await _unitOfWork.SaveChangesAsync();
+			return true;
+		}
 
         public async Task<EquipmentDto> UpdateEquipmentQuantityAsync(Guid id, UpdateEquipmentQuantityDto input, Guid modifiedBy)
         {
             var equipment = await _equipmentRepository.GetAll(e => e.Warehouse, e => e.Supplier)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
-            if (equipment == null)
-            {
-                throw new ArgumentException("Equipment not found");
-            }
+			if (equipment == null)
+			{
+				throw new ArgumentException("Equipment not found");
+			}
 
-            equipment.Quantity = input.Quantity;
-            equipment.DateModified = DateTime.UtcNow;
-            equipment.ModifiedBy = modifiedBy;
+			equipment.Quantity = input.Quantity;
+			equipment.DateModified = DateTime.UtcNow;
+			equipment.ModifiedBy = modifiedBy;
 
-            _equipmentRepository.Update(equipment);
-            await _unitOfWork.SaveChangesAsync();
+			_equipmentRepository.Update(equipment);
+			await _unitOfWork.SaveChangesAsync();
 
             return new EquipmentDto
             {
@@ -311,22 +317,22 @@ namespace HSP.Service.Implementations
                 .ToListAsync();
         }
 
-        public async Task<bool> EquipmentExistsAsync(Guid id)
-        {
-            return await _equipmentRepository.AnyAsync(e => e.Id == id);
-        }
+		public async Task<bool> EquipmentExistsAsync(Guid id)
+		{
+			return await _equipmentRepository.AnyAsync(e => e.Id == id);
+		}
 
-        public async Task<bool> IsEquipmentCodeUniqueAsync(string? code, Guid? excludeId = null)
-        {
-            if (string.IsNullOrWhiteSpace(code))
-                return true;
+		public async Task<bool> IsEquipmentCodeUniqueAsync(string? code, Guid? excludeId = null)
+		{
+			if (string.IsNullOrWhiteSpace(code))
+				return true;
 
-            var query = _equipmentRepository.GetAll().Where(e => e.EquipmentCode == code);
+			var query = _equipmentRepository.GetAll().Where(e => e.EquipmentCode == code);
 
-            if (excludeId.HasValue)
-            {
-                query = query.Where(e => e.Id != excludeId.Value);
-            }
+			if (excludeId.HasValue)
+			{
+				query = query.Where(e => e.Id != excludeId.Value);
+			}
 
             return !await query.AnyAsync();
         }

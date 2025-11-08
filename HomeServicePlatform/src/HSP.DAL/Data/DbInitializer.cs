@@ -2,6 +2,7 @@
 using HSP.Core.Entities;
 using HSP.DAL.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace HSP.DAL.Data
 {
@@ -9,9 +10,14 @@ namespace HSP.DAL.Data
 	{
 		private readonly RoleManager<AppRole> _roleManager;
 		private readonly UserManager<AppUser> _userManager;
+		private readonly ApplicationDbContext _context;
 
-		public DbInitializer(RoleManager<AppRole> roleManager, UserManager<AppUser> userManager)
+		public DbInitializer(
+			 ApplicationDbContext context,
+			 RoleManager<AppRole> roleManager,
+			 UserManager<AppUser> userManager)
 		{
+			_context = context;
 			_roleManager = roleManager;
 			_userManager = userManager;
 		}
@@ -53,6 +59,26 @@ namespace HSP.DAL.Data
 				{
 					await _userManager.AddToRoleAsync(user, RoleNames.Admin);
 				}
+			}
+			if (!await _context.ObjectTypes.AnyAsync())
+			{
+				var objectTypes = new List<ObjectType>{
+					new ObjectType
+					{
+						Id = Guid.NewGuid(),
+						Name = RoleNames.Technician,
+						Description = "Hồ sơ kỹ thuật viên"
+					},
+					new ObjectType
+					{
+						Id = Guid.NewGuid(),
+						Name = RoleNames.Customer,
+						Description = "Avatar khách hàng"
+					}
+				};
+
+				await _context.ObjectTypes.AddRangeAsync(objectTypes);
+				await _context.SaveChangesAsync();
 			}
 		}
 	}

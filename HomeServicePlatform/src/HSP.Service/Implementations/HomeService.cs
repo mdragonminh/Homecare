@@ -49,11 +49,10 @@ namespace HSP.Service.Implementations
 			return newHome.Id;
 		}
 
-		public async Task<bool> DeleteHomeAsynce(Guid homeId, string userId)
+		public async Task<bool> DeleteHomeAsynce(Guid homeId, Guid userId)
 		{
 			var home = await _homeRepository.GetAll()
-				.Include(x => x.CustomerProfile)
-				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.Id.ToString().Equals(userId));
+				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerId.Equals(userId));
 			if (home == null)
 			{
 				throw new ValidationException("Home not found or you do not have permission to delete this home.");
@@ -63,12 +62,12 @@ namespace HSP.Service.Implementations
 			return true;
 		}
 
-		public async Task<PagedList<HomeDto>> GetAllHomesAsync(HomeInput input, string userId)
+		public async Task<PagedList<HomeDto>> GetAllHomesAsync(HomeInput input, Guid userId)
 		{
 			var query = _homeRepository.GetAll()
 				.Include(x => x.CustomerProfile)
 			.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
-			.Where(x => x.CustomerProfile.Id.ToString().Equals(userId));
+			.Where(x => x.CustomerProfile.Id.Equals(userId));
 			var homeDtos = query.Select(x => new HomeDto
 			{
 				Id = x.Id,
@@ -82,11 +81,11 @@ namespace HSP.Service.Implementations
 			return pagedHomes;
 		}
 
-		public async Task<HomeDto> GetHomeByIdAsync(Guid homeId, string userId)
+		public async Task<HomeDto> GetHomeByIdAsync(Guid homeId, Guid userId)
 		{
 			var query = await _homeRepository.GetAll()
 				.Include(x => x.CustomerProfile)
-				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.Id.ToString().Equals(userId));
+				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.Id.Equals(userId));
 			if (query == null)
 			{
 				throw new ValidationException("Home not found or you do not have permission to view this home.");
@@ -103,7 +102,7 @@ namespace HSP.Service.Implementations
 			return homeDto;
 		}
 
-		public async Task<bool> UpdateHomeAsync(Guid homeId, UpdateHomeDto input, string userId)
+		public async Task<bool> UpdateHomeAsync(Guid homeId, UpdateHomeDto input, Guid userId)
 		{
 			if (input == null)
 			{
@@ -111,7 +110,7 @@ namespace HSP.Service.Implementations
 			}
 			var homeToUpdate = await _homeRepository.GetAll()
 				.Include(x => x.CustomerProfile)
-				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.Id.ToString().Equals(userId));
+				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.Id.Equals(userId));
 			if (homeToUpdate == null)
 			{
 				throw new ValidationException("Home not found or you do not have permission to delete this home.");

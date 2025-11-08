@@ -1,14 +1,17 @@
 ﻿using HSP.Core.Dtos.ServiceDto;
+using HSP.Core.Dtos.Shared;
 
 namespace HSP.Service.Interfaces
 {
 	public interface IHomeServiceService
 	{
-		//Task<IEnumerable<ServiceGroupDto>> GetAllServicesAsync(HomeServiceInput input);
+		Task<Guid> CreateHomeServiceAsync(Guid userId, CreateHomeServiceDto input);
+		Task<PagedList<AdminHomeServiceDto>> GetAllAsync(HomeServiceInput input);
+		Task<AdminHomeServiceDto> GetHomeServiceByIdAsync(Guid id);
+		Task<bool> UpdateHomeServiceAsync(Guid userId, Guid id, UpdateHomeServiceDto input);
+		Task<bool> DeleteHomeServiceAsync(Guid userId, Guid id);
+		#region Home Page
 		Task<IEnumerable<HomeServiceDto>> GetAllServiceHomePageAsync();
-
-		#region service category
-		//Task<IEnumerable<ServiceCategoryDto>> GetAllServicesCategoryAsync();
 		#endregion
 	}
 }

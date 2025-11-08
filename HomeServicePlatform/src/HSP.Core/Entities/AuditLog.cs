@@ -1,4 +1,5 @@
-﻿using HSP.Core.Interfaces.Entity;
+﻿using HSP.Core.Abstractions.Entity;
+using HSP.Core.Interfaces.Entity;
 using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Core.Entities
@@ -33,6 +34,6 @@ namespace HSP.Core.Entities
 		public string? UserAgent { get; set; }
 		public DateTime DateCreated { get; set; }
 		public DateTime DateModified { get; set; }
-		public virtual AppUser? User { get; set; }
+		public AppUser? User { get; set; }
 	}
 }

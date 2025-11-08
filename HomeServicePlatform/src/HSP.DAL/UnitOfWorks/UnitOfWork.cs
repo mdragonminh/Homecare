@@ -1,6 +1,5 @@
 ﻿using HSP.Core.Interfaces.DataAccess;
 using HSP.DAL.Data;
-using HSP.DAL.Repositories;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace HSP.DAL.UnitOfWorks
@@ -47,7 +46,7 @@ namespace HSP.DAL.UnitOfWorks
 				if (_currentTransaction != null)
 				{
 					await _currentTransaction.DisposeAsync();
-					_currentTransaction = null; 
+					_currentTransaction = null;
 				}
 			}
 		}

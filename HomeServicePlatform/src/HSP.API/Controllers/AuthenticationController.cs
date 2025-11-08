@@ -1,19 +1,18 @@
-﻿using HSP.Core.Constans;
+﻿using HSP.API.Extensions;
+using HSP.Core.Constans;
 using HSP.Core.Dtos.AuthenticationDto;
 using HSP.Core.Dtos.ConfigurationDto;
-using HSP.Core.Entities;
 using HSP.Core.Interfaces.External;
 using HSP.Service.Dtos.AuthenticationDto;
-using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Razor.Templating.Core;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 namespace HSP.API.Controllers
 {
@@ -22,22 +21,22 @@ namespace HSP.API.Controllers
 	public class AuthenticationController : ControllerBase
 	{
 		private readonly IAuthenticationService _authenticationService;
-		private readonly IEmailService _emailService;
-		private readonly IFileService _fileService;
 		private readonly UrlSettingsDto _urlSettings;
-		private readonly SignInManager<AppUser> _signInManager;
+		private readonly IAuthSignInService _signInService;
+		private readonly IJwtService _jwtService;
+		private readonly IRedisCacheService _redisCacheService;
 
-		public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService,
-			IFileService fileService,
+		public AuthenticationController(IAuthenticationService authenticationService,
 			IOptions<UrlSettingsDto> urlOptions,
-			IOptions<UrlSettingsDto> urlSetting,
-			SignInManager<AppUser> signInManager)
+			IJwtService jwtService,
+			IRedisCacheService redisCacheService,
+			IAuthSignInService signInService)
 		{
 			_authenticationService = authenticationService;
-			_emailService = emailService;
-			_fileService = fileService;
 			_urlSettings = urlOptions.Value;
-			_signInManager = signInManager;
+			_jwtService = jwtService;
+			_redisCacheService = redisCacheService;
+			_signInService = signInService;
 		}
 
 		[HttpPost("register")]
@@ -62,51 +61,10 @@ namespace HSP.API.Controllers
 				return BadRequest(new { message = "An error occurred" });
 			}
 		}
-		[HttpPost("upload-certificates")]
-		[AllowAnonymous]
-		public async Task<IActionResult> UploadCertificates([FromForm] IList<IFormFile> certificates)
-		{
-			try
-			{
-				if (certificates == null || !certificates.Any())
-				{
-					return BadRequest(new { message = "No certificates provided" });
-				}
-
-				var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
-				var maxFileSize = 5 * 1024 * 1024; // 5MB
-
-				// Validate files
-				foreach (var file in certificates)
-				{
-					if (!_fileService.ValidateFileType(file, allowedExtensions))
-					{
-						return BadRequest(new { message = $"File type not allowed: {file.FileName}" });
-					}
-					if (!_fileService.ValidateFileSize(file, maxFileSize))
-					{
-						return BadRequest(new { message = $"File size too large: {file.FileName}" });
-					}
-				}
-
-				// Upload files
-				var uploadedPaths = await _fileService.UploadMultipleFilesAsync(certificates, "certificates");
-
-				return Ok(new
-				{
-					message = "Certificates uploaded successfully",
-					filePaths = uploadedPaths
-				});
-			}
-			catch (Exception ex)
-			{
-				return StatusCode(500, new { message = "An error occurred while uploading certificates", details = ex.Message });
-			}
-		}
 
 		[HttpPost("register-technician")]
 		[AllowAnonymous]
-		public async Task<IActionResult> RegisterTechnician([FromBody] RegisterTechnicianRequestDto input)
+		public async Task<IActionResult> RegisterTechnician([FromForm] RegisterTechnicianRequestDto input)
 		{
 			if (!ModelState.IsValid)
 			{
@@ -115,8 +73,7 @@ namespace HSP.API.Controllers
 			try
 			{
 				var result = await _authenticationService.RegisterTechnician(input);
-				await SendConfirmationEmailAsync(result, input.FullName);
-				return Ok(new { message = "Please check your email to confirm your registration." });
+				return Ok("Đăng ký thành công!");
 			}
 			catch (ValidationException ex)
 			{
@@ -127,26 +84,42 @@ namespace HSP.API.Controllers
 				return BadRequest(new { message = "An error occurred" });
 			}
 		}
-		private async Task SendConfirmationEmailAsync(RegisterResponseDto result, string fullName)
+		[HttpPost("refresh-token")]
+		public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto input)
 		{
-			var tokenBytes = Encoding.UTF8.GetBytes(result.EmailConfirmToken);
-			var base64Token = Convert.ToBase64String(tokenBytes);
-			var baseUrl = _urlSettings.BaseUrl;
-			var confirmUrl = $"{baseUrl}/api/Authentication/confirm-email?userId={result.UserId}&token={base64Token}";
-
-			var emailDto = new EmailDto
+			if (!ModelState.IsValid)
 			{
-				ToEmail = result.Email,
-				Subject = "Please confirm your email",
-				HtmlBody = $"""
-			<p>Hello {fullName},</p>
-			<p>Click the link to confirm your email:</p>
-			<p><a href="{confirmUrl}">Confirm Email</a></p>
-		""",
-				TextBody = $"Hello {fullName},\nClick the link to confirm your email: {confirmUrl}"
-			};
+				return BadRequest();
+			}
+			try
+			{
+				var result = await _jwtService.RefreshTokenAsync(input.RefreshToken);
+				return Ok(result);
+			}
+			catch (UnauthorizedAccessException ex)
+			{
+				return Unauthorized(new { message = ex.Message });
+			}
+			catch (Exception)
+			{
+				return StatusCode(500, new { message = "An internal server error occurred." });
+			}
+		}
 
-			await _emailService.SendEmailAsync(emailDto);
+		[Authorize]
+		[HttpPost("logout")]
+		public async Task<IActionResult> Logout()
+		{
+			try
+			{
+				var userId = User.GetUserId();
+				await _jwtService.RevokeRefreshTokenAsync(userId);
+				return Ok(new { message = "Logout successful." });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, new { message = "Logout failed", detail = ex.Message });
+			}
 		}
 
 		[HttpPost("login")]
@@ -177,10 +150,14 @@ namespace HSP.API.Controllers
 		}
 		[HttpGet("google-login")]
 		[AllowAnonymous]
-		public IActionResult GoogleLogin()
+		public async Task<IActionResult> GoogleLogin()
 		{
 			var redirectUrl = Url.Action(nameof(GoogleCallback), "Authentication");
-			var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
+			if (redirectUrl == null)
+			{
+				return Problem("Failed to generate redirect url: " + StatusCode(500));
+			}
+			var properties = _signInService.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
 			return new ChallengeResult("Google", properties);
 		}
 
@@ -189,11 +166,28 @@ namespace HSP.API.Controllers
 		public async Task<IActionResult> GoogleCallback()
 		{
 			var loginResponse = await _authenticationService.GoogleLogin();
-			var frontendSuccessUrl = _urlSettings.FrontendLoginSuccess;
-			var redirectUrl = $"{frontendSuccessUrl}?token={loginResponse.JwtToken}&requirePasswordSetup={loginResponse.RequirePasswordSetup}";
+			var code = Guid.NewGuid().ToString("N");
+			await _redisCacheService.SetAsync($"auth:{code}",
+				JsonSerializer.Serialize(loginResponse),
+				TimeSpan.FromMinutes(3));
+			var redirectUrl = $"{_urlSettings.FrontendLoginSuccess}?code={code}";
 			return Redirect(redirectUrl);
 		}
+		[HttpGet("exchange-token")]
+		[AllowAnonymous]
+		public async Task<IActionResult> ExchangeToken([FromQuery] string code)
+		{
+			var data = await _redisCacheService.GetAsync<string>($"auth:{code}");
 
+			if (string.IsNullOrEmpty(data))
+				return Unauthorized("Code invalid or expired");
+
+			var token = JsonSerializer.Deserialize<LoginResponseDto>(data);
+
+			await _redisCacheService.RemoveAsync($"auth:{code}");
+
+			return Ok(token);
+		}
 
 		[HttpGet("confirm-email")]
 		[AllowAnonymous]
@@ -239,13 +233,7 @@ namespace HSP.API.Controllers
 
 			try
 			{
-				// Lấy user ID từ JWT token
-				var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-				if (!Guid.TryParse(userIdClaim, out var userId))
-				{
-					return Unauthorized(new { message = "Invalid user token" });
-				}
-
+				var userId = User.GetUserId();
 				var result = await _authenticationService.ChangePassword(userId, input);
 				return Ok(result);
 			}
@@ -266,11 +254,7 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest();
 			}
-			var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-			if (userIdString == null || !Guid.TryParse(userIdString, out var userId))
-			{
-				return Unauthorized();
-			}
+			var userId = User.GetUserId();
 			try
 			{
 				var result = await _authenticationService.AddPasswordAsync(userId, input);

@@ -1,4 +1,4 @@
-﻿namespace HSP.Core.Entities
+﻿namespace HSP.Core.Abstractions.Entity
 {
 	public abstract class BaseEntity<T>
 	{

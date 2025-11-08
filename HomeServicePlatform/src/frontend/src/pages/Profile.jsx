@@ -22,7 +22,7 @@ import DeleteAvatarModal from "../components/DeleteAvatarModal";
 import { Footer } from "../components/Footer";
 import { profileApi } from "../services/profileApi";
 
-const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
+const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister, onProfileUpdate }) => {
   const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,38 +70,42 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
     [t]
   );
 
-  // Hàm validate Email
-  const validateEmail = useCallback(
-    (value) => {
-      if (!value || value.trim() === "") {
-        return t("ui.validation.email.required");
-      }
+// Hàm validate Email
+const validateEmail = useCallback(
+  (value) => {
+    if (!value || value.trim() === "") {
+      return t("ui.validation.email.required");
+    }
 
-      // Kiểm tra có bất kỳ khoảng trắng nào không
-      if (/\s/.test(value)) {
-        return t("ui.validation.email.no_spaces");
-      }
+    // Kiểm tra có bất kỳ khoảng trắng nào trong toàn bộ chuỗi (kể cả đầu, giữa, cuối)
+    if (/\s/.test(value)) {
+      return t("ui.validation.email.no_spaces");
+    }
 
-      // Kiểm tra định dạng email với regex chặt chẽ
-      // ^ : bắt đầu chuỗi
-      // [a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+ : phần tên email (không cho phép khoảng trắng)
-      // @ : ký tự @
-      // [a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])? : tên miền phụ (nếu có)
-      // (?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+ : tên miền chính và đuôi
-      // $ : kết thúc chuỗi
-      const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+    // Kiểm tra định dạng email với regex chặt chẽ
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
 
-      if (!emailRegex.test(value)) {
-        return t("ui.validation.email.invalid_format");
-      }
+    if (!emailRegex.test(value)) {
+      return t("ui.validation.email.invalid_format");
+    }
 
-      if (value.length > 100) {
-        return t("ui.validation.email.max_length");
-      }
-      return "";
-    },
-    [t]
-  );
+if ((value.match(/@/g) || []).length !== 1) {
+  return t("ui.validation.email.single_at_required");
+}
+
+const domainParts = value.split('@')[1];
+if ((domainParts.match(/\./g) || []).length < 1) {
+  return t("ui.validation.email.dot_required");
+}
+
+    if (value.length > 100) {
+      return t("ui.validation.email.max_length");
+    }
+
+    return "";
+  },
+  [t]
+);
 
   // Hàm validate Phone Number
   const validatePhoneNumber = useCallback(
@@ -309,14 +313,20 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
           throw new Error(updateResult.message);
         }
 
-        setProfile((prev) => ({
-          ...prev,
+      const updatedProfileData = {
+          ...profile,
           fullName: editForm.fullName,
           phoneNumber: editForm.phoneNumber,
-        }));
+        };
+        
+        setProfile(updatedProfileData);
 
-        setEditingField(null);
-        toast.success(t("success.profile_updated"));
+        if (onProfileUpdate) {
+          onProfileUpdate(updatedProfileData); 
+        }
+
+      setEditingField(null);
+      toast.success(t("success.profile_updated"));
       } else if (fieldToUpdate === "email") {
         if (editForm.email !== profile.email) {
           const emailResult = await profileApi.requestEmailChange(
@@ -562,7 +572,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                             accept="image/jpeg,image/jpg,image/png,image/gif"
                             onChange={handleAvatarFileChange}
                             className="hidden"
-                            disabled={uploadingAvatar}
+                            disabled
                           />
                           <Camera className="w-5 h-5 text-white hover:text-blue-300 transition-colors duration-200" />
                         </label>
@@ -736,12 +746,18 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                             )}
                           </div>
                         ) : (
-                          <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                            <p className="text-gray-900">
+                          <div
+                            className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 cursor-pointer group"
+                            onClick={() => handleEditField("fullName")}
+                          >
+                            <p className="text-gray-900 group-hover:text-blue-600">
                               {profile.fullName || t("ui.not_updated")}
                             </p>
                             <button
-                              onClick={() => handleEditField("fullName")}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditField("fullName");
+                              }}
                               className="text-blue-600 hover:text-blue-700"
                             >
                               <Edit className="w-4 h-4" />
@@ -788,12 +804,18 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                             )}
                           </div>
                         ) : (
-                          <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                            <p className="text-gray-900">
+                          <div
+                            className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 cursor-pointer group"
+                            onClick={() => handleEditField("email")}
+                          >
+                            <p className="text-gray-900 group-hover:text-blue-600">
                               {profile.email || t("ui.not_updated")}
                             </p>
                             <button
-                              onClick={() => handleEditField("email")}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditField("email");
+                              }}
                               className="text-blue-600 hover:text-blue-700"
                             >
                               <Edit className="w-4 h-4" />
@@ -832,12 +854,18 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister }) => {
                             )}
                           </div>
                         ) : (
-                          <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                            <p className="text-gray-900">
+                          <div
+                            className="flex items-center justify-between px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 cursor-pointer group"
+                            onClick={() => handleEditField("phoneNumber")}
+                          >
+                            <p className="text-gray-900 group-hover:text-blue-600">
                               {profile.phoneNumber || t("ui.not_updated")}
                             </p>
                             <button
-                              onClick={() => handleEditField("phoneNumber")}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditField("phoneNumber");
+                              }}
                               className="text-blue-600 hover:text-blue-700"
                             >
                               <Edit className="w-4 h-4" />

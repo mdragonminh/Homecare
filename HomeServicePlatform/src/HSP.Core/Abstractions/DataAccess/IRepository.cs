@@ -1,4 +1,4 @@
-﻿using HSP.Core.Entities;
+﻿using HSP.Core.Abstractions.Entity;
 using System.Linq.Expressions;
 
 namespace HSP.Core.Interfaces.DataAccess
@@ -11,6 +11,7 @@ namespace HSP.Core.Interfaces.DataAccess
 		void Update(T entity);
 		void SoftDelete(T entity);
 		void HardDelete(T entity);
+		Task RemoveRange(IEnumerable<T> entities);
 		Task DeleteAsync(K id);
 		Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
 		Task AddRangeAsync(IEnumerable<T> entities);

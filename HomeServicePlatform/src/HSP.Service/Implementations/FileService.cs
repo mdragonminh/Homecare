@@ -1,151 +1,184 @@
+﻿using HSP.Core.Constants;
+using HSP.Core.Dtos.FileDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
-using HSP.DAL.Interfaces;
+using HSP.Core.Resources;
 using HSP.Service.Interfaces;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Hosting;
-using System.IO;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 
 namespace HSP.Service.Implementations
 {
-    public class FileService : IFileService
-    {
-        private readonly IRepository<HSP.Core.Entities.File, Guid> _fileRepository;
-        private readonly IRepository<FileRelation, Guid> _fileRelationRepository;
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IHostEnvironment _environment;
-        private readonly string[] _allowedImageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
-        private readonly string[] _allowedDocumentExtensions = { ".pdf", ".doc", ".docx", ".txt" };
-        private readonly long _maxFileSize = 10 * 1024 * 1024; // 10MB
+	public class FileService : BaseService, IFileService
+	{
+		private readonly IRepository<HSP.Core.Entities.File, Guid> _fileRepository;
+		private readonly IRepository<FileRelation, Guid> _fileRelationRepository;
+		private readonly IRepository<ObjectType, Guid> _objectTypeRepository;
+		private readonly IWebHostEnvironment _environment;
 
-        public FileService(
-            IRepository<HSP.Core.Entities.File, Guid> fileRepository,
-            IRepository<FileRelation, Guid> fileRelationRepository,
-            IUnitOfWork unitOfWork,
-            IHostEnvironment environment)
-        {
-            _fileRepository = fileRepository;
-            _fileRelationRepository = fileRelationRepository;
-            _unitOfWork = unitOfWork;
-            _environment = environment;
-        }
-        public async Task<string> UploadFileAsync(IFormFile file, string subFolder = "")
-        {
-            if (file == null || file.Length == 0)
-                throw new ArgumentException("File is empty or null");
+		public FileService(IRepository<HSP.Core.Entities.File, Guid> fileRepository,
+			IRepository<FileRelation, Guid> fileRelationRepository,
+			IRepository<ObjectType, Guid> objectTypeRepository,
+			IWebHostEnvironment environment,
+			IUnitOfWork unitOfWork,
+			IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
+		{
+			_fileRepository = fileRepository;
+			_fileRelationRepository = fileRelationRepository;
+			_objectTypeRepository = objectTypeRepository;
+			_environment = environment;
+		}
 
-            // Validate file
-            var allowedExtensions = _allowedImageExtensions.Concat(_allowedDocumentExtensions).ToArray();
-            if (!ValidateFileType(file, allowedExtensions))
-                throw new ArgumentException("File type is not allowed");
+		public async Task<FileDto> UploadAsync(FileUploadDto input)
+		{
+			var file = input.File ?? throw new ArgumentException("Invalid file upload");
+			var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+			if (!FileConstants.AllowedImageExtensions
+				.Concat(FileConstants.AllowedDocumentExtensions)
+				.Contains(extension))
+				throw new InvalidOperationException($"Unsupported file type: {extension}");
 
-            if (!ValidateFileSize(file, _maxFileSize))
-                throw new ArgumentException("File size exceeds limit");
+			if (file.Length > FileConstants.MaxFileSize)
+				throw new InvalidOperationException("File too large");
 
-            // Create upload directory
-            var uploadsFolder = Path.Combine(_environment.ContentRootPath, "uploads", subFolder);
-            Directory.CreateDirectory(uploadsFolder);
+			var uploadFolder = Path.Combine(_environment.WebRootPath ?? "wwwroot", FileConstants.UploadRoot, input.ObjectTypeName);
+			Directory.CreateDirectory(uploadFolder);
 
-            // Generate unique filename
-            var fileExtension = Path.GetExtension(file.FileName);
-            var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+			var fileName = $"{Guid.NewGuid():N}{extension}";
+			var filePath = Path.Combine(uploadFolder, fileName);
+			var relativePath = Path.Combine(FileConstants.UploadRoot, input.ObjectTypeName, fileName)
+											 .Replace("\\", "/");
 
-            // Save file
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(fileStream);
-            }
+			using (var stream = new FileStream(filePath, FileMode.Create))
+				await file.CopyToAsync(stream);
 
-            // Return relative path for storing in database
-            return Path.Combine("uploads", subFolder, uniqueFileName).Replace("\\", "/");
-        }
+			var objectType = await _objectTypeRepository.GetAll().FirstOrDefaultAsync(x => x.Name == input.ObjectTypeName)
+					?? throw new Exception($"ObjectType '{input.ObjectTypeName}' not found");
+			var fileEntity = new Core.Entities.File
+			{
+				FileName = file.FileName,
+				FilePath = relativePath,
+				FileType = file.ContentType,
+				FileSize = file.Length,
+				UploadedBy = input.UserId,
+				DateCreated = DateTime.UtcNow
+			};
+			var relation = new FileRelation
+			{
+				File = fileEntity,
+				ObjectTypeId = objectType.Id,
+				ObjectId = input.ObjectId,
+				RelationType = input.RelationType
+			};
 
-        public async Task<List<string>> UploadMultipleFilesAsync(IList<IFormFile> files, string subFolder = "")
-        {
-            var uploadedPaths = new List<string>();
+			try
+			{
+				await _fileRepository.AddAsync(fileEntity);
+				await _fileRelationRepository.AddAsync(relation);
+				await _unitOfWork.SaveChangesAsync();
+			}
+			catch
+			{
+				if (System.IO.File.Exists(filePath))
+					System.IO.File.Delete(filePath);
+				throw;
+			}
 
-            foreach (var file in files)
-            {
-                try
-                {
-                    var filePath = await UploadFileAsync(file, subFolder);
-                    uploadedPaths.Add(filePath);
-                }
-                catch (Exception)
-                {
-                    // Log error và continue với files khác
-                    // Có thể thêm logging service ở đây
-                    continue;
-                }
-            }
+			return new FileDto
+			{
+				Id = fileEntity.Id,
+				FileName = fileEntity.FileName,
+				FilePath = fileEntity.FilePath,
+				FileType = fileEntity.FileType,
+				FileSize = fileEntity.FileSize
+			};
+		}
 
-            return uploadedPaths;
-        }
+		public async Task<IEnumerable<FileDto>> UploadManyAsync(IEnumerable<FileUploadDto> inputs)
+		{
+			var results = new List<FileDto>();
+			foreach (var input in inputs)
+				results.Add(await UploadAsync(input));
+			return results;
+		}
 
-        public async Task<bool> DeleteFileAsync(string filePath)
-        {
-            try
-            {
-                var fullPath = Path.Combine(_environment.ContentRootPath, filePath);
-                if (System.IO.File.Exists(fullPath))
-                {
-                    System.IO.File.Delete(fullPath);
-                    return true;
-                }
-                return false;
-            }
-            catch
-            {
-                return false;
-            }
-        }
+		public async Task<IEnumerable<FileDto>> GetFilesAsync(Guid objectId, string objectTypeName)
+		{
+			var objectType = await _objectTypeRepository.GetAll().FirstOrDefaultAsync(x => x.Name == objectTypeName)
+					?? throw new Exception($"ObjectType '{objectTypeName}' not found");
 
-        public async Task<HSP.Core.Entities.File> SaveFileInfoAsync(string fileName, string filePath, string fileType, long fileSize, Guid uploadedBy)
-        {
-            var fileEntity = new HSP.Core.Entities.File
-            {
-                Id = Guid.NewGuid(),
-                FileName = fileName,
-                FilePath = filePath,
-                FileType = fileType,
-                FileSize = fileSize,
-                UploadedBy = uploadedBy,
-                DateCreated = DateTime.UtcNow,
-                DateModified = DateTime.UtcNow
-            };
+			return await _fileRelationRepository.GetAll()
+					.Include(fr => fr.File)
+					.Where(fr => fr.ObjectId == objectId && fr.ObjectTypeId == objectType.Id)
+					.Select(fr => new FileDto
+					{
+						Id = fr.File.Id,
+						FileName = fr.File.FileName,
+						FilePath = fr.File.FilePath,
+						FileType = fr.File.FileType,
+						FileSize = fr.File.FileSize
+					})
+					.ToListAsync();
+		}
 
-            await _fileRepository.AddAsync(fileEntity);
-            await _unitOfWork.SaveChangesAsync();
-            return fileEntity;
-        }
-        public async Task<bool> CreateFileRelationAsync(Guid fileId, Guid objectId, Guid objectTypeId, string relationType)
-        {
-            var relation = new FileRelation
-            {
-                Id = Guid.NewGuid(),
-                FileId = fileId,
-                ObjectId = objectId,
-                ObjectTypeId = objectTypeId,
-                RelationType = relationType,
-                DateCreated = DateTime.UtcNow,
-                DateModified = DateTime.UtcNow
-            };
+		public async Task DeleteAsync(Guid fileId)
+		{
+			var file = await _fileRepository.GetAll().FirstOrDefaultAsync(f => f.Id == fileId)
+					?? throw new Exception("File not found");
 
-            await _fileRelationRepository.AddAsync(relation);
-            await _unitOfWork.SaveChangesAsync();
-            return true;
-        }
+			var fullPath = Path.Combine(_environment.WebRootPath ?? "wwwroot", file.FilePath.TrimStart('/'));
+			if (System.IO.File.Exists(fullPath))
+				System.IO.File.Delete(fullPath);
 
-        public bool ValidateFileType(IFormFile file, string[] allowedExtensions)
-        {
-            var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            return allowedExtensions.Contains(fileExtension);
-        }
+			var relations = _fileRelationRepository.GetAll().Where(r => r.FileId == file.Id);
+			await _fileRelationRepository.RemoveRange(relations);
+			_fileRepository.HardDelete(file);
+			await _unitOfWork.SaveChangesAsync();
+		}
 
-        public bool ValidateFileSize(IFormFile file, long maxSizeInBytes)
-        {
-            return file.Length <= maxSizeInBytes;
-        }
-    }
+		public Task<FileDownloadResult> GetFileForDownload(string relativePath)
+		{
+			try
+			{
+				var fullPath = GetPhysicalPath(relativePath);
+				if (!System.IO.File.Exists(fullPath))
+				{
+					throw new FileNotFoundException("Không tìm thấy file", fullPath);
+				}
+
+				var contentType = GetMimeType(fullPath);
+				var fileName = Path.GetFileName(fullPath);
+
+				var result = new FileDownloadResult
+				{
+					PhysicalPath = fullPath,
+					ContentType = contentType,
+					FileName = fileName
+				};
+				return Task.FromResult(result);
+			}
+			catch (Exception ex)
+			{
+				return Task.FromException<FileDownloadResult>(ex);
+			}
+		}
+
+		private string GetPhysicalPath(string relativePath)
+		{
+			var cleanPath = relativePath.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+			return Path.Combine(_environment.WebRootPath ?? "wwwroot", cleanPath);
+		}
+
+		private string GetMimeType(string filePath)
+		{
+			var provider = new FileExtensionContentTypeProvider();
+			if (!provider.TryGetContentType(filePath, out var contentType))
+			{
+				contentType = "application/octet-stream";
+			}
+			return contentType;
+		}
+	}
 }

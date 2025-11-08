@@ -1,4 +1,3 @@
-// src/components/Header.jsx
 
 import React from "react";
 import { Home, Menu } from "lucide-react";
@@ -48,6 +47,14 @@ export function Header({
             >
               {t("nav.services")}
             </button>
+            {loggedInUser && loggedInUser.role === "customer" && (
+              <button
+                onClick={() => navigate("/chat")}
+                className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+              >
+                Chat
+              </button>
+            )}
             <a
               href="/about"
               className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
@@ -111,6 +118,17 @@ export function Header({
               >
                 {t("nav.services")}
               </a>
+              {loggedInUser && loggedInUser.role === "customer" && (
+                <button
+                  onClick={() => {
+                    navigate("/chat");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="px-4 py-3 text-left text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"
+                >
+                  Chat
+                </button>
+              )}
               <a
                 href="/about"
                 className="px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"

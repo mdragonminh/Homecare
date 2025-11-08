@@ -1,10 +1,11 @@
 ﻿using HSP.Core.Dtos.ServiceDto;
+using HSP.Core.Dtos.Shared;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
+using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-
 namespace HSP.Service.Implementations
 {
 	public class HomeServiceService : BaseService, IHomeServiceService
@@ -16,6 +17,113 @@ namespace HSP.Service.Implementations
 			_homeServiceRepository = homeServiceRepository;
 		}
 
+		public async Task<Guid> CreateHomeServiceAsync(Guid userId, CreateHomeServiceDto input)
+		{
+			if (input == null)
+			{
+				throw new ArgumentNullException(nameof(input));
+			}
+			var newService = new Core.Entities.Service
+			{
+				Name = input.Name,
+				Price = input.Price,
+				Description = input.Description,
+				DateCreated = DateTime.UtcNow,
+				CreatedBy = userId
+			};
+			await _homeServiceRepository.AddAsync(newService);
+			await _unitOfWork.SaveChangesAsync();
+			return newService.Id;
+		}
+
+		public async Task<PagedList<AdminHomeServiceDto>> GetAllAsync(HomeServiceInput input)
+		{
+			var query = _homeServiceRepository.GetAll()
+				.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()));
+			var homeServiceDto = query
+				.Select(s => new AdminHomeServiceDto
+				{
+					Id = s.Id,
+					Name = s.Name,
+					Price = s.Price,
+					Description = s.Description
+				});
+			var pagedHomeService = await homeServiceDto.ToPagedListAsync(input);
+			return pagedHomeService;
+		}
+
+		public async Task<AdminHomeServiceDto> GetHomeServiceByIdAsync(Guid id)
+		{
+			var service = await _homeServiceRepository.GetByIdAsync(id);
+			if (service == null)
+			{
+				throw new KeyNotFoundException("home service not found");
+			}
+			var serviceDto = new AdminHomeServiceDto
+			{
+				Id = service.Id,
+				Name = service.Name,
+				Description = service.Description,
+				Price = service.Price
+			};
+			return serviceDto;
+		}
+
+		public async Task<bool> UpdateHomeServiceAsync(Guid userId, Guid id, UpdateHomeServiceDto input)
+		{
+			if (input == null)
+			{
+				throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
+			}
+			var existingService = await _homeServiceRepository.GetAll()
+				.FirstOrDefaultAsync(x => x.Id.Equals(id));
+			if (existingService == null)
+			{
+				throw new KeyNotFoundException("Service not found");
+			}
+			var flag = false;
+			if (existingService.Name != input.Name)
+			{
+				existingService.Name = input.Name;
+				flag = true;
+			}
+			if (existingService.Price != input.Price)
+			{
+				existingService.Price = input.Price;
+				flag = true;
+			}
+			if (existingService.Description != input.Description)
+			{
+				existingService.Description = input.Description;
+				flag = true;
+			}
+			if (flag == true)
+			{
+				existingService.DateModified = DateTime.UtcNow;
+				existingService.ModifiedBy = userId;
+				await _unitOfWork.SaveChangesAsync();
+			}
+			return true;
+		}
+		public async Task<bool> DeleteHomeServiceAsync(Guid userId, Guid id)
+		{
+			var homeService = await _homeServiceRepository.GetAll()
+				.Include(x => x.Technicians)
+				.FirstOrDefaultAsync(hs => hs.Id.Equals(id));
+			if (homeService == null)
+			{
+				throw new KeyNotFoundException("Service not found");
+			}
+			var isInUse = homeService.Technicians?.Where(x => x.ApprovalStatus == Core.Enums.TechnicianApprovalStatus.Approved).Any() ?? false;
+			if (isInUse)
+			{
+				throw new InvalidOperationException(_localizer["ServiceIsCurrentlyInUse"]);
+			}
+			await _homeServiceRepository.DeleteAsync(id);
+			await _unitOfWork.SaveChangesAsync();
+			return true;
+		}
+		#region Home Page
 		public async Task<IEnumerable<HomeServiceDto>> GetAllServiceHomePageAsync()
 		{
 			var services = await _homeServiceRepository.GetAll()
@@ -27,6 +135,6 @@ namespace HSP.Service.Implementations
 				}).ToListAsync();
 			return services;
 		}
-
+		#endregion
 	}
 }

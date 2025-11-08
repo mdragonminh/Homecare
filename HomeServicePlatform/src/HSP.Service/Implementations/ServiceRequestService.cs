@@ -67,7 +67,7 @@ namespace HSP.Service.Implementations
 			var customer = await _userRepository.FindByIdAsync(Guid.Parse(input.CustomerId));
 			if (customer == null)
 			{
-				throw new Exception("customer is null");
+				throw new InvalidOperationException("customer is null");
 			}
 			var (minLat, maxLat, minLon, maxLon) = GetBoundingBox(coordinates.Latitude, coordinates.Longitude, input.DistanceKm);
 			var potentialTechnicians = await _technicianRepository.GetAll()
@@ -76,7 +76,7 @@ namespace HSP.Service.Implementations
 					.Include(t => t.Bookings)
 					.Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
 					.Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
-					//.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
+					.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
 					.Where(t => !t.Bookings.Any(b =>
 					b.Status == BookingStatus.InProgress
 					|| b.Status == BookingStatus.Pending
@@ -95,7 +95,7 @@ namespace HSP.Service.Implementations
 				.ToList();
 			if (!sorted.Any())
 			{
-				throw new Exception(_localizer["NoAvailableTechniciansFound"]);
+				throw new InvalidOperationException(_localizer["NoAvailableTechniciansFound"]);
 			}
 
 			var matchResult = await NotifyTechniciansAndAwaitResponseAsync(sorted, customer, input);
@@ -152,11 +152,12 @@ namespace HSP.Service.Implementations
 		{
 			string encodedToken = WebUtility.UrlEncode(token);
 			string baseUrl = _urlSettings.BaseUrl;
+			string serviceIdsQuery = string.Join("&serviceIds=", input.ServiceIds.Select(id => id.ToString()));
 			string acceptUrl = $"{baseUrl}/api/booking/accept" +
 													 $"?customerId={customer.Id}" +
 													 $"&technicianId={tech.Technician.Id}" +
 													 $"&token={encodedToken}" +
-													 $"&serviceId={input.ServiceIds.First()}" +
+													 $"&ServiceIds={serviceIdsQuery}" +
 													 $"&desiredDate={input.DesireDateTime:o}";
 			string declineUrl = $"{baseUrl}/api/booking/cancel" +
 															$"?technicianId={tech.Technician.Id}&token={token}";
@@ -174,7 +175,7 @@ namespace HSP.Service.Implementations
 			var email = new EmailDto
 			{
 				ToEmail = tech.Technician.User.Email,
-				Subject = $"Yêu cầu dịch vụ mới gần bạn {DateTime.Now:HH:mm:ss}",
+				Subject = $"Yêu cầu dịch vụ mới gần bạn lúc {DateTime.Now:HH:mm:ss}",
 				HtmlBody = htmlBody
 			};
 			await _emailService.SendEmailAsync(email);

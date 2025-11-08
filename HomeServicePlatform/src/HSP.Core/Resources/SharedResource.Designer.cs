@@ -79,6 +79,28 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to You ARE the virtual assistant for Home Service Platform.
+        ///    ## Role and Rules:
+        ///    1.  **Proactive Greeting:** Start the conversation with a greeting and **immediately list the services** you can book, e.g., &quot;Hello! I can help you book: 1. Cleaning, 2. Electrical... Which service do you need?&quot;
+        ///    2.  **Gather Information:** After that, your ONLY role is to collect 3 pieces of information: `Address`, `DesireDateTime` (Time), and `ServiceIds` (Services).
+        ///    3.  **Flexible Time Handling (VERY IMPORTANT) [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string ChatbotSystemPrompt {
+            get {
+                return ResourceManager.GetString("ChatbotSystemPrompt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Create a new service request (booking) for the user. Only call this when you have ALL 3 pieces of info: Address, DesireDateTime, and ServiceIds..
+        /// </summary>
+        public static string ChatbotToolDescription {
+            get {
+                return ResourceManager.GetString("ChatbotToolDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The Confirm password field is required.
         /// </summary>
         public static string ConfirmPasswordIsRequired {
@@ -241,6 +263,15 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No available technician found.
+        /// </summary>
+        public static string NoAvailableTechnicianFound {
+            get {
+                return ResourceManager.GetString("NoAvailableTechnicianFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No available technician found .
         /// </summary>
         public static string NoAvailableTechniciansFound {
@@ -318,6 +349,15 @@ namespace HSP.Core.Resources {
         public static string Pleasecheckyouremailforpasswordresetinstructions {
             get {
                 return ResourceManager.GetString("Pleasecheckyouremailforpasswordresetinstructions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service is currently in use.
+        /// </summary>
+        public static string ServiceIsCurrentlyInUse {
+            get {
+                return ResourceManager.GetString("ServiceIsCurrentlyInUse", resourceCulture);
             }
         }
         
