@@ -523,6 +523,7 @@
       "rejected": "Bị từ chối",
       "total": "Tổng cộng"
     },
+    
     "modal": {
       "basic_info": "Thông tin cơ bản",
       "username": "Username",
@@ -655,7 +656,27 @@
       "password_required_error": "Vui lòng nhập mật khẩu.",
       "avatar_required_error": "Vui lòng upload ảnh đại diện.",
       "confirm_password_mismatch_error": "Xác nhận mật khẩu không khớp.",
-      "password_strength_error": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
+      "password_strength_error": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.",
+      "citizen_id_required": "Vui lòng nhập số CMND/CCCD.",
+      "citizen_id_invalid": "Số CMND/CCCD phải có đúng 12 chữ số."
+    },
+    "citizen_id": {
+      "title": "Xác Thực CMND/CCCD",
+      "subtitle": "Quét CMND/CCCD của bạn để tự động điền thông tin và xác thực danh tính.",
+      "upload_required": "Tải lên ảnh CMND/CCCD (Mặt trước)",
+      "number_required": "Số CMND/CCCD",
+      "number_placeholder": "Nhập số CMND/CCCD 12 chữ số",
+      "file_too_large": "quá lớn (tối đa 5MB).",
+      "file_invalid_format": "có định dạng không hợp lệ (chỉ cho phép JPG, PNG).",
+      "file_removed": "Ảnh CMND/CCCD đã bị xóa."
+    },
+    "ocr": {
+      "scanning": "Đang quét OCR...",
+      "click_to_upload": "Nhấp để tải lên (JPG, PNG)",
+      "success_filled": "Thông tin đã được tự động điền từ CMND/CCCD",
+      "failed_no_id": "Không thể trích xuất số CMND/CCCD. Vui lòng thử một bức ảnh khác hoặc nhập thủ công.",
+      "error_general": "Lỗi kết nối hoặc xử lý. Vui lòng thử lại.",
+      "auto_filled_note": "Đã điền (tự động hoặc thủ công). Vui lòng xác minh."
     }
   },
   "toast":{

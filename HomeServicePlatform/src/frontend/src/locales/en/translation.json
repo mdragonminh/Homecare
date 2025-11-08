@@ -670,7 +670,27 @@
       "password_required_error": "Please enter your password.",
       "avatar_required_error": "Please upload your avatar.",
       "confirm_password_mismatch_error": "Password confirmation does not match.",
-      "password_strength_error": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character."
+      "password_strength_error": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character.",
+       "citizen_id_required": "Please enter your Citizen ID number",
+      "citizen_id_invalid": "Citizen ID must be exactly 12 digits"
+    },
+    "citizen_id": {
+      "title": "Citizen ID Information",
+      "subtitle": "Scan your Citizen ID card to auto-fill information and verify identity.",
+      "upload_required": "Upload Citizen ID Photo (Front)",
+      "number_required": "Citizen ID Number",
+      "number_placeholder": "Enter 12-digit Citizen ID",
+      "file_too_large": "is too large (maximum 5MB).",
+      "file_invalid_format": "has invalid format (only JPG, PNG allowed).",
+      "file_removed": "Citizen ID photo removed."
+    },
+    "ocr": {
+      "scanning": "Scanning OCR...",
+      "click_to_upload": "Click to upload (JPG, PNG)",
+      "success_filled": "Information auto-filled from Citizen ID",
+      "failed_no_id": "Could not extract Citizen ID number. Please try another photo or enter manually.",
+      "error_general": "Connection or processing error. Please try again.",
+      "auto_filled_note": "Filled (auto or manual). Please verify."
     }
   },
   "toast":{

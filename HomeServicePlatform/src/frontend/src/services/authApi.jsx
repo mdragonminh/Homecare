@@ -80,10 +80,8 @@ export const authApi = {
     }
   },
 
-  registerTechnician: async (formData) => {
+ registerTechnician: async (formData) => {
     try {
-      console.log("Sending registerTechnician (FormData) payload");
-
       const res = await axiosClient.post(
         "/Authentication/register-technician",
         formData
@@ -123,7 +121,7 @@ export const authApi = {
       };
     }
   },
-  prepareRegisterTechnicianData: ({
+ prepareRegisterTechnicianData: ({
     email,
     fullName,
     phoneNumber,
@@ -134,6 +132,7 @@ export const authApi = {
     confirmPassword,
     avatarFile,
     serviceCertificates,
+    citizenId, 
   }) => {
     const expMap = {
       "0-1": 1,
@@ -152,6 +151,9 @@ export const authApi = {
     formData.append("Address", address);
     formData.append("Password", password);
     formData.append("ConfirmPassword", confirmPassword);
+    if (citizenId) {
+       formData.append("CitizenId", citizenId || "");
+    }    
     if (serviceIds && serviceIds.length > 0) {
       serviceIds.forEach((id) => {
         formData.append("ServiceIds", id.toString());
@@ -170,27 +172,6 @@ export const authApi = {
         });
       });
     }
-
-    console.log("=== FormData Debug ===");
-    console.log("Total serviceIds:", serviceIds.length);
-    console.log("Has avatar:", !!avatarFile);
-    console.log(
-      "Certificate count:",
-      Object.values(serviceCertificates).reduce(
-        (sum, certs) => sum + certs.length,
-        0
-      )
-    );
-
-    for (let [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}:`, `[File] ${value.name} (${value.size} bytes)`);
-      } else {
-        console.log(`${key}:`, value);
-      }
-    }
-    console.log("=== End FormData ===");
-
     return formData;
   },
   login: async ({ emailOrPhone, password }) => {
@@ -199,8 +180,6 @@ export const authApi = {
         emailOrPhone,
         password,
       });
-
-      // === THÀNH CÔNG ===
       const tokenData = res.data?.jwtToken;
       if (
         res.status === 200 &&

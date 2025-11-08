@@ -38,6 +38,7 @@ function TechnicianRegister({ loggedInUser }) {
     loading,
     submitting,
     previewImage,
+    previewCitizenId,
     updateFormData,
     toggleSpecialization,
     handleCertificateUpload,
@@ -46,9 +47,19 @@ function TechnicianRegister({ loggedInUser }) {
     closePreview,
     handleAvatarUpload,
     removeAvatar,
+    handleCitizenIdUpload,
+    removeCitizenIdFile,
     handleSubmit,
     t,
   } = useTechnicianRegister(loggedInUser);
+  const getCitizenIdCertData = () => {
+    if (!formData.citizenIdFile) return null;
+    return {
+      file: formData.citizenIdFile,
+      name: formData.citizenIdFile.name,
+      url: previewCitizenId,
+    };
+  };
 
   return (
     <div className="relative">
@@ -130,7 +141,7 @@ function TechnicianRegister({ loggedInUser }) {
         <div className="py-12 px-4">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              {/* Personal Info Section */}
+              {/* Personal Info Section (Bắt đầu từ đây) */}
               <div className="p-8 border-b border-gray-100">
                 <div className="flex items-start gap-4 mb-8">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -225,8 +236,6 @@ function TechnicianRegister({ loggedInUser }) {
                       {(validationErrors.avatarFile ||
                         validationErrors.avatarUploadError) && (
                         <div className="mt-2">
-                          {" "}
-                          {/* Đã xóa ml-[208px] và chỉ dùng mt-2 */}
                           {validationErrors.avatarFile && (
                             <ErrorMessage error={validationErrors.avatarFile} />
                           )}
@@ -393,7 +402,160 @@ function TechnicianRegister({ loggedInUser }) {
                   </div>
                 </div>
               </div>
-              {/* Experience Skills Section */}
+              {/* Personal Info Section (Kết thúc ở đây) */}
+              {/* CCCD (Citizen ID) Upload Section - ĐÃ THÊM MỚI Ở ĐÂY */}
+              <div className="p-8 border-b border-gray-100">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-gray-800">
+                      {t("technician_register.citizen_id.title") ||
+                        "Thông tin Căn cước công dân"}
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      {t("technician_register.citizen_id.subtitle") ||
+                        "Quét ảnh CCCD để tự động điền thông tin và xác minh danh tính."}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Upload CCCD File */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
+                      {t("technician_register.citizen_id.upload_required") ||
+                        "Tải lên ảnh CCCD (Mặt trước)"}{" "}
+                      *
+                    </label>
+                    <div className="relative h-40 border-2 border-dashed rounded-lg flex items-center justify-center">
+                      {loading ? (
+                        <div className="flex items-center text-blue-600 p-4">
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          {t("technician_register.ocr.scanning") ||
+                            "Đang quét OCR..."}
+                        </div>
+                      ) : previewCitizenId ? (
+                        <>
+                          {formData.citizenIdFile.type.startsWith("image/") ? (
+                            <img
+                              src={previewCitizenId}
+                              alt="Citizen ID Preview"
+                              className="h-full w-full object-contain p-2 rounded-lg"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center text-red-600">
+                              <FileText className="w-10 h-10" />
+                              <span className="text-sm mt-2">
+                                {formData.citizenIdFile.name}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Action Overlay */}
+                          <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity space-x-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                viewCertificate(getCitizenIdCertData())
+                              }
+                              className="p-2 rounded-full bg-white text-blue-600 hover:bg-gray-100 transition-colors"
+                              title={
+                                t(
+                                  "technician_register.personal_info.view_avatar"
+                                ) || "Xem ảnh"
+                              }
+                            >
+                              <Eye className="w-5 h-5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={removeCitizenIdFile}
+                              className="p-2 rounded-full bg-white text-red-600 hover:bg-gray-100 transition-colors"
+                              title={
+                                t(
+                                  "technician_register.personal_info.remove_avatar"
+                                ) || "Xóa ảnh"
+                              }
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <label
+                          htmlFor="citizenIdFile"
+                          className={`flex flex-col items-center justify-center w-full h-full p-4 border-2 border-dashed rounded-lg cursor-pointer transition-all hover:border-blue-500 hover:bg-blue-50 ${
+                            validationErrors.citizenIdFile
+                              ? "border-red-500 ring-1 ring-red-500 bg-red-50"
+                              : "border-gray-300"
+                          }`}
+                        >
+                          <Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                          <span className="text-sm text-gray-500 mt-2 group-hover:text-blue-600">
+                            {t("technician_register.ocr.click_to_upload") ||
+                              "Nhấp để tải lên (JPG, PNG, PDF)"}
+                          </span>
+                        </label>
+                      )}
+
+                      <input
+                        id="citizenIdFile"
+                        type="file"
+                        accept="image/jpeg, image/png, application/pdf"
+                        className="sr-only"
+                        onChange={(e) =>
+                          handleCitizenIdUpload(e.target.files[0])
+                        }
+                        disabled={loading || submitting}
+                        onClick={(e) => {
+                          e.target.value = null;
+                        }}
+                      />
+                    </div>
+                    <ErrorMessage error={validationErrors.citizenIdFile} />
+                  </div>
+
+                  {/* Citizen ID Number (Result) */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
+                      {t("technician_register.citizen_id.number_required") ||
+                        "Số Căn cước công dân"}{" "}
+                      *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.citizenId}
+                      onChange={(e) =>
+                        updateFormData("citizenId", e.target.value)
+                      }
+                      className={`w-full border rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all ${
+                        validationErrors.citizenId
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-100 bg-red-50"
+                          : formData.citizenId
+                          ? "border-green-500 focus:border-green-500 focus:ring-green-100 bg-white"
+                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-100 bg-white"
+                      }`}
+                      placeholder={
+                        t(
+                          "technician_register.citizen_id.number_placeholder"
+                        ) || "Số CCCD"
+                      }
+                      disabled={submitting}
+                    />
+                    <ErrorMessage error={validationErrors.citizenId} />
+                    {formData.citizenId && !loading && (
+                      <p className="mt-1 text-xs text-green-600 flex items-center">
+                        <span className="mr-1"></span>
+                        {t("technician_register.ocr.auto_filled_note") ||
+                          "Đã điền (tự động hoặc thủ công). Vui lòng kiểm tra lại."}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* END CCCD (Citizen ID) Upload Section */}
+              {/* Experience Skills Section (Tiếp tục với phần cũ) */}
               <div className="p-8 border-b border-gray-100">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -603,6 +765,8 @@ function TechnicianRegister({ loggedInUser }) {
                   </div>
                 </div>
               </div>
+              {/* Experience Skills Section (Kết thúc ở đây) */}
+
               {/* Terms and Submit Section */}
               <div className="p-8 flex flex-col items-center">
                 <div className="flex items-center gap-3 mb-6">
@@ -716,22 +880,21 @@ function TechnicianRegister({ loggedInUser }) {
               </button>
             </div>
             <div className="p-4 overflow-auto max-h-[calc(90vh-80px)] w-full">
-              {previewImage.url.startsWith("blob:http") &&
-                (previewImage.name.toLowerCase().endsWith(".pdf") ? (
-                  <embed
-                    src={previewImage.url}
-                    type="application/pdf"
-                    width="100%"
-                    height="800px"
-                    style={{ minHeight: "600px" }}
-                  />
-                ) : (
-                  <img
-                    src={previewImage.url}
-                    alt={previewImage.name}
-                    className="max-w-full h-auto mx-auto"
-                  />
-                ))}
+              {previewImage.name.toLowerCase().endsWith(".pdf") ? (
+                <embed
+                  src={previewImage.url}
+                  type="application/pdf"
+                  width="100%"
+                  height="800px"
+                  style={{ minHeight: "600px" }}
+                />
+              ) : (
+                <img
+                  src={previewImage.url}
+                  alt={previewImage.name}
+                  className="max-w-full h-auto mx-auto"
+                />
+              )}
             </div>
           </div>
         </div>
