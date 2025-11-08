@@ -2,8 +2,9 @@
 
 namespace HSP.Core.Interfaces.External
 {
-    public interface IChatbotService
-    {
-        Task<ChatResponseDto> ProcessMessageAsync(ChatInputDto input, Guid customerId);
-    }
+	public interface IChatbotService
+	{
+		Task<ChatResponseDto> ProcessMessageAsync(ChatInputDto input, Guid customerId);
+		Task<string> GetChatResponseAsync(string prompt);
+	}
 }

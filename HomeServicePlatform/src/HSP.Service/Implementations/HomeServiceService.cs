@@ -16,17 +16,36 @@ namespace HSP.Service.Implementations
 			_homeServiceRepository = homeServiceRepository;
 		}
 
-		public async Task<IEnumerable<HomeServiceDto>> GetAllServiceHomePageAsync()
+		//public async Task<Guid> CreateHomeServiceAsync(CreateHomeServiceDto input)
+		//{
+		//	if (input == null)
+		//	{
+		//		throw new ArgumentNullException("input is null");
+		//	}
+		//	var homeService = new Core.Entities.Service
+		//	{
+		//		Name = input.Name,
+		//		Description = input.Description,
+		//		CreatedBy = input.CreatedBy,
+		//		DateCreated = DateTime.UtcNow
+		//	};
+		//	var resutl = await _homeServiceRepository.AddAsync(homeService);
+		//	await _unitOfWork.SaveChangesAsync();
+		//	return resutl.Id;
+		//}
+
+		#region Home Page
+		public async Task<IEnumerable<HomePageServiceDto>> GetAllServiceHomePageAsync()
 		{
 			var services = await _homeServiceRepository.GetAll()
 				.OrderBy(x => x.Name)
-				.Select(s => new HomeServiceDto
+				.Select(s => new HomePageServiceDto
 				{
 					Id = s.Id,
 					Name = s.Name,
 				}).ToListAsync();
 			return services;
 		}
-
+		#endregion
 	}
 }

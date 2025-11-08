@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     <PackageReference Include="OpenAI" Version="2.5.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+		<!--<PackageReference Include="Tesseract" Version="5.2.0" />-->
   </ItemGroup>
 
   <ItemGroup>
@@ -31,6 +32,15 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="tessdata\eng.traineddata">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="tessdata\vie.traineddata">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
