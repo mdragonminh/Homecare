@@ -297,6 +297,7 @@ namespace HSP.Service.Implementations
 						UserId = user.Id,
 						ExperienceYears = input.ExperienceYears,
 						Address = input.Address,
+						CitizenId = input.CitizenId,
 						DateCreated = DateTime.UtcNow,
 						IsDeleted = false
 					};

@@ -36,6 +36,9 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		[Range(0, 50, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsRange")]
 		public int ExperienceYears { get; set; }
 		[Required]
+		[MaxLength(12)]
+		public string CitizenId { get; set; }
+		[Required]
 		public List<Guid> ServiceIds { get; set; } = new List<Guid>();
 		[Required]
 		public string Address {  get; set; }
