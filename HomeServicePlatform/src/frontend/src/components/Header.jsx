@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Home, Menu } from "lucide-react";
+import { Home, Menu, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AuthButtons } from "./AuthButtons";
 import { useTranslation } from "react-i18next";
@@ -48,12 +48,21 @@ export function Header({
               {t("nav.services")}
             </button>
             {loggedInUser && loggedInUser.role === "customer" && (
-              <button
-                onClick={() => navigate("/chat")}
-                className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
-              >
-                Chat
-              </button>
+              <>
+                <button
+                  onClick={() => navigate("/my-bookings")}
+                  className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium flex items-center space-x-2"
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  <span>Booking của tôi</span>
+                </button>
+                <button
+                  onClick={() => navigate("/chat")}
+                  className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+                >
+                  Chat
+                </button>
+              </>
             )}
             <a
               href="/about"
@@ -119,15 +128,27 @@ export function Header({
                 {t("nav.services")}
               </a>
               {loggedInUser && loggedInUser.role === "customer" && (
-                <button
-                  onClick={() => {
-                    navigate("/chat");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="px-4 py-3 text-left text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"
-                >
-                  Chat
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      navigate("/my-bookings");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-left text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium flex items-center space-x-2"
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                    <span>Booking của tôi</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/chat");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-left text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"
+                  >
+                    Chat
+                  </button>
+                </>
               )}
               <a
                 href="/about"

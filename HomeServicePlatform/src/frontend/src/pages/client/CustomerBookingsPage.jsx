@@ -1,0 +1,351 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  ClipboardList,
+  Calendar,
+  CreditCard,
+  Eye,
+  Loader2,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+} from "lucide-react";
+import { toast } from "sonner";
+import { bookingApi } from "../../services/bookingApi";
+import { paymentApi, getPaymentStatusText, PaymentStatus } from "../../services/paymentApi";
+
+const CustomerBookingsPage = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    pageSize: 10,
+    totalPages: 0,
+    totalCount: 0,
+  });
+
+  // Load payment status for bookings
+  const [bookingPayments, setBookingPayments] = useState({});
+
+  useEffect(() => {
+    loadBookings();
+  }, [pagination.currentPage, selectedStatus]);
+
+  const loadBookings = async () => {
+    try {
+      setLoading(true);
+      const response = await bookingApi.getMyBookings(
+        pagination.currentPage,
+        pagination.pageSize,
+        "",
+        selectedStatus,
+        null,
+        null
+      );
+
+      setBookings(response.items || []);
+      setPagination((prev) => ({
+        ...prev,
+        totalPages: response.totalPages || 0,
+        totalCount: response.totalCount || 0,
+      }));
+
+      // Load payment status for each booking
+      if (response.items && response.items.length > 0) {
+        loadPaymentStatuses(response.items);
+      }
+    } catch (error) {
+      console.error("Error loading bookings:", error);
+      toast.error("Không thể tải danh sách booking");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadPaymentStatuses = async (bookings) => {
+    const paymentPromises = bookings.map(async (booking) => {
+      try {
+        const result = await paymentApi.getPaymentsByBookingId(booking.id);
+        if (result.success && result.data && result.data.length > 0) {
+          // Get the latest payment
+          return { bookingId: booking.id, payment: result.data[0] };
+        }
+      } catch (error) {
+        console.error(`Error loading payment for booking ${booking.id}:`, error);
+      }
+      return { bookingId: booking.id, payment: null };
+    });
+
+    const results = await Promise.all(paymentPromises);
+    const paymentsMap = {};
+    results.forEach(({ bookingId, payment }) => {
+      paymentsMap[bookingId] = payment;
+    });
+    setBookingPayments(paymentsMap);
+  };
+
+  const handleViewDetails = (bookingId) => {
+    // Navigate to booking detail page if exists, or show modal
+    toast.info("Xem chi tiết booking: " + bookingId);
+  };
+
+  const handlePayNow = (bookingId) => {
+    navigate(`/payment/${bookingId}`);
+  };
+
+  const handleViewPayment = (paymentId) => {
+    navigate(`/payment/result/${paymentId}`);
+  };
+
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      0: { text: "Chờ xác nhận", color: "bg-yellow-100 text-yellow-800", icon: Clock },
+      1: { text: "Đã xác nhận", color: "bg-blue-100 text-blue-800", icon: CheckCircle },
+      2: { text: "Đang thực hiện", color: "bg-purple-100 text-purple-800", icon: AlertCircle },
+      3: { text: "Hoàn thành", color: "bg-green-100 text-green-800", icon: CheckCircle },
+      4: { text: "Đã hủy", color: "bg-red-100 text-red-800", icon: XCircle },
+      5: { text: "Bị từ chối", color: "bg-gray-100 text-gray-800", icon: XCircle },
+    };
+
+    const config = statusConfig[status] || statusConfig[0];
+    const Icon = config.icon;
+
+    return (
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${config.color}`}>
+        <Icon className="h-4 w-4 mr-1" />
+        {config.text}
+      </span>
+    );
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatAmount = (amount) => {
+    return new Intl.NumberFormat("vi-VN").format(amount || 0);
+  };
+
+  const canPayForBooking = (booking, payment) => {
+    // Can pay if booking is confirmed and no completed payment exists
+    const isConfirmed = booking.status === 1; // Confirmed status
+    const hasNoCompletedPayment = !payment || payment.status !== PaymentStatus.Completed;
+    return isConfirmed && hasNoCompletedPayment;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <ClipboardList className="h-8 w-8 mr-3 text-blue-600" />
+            Booking của tôi
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Quản lý các booking và thanh toán của bạn
+          </p>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Trạng thái
+              </label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Tất cả</option>
+                <option value="0">Chờ xác nhận</option>
+                <option value="1">Đã xác nhận</option>
+                <option value="2">Đang thực hiện</option>
+                <option value="3">Hoàn thành</option>
+                <option value="4">Đã hủy</option>
+              </select>
+            </div>
+            <button
+              onClick={loadBookings}
+              disabled={loading}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              {loading ? "Đang tải..." : "Làm mới"}
+            </button>
+          </div>
+        </div>
+
+        {/* Bookings List */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+          </div>
+        ) : bookings.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+            <ClipboardList className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 text-lg">Bạn chưa có booking nào</p>
+            <button
+              onClick={() => navigate("/services")}
+              className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Tìm dịch vụ ngay
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {bookings.map((booking) => {
+              const payment = bookingPayments[booking.id];
+              const canPay = canPayForBooking(booking, payment);
+
+              return (
+                <div
+                  key={booking.id}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    {/* Booking Info */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-sm text-gray-500">Mã booking</p>
+                          <p className="font-mono text-sm font-semibold text-gray-900">
+                            {booking.id.substring(0, 8)}...
+                          </p>
+                        </div>
+                        {getStatusBadge(booking.status)}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                        <div className="flex items-center text-gray-600">
+                          <Calendar className="h-4 w-4 mr-2" />
+                          <span className="text-sm">
+                            {formatDate(booking.desiredDate)}
+                          </span>
+                        </div>
+                        {booking.totalPrice && (
+                          <div className="flex items-center text-gray-600">
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            <span className="text-sm font-semibold">
+                              {formatAmount(booking.totalPrice)} VNĐ
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Payment Status */}
+                      {payment && (
+                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                          <p className="text-sm text-gray-600">
+                            Trạng thái thanh toán:{" "}
+                            <span
+                              className={`font-semibold ${
+                                payment.status === PaymentStatus.Completed
+                                  ? "text-green-600"
+                                  : payment.status === PaymentStatus.Failed
+                                  ? "text-red-600"
+                                  : "text-yellow-600"
+                              }`}
+                            >
+                              {getPaymentStatusText(payment.status)}
+                            </span>
+                          </p>
+                          {payment.paidAt && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Thanh toán lúc: {formatDate(payment.paidAt)}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2 lg:w-48">
+                      <button
+                        onClick={() => handleViewDetails(booking.id)}
+                        className="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Xem chi tiết
+                      </button>
+
+                      {payment ? (
+                        <button
+                          onClick={() => handleViewPayment(payment.id)}
+                          className="flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Xem thanh toán
+                        </button>
+                      ) : canPay ? (
+                        <button
+                          onClick={() => handlePayNow(booking.id)}
+                          className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Thanh toán ngay
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && bookings.length > 0 && pagination.totalPages > 1 && (
+          <div className="mt-6 flex justify-center">
+            <nav className="flex items-center gap-2">
+              <button
+                onClick={() =>
+                  setPagination((prev) => ({
+                    ...prev,
+                    currentPage: Math.max(1, prev.currentPage - 1),
+                  }))
+                }
+                disabled={pagination.currentPage === 1}
+                className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Trước
+              </button>
+
+              <span className="px-4 py-2 text-gray-700">
+                Trang {pagination.currentPage} / {pagination.totalPages}
+              </span>
+
+              <button
+                onClick={() =>
+                  setPagination((prev) => ({
+                    ...prev,
+                    currentPage: Math.min(prev.totalPages, prev.currentPage + 1),
+                  }))
+                }
+                disabled={pagination.currentPage === pagination.totalPages}
+                className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+            </nav>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CustomerBookingsPage;

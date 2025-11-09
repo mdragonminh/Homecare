@@ -7,6 +7,10 @@ import HomeItemsPage from "../pages/client/home/HomeItemsPage";
 import Profile from "../pages/Profile";
 import { jwtDecode } from "jwt-decode";
 import { FindTechnicianPage } from "../pages/client/service/FindTechnicianPage";
+import CustomerBookingsPage from "../pages/client/CustomerBookingsPage";
+import PaymentPage from "../pages/client/payment/PaymentPage";
+import PaymentInstructionsPage from "../pages/client/payment/PaymentInstructionsPage";
+import PaymentResultPage from "../pages/client/payment/PaymentResultPage";
 
 import TicketManagementPage from "../pages/supporter/TicketManagementPage";
 
@@ -125,6 +129,46 @@ export default function ClientRoutes({
       <Route
         path="/services"
         element={<FindTechnicianPage loggedInUser={loggedInUser} />}
+      />
+
+      {/* Customer Bookings */}
+      <Route
+        path="/my-bookings"
+        element={
+          <ProtectedRoute
+            loggedInUser={loggedInUser}
+            element={<CustomerBookingsPage />}
+          />
+        }
+      />
+
+      {/* Payment Routes */}
+      <Route
+        path="/payment/:bookingId"
+        element={
+          <ProtectedRoute
+            loggedInUser={loggedInUser}
+            element={<PaymentPage />}
+          />
+        }
+      />
+      <Route
+        path="/payment/instructions/:paymentId"
+        element={
+          <ProtectedRoute
+            loggedInUser={loggedInUser}
+            element={<PaymentInstructionsPage />}
+          />
+        }
+      />
+      <Route
+        path="/payment/result/:paymentId"
+        element={
+          <ProtectedRoute
+            loggedInUser={loggedInUser}
+            element={<PaymentResultPage />}
+          />
+        }
       />
 
       <Route

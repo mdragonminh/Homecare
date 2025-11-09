@@ -1,6 +1,40 @@
 import axiosClient from "../config/axiosClient";
 
 export const bookingApi = {
+  // Get all bookings for current customer
+  getMyBookings: async (
+    pageNumber = 1,
+    pageSize = 10,
+    searchTerm = "",
+    status = null,
+    fromDate = null,
+    toDate = null
+  ) => {
+    const params = new URLSearchParams({
+      pageNumber: pageNumber.toString(),
+      pageSize: pageSize.toString(),
+    });
+
+    if (searchTerm) {
+      params.append("searchTerm", searchTerm);
+    }
+
+    if (status !== null && status !== undefined && status !== "") {
+      params.append("status", status);
+    }
+
+    if (fromDate) {
+      params.append("fromDate", fromDate);
+    }
+
+    if (toDate) {
+      params.append("toDate", toDate);
+    }
+
+    const response = await axiosClient.get(`/booking/my-bookings?${params}`);
+    return response.data;
+  },
+
   // Get all bookings for current technician
   getAllBookings: async (
     pageNumber = 1,
