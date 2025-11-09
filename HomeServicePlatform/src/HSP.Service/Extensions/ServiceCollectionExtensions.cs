@@ -1,4 +1,6 @@
-﻿using HSP.Core.Interfaces.External;
+using HSP.Core.Abstractions.External;
+using HSP.Core.Entities;
+using HSP.Core.Interfaces.External;
 using HSP.Service.Implementations;
 using HSP.Service.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +39,9 @@ namespace HSP.Service.Extensions
 			services.AddScoped<ITechnicianLocationService, TechnicianLocationService>();
 			services.AddScoped<IChatbotService, ChatbotService>();
 			services.AddScoped<IChatService, ChatService>();
+			services.AddScoped<ISePayService, SePayService>();
+			services.AddScoped<IPaymentService, PaymentService>();
+			services.AddHttpClient("SePay");
 			services.AddSingleton<TesseractEngine>(sp =>
 			{
 				var tessdataPath = Path.Combine(AppContext.BaseDirectory, "tessdata");

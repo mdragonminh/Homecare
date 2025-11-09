@@ -25,15 +25,16 @@ namespace HSP.Core.Entities
 		public DateTime? DateCompleted { get; set; }
 
 
-		public BookingFeedback? Feedback { get; set; }
-		public BookingCancellation? Cancellation { get; set; }
+	public BookingFeedback? Feedback { get; set; }
+	public BookingCancellation? Cancellation { get; set; }
 
-		[NotMapped]
-		public ICollection<FileRelation> Files { get; set; } = new List<FileRelation>();
+	[NotMapped]
+	public ICollection<FileRelation> Files { get; set; } = new List<FileRelation>();
 
-		public bool IsDeleted { get; set; }
-		public DateTime DateCreated { get; set; }
-		public DateTime DateModified { get; set; }
-		public ICollection<BookingItem> Items { get; set; } = new List<BookingItem>();
+	public bool IsDeleted { get; set; }
+	public DateTime DateCreated { get; set; }
+	public DateTime DateModified { get; set; }
+	public ICollection<BookingItem> Items { get; set; } = new List<BookingItem>();
+	public ICollection<Payment> Payments { get; set; } = new List<Payment>();
 	}
 }

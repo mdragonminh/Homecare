@@ -51,6 +51,16 @@ namespace HSP.Core.Dtos.BookingDto
         public string? TechnicianPhone { get; set; }
         public string? ServiceName { get; set; }
         public decimal? ServiceBasePrice { get; set; }
+        public List<BookingItemDto>? Items { get; set; }
+        public decimal TotalPrice { get; set; }
+    }
+
+    public class BookingItemDto
+    {
+        public Guid Id { get; set; }
+        public Guid ServiceId { get; set; }
+        public string? ServiceName { get; set; }
+        public decimal Price { get; set; }
     }
 
     public class BookingStatsDto

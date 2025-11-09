@@ -138,61 +138,75 @@ namespace HSP.Service.Implementations
             return pagedResult;
 		}
 
-		public async Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId)
+	public async Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId)
+	{
+		var booking = await _bookingRepository.GetAll(
+				b => b.Customer
+				//b => b.Service
+		).FirstOrDefaultAsync(b => b.Id == bookingId);
+
+		if (booking == null)
+			return null;
+
+		// Load technician separately if exists
+		TechnicianProfile? technician = null;
+		if (booking.TechnicianId.HasValue)
 		{
-			var booking = await _bookingRepository.GetAll(
-					b => b.Customer
-					//b => b.Service
-			).FirstOrDefaultAsync(b => b.Id == bookingId);
-
-			if (booking == null)
-				return null;
-
-			// Load technician separately if exists
-			TechnicianProfile? technician = null;
-			if (booking.TechnicianId.HasValue)
-			{
-				technician = await _technicianRepository.GetAll(t => t.User)
-						.FirstOrDefaultAsync(t => t.Id == booking.TechnicianId.Value);
-			}
-
-			return new BookingDetailDto
-			{
-				Id = booking.Id,
-				CustomerProfileId = booking.CustomerId,
-				TechnicianId = booking.TechnicianId,
-				//ServiceId = booking.ServiceId,
-				DesiredDate = booking.DesiredDate.Value,
-				ProblemDescription = booking.ProblemDescription,
-				Status = booking.Status,
-				DateCompleted = booking.DateCompleted,
-				DateCreated = booking.DateCreated,
-				DateModified = booking.DateModified,
-				CustomerName = booking.Customer?.UserName,
-				CustomerEmail = booking.Customer?.Email,
-				CustomerPhone = booking.Customer?.PhoneNumber,
-				TechnicianName = technician?.User?.UserName,
-				TechnicianEmail = technician?.User?.Email,
-				TechnicianPhone = technician?.User?.PhoneNumber,
-				//ServiceName = booking.Service.Name,
-				//ServiceBasePrice = booking.Service.BasePrice,
-				Feedback = booking.Feedback != null ? new BookingFeedbackResponseDto
-				{
-					BookingId = booking.Feedback.BookingId,
-					Rating = booking.Feedback.Rating,
-					Comment = booking.Feedback.Comment
-				} : null,
-				Cancellation = booking.Cancellation != null ? new BookingCancellationResponseDto
-				{
-					BookingId = booking.Cancellation.BookingId,
-					Reason = booking.Cancellation.Reason,
-					CancelledBy = booking.Cancellation.CancelledBy,
-					CancelledAt = booking.Cancellation.CancelledAt
-				} : null
-			};
+			technician = await _technicianRepository.GetAll(t => t.User)
+					.FirstOrDefaultAsync(t => t.Id == booking.TechnicianId.Value);
 		}
 
-		public async Task<bool> UpdateBookingStatusAsync(UpdateBookingStatusDto input, string technicianUserId)
+		// Load booking items with services
+		var bookingItems = await _bookingItemRepository.GetAll(i => i.Service)
+			.Where(i => i.BookingId == bookingId && !i.IsDeleted)
+			.ToListAsync();
+
+		// Calculate total price from items
+		var totalPrice = bookingItems.Sum(i => i.Price);
+
+		return new BookingDetailDto
+		{
+			Id = booking.Id,
+			CustomerProfileId = booking.CustomerId,
+			TechnicianId = booking.TechnicianId,
+			//ServiceId = booking.ServiceId,
+			DesiredDate = booking.DesiredDate.Value,
+			ProblemDescription = booking.ProblemDescription,
+			Status = booking.Status,
+			DateCompleted = booking.DateCompleted,
+			DateCreated = booking.DateCreated,
+			DateModified = booking.DateModified,
+			CustomerName = booking.Customer?.UserName,
+			CustomerEmail = booking.Customer?.Email,
+			CustomerPhone = booking.Customer?.PhoneNumber,
+			TechnicianName = technician?.User?.UserName,
+			TechnicianEmail = technician?.User?.Email,
+			TechnicianPhone = technician?.User?.PhoneNumber,
+			//ServiceName = booking.Service.Name,
+			//ServiceBasePrice = booking.Service.BasePrice,
+			Items = bookingItems.Select(i => new BookingItemDto
+			{
+				Id = i.Id,
+				ServiceId = i.ServiceId,
+				ServiceName = i.Service?.Name,
+				Price = i.Price
+			}).ToList(),
+			TotalPrice = totalPrice,
+			Feedback = booking.Feedback != null ? new BookingFeedbackResponseDto
+			{
+				BookingId = booking.Feedback.BookingId,
+				Rating = booking.Feedback.Rating,
+				Comment = booking.Feedback.Comment
+			} : null,
+			Cancellation = booking.Cancellation != null ? new BookingCancellationResponseDto
+			{
+				BookingId = booking.Cancellation.BookingId,
+				Reason = booking.Cancellation.Reason,
+				CancelledBy = booking.Cancellation.CancelledBy,
+				CancelledAt = booking.Cancellation.CancelledAt
+			} : null
+		};
+	}		public async Task<bool> UpdateBookingStatusAsync(UpdateBookingStatusDto input, string technicianUserId)
 		{
 			var booking = await _bookingRepository.GetByIdAsync(input.BookingId);
 			if (booking == null)
