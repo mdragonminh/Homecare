@@ -34,10 +34,11 @@ namespace HSP.DAL.Data
 		public DbSet<Ticket> Tickets { get; set; }
 		public DbSet<SystemSetting> SystemSettings { get; set; }
 		public DbSet<AuditLog> AuditLogs { get; set; }
-		public DbSet<ChatConversation> ChatConversations { get; set; }
-		public DbSet<ChatMessage> ChatMessages { get; set; }
-		public DbSet<ChatAttachment> ChatAttachments { get; set; }
+	public DbSet<ChatConversation> ChatConversations { get; set; }
+	public DbSet<ChatMessage> ChatMessages { get; set; }
+	public DbSet<ChatAttachment> ChatAttachments { get; set; }
         public DbSet<ChatMessageHistory> ChatMessageHistories { get; set; }
+	public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
 		{
@@ -115,14 +116,27 @@ namespace HSP.DAL.Data
 					.WithOne(b => b.Feedback)
 					.HasForeignKey<BookingFeedback>(f => f.BookingId)
 					.OnDelete(DeleteBehavior.Cascade);
-			builder.Entity<BookingCancellation>()
-					.HasKey(c => c.BookingId);
-			builder.Entity<BookingCancellation>()
-					.HasOne(c => c.Booking)
-					.WithOne(b => b.Cancellation)
-					.HasForeignKey<BookingCancellation>(c => c.BookingId)
-					.OnDelete(DeleteBehavior.Cascade);
-			builder.Entity<Warehouse>()
+		builder.Entity<BookingCancellation>()
+				.HasKey(c => c.BookingId);
+		builder.Entity<BookingCancellation>()
+				.HasOne(c => c.Booking)
+				.WithOne(b => b.Cancellation)
+				.HasForeignKey<BookingCancellation>(c => c.BookingId)
+				.OnDelete(DeleteBehavior.Cascade);
+		builder.Entity<Payment>(entity =>
+		{
+			entity.HasOne(p => p.Booking)
+				.WithMany(b => b.Payments)
+				.HasForeignKey(p => p.BookingId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			entity.HasIndex(p => p.BookingId);
+			entity.HasIndex(p => p.SePayOrderId);
+			entity.HasIndex(p => p.TransactionId);
+			entity.HasIndex(p => p.Status);
+			entity.HasIndex(p => p.DateCreated);
+		});
+		builder.Entity<Warehouse>()
 				.HasMany(w => w.Equipments)
 				.WithOne(e => e.Warehouse)
 				.HasForeignKey(e => e.WarehouseId)
@@ -240,6 +254,7 @@ namespace HSP.DAL.Data
 			builder.Entity<Equipment>().HasQueryFilter(e => !e.IsDeleted);
 			builder.Entity<Ticket>().HasQueryFilter(t => !t.IsDeleted);
 			builder.Entity<SystemSetting>().HasQueryFilter(s => !s.IsDeleted);
+			builder.Entity<Payment>().HasQueryFilter(p => !p.IsDeleted);
 		}
 	}
 }

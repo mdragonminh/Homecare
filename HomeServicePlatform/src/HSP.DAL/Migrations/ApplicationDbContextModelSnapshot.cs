@@ -212,7 +212,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasIndex("EntityType", "EntityId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.Booking", b =>
@@ -265,7 +265,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasIndex("TechnicianId");
 
-                    b.ToTable("Bookings");
+                    b.ToTable("Bookings", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.BookingCancellation", b =>
@@ -285,7 +285,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("BookingId");
 
-                    b.ToTable("BookingCancellations");
+                    b.ToTable("BookingCancellations", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.BookingFeedback", b =>
@@ -302,7 +302,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("BookingId");
 
-                    b.ToTable("BookingFeedbacks");
+                    b.ToTable("BookingFeedbacks", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.ChatMessageHistory", b =>
@@ -342,7 +342,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChatMessageHistories");
+                    b.ToTable("ChatMessageHistories", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.Equipment", b =>
@@ -389,7 +389,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasIndex("WarehouseId");
 
-                    b.ToTable("Equipments");
+                    b.ToTable("Equipments", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.File", b =>
@@ -430,7 +430,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Files");
+                    b.ToTable("Files", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.FileRelation", b =>
@@ -469,7 +469,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasIndex("ObjectTypeId", "ObjectId");
 
-                    b.ToTable("FileRelations");
+                    b.ToTable("FileRelations", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.Home", b =>
@@ -510,7 +510,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Homes");
+                    b.ToTable("Homes", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.HomeItem", b =>
@@ -561,7 +561,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasIndex("HomeId");
 
-                    b.ToTable("HomeItems");
+                    b.ToTable("HomeItems", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.ObjectType", b =>
@@ -581,7 +581,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ObjectTypes");
+                    b.ToTable("ObjectTypes", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.Service", b =>
@@ -616,7 +616,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Services");
+                    b.ToTable("Services", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.SystemSetting", b =>
@@ -670,7 +670,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasIndex("Group", "Key");
 
-                    b.ToTable("SystemSettings");
+                    b.ToTable("SystemSettings", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.TechnicianProfile", b =>
@@ -722,7 +722,7 @@ namespace HSP.DAL.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("TechnicianProfiles");
+                    b.ToTable("TechnicianProfiles", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.Ticket", b =>
@@ -770,7 +770,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasIndex("TechnicianId");
 
-                    b.ToTable("Tickets");
+                    b.ToTable("Tickets", (string)null);
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.Warehouse", b =>
@@ -810,7 +810,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasIndex("ManagerId");
 
-                    b.ToTable("Warehouses");
+                    b.ToTable("Warehouses", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

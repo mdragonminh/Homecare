@@ -23,6 +23,35 @@ namespace HSP.API.Controllers
 		}
 
 		/// <summary>
+		/// Lấy danh sách booking cho customer hiện tại
+		/// </summary>
+		[HttpGet("my-bookings")]
+		public async Task<IActionResult> GetMyBookings([FromQuery] BookingInput input)
+		{
+			try
+			{
+				// Lấy user ID từ JWT token
+				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+				if (string.IsNullOrEmpty(userId))
+					return Unauthorized();
+
+				// Chuyển userId thành Guid để filter theo CustomerId
+				if (!Guid.TryParse(userId, out Guid customerGuid))
+					return BadRequest(new { message = "Invalid user ID format" });
+
+				// Chỉ lấy booking của customer hiện tại
+				input.CustomerId = customerGuid;
+
+				var result = await _bookingService.GetAllBookingsAsync(input);
+				return Ok(result);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+		}
+
+		/// <summary>
 		/// Lấy danh sách tất cả booking được gán cho technician hiện tại
 		/// </summary>
 		[HttpGet]
@@ -66,15 +95,24 @@ namespace HSP.API.Controllers
 				if (result == null)
 					return NotFound(new { message = "Booking not found" });
 
-				// Kiểm tra xem booking này có được gán cho technician hiện tại không
-				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-				var technicianProfile = await _technicianRepository.GetAll()
-						.FirstOrDefaultAsync(t => t.UserId.ToString() == userId);
+			// Kiểm tra quyền truy cập: chỉ customer hoặc technician liên quan mới được xem
+			var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			if (string.IsNullOrEmpty(userId))
+				return Unauthorized();
 
-				if (technicianProfile == null || result.TechnicianId != technicianProfile.Id)
-					return Forbid("You can only view bookings assigned to you");
-
+			// Kiểm tra nếu là customer của booking này (CustomerId trong Booking là UserId của AppUser)
+			if (Guid.TryParse(userId, out Guid userGuid) && result.CustomerProfileId == userGuid)
 				return Ok(result);
+
+			// Kiểm tra nếu là technician được gán cho booking này
+			var technicianProfile = await _technicianRepository.GetAll()
+					.FirstOrDefaultAsync(t => t.UserId.ToString() == userId);
+
+			if (technicianProfile != null && result.TechnicianId == technicianProfile.Id)
+				return Ok(result);
+
+			// Không phải customer cũng không phải technician của booking này
+			return StatusCode(403, new { message = "You can only view your own bookings" });
 			}
 			catch (Exception ex)
 			{

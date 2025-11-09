@@ -51,14 +51,15 @@ namespace HSP.API
 						});
 			});
 
-			builder.Services.Configure<SmtpConfigurationDto>(builder.Configuration.GetSection("Smtp"));
-			builder.Services.Configure<JwtSettingsDto>(builder.Configuration.GetSection("JwtSettings"));
-			builder.Services.Configure<GoogleAuthConfigurationDto>(builder.Configuration.GetSection("Google"));
-			builder.Services.Configure<GoogleMapConfigurationDto>(builder.Configuration.GetSection("GoogleMaps"));
-			builder.Services.Configure<LocalizationSettingsDto>(builder.Configuration.GetSection("LocalizationSettings"));
-			builder.Services.Configure<UrlSettingsDto>(builder.Configuration.GetSection("UrlSettings"));
+		builder.Services.Configure<SmtpConfigurationDto>(builder.Configuration.GetSection("Smtp"));
+		builder.Services.Configure<JwtSettingsDto>(builder.Configuration.GetSection("JwtSettings"));
+		builder.Services.Configure<GoogleAuthConfigurationDto>(builder.Configuration.GetSection("Google"));
+		builder.Services.Configure<GoogleMapConfigurationDto>(builder.Configuration.GetSection("GoogleMaps"));
+		builder.Services.Configure<LocalizationSettingsDto>(builder.Configuration.GetSection("LocalizationSettings"));
+		builder.Services.Configure<UrlSettingsDto>(builder.Configuration.GetSection("UrlSettings"));
 			builder.Services.Configure<OpenAISettingsDto>(builder.Configuration.GetSection("OpenAI"));
-			builder.Services.AddRazorTemplating();
+		builder.Services.Configure<SePayConfigurationDto>(builder.Configuration.GetSection("SePay"));
+		builder.Services.AddRazorTemplating();
 			builder.Services.AddStackExchangeRedisCache(options =>
 			{
 				options.Configuration = builder.Configuration.GetConnectionString("Redis");
