@@ -115,7 +115,12 @@ namespace HSP.Service.Implementations
 			{
 				throw new ValidationException("Home not found or you do not have permission to delete this home.");
 			}
-			homeToUpdate.Name = input.Name;
+			var flag = false;
+			if (input.Name != homeToUpdate.Name)
+			{
+				homeToUpdate.Name = input.Name;
+				flag = true;
+			}
 			if (homeToUpdate.Address != input.Address)
 			{
 				var coordinates = await _geocodingService.GetCoordinatesForAddressAsync(input.Address);
@@ -126,9 +131,13 @@ namespace HSP.Service.Implementations
 				homeToUpdate.Address = input.Address;
 				homeToUpdate.Latitude = coordinates.Latitude;
 				homeToUpdate.Longitude = coordinates.Longitude;
+				flag = true;
 			}
-			homeToUpdate.DateModified = DateTime.UtcNow;
-			await _unitOfWork.SaveChangesAsync();
+			if(flag == true)
+			{
+				homeToUpdate.DateModified = DateTime.UtcNow;
+				await _unitOfWork.SaveChangesAsync();
+			}
 			return true;
 		}
 	}

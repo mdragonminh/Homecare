@@ -91,14 +91,42 @@ namespace HSP.Service.Implementations
 		public async Task<bool> UpdateHomeItemAsync(Guid homeItemId, UpdateHomeItemDto input, Guid userId)
 		{
 			var homeItem = await GetOwnedHomeItemAsync(homeItemId, userId);
-			homeItem.Name = input.Name;
-			homeItem.Brand = input.Brand;
-			homeItem.ModelNumber = input.ModelNumber;
-			homeItem.Notes = input.Notes;
-			homeItem.SerialNumber = input.SerialNumber;
-			homeItem.Type = input.Type;
-			homeItem.DateModified = DateTime.UtcNow;
-			await _unitOfWork.SaveChangesAsync();
+			var flag = false;
+			if(input.Name != homeItem.Name)
+			{
+				homeItem.Name = input.Name;
+				flag = true;
+			}
+			if(input.Brand != homeItem.Brand)
+			{
+				homeItem.Brand = input.Brand;
+				flag = true;
+			}
+			if(input.ModelNumber != homeItem.ModelNumber)
+			{
+				homeItem.ModelNumber = input.ModelNumber;
+				flag = true;
+			}
+			if(input.Notes != homeItem.Notes)
+			{
+				homeItem.Notes = input.Notes;
+				flag = true;
+			}
+			if(input.SerialNumber != homeItem.SerialNumber)
+			{
+				homeItem.SerialNumber = input.SerialNumber;
+				flag = true;
+			}
+			if (input.Type != homeItem.Type)
+			{
+				homeItem.Type = input.Type;
+				flag = true;
+			}
+			if (flag == true)
+			{
+				homeItem.DateModified = DateTime.UtcNow;
+				await _unitOfWork.SaveChangesAsync();
+			}
 			return true;
 		}
 		private async Task VerifyHomeOwnershipAsync(Guid homeId, Guid userId)
