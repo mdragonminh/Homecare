@@ -23,7 +23,7 @@ namespace HSP.Service.Implementations
 		private readonly IRepository<ChatMessageHistory, Guid> _historyRepository;
 		private readonly OpenAISettingsDto _settings;
 
-		public ChatbotService(
+        public ChatbotService(
 				IConfiguration configuration,
 				IServiceRequestService serviceRequestService,
 				IRepository<Core.Entities.Service, Guid> serviceRepository,

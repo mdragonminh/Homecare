@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Dtos.ChatbotDto;
+using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Dtos.ServiceRequestDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
@@ -7,6 +8,7 @@ using HSP.Service.Implementations;
 using HSP.Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using MockQueryable;
 using MockQueryable.Moq;
 using Moq;
@@ -43,28 +45,64 @@ namespace HSP.Service.Test.Implementations
         // ============================================================
 
         [Fact]
-        // Kiểm tra khi OPENAI_API_KEY không được cấu hình → ném exception
         public void Constructor_ShouldThrow_WhenApiKeyIsMissing()
         {
             // Arrange
-            _configMock.Setup(c => c["OPENAI_API_KEY"]).Returns((string?)null);
+            var settingsMock = new Mock<IOptions<OpenAISettingsDto>>();
+            settingsMock.Setup(o => o.Value).Returns(new OpenAISettingsDto
+            {
+                ApiKey = null,
+                Model = "gpt-4o"
+            });
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentNullException>(() => CreateService());
-            Assert.Contains("OPENAI_API_KEY", ex.Message);
+            var ex = Assert.Throws<ArgumentNullException>(() =>
+                new ChatbotService(
+                    _configMock.Object,
+                    _serviceRequestServiceMock.Object,
+                    _serviceRepoMock.Object,
+                    _historyRepoMock.Object,
+                    settingsMock.Object,
+                    _unitOfWorkMock.Object,
+                    _localizerMock.Object
+                )
+            );
+
+            Assert.Contains("key", ex.ParamName);
         }
 
-        [Fact]
+
         // Kiểm tra khi OPENAI_API_KEY là chuỗi rỗng → ném exception
+
+        [Fact]
         public void Constructor_ShouldThrow_WhenApiKeyIsEmpty()
         {
             // Arrange
-            _configMock.Setup(c => c["OPENAI_API_KEY"]).Returns(string.Empty);
+            var settingsMock = new Mock<IOptions<OpenAISettingsDto>>();
+            settingsMock.Setup(o => o.Value).Returns(new OpenAISettingsDto
+            {
+                ApiKey = "",    // <- empty
+                Model = "gpt-4o"
+            });
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentNullException>(() => CreateService());
-            Assert.Contains("OPENAI_API_KEY", ex.Message);
+            var ex = Assert.Throws<ArgumentException>(() =>
+                new ChatbotService(
+                    _configMock.Object,
+                    _serviceRequestServiceMock.Object,
+                    _serviceRepoMock.Object,
+                    _historyRepoMock.Object,
+                    settingsMock.Object,
+                    _unitOfWorkMock.Object,
+                    _localizerMock.Object
+                )
+            );
+
+            Assert.Contains("Value cannot be an empty string", ex.Message);
         }
+
+
+
 
         [Fact]
         // Kiểm tra khi OPENAI_API_KEY hợp lệ → tạo service thành công
@@ -360,7 +398,7 @@ namespace HSP.Service.Test.Implementations
         // ✅ TEST: ProcessMessageAsync - UnitOfWork
         // ============================================================
 
-        
+
 
         // ============================================================
         // Helper Methods
@@ -368,15 +406,24 @@ namespace HSP.Service.Test.Implementations
 
         private ChatbotService CreateService()
         {
+            var openAISettingsMock = new Mock<IOptions<OpenAISettingsDto>>();
+            openAISettingsMock.Setup(x => x.Value).Returns(new OpenAISettingsDto
+            {
+                ApiKey = "test-key",
+                Model = "gpt-4o" // hoặc model bạn dùng
+            });
+
             return new ChatbotService(
                 _configMock.Object,
                 _serviceRequestServiceMock.Object,
                 _serviceRepoMock.Object,
                 _historyRepoMock.Object,
+                openAISettingsMock.Object,    
                 _unitOfWorkMock.Object,
                 _localizerMock.Object
             );
         }
+
 
         private ChatbotService CreateServiceWithValidApiKey()
         {
