@@ -105,7 +105,7 @@ namespace HSP.Service.Implementations
 			}
 			return true;
 		}
-		public async Task<bool> DeleteHomeServiceAsync(Guid userId, Guid id)
+		public async Task<bool> DeleteHomeServiceAsync(Guid id)
 		{
 			var homeService = await _homeServiceRepository.GetAll()
 				.Include(x => x.Technicians)

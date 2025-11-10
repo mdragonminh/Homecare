@@ -197,7 +197,7 @@ namespace HSP.Service.Test.Implementations
 			_mockUnitOfWork
 				.Setup(uow => uow.SaveChangesAsync())
 				.ReturnsAsync(1);
-			var result = await _homeServiceService.DeleteHomeServiceAsync(userId, existingService.Id);
+			var result = await _homeServiceService.DeleteHomeServiceAsync(existingService.Id);
 			Assert.True(result);
 			_mockHomeServiceRepository.Verify(repo => repo.DeleteAsync(existingService.Id), Times.Once);
 			_mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(), Times.Once);
@@ -211,7 +211,7 @@ namespace HSP.Service.Test.Implementations
 			_mockHomeServiceRepository
 					.Setup(repo => repo.GetAll())
 					.Returns(emptyServices);
-			await Assert.ThrowsAsync<KeyNotFoundException>(() => _homeServiceService.DeleteHomeServiceAsync(userId, nonExistentServiceId));
+			await Assert.ThrowsAsync<KeyNotFoundException>(() => _homeServiceService.DeleteHomeServiceAsync(nonExistentServiceId));
 		}
 		[Fact]
 		public async Task DeleteHomeServiceAsync_ServiceInUse_ThrowInvalidOperationException()
@@ -236,7 +236,7 @@ namespace HSP.Service.Test.Implementations
 					.Returns(services);
 
 			await Assert.ThrowsAsync<InvalidOperationException>(() =>
-					_homeServiceService.DeleteHomeServiceAsync(userId, serviceId));
+					_homeServiceService.DeleteHomeServiceAsync(serviceId));
 
 			_mockHomeServiceRepository.Verify(r => r.DeleteAsync(It.IsAny<Guid>()), Times.Never);
 			_mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Never);

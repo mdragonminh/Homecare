@@ -82,10 +82,9 @@ namespace HSP.API.Controllers
 		[Authorize(Roles = RoleNames.Admin)]
 		public async Task<IActionResult> DeleteHomeService([FromRoute] Guid id)
 		{
-			var userId = User.GetUserId();
 			try
 			{
-				var result = await _homeServiceService.DeleteHomeServiceAsync(userId, id);
+				var result = await _homeServiceService.DeleteHomeServiceAsync(id);
 				if (result)
 				{
 					return NoContent();

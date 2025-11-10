@@ -9,7 +9,7 @@ namespace HSP.Service.Interfaces
 		Task<PagedList<AdminHomeServiceDto>> GetAllAsync(HomeServiceInput input);
 		Task<AdminHomeServiceDto> GetHomeServiceByIdAsync(Guid id);
 		Task<bool> UpdateHomeServiceAsync(Guid userId, Guid id, UpdateHomeServiceDto input);
-		Task<bool> DeleteHomeServiceAsync(Guid userId, Guid id);
+		Task<bool> DeleteHomeServiceAsync(Guid id);
 		#region Home Page
 		Task<IEnumerable<HomeServiceDto>> GetAllServiceHomePageAsync();
 		#endregion
