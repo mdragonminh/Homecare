@@ -571,7 +571,7 @@ namespace HSP.Service.Test.Implementations
             Assert.NotNull(result);
             Assert.Equal(userId, result.Id);
             Assert.Equal("Thanh Long Nguyen", result.FullName); // Đã được cập nhật
-            Assert.Equal("09737752747", result.PhoneNumber); // Đã được cập nhật
+            Assert.Equal("0973775247", result.PhoneNumber); // Đã được cập nhật
             Assert.Equal("thanhlongnguyenn198@gmail.com", result.Email);
             Assert.True(result.IsActive);
             Assert.Equal(1, result.TotalHomes);
