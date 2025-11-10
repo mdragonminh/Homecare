@@ -458,7 +458,7 @@ namespace HSP.Service.Test.Implementations
         {
             // Arrange
             string invalidUserId = "not-a-guid";
-            var updateDto = new UpdateAppUserDto { FullName = "New Name", PhoneNumber = "0123456789" };
+            var updateDto = new UpdateAppUserDto {FullName = "Thanh Long Nguyen", PhoneNumber = "0973775247" };
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -471,7 +471,7 @@ namespace HSP.Service.Test.Implementations
         {
             // Arrange
             string validUserId = Guid.NewGuid().ToString();
-            var updateDto = new UpdateAppUserDto { FullName = "New Name", PhoneNumber = "0123456789" };
+            var updateDto = new UpdateAppUserDto { FullName = "Thanh Long Nguyen", PhoneNumber = "0973775247" };
 
             _userRepoMock.Setup(r => r.FindByIdAsync(It.IsAny<Guid>()))
                          .ReturnsAsync((AppUser?)null);
@@ -489,14 +489,14 @@ namespace HSP.Service.Test.Implementations
             var user = new AppUser
             {
                 Id = Guid.NewGuid(),
-                FullName = "Old Name",
-                PhoneNumber = "0000000000"
+                FullName = "Nguyen Thanh Long", // old name
+                PhoneNumber = "0979735203",   // old phone
             };
 
             var updateDto = new UpdateAppUserDto
             {
-                FullName = "New Name",
-                PhoneNumber = "0123456789"
+                FullName = "Thanh Long Nguyen", // new name
+                PhoneNumber = "0973775247" // new phone
             };
 
             _userRepoMock.Setup(r => r.FindByIdAsync(user.Id)).ReturnsAsync(user);
@@ -519,9 +519,9 @@ namespace HSP.Service.Test.Implementations
             var user = new AppUser
             {
                 Id = userId,
-                FullName = "Old Name",
-                PhoneNumber = "0000000000",
-                Email = "test@example.com",
+                FullName = "Nguyen Thanh Long", // old name
+                PhoneNumber = "0979735203",   // old phone
+                Email = "thanhlongnguyenn198@gmail.com",
                 IsActive = true,
                 DateCreated = DateTime.UtcNow.AddDays(-10),
                 DateModified = DateTime.UtcNow.AddDays(-5),
@@ -532,8 +532,8 @@ namespace HSP.Service.Test.Implementations
             };
             var updateDto = new UpdateAppUserDto
             {
-                FullName = "New Name",
-                PhoneNumber = "0123456789"
+                FullName = "Thanh Long Nguyen", // new name
+                PhoneNumber = "0973775247" // new phone
             };
 
             // Mock FindByIdAsync cho UpdateCustomerAsync
@@ -570,9 +570,9 @@ namespace HSP.Service.Test.Implementations
             // Assert
             Assert.NotNull(result);
             Assert.Equal(userId, result.Id);
-            Assert.Equal("New Name", result.FullName); // Đã được cập nhật
-            Assert.Equal("0123456789", result.PhoneNumber); // Đã được cập nhật
-            Assert.Equal("test@example.com", result.Email);
+            Assert.Equal("Thanh Long Nguyen", result.FullName); // Đã được cập nhật
+            Assert.Equal("09737752747", result.PhoneNumber); // Đã được cập nhật
+            Assert.Equal("thanhlongnguyenn198@gmail.com", result.Email);
             Assert.True(result.IsActive);
             Assert.Equal(1, result.TotalHomes);
 
@@ -580,8 +580,8 @@ namespace HSP.Service.Test.Implementations
             _userRepoMock.Verify(r => r.FindByIdAsync(userId), Times.Once);
             _userRepoMock.Verify(r => r.UpdateAccount(It.Is<AppUser>(u =>
                 u.Id == userId &&
-                u.FullName == "New Name" &&
-                u.PhoneNumber == "0123456789")), Times.Once);
+                u.FullName == "Thanh Long Nguyen" &&
+                u.PhoneNumber == "0973775247")), Times.Once);
             _userRepoMock.Verify(r => r.GetUsersAsQueryable(), Times.Once);
 
         }
