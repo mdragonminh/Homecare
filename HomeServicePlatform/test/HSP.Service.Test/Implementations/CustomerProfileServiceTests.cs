@@ -115,37 +115,60 @@ namespace HSP.Service.Test.Implementations
         }
 
 
-        //[Fact]
-        //public async Task GetCustomerByUserIdAsync_ShouldReturnUser_WhenUserExists()
-        //{
-        //    // Arrange
-        //    var userId = Guid.NewGuid();
-        //    var user = new AppUser
-        //    {
-        //        Id = userId,
-        //        FullName = "Nguyen Van A",
-        //        Email = "a@example.com",
-        //        PhoneNumber = "0123456789",
-        //        IsActive = true,
-        //        Homes = new List<Home> { new Home { Id = Guid.NewGuid(), IsDeleted = false } }
-        //    };
+        [Fact]
+        public async Task GetCustomerByUserIdAsync_ShouldReturnUser_WhenUserExists()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Nguyen Van A",
+                Email = "a@example.com",
+                PhoneNumber = "0123456789",
+                IsActive = true,
+                DateCreated = DateTime.UtcNow.AddDays(-10),
+                DateModified = DateTime.UtcNow.AddDays(-5),
+                Homes = new List<Home> { new Home { Id = Guid.NewGuid(), IsDeleted = false } }
+            };
 
-        //    // ✅ Sử dụng BuildMockDbSet() để hỗ trợ async LINQ
-        //    var mockUsers = new List<AppUser> { user }.BuildMockDbSet();
+            // ✅ Tạo mock IQueryable từ List - BuildMock() phải gọi trực tiếp từ List
+            var usersList = new List<AppUser> { user };
+            var mockUsers = usersList.BuildMock();
 
-        //    _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers.Object);
+            _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
 
-        //    // Act
-        //    var result = await _service.GetCustomerByUserIdAsync(userId.ToString());
+            // Mock GetUserAvatarUrlAsync - ObjectType repository
+            var objectTypes = new List<ObjectType>
+            {
+                new ObjectType { Id = Guid.NewGuid(), Name = "User" }
+            };
+            var objectTypesMock = objectTypes.BuildMock();
+            _objTypeRepoMock.Setup(r => r.GetAll())
+                           .Returns(objectTypesMock);
 
-        //    // Assert
-        //    Assert.NotNull(result);
-        //    Assert.Equal(userId, result.Id);
-        //    Assert.Equal("Nguyen Van A", result.FullName);
-        //    Assert.Equal("a@example.com", result.Email);
-        //    Assert.True(result.IsActive);
-        //    Assert.Equal(1, result.TotalHomes);
-        //}
+            // Mock GetUserAvatarUrlAsync - FileRelation repository (không có avatar)
+            var fileRelations = new List<FileRelation>();
+            var fileRelationsMock = fileRelations.BuildMock();
+            _fileRelRepoMock.Setup(r => r.GetAll())
+                           .Returns(fileRelationsMock);
+
+            // Act
+            var result = await _service.GetCustomerByUserIdAsync(userId.ToString());
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(userId, result.Id);
+            Assert.Equal("Nguyen Van A", result.FullName);
+            Assert.Equal("a@example.com", result.Email);
+            Assert.Equal("0123456789", result.PhoneNumber);
+            Assert.True(result.IsActive);
+            Assert.Equal(1, result.TotalHomes);
+
+            // Verify method đã được gọi
+            _userRepoMock.Verify(r => r.GetUsersAsQueryable(), Times.Once);
+        }
+
 
 
 
