@@ -1,7 +1,9 @@
 using HSP.Core.Dtos.BookingDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
+using HSP.Service.Implementations;
 using HSP.Service.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Razor.Templating.Core;
@@ -14,11 +16,13 @@ namespace HSP.API.Controllers
 	public class BookingController : ControllerBase
 	{
 		private readonly IBookingService _bookingService;
+		private readonly IFeedbackService _feedbackService;
 		private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
 
-		public BookingController(IBookingService bookingService, IRepository<TechnicianProfile, Guid> technicianRepository)
+		public BookingController(IBookingService bookingService, IFeedbackService feedbackService, IRepository<TechnicianProfile, Guid> technicianRepository)
 		{
 			_bookingService = bookingService;
+            _feedbackService = feedbackService;
 			_technicianRepository = technicianRepository;
 		}
 
@@ -233,5 +237,42 @@ namespace HSP.API.Controllers
 				return BadRequest(new { message = ex.Message });
 			}
 		}
-	}
+
+        [Authorize]
+        [HttpPost("{bookingId}/feedback")]
+        public async Task<IActionResult> CreateFeedback(Guid bookingId, [FromBody] CreateFeedbackDto input)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(); 
+
+                var feedbackDto = await _feedbackService.CreateFeedbackAsync(bookingId, input, userId);
+
+                return Ok(feedbackDto);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message }); 
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message); 
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+        }
+    }
 }

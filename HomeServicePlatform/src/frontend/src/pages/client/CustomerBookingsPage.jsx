@@ -91,8 +91,7 @@ const CustomerBookingsPage = () => {
   };
 
   const handleViewDetails = (bookingId) => {
-    // Navigate to booking detail page if exists, or show modal
-    toast.info("Xem chi tiết booking: " + bookingId);
+    navigate(`/my-bookings/${bookingId}`);
   };
 
   const handlePayNow = (bookingId) => {

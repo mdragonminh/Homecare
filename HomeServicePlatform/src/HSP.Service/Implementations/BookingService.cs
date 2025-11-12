@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Dtos.BookingDto;
+using HSP.Core.Dtos.PaymentDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Enums;
@@ -141,9 +142,10 @@ namespace HSP.Service.Implementations
 	public async Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId)
 	{
 		var booking = await _bookingRepository.GetAll(
-				b => b.Customer
-				//b => b.Service
-		).FirstOrDefaultAsync(b => b.Id == bookingId);
+				b => b.Customer,
+                b => b.Payments
+        //b => b.Service
+        ).FirstOrDefaultAsync(b => b.Id == bookingId);
 
 		if (booking == null)
 			return null;
@@ -204,8 +206,19 @@ namespace HSP.Service.Implementations
 				Reason = booking.Cancellation.Reason,
 				CancelledBy = booking.Cancellation.CancelledBy,
 				CancelledAt = booking.Cancellation.CancelledAt
-			} : null
-		};
+			} : null,
+            Payments = booking.Payments.Select(p => new PaymentDto
+            {
+                Id = p.Id,
+                BookingId = p.BookingId,
+                Amount = p.Amount,
+                PaymentMethod = p.PaymentMethod,
+                Status = p.Status,
+                TransactionId = p.TransactionId,
+                PaidAt = p.PaidAt,
+                DateCreated = p.DateCreated
+            }).OrderByDescending(p => p.DateCreated).ToList()
+        };
 	}		public async Task<bool> UpdateBookingStatusAsync(UpdateBookingStatusDto input, string technicianUserId)
 		{
 			var booking = await _bookingRepository.GetByIdAsync(input.BookingId);

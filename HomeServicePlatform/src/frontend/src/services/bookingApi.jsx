@@ -97,4 +97,16 @@ export const bookingApi = {
     });
     return response.data;
   },
+
+  createFeedback: async (bookingId, rating, comment) => {
+    const payload = {
+      rating: rating,
+      comment: comment,
+    };
+    const response = await axiosClient.post(
+      `/booking/${bookingId}/feedback`,
+      payload
+    );
+    return response.data;
+  },
 };
