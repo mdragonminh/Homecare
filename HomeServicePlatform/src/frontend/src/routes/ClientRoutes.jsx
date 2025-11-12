@@ -11,6 +11,7 @@ import CustomerBookingsPage from "../pages/client/CustomerBookingsPage";
 import PaymentPage from "../pages/client/payment/PaymentPage";
 import PaymentInstructionsPage from "../pages/client/payment/PaymentInstructionsPage";
 import PaymentResultPage from "../pages/client/payment/PaymentResultPage";
+import CustomerBookingDetail from "../pages/client/CustomerBookingDetail"
 
 import TicketManagementPage from "../pages/supporter/TicketManagementPage";
 
@@ -138,6 +139,16 @@ export default function ClientRoutes({
           <ProtectedRoute
             loggedInUser={loggedInUser}
             element={<CustomerBookingsPage />}
+          />
+        }
+      />
+
+      <Route
+        path="/my-bookings/:id"
+        element={
+          <ProtectedRoute
+            loggedInUser={loggedInUser}
+            element={<CustomerBookingDetail />} 
           />
         }
       />

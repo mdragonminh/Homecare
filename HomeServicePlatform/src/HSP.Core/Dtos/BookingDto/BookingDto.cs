@@ -53,6 +53,7 @@ namespace HSP.Core.Dtos.BookingDto
         public decimal? ServiceBasePrice { get; set; }
         public List<BookingItemDto>? Items { get; set; }
         public decimal TotalPrice { get; set; }
+        public ICollection<PaymentDto.PaymentDto> Payments { get; set; } = new List<PaymentDto.PaymentDto>();
     }
 
     public class BookingItemDto
