@@ -675,7 +675,7 @@
       "citizen_id_invalid": "Citizen ID must be exactly 12 digits"
     },
     "citizen_id": {
-      "title": "Citizen ID Information",
+      "title": "Identification Documents",
       "subtitle": "Scan your Citizen ID card to auto-fill information and verify identity.",
       "upload_required": "Upload Citizen ID Photo (Front)",
       "number_required": "Citizen ID Number",

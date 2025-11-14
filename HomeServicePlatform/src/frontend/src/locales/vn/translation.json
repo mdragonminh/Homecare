@@ -661,7 +661,7 @@
       "citizen_id_invalid": "Số CMND/CCCD phải có đúng 12 chữ số."
     },
     "citizen_id": {
-      "title": "Xác Thực CMND/CCCD",
+      "title": "Giấy tờ tùy thân",
       "subtitle": "Quét CMND/CCCD của bạn để tự động điền thông tin và xác thực danh tính.",
       "upload_required": "Tải lên ảnh CMND/CCCD (Mặt trước)",
       "number_required": "Số CMND/CCCD",

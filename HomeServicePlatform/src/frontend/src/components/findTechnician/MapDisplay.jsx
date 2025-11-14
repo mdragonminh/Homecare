@@ -1,3 +1,4 @@
+// fileName: MapDisplay.jsx
 
 import React, { useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -98,7 +99,7 @@ const MapDisplay = ({ lat, lng, technicians, isDraggable, onMarkerDrag }) => {
         draggable: isDraggable, 
       }).addTo(mapInstance.current);
 
-     
+      
       markerInstance.current.on("dragend", (e) => {
         const { lat, lng } = e.target.getLatLng();
         onMarkerDrag(lat, lng); 
@@ -114,7 +115,7 @@ const MapDisplay = ({ lat, lng, technicians, isDraggable, onMarkerDrag }) => {
     }
 
 
-   
+    
     if (lat && lng) {
       const newLatlng = L.latLng(lat, lng);
       const currentCenter = mapInstance.current.getCenter();
@@ -153,7 +154,8 @@ const MapDisplay = ({ lat, lng, technicians, isDraggable, onMarkerDrag }) => {
   return (
     <div
       ref={mapRef}
-      className="w-full h-full rounded-xl shadow-lg border-2 border-gray-500 relative z-0 overflow-hidden transition-all duration-300"
+      // Đã sửa: Loại bỏ shadow-lg và border-2 border-gray-500
+      className="w-full h-full rounded-xl relative z-0 overflow-hidden transition-all duration-300" 
       style={{ minHeight: "400px" }}
     />
   );
