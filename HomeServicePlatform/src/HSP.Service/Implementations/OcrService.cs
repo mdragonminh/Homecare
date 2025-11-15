@@ -1,9 +1,10 @@
 ﻿using HSP.Core.Dtos.OcrDto;
-using HSP.Core.Interfaces.External;
 using HSP.Service.Interfaces;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using System.Text.Json;
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using Tesseract;
 
@@ -12,74 +13,132 @@ namespace HSP.Service.Implementations
 	public class OcrService : IOcrService
 	{
 		private readonly TesseractEngine _engine;
-		private readonly IChatbotService _chatbotService;
 
-
-		public OcrService(TesseractEngine engine, IChatbotService chatbotService)
+		public OcrService(TesseractEngine engine)
 		{
 			_engine = engine;
-			_chatbotService = chatbotService;
 		}
-		public async Task<CccdDataDto> ScanCccdAsync(byte[] imageData)
-		{
-			var ocrText = await ExtractTextAsync(imageData);
+        public async Task<CccdDataDto> ScanCccdAsync(byte[] imageData)
+        {
+            using var image = Image.Load<Rgba32>(imageData);
+            var preprocessed = Preprocess(image.Clone());
+            string rawText = await OcrFull(preprocessed);
 
-			var idNumber = ExtractIdNumber(ocrText);
-			var dto = await AskGptForCccdDataAsync(ocrText);
-			dto.IdNumber = idNumber;
-			return dto;
-		}
+            string idNumber = ExtractIdNumber(rawText);
 
-		private async Task<string> ExtractTextAsync(byte[] imageData)
-		{
-			using var image = Image.Load(imageData);
-			image.Mutate(x => x.AutoOrient().Grayscale());
+            string fullName = ExtractFullName(rawText);
 
-			using var ms = new MemoryStream();
-			await image.SaveAsPngAsync(ms);
+            return new CccdDataDto
+            {
+                IdNumber = idNumber,
+                FullName = fullName
+            };
+        }
 
-			using var pix = Pix.LoadFromMemory(ms.ToArray());
-			using var page = _engine.Process(pix);
+        private Image<Rgba32> Preprocess(Image<Rgba32> img)
+        {
+            img.Mutate(x =>
+            {
+                x.AutoOrient();
+                x.Resize(img.Width * 2, img.Height * 2);
+                x.Grayscale();
+                x.GaussianSharpen(0.6f);
+                x.Contrast(1.1f);
+            });
 
-			var rawText = page.GetText() ?? "";
-			return Regex.Replace(rawText, @"\s+", " ").Trim();
-		}
+            return img;
+        }
 
-		private string ExtractIdNumber(string text)
-		{
-			var match = Regex.Match(text, @"\b\d{12}\b");
-			return match.Success ? match.Value : string.Empty;
-		}
+        private async Task<string> OcrFull(Image<Rgba32> img)
+        {
+            using var ms = new MemoryStream();
+            await img.SaveAsPngAsync(ms);
 
-		private async Task<CccdDataDto> AskGptForCccdDataAsync(string ocrText)
-		{
-			var prompt = $@"
-			Dưới đây là nội dung OCR đọc được từ căn cước công dân Việt Nam (có thể có lỗi chính tả):
-			{ocrText}
+            using var pix = Pix.LoadFromMemory(ms.ToArray());
+            _engine.DefaultPageSegMode = PageSegMode.Auto;
 
-			Hãy chỉ trích xuất **họ và tên đầy đủ của người được cấp căn cước công dân**.
+            using var page = _engine.Process(pix);
+            string text = page.GetText() ?? "";
 
-			Trả về JSON đúng định dạng:
-			{{ ""FullName"": ""HOANG QUOC QUAN"" }}";
+            text = text.Replace("\r", "");
+            text = Regex.Replace(text, @"[ ]{2,}", " ");
 
-			var response = await _chatbotService.GetChatResponseAsync(prompt);
+            return text.Trim();
+        }
 
-			response = response.Replace("```json", "").Replace("```", "").Trim();
+        private string ExtractIdNumber(string text)
+        {
+            var match = Regex.Match(text, @"\b\d{12}\b");
+            return match.Success ? match.Value : "";
+        }
 
-			try
-			{
-				var result = JsonSerializer.Deserialize<CccdDataDto>(response,
-					new JsonSerializerOptions
-					{
-						PropertyNameCaseInsensitive = true
-					});
+        private string ExtractFullName(string rawText)
+        {
+            if (string.IsNullOrWhiteSpace(rawText))
+                return "";
 
-				return result ?? new CccdDataDto();
-			}
-			catch
-			{
-				return new CccdDataDto();
-			}
-		}
-	}
+            var lines = rawText
+                .Split('\n')
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .ToList();
+
+            int idx = lines.FindIndex(l =>
+                Regex.IsMatch(l, @"HO.?VA.?TEN|FULL.?NAME", RegexOptions.IgnoreCase));
+
+            if (idx != -1 && idx + 1 < lines.Count)
+            {
+                string candidate = lines[idx + 1];
+                return ConvertToName(candidate);
+            }
+
+            foreach (var line in lines)
+            {
+                var name = ConvertToName(line);
+                if (!string.IsNullOrEmpty(name))
+                {
+                    return name;
+                }
+            }
+
+            return "";
+        }
+
+        private string ConvertToName(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                return "";
+
+            line = Regex.Replace(line, @"[^A-Za-zÀ-ỹ\s]", " ").Trim();
+
+            string noDia = RemoveDiacritics(line).ToUpper();
+
+            var match = Regex.Match(noDia,
+                @"([A-Z]{2,}(?:\s+[A-Z]{2,})+)"
+            );
+
+            if (!match.Success)
+                return "";
+
+            return Regex.Replace(match.Value, @"\s+", " ").Trim();
+        }
+
+        private string RemoveDiacritics(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return "";
+
+            var normalized = text.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+
+            foreach (var ch in normalized)
+            {
+                var uc = CharUnicodeInfo.GetUnicodeCategory(ch);
+                if (uc != UnicodeCategory.NonSpacingMark)
+                    sb.Append(ch);
+            }
+
+            return sb.ToString().Normalize(NormalizationForm.FormC);
+        }
+    }
 }
