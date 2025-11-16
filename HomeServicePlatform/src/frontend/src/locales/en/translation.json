@@ -51,6 +51,10 @@
       "error_new_same": "New password must be different from current password"
       
     },
+    "type": "Type",
+    "home_name": "Home Name",
+    "address": "Address",
+    "actions": "Actions",
     "welcome_back": "Welcome back!",
     "login_button": "Log in",
     "logging_in": "Logging in...",
