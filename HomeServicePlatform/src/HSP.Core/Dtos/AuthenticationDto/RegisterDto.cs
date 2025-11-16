@@ -43,6 +43,8 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		[Required]
 		public string Address {  get; set; }
 		public IFormFile AvatarFile { get; set; }
-		public List<IFormFile> CertificateFiles { get; set; } = new List<IFormFile>();
+		[Required]
+		public IFormFile LegalDocument { get; set; }
+        public List<IFormFile> CertificateFiles { get; set; } = new List<IFormFile>();
 	}
 }

@@ -58,7 +58,7 @@ namespace HSP.Service.Implementations
             _engine.DefaultPageSegMode = PageSegMode.Auto;
 
             using var page = _engine.Process(pix);
-            string text = page.GetText() ?? "";
+            string text = page.GetText() ?? string.Empty;
 
             text = text.Replace("\r", "");
             text = Regex.Replace(text, @"[ ]{2,}", " ");
@@ -75,7 +75,7 @@ namespace HSP.Service.Implementations
         private string ExtractFullName(string rawText)
         {
             if (string.IsNullOrWhiteSpace(rawText))
-                return "";
+                return string.Empty;
 
             var lines = rawText
                 .Split('\n')
@@ -101,13 +101,13 @@ namespace HSP.Service.Implementations
                 }
             }
 
-            return "";
+            return string.Empty;
         }
 
         private string ConvertToName(string line)
         {
             if (string.IsNullOrWhiteSpace(line))
-                return "";
+                return string.Empty;
 
             line = Regex.Replace(line, @"[^A-Za-zÀ-ỹ\s]", " ").Trim();
 
@@ -118,7 +118,7 @@ namespace HSP.Service.Implementations
             );
 
             if (!match.Success)
-                return "";
+                return string.Empty;
 
             return Regex.Replace(match.Value, @"\s+", " ").Trim();
         }
@@ -126,7 +126,7 @@ namespace HSP.Service.Implementations
         private string RemoveDiacritics(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
-                return "";
+                return string.Empty;
 
             var normalized = text.Normalize(NormalizationForm.FormD);
             var sb = new StringBuilder();
@@ -139,6 +139,14 @@ namespace HSP.Service.Implementations
             }
 
             return sb.ToString().Normalize(NormalizationForm.FormC);
+        }
+
+        public async Task<string> ExtractTextAsync(byte[] imageData)
+        {
+            using var image = Image.Load<Rgba32>(imageData);
+            var preprocessed = Preprocess(image.Clone());
+            var text = await OcrFull(preprocessed);
+            return text;
         }
     }
 }

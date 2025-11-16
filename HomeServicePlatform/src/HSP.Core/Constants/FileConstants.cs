@@ -8,5 +8,6 @@
 		public const string UploadRoot = "uploads";
 		public const string Avatar = "avatar";
 		public const string TechnicianCertificate = "certificate";
+		public const string LegalDocument = "legaldocument";
 	}
 }

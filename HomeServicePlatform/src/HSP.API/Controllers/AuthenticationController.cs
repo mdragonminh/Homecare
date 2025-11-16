@@ -79,9 +79,13 @@ namespace HSP.API.Controllers
 			{
 				return BadRequest(new { message = ex.Message });
 			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
 			catch (Exception)
 			{
-				return BadRequest(new { message = "An error occurred" });
+				return StatusCode(500, new { message = "An internal server error occurred." });
 			}
 		}
 		[HttpPost("refresh-token")]

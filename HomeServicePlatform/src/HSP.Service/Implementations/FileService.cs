@@ -102,9 +102,6 @@ namespace HSP.Service.Implementations
 			foreach (var input in inputs)
 				results.Add(await UploadAsync(input));
 			return results;
-			//var tasks = inputs.Select(UploadAsync);
-			//var results = await Task.WhenAll(tasks);
-			//return results;
 		}
 
 		public async Task<IEnumerable<FileDto>> GetFilesAsync(Guid objectId, string objectTypeName)

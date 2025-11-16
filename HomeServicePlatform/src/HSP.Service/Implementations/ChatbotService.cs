@@ -11,7 +11,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
+using StackExchange.Redis;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using ChatMessage = OpenAI.Chat.ChatMessage;
 
 namespace HSP.Service.Implementations
@@ -329,6 +331,81 @@ namespace HSP.Service.Implementations
                 await _historyRepository.AddRangeAsync(newMessagesToSave);
                 await _unitOfWork.SaveChangesAsync();
             }
+        }
+
+        public async Task<bool> ValidateCertificateAsync(string ocrText, List<string> serviceNames)
+        {
+            if (string.IsNullOrWhiteSpace(ocrText) || serviceNames == null || serviceNames.Count == 0)
+                return false;
+
+            string safeOcr = ocrText.Length > 3000 ? ocrText.Substring(0, 3000) + " ..." : ocrText;
+            string services = string.Join(", ", serviceNames);
+
+            var systemMessage = new SystemChatMessage("Bạn là hệ thống phân loại. " +
+                "Chỉ trả về một từ duy nhất 'true' hoặc 'false' (không có giải thích).");
+            var userMessage = new UserChatMessage($@"Dựa vào nội dung OCR sau, hãy xác định xem tài liệu có liên quan đến 
+            MỘT TRONG CÁC dịch vụ sau không: {services}
+            Nội dung OCR:
+            {safeOcr}
+            Trả về duy nhất 'true' nếu phù hợp, ngược lại 'false'.");
+
+            var completion = await _client.CompleteChatAsync(new ChatMessage[] { systemMessage, userMessage });
+
+            var raw = completion?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
+            var normalized = raw.Trim().ToLowerInvariant();
+
+            if (normalized == "true" || normalized.StartsWith("true") || normalized.Contains(" true") ||
+                normalized == "yes" || normalized.StartsWith("yes") || normalized.Contains(" yes") ||
+                normalized.Contains("có"))
+            {
+                return true;
+            }
+
+            return false;
+        }
+        public async Task<bool> ValidateLegalDocumentAsync(string ocrText, string citizenId)
+        {
+            if (string.IsNullOrWhiteSpace(ocrText) || string.IsNullOrWhiteSpace(citizenId))
+                return false;
+
+            var normalizedId = new string(citizenId.Where(char.IsDigit).ToArray());
+            if (string.IsNullOrWhiteSpace(normalizedId))
+                return false;
+
+            foreach (Match m in Regex.Matches(ocrText, @"\d{6,20}"))
+            {
+                var found = m.Value;
+                var normFound = new string(found.Where(char.IsDigit).ToArray());
+                if (normFound.Length == normalizedId.Length && normFound == normalizedId)
+                    return true;
+            }
+
+            string safeOcr = ocrText.Length > 3000 ? ocrText.Substring(0, 3000) + " ..." : ocrText;
+
+            var systemMessage = new SystemChatMessage(
+                @"Bạn là hệ thống phân loại. Trả về DUY NHẤT một từ 'true' 
+                hoặc 'false' (không kèm giải thích, không có dấu ngoặc, không có ký tự khác)."
+            );
+
+            var userMessage = new UserChatMessage($@"Dưới đây là nội dung OCR của 1 tài liệu:
+            {safeOcr}
+
+            SỐ CCCD CẦN SO SÁNH: {normalizedId}
+
+            Hỏi: Tài liệu này có phải là tài liệu pháp lý Việt Nam và có chứa số CCCD TRÙNG với số trên không?
+            - Trả về duy nhất 'true' nếu cả hai điều kiện thoả; ngược lại trả 'false'.");
+
+            var completion = await _client.CompleteChatAsync(new ChatMessage[] { systemMessage, userMessage });
+            var raw = completion?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;
+            var normalized = raw.Trim().ToLowerInvariant();
+
+            if (normalized == "true" || normalized.StartsWith("true") || normalized == "có" || normalized.StartsWith("có") ||
+                normalized == "yes" || normalized.StartsWith("yes"))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
