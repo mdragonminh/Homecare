@@ -3,6 +3,11 @@ import {
   HomeOutlined,
   TeamOutlined,
   ToolOutlined,
+  SettingOutlined,
+  CreditCardOutlined,
+  CustomerServiceOutlined,
+  ShopOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, Space, Typography } from "antd";
 import { useMemo, useState } from "react";
@@ -22,7 +27,11 @@ export default function AdminLayout({ loggedInUser }) {
   const selectedKeys = useMemo(() => {
     if (location.pathname.startsWith("/admin/dashboard")) return ["dashboard"];
     if (location.pathname.startsWith("/admin/accounts")) return ["accounts"];
+    if (location.pathname.startsWith("/admin/account-management")) return ["account-management"];
+    if (location.pathname.startsWith("/admin/technicians")) return ["technicians"];
     if (location.pathname.startsWith("/admin/home-services")) return ["homeservices"];
+    if (location.pathname.startsWith("/admin/service-management")) return ["service-management"];
+    if (location.pathname.startsWith("/admin/payments")) return ["payments"];
     if (location.pathname.startsWith("/admin/settings")) return ["settings"];
     return ["dashboard"];
   }, [location.pathname]);
@@ -85,7 +94,11 @@ export default function AdminLayout({ loggedInUser }) {
           onClick={({ key }) => {
             if (key === "dashboard") navigate("/admin/dashboard");
             if (key === "accounts") navigate("/admin/accounts");
+            if (key === "account-management") navigate("/admin/account-management");
+            if (key === "technicians") navigate("/admin/technicians");
             if (key === "homeservices") navigate("/admin/home-services");
+            if (key === "service-management") navigate("/admin/service-management");
+            if (key === "payments") navigate("/admin/payments");
             if (key === "settings") navigate("/admin/settings");
           }}
           items={[
@@ -96,21 +109,33 @@ export default function AdminLayout({ loggedInUser }) {
               style: { marginBottom: 4 },
             },
             {
-              key: "accounts",
-              icon: <TeamOutlined />,
-              label: t("admin.menu.manage_accounts", "Manager Accounts"),
+              key: "account-management",
+              icon: <UserOutlined />,
+              label: t("admin.menu.account-management", "Quản lý tài khoản"),
               style: { marginBottom: 4 },
             },
             {
-              key: "homeservices",
-              icon: <HomeOutlined  />,
-              label: t("admin.menu.home_service_manage", "Manager Home Services"),
+              key: "technicians",
+              icon: <TeamOutlined />,
+              label: t("admin.menu.technicians", "Kỹ thuật viên"),
+              style: { marginBottom: 4 },
+            },
+            {
+              key: "service-management",
+              icon: <CustomerServiceOutlined />,
+              label: t("admin.menu.service-management", "Quản lý dịch vụ"),
+              style: { marginBottom: 4 },
+            },
+            {
+              key: "payments",
+              icon: <CreditCardOutlined />,
+              label: t("admin.menu.payments", "Quản lý thanh toán"),
               style: { marginBottom: 4 },
             },
             {
               key: "settings",
-              icon: <ToolOutlined />,
-              label: t("admin.menu.settings", "Settings"),
+              icon: <SettingOutlined />,
+              label: t("admin.menu.settings", "Cài đặt hệ thống"),
               style: { marginBottom: 4 },
             },
           ]}
