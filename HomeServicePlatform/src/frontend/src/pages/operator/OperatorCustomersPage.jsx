@@ -71,7 +71,7 @@ export default function OperatorCustomersPage() {
       if (result.success) {
         const data = result.data;
         // API returns { data: [...], totalCount: x, pageNumber: x, pageSize: x, totalPages: x }
-        const customerList = data.data || [];
+        const customerList = data.items || [];
 
         // Transform data to match the expected format
         const transformedCustomers = customerList.map((customer) => ({
