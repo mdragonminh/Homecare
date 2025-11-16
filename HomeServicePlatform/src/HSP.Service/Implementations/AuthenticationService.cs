@@ -20,10 +20,8 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
-using System.Globalization;
 using System.Security.Claims;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace HSP.Service.Implementations
@@ -400,19 +398,17 @@ namespace HSP.Service.Implementations
                 });
             }
 
-            if(input.LegalDocument != null)
+            if (input.LegalDocument != null)
             {
-                var citizenNumber = profile.CitizenId;
-                if(citizenNumber == null)
-                {
-                    throw new ArgumentException("Bạn chưa nhập số căn cước công dân");
-                }
+                if (string.IsNullOrWhiteSpace(profile.CitizenId))
+                    throw new ValidationException("Bạn chưa nhập số căn cước công dân");
+
                 var images = await ConvertPdfToImagesIfNeeded(input.LegalDocument);
                 var flag = false;
                 foreach (var imgBytes in images)
                 {
                     var ocrText = await _ocrService.ExtractTextAsync(imgBytes);
-                    if (await _chatbotService.ValidateLegalDocumentAsync(ocrText, citizenNumber))
+                    if (await _chatbotService.ValidateLegalDocumentAsync(ocrText) && ContainsCitizenId(ocrText, profile.CitizenId))
                     {
                         flag = true;
                         break;
@@ -476,6 +472,29 @@ namespace HSP.Service.Implementations
                 });
                 await _fileService.UploadManyAsync(uploadDtos);
             }
+        }
+        private bool ContainsCitizenId(string ocrText, string citizenId)
+        {
+            var normalizedId = new string(citizenId.Where(char.IsDigit).ToArray());
+            if (string.IsNullOrWhiteSpace(normalizedId))
+                return false;
+
+            if (ocrText.Contains(normalizedId))
+                return true;
+
+            var pattern = string.Join(@"\D*", normalizedId.Select(c => c.ToString()));
+
+            if (Regex.IsMatch(ocrText, pattern))
+                return true;
+
+            foreach (Match m in Regex.Matches(ocrText, @"\d{6,20}"))
+            {
+                var found = new string(m.Value.Where(char.IsDigit).ToArray());
+                if (found == normalizedId)
+                    return true;
+            }
+
+            return false;
         }
 
         private async Task<byte[]> GetBytesAsync(IFormFile certFile)

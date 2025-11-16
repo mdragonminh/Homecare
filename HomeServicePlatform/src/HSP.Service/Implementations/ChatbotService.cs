@@ -363,37 +363,25 @@ namespace HSP.Service.Implementations
 
             return false;
         }
-        public async Task<bool> ValidateLegalDocumentAsync(string ocrText, string citizenId)
+        public async Task<bool> ValidateLegalDocumentAsync(string ocrText)
         {
-            if (string.IsNullOrWhiteSpace(ocrText) || string.IsNullOrWhiteSpace(citizenId))
+            if (string.IsNullOrWhiteSpace(ocrText))
                 return false;
-
-            var normalizedId = new string(citizenId.Where(char.IsDigit).ToArray());
-            if (string.IsNullOrWhiteSpace(normalizedId))
-                return false;
-
-            foreach (Match m in Regex.Matches(ocrText, @"\d{6,20}"))
-            {
-                var found = m.Value;
-                var normFound = new string(found.Where(char.IsDigit).ToArray());
-                if (normFound.Length == normalizedId.Length && normFound == normalizedId)
-                    return true;
-            }
 
             string safeOcr = ocrText.Length > 3000 ? ocrText.Substring(0, 3000) + " ..." : ocrText;
 
             var systemMessage = new SystemChatMessage(
-                @"Bạn là hệ thống phân loại. Trả về DUY NHẤT một từ 'true' 
-                hoặc 'false' (không kèm giải thích, không có dấu ngoặc, không có ký tự khác)."
+                 "Bạn là một hệ thống AI phân loại văn bản tiếng Việt. " +
+                 "Chỉ trả về DUY NHẤT một từ: 'true' hoặc 'false' (không kèm giải thích). " +
+                 "'true' nếu nội dung là tài liệu pháp lý/giấy tờ do cơ quan nhà nước cấp hoặc liên quan đến cơ quan nhà nước Việt Nam " +
+                 "(ví dụ: có tiêu đề, con dấu, tên cơ quan như 'SỞ TƯ PHÁP', 'UBND', 'CÔNG AN', 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', 'GIẤY XÁC NHẬN', ...)."
+             );
+
+            var userMessage = new UserChatMessage($@"Nội dung OCR:
+                {safeOcr}
+                Hỏi: Đây có phải là tài liệu pháp lý / giấy tờ do cơ quan nhà nước cấp (theo cú pháp và ngữ cảnh tiếng Việt) không?
+                Trả về duy nhất 'true' nếu đúng, ngược lại 'false'."
             );
-
-            var userMessage = new UserChatMessage($@"Dưới đây là nội dung OCR của 1 tài liệu:
-            {safeOcr}
-
-            SỐ CCCD CẦN SO SÁNH: {normalizedId}
-
-            Hỏi: Tài liệu này có phải là tài liệu pháp lý Việt Nam và có chứa số CCCD TRÙNG với số trên không?
-            - Trả về duy nhất 'true' nếu cả hai điều kiện thoả; ngược lại trả 'false'.");
 
             var completion = await _client.CompleteChatAsync(new ChatMessage[] { systemMessage, userMessage });
             var raw = completion?.Value?.Content?.FirstOrDefault()?.Text ?? string.Empty;

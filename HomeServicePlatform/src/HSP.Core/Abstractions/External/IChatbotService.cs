@@ -6,6 +6,6 @@ namespace HSP.Core.Interfaces.External
 	{
 		Task<ChatResponseDto> ProcessMessageAsync(ChatInputDto input, Guid customerId);
 		Task<bool> ValidateCertificateAsync(string ocrText, List<string> serviceNames);
-		Task<bool> ValidateLegalDocumentAsync(string ocrText, string citizenId);
+		Task<bool> ValidateLegalDocumentAsync(string ocrText);
     }
 }
