@@ -35,7 +35,6 @@ export default function useTechnicianRegister(loggedInUser) {
     avatarFile: null,
     citizenId: "",
     citizenIdFile: null,
-    legalDocumentFile: null,
     agreeToTerms: false,
     agreeToBackgroundCheck: false,
   });
@@ -44,7 +43,6 @@ export default function useTechnicianRegister(loggedInUser) {
   const [submitting, setSubmitting] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [previewCitizenId, setPreviewCitizenId] = useState(null);
-  const [previewLegalDocument, setPreviewLegalDocument] = useState(null);
   useEffect(() => {
     if (loggedInUser) {
       navigate("/");
@@ -61,18 +59,15 @@ export default function useTechnicianRegister(loggedInUser) {
             t("technician_register.validation.error_fetching_services")
         );
       }
-      setServicesLoading(false);
+     setServicesLoading(false);
     };
     fetchServices();
     return () => {
       if (previewCitizenId) {
         URL.revokeObjectURL(previewCitizenId);
       }
-      if (previewLegalDocument) {
-        URL.revokeObjectURL(previewLegalDocument);
-      }
     };
-  }, [loggedInUser, navigate, t, previewCitizenId, previewLegalDocument]);
+  }, [loggedInUser, navigate, t, previewCitizenId]);
 
   const updateFormData = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -121,96 +116,7 @@ export default function useTechnicianRegister(loggedInUser) {
       };
     });
   };
-  const handleLegalDocumentUpload = useCallback(
-    async (file) => {
-      if (!file) return;
-      toast.dismiss();
 
-      if (previewLegalDocument) {
-        URL.revokeObjectURL(previewLegalDocument);
-      }
-      setPreviewLegalDocument(null);
-
-      const maxFileSize = 5 * 1024 * 1024;
-      // Cho phép PDF, ảnh
-      const allowedTypes = [
-        "application/pdf",
-        "image/jpeg",
-        "image/png",
-        "image/jpg",
-        "image/jfif",
-      ];
-      const allowedExtensions = [".pdf", ".jpeg", ".png", ".jpg", ".jfif"];
-      const fileNameLower = file.name.toLowerCase();
-      const fileExtension = fileNameLower.substring(
-        fileNameLower.lastIndexOf(".")
-      );
-
-      const isAllowedType = allowedTypes.includes(file.type);
-      const isAllowedExtension = allowedExtensions.includes(fileExtension);
-
-      let error = null;
-
-      if (file.size > maxFileSize) {
-        error =
-          t("technician_register.legal_document.file_too_large") ||
-          `Tập tin ${file.name} quá lớn (tối đa 5MB).`;
-      } else if (!isAllowedType || !isAllowedExtension) {
-        error =
-          t("technician_register.legal_document.file_invalid_format") ||
-          `Tập tin ${file.name} không đúng định dạng (chỉ cho phép JPG, PNG, PDF).`;
-      }
-
-      if (error) {
-        setFormData((prev) => ({
-          ...prev,
-          legalDocumentFile: null,
-        }));
-        setValidationErrors((prev) => ({
-          ...prev,
-          legalDocumentFile: error,
-        }));
-        toast.error(error);
-        return;
-      }
-
-      // Thành công
-      const fileUrl = URL.createObjectURL(file);
-      setPreviewLegalDocument(fileUrl);
-      setFormData((prev) => ({
-        ...prev,
-        legalDocumentFile: file,
-      }));
-      setValidationErrors((prev) => ({
-        ...prev,
-        legalDocumentFile: null,
-      }));
-      toast.success(
-        t("technician_register.legal_document.file_uploaded", {
-          fileName: file.name,
-        }) || `Đã tải lên tệp ${file.name}.`
-      );
-    },
-    [t, previewLegalDocument]
-  );
-  const removeLegalDocumentFile = useCallback(() => {
-    if (previewLegalDocument) {
-      URL.revokeObjectURL(previewLegalDocument);
-    }
-    setPreviewLegalDocument(null);
-    setFormData((prev) => ({
-      ...prev,
-      legalDocumentFile: null,
-    }));
-    setValidationErrors((prev) => ({
-      ...prev,
-      legalDocumentFile: undefined,
-    }));
-    toast.info(
-      t("technician_register.legal_document.file_removed") ||
-        "Đã xóa tệp Sơ yếu lí lịch."
-    );
-  }, [t, previewLegalDocument]);
   const handleCertificateUpload = useCallback(
     async (file, serviceId) => {
       if (!file) return;
@@ -224,18 +130,12 @@ export default function useTechnicianRegister(loggedInUser) {
             delete newErrors.certificate;
           }
         }
+        // Đảm bảo lỗi upload cụ thể cũng được xóa
         if (newErrors.certificateUploadErrors?.[serviceId]) {
           const { [serviceId]: _, ...rest } = newErrors.certificateUploadErrors;
           newErrors.certificateUploadErrors = rest;
           if (Object.keys(newErrors.certificateUploadErrors).length === 0) {
             delete newErrors.certificateUploadErrors;
-          }
-        }
-        if (newErrors.certificateBeErrors?.[serviceId]) {
-          const { [serviceId]: _, ...rest } = newErrors.certificateBeErrors;
-          newErrors.certificateBeErrors = rest;
-          if (Object.keys(newErrors.certificateBeErrors).length === 0) {
-            delete newErrors.certificateBeErrors;
           }
         }
         return newErrors;
@@ -542,11 +442,6 @@ export default function useTechnicianRegister(loggedInUser) {
         "technician_register.validation.address_required_error"
       );
     }
-    if (!formData.legalDocumentFile) {
-      errors.legalDocumentFile = t(
-        "technician_register.validation.legal_document_required"
-      );
-    }
     if (!password) {
       errors.password = t(
         "technician_register.validation.password_required_error"
@@ -613,6 +508,7 @@ export default function useTechnicianRegister(loggedInUser) {
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
+
   const handleSubmit = async () => {
     toast.dismiss();
 
@@ -649,83 +545,17 @@ export default function useTechnicianRegister(loggedInUser) {
         avatarFile: formData.avatarFile,
         citizenId: formData.citizenId,
         serviceCertificates: formData.serviceCertificates,
-        legalDocumentFile: formData.legalDocumentFile,
       });
 
       const registerRes = await authApi.registerTechnician(preparedData);
 
       if (!registerRes.success) {
         let errorMsg = registerRes.message;
-        const newErrors = {};
-        newErrors.certificateBeErrors = {};
         if (registerRes.errors) {
-          const beErrors = registerRes.errors;
-
-          if (beErrors.CitizenId) {
-            newErrors.citizenId = beErrors.CitizenId[0];
-          }
-
-          if (beErrors.LegalDocument) {
-            newErrors.legalDocumentFile = beErrors.LegalDocument[0];
-          }
-          if (Object.keys(beErrors).length > 0) {
-            errorMsg =
-              newErrors.citizenId ||
-              newErrors.legalDocumentFile ||
-              Object.values(beErrors).flat().join(", ") ||
-              errorMsg;
-          }
-        }
-        if (errorMsg) {
-          const lowerCaseMessage = errorMsg.toLowerCase();
-          if (
-            lowerCaseMessage.includes("tài liệu pháp lý không hợp lệ") ||
-            lowerCaseMessage.includes("tài liệu pháp lý không phải của bạn")
-          ) {
-            newErrors.legalDocumentFile = errorMsg;
-          }
-          if (
-            lowerCaseMessage.includes("chứng chỉ không phù hợp với dịch vụ")
-          ) {
-            const parts = errorMsg.split(":");
-            if (parts.length > 1) {
-              const serviceName = parts[1].trim();
-              const service = services.find((s) => s.name === serviceName);
-
-              if (service) {
-                newErrors.certificateBeErrors[service.id] = errorMsg;
-              }
-            }
-          }
-          if (
-            lowerCaseMessage.includes("số cccd không hợp lệ") ||
-            lowerCaseMessage.includes("số cccd không khớp")
-          ) {
-            newErrors.citizenId = errorMsg;
-          }
-        }
-        const errorsToUpdate = {};
-        for (const key in newErrors) {
-          if (
-            (newErrors[key] &&
-              Array.isArray(newErrors[key]) &&
-              newErrors[key].length > 0) ||
-            Object.keys(newErrors[key]).length > 0 ||
-            typeof newErrors[key] === "string"
-          ) {
-            errorsToUpdate[key] = newErrors[key];
-          }
-        }
-
-        if (Object.keys(errorsToUpdate).length > 0) {
-          setValidationErrors((prev) => ({ ...prev, ...errorsToUpdate }));
-        }
-
-        // Fallback cho lỗi không xác định
-        if (typeof registerRes.message === "object") {
+          errorMsg = Object.values(registerRes.errors).join(", ");
+        } else if (typeof registerRes.message === "object") {
           errorMsg = JSON.stringify(registerRes.message);
         }
-
         toast.error(
           errorMsg || t("technician_register.validation.register_failed")
         );
@@ -744,16 +574,16 @@ export default function useTechnicianRegister(loggedInUser) {
       setSubmitting(false);
     }
   };
+
   return {
     formData,
     validationErrors,
     services,
     servicesLoading,
-    loadingOcr,
+     loadingOcr,
     submitting,
     previewImage,
     previewCitizenId,
-    previewLegalDocument,
     updateFormData,
     toggleSpecialization,
     handleCertificateUpload,
@@ -762,8 +592,6 @@ export default function useTechnicianRegister(loggedInUser) {
     closePreview,
     handleCitizenIdUpload,
     handleAvatarUpload,
-    handleLegalDocumentUpload,
-    removeLegalDocumentFile,
     removeAvatar,
     removeCitizenIdFile,
     handleSubmit,

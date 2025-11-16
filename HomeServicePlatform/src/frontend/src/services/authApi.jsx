@@ -121,7 +121,7 @@ export const authApi = {
       };
     }
   },
-prepareRegisterTechnicianData: ({
+ prepareRegisterTechnicianData: ({
     email,
     fullName,
     phoneNumber,
@@ -132,8 +132,7 @@ prepareRegisterTechnicianData: ({
     confirmPassword,
     avatarFile,
     serviceCertificates,
-    citizenId,
-    legalDocumentFile, 
+    citizenId, 
   }) => {
     const expMap = {
       "0-1": 1,
@@ -162,9 +161,6 @@ prepareRegisterTechnicianData: ({
     }
     if (avatarFile) {
       formData.append("AvatarFile", avatarFile, avatarFile.name);
-    }
-    if (legalDocumentFile) {
-      formData.append("LegalDocument", legalDocumentFile, legalDocumentFile.name);
     }
     if (serviceCertificates) {
       serviceIds.forEach((serviceId) => {

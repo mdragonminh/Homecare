@@ -548,8 +548,6 @@
     }
   },
   "technician_register": {
-    "legal_document.title": "Legal Documents",
-    "legal_document.file_too_large": "File size is too large",
     "title": "Become a Professional Technician",
     "subtitle": "Join Vietnam's leading home service platform and start earning today",
     "benefits": {
@@ -680,9 +678,7 @@
       "confirm_password_mismatch_error": "Password confirmation does not match.",
       "password_strength_error": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character.",
        "citizen_id_required": "Please enter your Citizen ID number",
-      "citizen_id_invalid": "Citizen ID must be exactly 12 digits",
-      "citizen_id_photo_required": "Please upload your Citizen ID photo",
-      "legal_document_required": "Please upload your legal document"
+      "citizen_id_invalid": "Citizen ID must be exactly 12 digits"
     },
     "citizen_id": {
       "title": "Identification Documents",
