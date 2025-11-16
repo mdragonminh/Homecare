@@ -124,6 +124,12 @@ namespace HSP.Service.Implementations
             {
                 throw new UnauthorizedAccessException(_localizer["InvalidPassword"]);
             }
+            
+            // Update LastLoginAt
+            user.LastLoginAt = DateTime.Now;
+            await _userRepository.UpdateAccount(user);
+            await _unitOfWork.SaveChangesAsync();
+            
             var token = await _jwtService.GenerateTokenPairAsync(new UserDto
             {
                 Id = user.Id,
@@ -150,6 +156,11 @@ namespace HSP.Service.Implementations
             {
                 throw new Exception(_localizer["CannotFindOrCreateUser"]);
             }
+
+            // Update LastLoginAt
+            user.LastLoginAt = DateTime.Now;
+            await _userRepository.UpdateAccount(user);
+            await _unitOfWork.SaveChangesAsync();
 
             var token = await _jwtService.GenerateTokenPairAsync(new UserDto
             {
