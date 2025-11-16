@@ -29,7 +29,7 @@ namespace HSP.Service.Implementations
 
 		public async Task<PagedList<AccountResponseDto>> GetAccountsAsync(AccountFilterDto filter)
 		{
-			// Get all users with management roles
+			// Get all users
 			var allUsers = await _userRepository.GetAllUsersAsync();
 			var accountDtos = new List<AccountResponseDto>();
 
@@ -37,12 +37,6 @@ namespace HSP.Service.Implementations
 			{
 				var roles = await _userRepository.GetRolesAsync(user);
 				var userRole = roles.FirstOrDefault();
-
-				// Only include management roles (exclude customer and technician)
-				if (userRole == RoleNames.Customer || userRole == RoleNames.Technician)
-				{
-					continue;
-				}
 
 				// Apply filters
 				if (!string.IsNullOrEmpty(filter.SearchTerm))

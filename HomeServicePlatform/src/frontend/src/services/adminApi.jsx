@@ -193,4 +193,72 @@ export const adminApi = {
     const baseURL = axiosClient.defaults.baseURL || "";
     return `${baseURL}/File/preview?filePath=${encodeURIComponent(filePath)}`;
   },
+
+  getDashboardStats: async (fromDate, toDate) => {
+    try {
+      const params = new URLSearchParams();
+      if (fromDate) params.append("fromDate", fromDate);
+      if (toDate) params.append("toDate", toDate);
+
+      const res = await axiosClient.get(`/Admin/dashboard/stats?${params.toString()}`);
+      return { success: true, data: res.data };
+    } catch (error) {
+      console.error("Get dashboard stats error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Lấy thống kê dashboard thất bại",
+      };
+    }
+  },
+
+  // Account Management APIs
+  getAccounts: async (params = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      // Map frontend params to backend DTO properties
+      if (params.pageNumber) queryParams.append("PageNumber", params.pageNumber.toString());
+      if (params.pageSize) queryParams.append("PageSize", params.pageSize.toString());
+      if (params.role) queryParams.append("Role", params.role);
+      if (params.searchTerm) queryParams.append("SearchTerm", params.searchTerm);
+      if (params.isActive !== undefined && params.isActive !== null) {
+        queryParams.append("IsActive", params.isActive.toString());
+      }
+
+      const res = await axiosClient.get(`/AccountManagement?${queryParams.toString()}`);
+      return { success: true, data: res.data };
+    } catch (error) {
+      console.error("Get accounts error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Lấy danh sách tài khoản thất bại",
+      };
+    }
+  },
+
+  suspendAccount: async (accountId, reason) => {
+    try {
+      const res = await axiosClient.patch(`/AccountManagement/${accountId}/disable`, { reason });
+      return { success: true, data: res.data };
+    } catch (error) {
+      console.error("Suspend account error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Khóa tài khoản thất bại",
+      };
+    }
+  },
+
+  unsuspendAccount: async (accountId) => {
+    try {
+      const res = await axiosClient.patch(`/AccountManagement/${accountId}/enable`);
+      return { success: true, data: res.data };
+    } catch (error) {
+      console.error("Unsuspend account error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Khôi phục tài khoản thất bại",
+      };
+    }
+  },
 };

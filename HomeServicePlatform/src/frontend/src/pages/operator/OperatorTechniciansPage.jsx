@@ -344,7 +344,7 @@ export default function OperatorTechniciansPage() {
         </div>
       </Card>
 
-      <Card style={{ borderRadius: 12 }} bodyStyle={{ padding: 0 }}>
+      <Card style={{ borderRadius: 12 }} styles={{ body: { padding: 0 } }}>
         <Table
           columns={columns}
           dataSource={filteredTechnicians}
@@ -368,7 +368,7 @@ export default function OperatorTechniciansPage() {
         onCancel={() => setDetailModalVisible(false)}
         footer={null}
         width={600}
-        destroyOnClose={true}
+        destroyOnHidden={true}
         centered
       >
         {technicianDetail && (

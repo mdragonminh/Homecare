@@ -118,7 +118,7 @@ namespace HSP.Service.Implementations
 				await SendInvitationEmailAsync(tech, customer, input, token);
 
 				var stopwatch = Stopwatch.StartNew();
-				while (stopwatch.Elapsed < TimeSpan.FromSeconds(10))
+				while (stopwatch.Elapsed < TimeSpan.FromSeconds(60))
 				{
 					var acceptedTechId = await GetAcceptedTechnicianAsync(token);
 					if (acceptedTechId.HasValue)
