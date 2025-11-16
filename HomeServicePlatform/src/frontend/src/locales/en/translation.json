@@ -51,6 +51,8 @@
       "error_new_same": "New password must be different from current password"
       
     },
+    "enter_address_to_search": "Please log in to use the service.",
+    "manage_rooms": "Devices",
     "type": "Type",
     "home_name": "Home Name",
     "address": "Address",

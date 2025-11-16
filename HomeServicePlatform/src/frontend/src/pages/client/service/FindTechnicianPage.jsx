@@ -128,7 +128,7 @@ export function FindTechnicianPage({ loggedInUser }) {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-full lg:max-w-7xl xl:max-w-full mx-auto pt-10 min-h-screen bg-gray-50">
+    <div className="p-4 md:p-6 max-w-screen-2xl mx-auto pt-10 min-h-screen bg-gray-50"> 
       {/* Modals */}
       {loggedInUser && isAddHomeModalOpen && (
         <AddHomeModal
@@ -154,8 +154,8 @@ export function FindTechnicianPage({ loggedInUser }) {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
-        {/* Left Column: Form */}
-        <div className="lg:w-3/5 flex flex-col">
+        {/* Left Column: Form - Giữ 1/2 và loại bỏ mx-auto */}
+        <div className="lg:w-1/2 flex flex-col"> 
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4 flex-1">
             {/* Section Title */}
             <div className="pb-3 border-b border-gray-200">
@@ -239,7 +239,7 @@ export function FindTechnicianPage({ loggedInUser }) {
               <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
                 <p className="text-gray-600 text-sm">
                   {t("ui.enter_address_to_search", {
-                    defaultValue: "Vui lòng nhập địa chỉ để tìm kiếm dịch vụ.",
+                    defaultValue: "Vui lòng đăng nhập để sử dụng dịch vụ.",
                   })}
                 </p>
               </div>
@@ -412,8 +412,6 @@ export function FindTechnicianPage({ loggedInUser }) {
                 </div>
               )}
             </div>
-
-            {/* Manual Address Input for Non-logged Users */}
             {!loggedInUser && (
               <div>
                 <label
@@ -483,8 +481,8 @@ export function FindTechnicianPage({ loggedInUser }) {
           </div>
         </div>
 
-        {/* Right Column: Map */}
-        <div className="lg:w-2/5 flex relative min-h-[450px]">
+        {/* Right Column: Map - Giữ 1/2 và loại bỏ mx-auto */}
+        <div className="lg:w-1/2 flex relative min-h-[450px]">
           <div className="w-full h-full rounded-xl shadow-lg">
             {" "}
             {/* Đã xóa bg-gray-900 và p-[2px] */}
@@ -518,8 +516,6 @@ export function FindTechnicianPage({ loggedInUser }) {
           </div>
         </div>
       </div>
-
-      {/* Technicians List */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 max-h-[500px] overflow-y-auto">
         <div className="pb-3 border-b border-gray-200 mb-4">
           <h3 className="font-semibold text-lg text-gray-900 flex items-center gap-2">

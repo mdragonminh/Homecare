@@ -52,6 +52,8 @@
       "error_new_same": "Mật khẩu mới phải khác mật khẩu hiện tại"
       
     },
+    "enter_address_to_search": "Vui lòng đăng nhập để sử dụng dịch vụ.",
+    "manage_rooms": "Thiết bị",
     "type": "Loại",
     "home_name": "Tên nhà",
     "address": "Địa chỉ",
