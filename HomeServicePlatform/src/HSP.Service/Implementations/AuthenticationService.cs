@@ -297,9 +297,7 @@ namespace HSP.Service.Implementations
                 try
                 {
                     var user = await CreateUserAsync(input.Email, input.FullName, input.PhoneNumber, input.Password);
-
                     var response = await AssignRoleAndSendConfirmationAsync(user, RoleNames.Technician);
-
                     var technicianProfile = new TechnicianProfile
                     {
                         UserId = user.Id,
@@ -309,7 +307,6 @@ namespace HSP.Service.Implementations
                         DateCreated = DateTime.UtcNow,
                         IsDeleted = false
                     };
-
                     if (input.ServiceIds != null && input.ServiceIds.Any())
                     {
                         var services = await _serviceRepository.GetAll()

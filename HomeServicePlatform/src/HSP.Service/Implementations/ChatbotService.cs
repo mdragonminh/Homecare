@@ -11,9 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
-using StackExchange.Redis;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using ChatMessage = OpenAI.Chat.ChatMessage;
 
 namespace HSP.Service.Implementations
@@ -40,18 +38,6 @@ namespace HSP.Service.Implementations
             _historyRepository = historyRepository;
             _settings = options.Value;
             _client = new ChatClient(_settings.Model, _settings.ApiKey);
-        }
-
-        public async Task<string> GetChatResponseAsync(string prompt)
-        {
-            var messages = new OpenAI.Chat.ChatMessage[]
-                {
-                        new SystemChatMessage("Bạn là AI chuyên xử lý ngôn ngữ tiếng Việt."),
-                        new UserChatMessage(prompt)
-                };
-
-            var completion = await _client.CompleteChatAsync(messages);
-            return completion.Value.Content[0].Text;
         }
 
         public async Task<ChatResponseDto> ProcessMessageAsync(ChatInputDto input, Guid customerId)
