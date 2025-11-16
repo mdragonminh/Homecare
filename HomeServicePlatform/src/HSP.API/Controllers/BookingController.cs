@@ -1,3 +1,4 @@
+using HSP.Core.Constans;
 using HSP.Core.Dtos.BookingDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
@@ -46,6 +47,24 @@ namespace HSP.API.Controllers
 				// Chỉ lấy booking của customer hiện tại
 				input.CustomerId = customerGuid;
 
+				var result = await _bookingService.GetAllBookingsAsync(input);
+				return Ok(result);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+		}
+
+		/// <summary> 
+		/// Lấy danh sách tất cả bookings cho admin
+		/// </summary>
+		[HttpGet("admin/all")]
+		[Authorize(Roles = RoleNames.Admin)]
+		public async Task<IActionResult> GetAllBookingsForAdmin([FromQuery] BookingInput input)
+		{
+			try
+			{
 				var result = await _bookingService.GetAllBookingsAsync(input);
 				return Ok(result);
 			}
