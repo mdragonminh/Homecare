@@ -39,6 +39,7 @@ function TechnicianRegister({ loggedInUser }) {
     submitting,
     previewImage,
     previewCitizenId,
+    previewLegalDocument,
     updateFormData,
     toggleSpecialization,
     handleCertificateUpload,
@@ -49,6 +50,8 @@ function TechnicianRegister({ loggedInUser }) {
     removeAvatar,
     handleCitizenIdUpload,
     removeCitizenIdFile,
+    handleLegalDocumentUpload,
+    removeLegalDocumentFile,
     handleSubmit,
     t,
   } = useTechnicianRegister(loggedInUser);
@@ -60,7 +63,14 @@ function TechnicianRegister({ loggedInUser }) {
       url: previewCitizenId,
     };
   };
-
+  const getLegalDocumentData = () => {
+    if (!formData.legalDocumentFile) return null;
+    return {
+      file: formData.legalDocumentFile,
+      name: formData.legalDocumentFile.name,
+      url: previewLegalDocument,
+    };
+  };
   return (
     <div className="relative">
       {/* Loading Overlay */}
@@ -403,7 +413,6 @@ function TechnicianRegister({ loggedInUser }) {
                 </div>
               </div>
               {/* Personal Info Section (Kết thúc ở đây) */}
-              {/* CCCD (Citizen ID) Upload Section - ĐÃ THÊM MỚI Ở ĐÂY */}
               <div className="p-8 border-b border-gray-100">
                 <div className="flex items-start gap-4 mb-6">
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -421,16 +430,17 @@ function TechnicianRegister({ loggedInUser }) {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Upload CCCD File */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
                       {t("technician_register.citizen_id.upload_required") ||
                         "Tải lên ảnh CCCD (Mặt trước)"}{" "}
                       *
                     </label>
-                    <div className="relative h-40 border-2 border-dashed rounded-lg flex items-center justify-center">
+
+                    <div className="relative border-2 border-dashed rounded-lg flex items-center justify-center w-96 h-50 mx-auto">
                       {loading ? (
                         <div className="flex items-center text-blue-600 p-4">
+                          {/* Icon: Loader2 */}
                           <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                           {t("technician_register.ocr.scanning") ||
                             "Đang quét OCR..."}
@@ -466,6 +476,7 @@ function TechnicianRegister({ loggedInUser }) {
                                 ) || "Xem ảnh"
                               }
                             >
+                              {/* Icon: Eye */}
                               <Eye className="w-5 h-5" />
                             </button>
                             <button
@@ -515,47 +526,125 @@ function TechnicianRegister({ loggedInUser }) {
                     </div>
                     <ErrorMessage error={validationErrors.citizenIdFile} />
                   </div>
-
-                  {/* Citizen ID Number (Result) */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
-                      {t("technician_register.citizen_id.number_required") ||
-                        "Số Căn cước công dân"}{" "}
-                      *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.citizenId}
-                      onChange={(e) =>
-                        updateFormData("citizenId", e.target.value)
-                      }
-                      className={`w-full border rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all ${
-                        validationErrors.citizenId
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-100 bg-red-50"
-                          : formData.citizenId
-                          ? "border-green-500 focus:border-green-500 focus:ring-green-100 bg-white"
-                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-100 bg-white"
-                      }`}
-                      placeholder={
-                        t(
-                          "technician_register.citizen_id.number_placeholder"
-                        ) || "Số CCCD"
-                      }
-                      disabled={submitting}
-                    />
-                    <ErrorMessage error={validationErrors.citizenId} />
-                    {formData.citizenId && !loading && (
-                      <p className="mt-1 text-xs text-green-600 flex items-center">
-                        <span className="mr-1"></span>
-                        {t("technician_register.ocr.auto_filled_note") ||
-                          "Đã điền (tự động hoặc thủ công). Vui lòng kiểm tra lại."}
-                      </p>
-                    )}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
+                        {t("technician_register.citizen_id.number_required") ||
+                          "Số Căn cước công dân"}{" "}
+                        *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.citizenId}
+                        onChange={(e) =>
+                          updateFormData("citizenId", e.target.value)
+                        }
+                        className={`w-full border rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none transition-all ${
+                          validationErrors.citizenId
+                            ? "border-red-500 focus:border-red-500 focus:ring-red-100 bg-red-50"
+                            : formData.citizenId
+                            ? "border-green-500 focus:border-green-500 focus:ring-green-100 bg-white"
+                            : "border-gray-300 focus:border-blue-500 focus:ring-blue-100 bg-white"
+                        }`}
+                        placeholder={
+                          t(
+                            "technician_register.citizen_id.number_placeholder"
+                          ) || "Số CCCD"
+                        }
+                        disabled={submitting}
+                      />
+                      <ErrorMessage error={validationErrors.citizenId} />
+                      {formData.citizenId && !loading && (
+                        <p className="mt-1 text-xs text-green-600 flex items-center">
+                          <span className="mr-1"></span>
+                          {t("technician_register.ocr.auto_filled_note") ||
+                            "Đã điền (tự động hoặc thủ công). Vui lòng kiểm tra lại."}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-6">
+                      <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
+                        {t("technician_register.legal_document.title") ||
+                          "Sơ Yếu Lý Lịch"}{" "}
+                        *
+                      </label>
+                      <div
+                        className={`border rounded-lg p-3 bg-white ${
+                          validationErrors.legalDocumentFile
+                            ? "border-red-500 ring-1 ring-red-500 bg-red-50"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        <div className="space-y-2">
+                          {formData.legalDocumentFile ? (
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-600 truncate max-w-[180px]">
+                                {formData.legalDocumentFile.name}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    viewCertificate(getLegalDocumentData())
+                                  }
+                                  className="p-1.5 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+                                  title="Xem file"
+                                >
+                                  {/* Icon: Eye */}
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+
+                                <label
+                                  htmlFor="upload-legal-document"
+                                  className="p-1.5 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer"
+                                  title="Thay file"
+                                >
+                                  <Upload className="w-3.5 h-3.5" />
+                                </label>
+
+                                <button
+                                  type="button"
+                                  onClick={removeLegalDocumentFile}
+                                  className="p-1.5 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                  title="Xóa file"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <label
+                              htmlFor="upload-legal-document"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded-full cursor-pointer hover:bg-blue-100 transition-colors"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>Tải lên</span>
+                            </label>
+                          )}
+                        </div>
+                        {/* SỬ DỤNG ErrorMessage component */}
+                        <ErrorMessage
+                          error={validationErrors.legalDocumentFile}
+                        />
+                        <input
+                          id="upload-legal-document"
+                          type="file"
+                          accept="image/jpeg,image/png,application/pdf"
+                          className="sr-only"
+                          onChange={(e) =>
+                            handleLegalDocumentUpload(e.target.files[0])
+                          }
+                          onClick={(e) => {
+                            e.target.value = null;
+                          }}
+                          disabled={loading || submitting}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
               {/* END CCCD (Citizen ID) Upload Section */}
-              {/* Experience Skills Section (Tiếp tục với phần cũ) */}
               <div className="p-8 border-b border-gray-100">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -648,7 +737,10 @@ function TechnicianRegister({ loggedInUser }) {
                           const isMissingCert =
                             validationErrors.certificate &&
                             validationErrors.certificate.includes(serviceId);
-                          const hasError = isMissingCert || uploadError;
+                          const beError =
+                            validationErrors.certificateBeErrors?.[serviceId];
+                          const hasError =
+                            isMissingCert || uploadError || beError;
 
                           return (
                             <div
@@ -753,6 +845,12 @@ function TechnicianRegister({ loggedInUser }) {
                                       {t(
                                         "technician_register.validation.certificate_required_error"
                                       )}
+                                    </p>
+                                  )}
+                                  {beError && (
+                                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                                      <X className="w-3 h-3 mr-1 flex-shrink-0" />
+                                      {beError}
                                     </p>
                                   )}
                                 </div>
