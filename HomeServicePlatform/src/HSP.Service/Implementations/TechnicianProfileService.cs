@@ -78,26 +78,6 @@ namespace HSP.Service.Implementations
 
 			var pagedTechnicians = await technicianDtosQuery.ToPagedListAsync(filterParams);
 
-			// Parse certificate paths after pagination (in memory)
-			foreach (var technician in pagedTechnicians.Items)
-			{
-				var technicianEntity = await _technicianProfileRepository.GetAll()
-					.FirstOrDefaultAsync(x => x.Id == technician.Id);
-
-				//if (technicianEntity != null && !string.IsNullOrEmpty(technicianEntity.CertificatePaths))
-				//{
-				//	try
-				//	{
-				//		technician.CertificatePaths = System.Text.Json.JsonSerializer.Deserialize<List<string>>(technicianEntity.CertificatePaths);
-				//	}
-				//	catch
-				//	{
-				//		// If parsing fails, leave as null
-				//		technician.CertificatePaths = null;
-				//	}
-				//}
-			}
-
 			return pagedTechnicians;
 		}
 
