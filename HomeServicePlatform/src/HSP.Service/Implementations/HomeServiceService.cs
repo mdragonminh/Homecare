@@ -36,23 +36,24 @@ namespace HSP.Service.Implementations
 			return newService.Id;
 		}
 
-		public async Task<PagedList<AdminHomeServiceDto>> GetAllAsync(HomeServiceInput input)
-		{
-			var query = _homeServiceRepository.GetAll()
-				.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()));
-			var homeServiceDto = query
-				.Select(s => new AdminHomeServiceDto
-				{
-					Id = s.Id,
-					Name = s.Name,
-					Price = s.Price,
-					Description = s.Description
-				});
-			var pagedHomeService = await homeServiceDto.ToPagedListAsync(input);
-			return pagedHomeService;
-		}
-
-		public async Task<AdminHomeServiceDto> GetHomeServiceByIdAsync(Guid id)
+	public async Task<PagedList<AdminHomeServiceDto>> GetAllAsync(HomeServiceInput input)
+	{
+		var query = _homeServiceRepository.GetAll()
+			.IgnoreQueryFilters()
+			.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search!.ToLower()))
+			.WhereIf(input.IsDeleted.HasValue, x => x.IsDeleted == input.IsDeleted!.Value);
+		var homeServiceDto = query
+			.Select(s => new AdminHomeServiceDto
+			{
+				Id = s.Id,
+				Name = s.Name,
+				Price = s.Price,
+				Description = s.Description,
+				IsDeleted = s.IsDeleted
+			});
+		var pagedHomeService = await homeServiceDto.ToPagedListAsync(input);
+		return pagedHomeService;
+	}		public async Task<AdminHomeServiceDto> GetHomeServiceByIdAsync(Guid id)
 		{
 			var service = await _homeServiceRepository.GetByIdAsync(id);
 			if (service == null)
@@ -95,6 +96,11 @@ namespace HSP.Service.Implementations
 			if (existingService.Description != input.Description)
 			{
 				existingService.Description = input.Description;
+				flag = true;
+			}
+			if (input.IsDeleted.HasValue && existingService.IsDeleted != input.IsDeleted.Value)
+			{
+				existingService.IsDeleted = input.IsDeleted.Value;
 				flag = true;
 			}
 			if (flag == true)
