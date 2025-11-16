@@ -52,6 +52,10 @@
       "error_new_same": "Mật khẩu mới phải khác mật khẩu hiện tại"
       
     },
+    "type": "Loại",
+    "home_name": "Tên nhà",
+    "address": "Địa chỉ",
+    "actions": "Hành động",
     "welcome_back": "Chào mừng trở lại!",
     "login_button": "Đăng nhập",
     "logging_in": "Đang đăng nhập...",
