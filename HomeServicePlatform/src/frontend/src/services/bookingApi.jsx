@@ -69,6 +69,48 @@ export const bookingApi = {
     return response.data;
   },
 
+  // Get all bookings for admin
+  getAllBookingsForAdmin: async (
+    pageNumber = 1,
+    pageSize = 10,
+    searchTerm = "",
+    status = null,
+    fromDate = null,
+    toDate = null
+  ) => {
+    const params = new URLSearchParams({
+      pageNumber: pageNumber.toString(),
+      pageSize: pageSize.toString(),
+    });
+
+    if (searchTerm) {
+      params.append("searchTerm", searchTerm);
+    }
+
+    if (status !== null && status !== undefined && status !== "") {
+      params.append("status", status);
+    }
+
+    if (fromDate) {
+      params.append("fromDate", fromDate);
+    }
+
+    if (toDate) {
+      params.append("toDate", toDate);
+    }
+
+    try {
+      const response = await axiosClient.get(`/booking/admin/all?${params}`);
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error("Error fetching admin bookings:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to fetch bookings",
+      };
+    }
+  },
+
   // Get booking detail
   getBookingDetail: async (id) => {
     const response = await axiosClient.get(`/booking/${id}`);

@@ -519,7 +519,7 @@ export default function AccountsPage() {
         </div>
       )}
 
-      <Card style={{ borderRadius: 12 }} bodyStyle={{ padding: 0 }}>
+      <Card style={{ borderRadius: 12 }} styles={{ body: { padding: 0 } }}>
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}

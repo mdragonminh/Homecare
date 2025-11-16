@@ -246,7 +246,7 @@ export default function OperatorCustomersPage() {
         </div>
       </Card>
 
-      <Card style={{ borderRadius: 12 }} bodyStyle={{ padding: 0 }}>
+      <Card style={{ borderRadius: 12 }} styles={{ body: { padding: 0 } }}>
         <Spin spinning={loading}>
           <Table
             columns={columns}

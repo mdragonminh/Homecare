@@ -13,6 +13,7 @@ namespace HSP.Core.Dtos.ServiceDto
 		public decimal Price { get; set; }
 		[StringLength(500)]
 		public string? Description { get; set; }
+		public bool? IsDeleted { get; set; }
 		public DateTime DateModified { get; set; }
 		public Guid? ModifiedBy { get; set; }
 	}
