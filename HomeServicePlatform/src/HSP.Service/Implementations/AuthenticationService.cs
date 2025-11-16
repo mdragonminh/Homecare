@@ -386,92 +386,102 @@ namespace HSP.Service.Implementations
         }
         private async Task HandleTechnicianFilesAsync(TechnicianProfile profile, RegisterTechnicianRequestDto input)
         {
-            if (input.AvatarFile != null)
+            await ProcessAvatarAsync(profile, input.AvatarFile);
+            await ProcessLegalDocumentAsync(profile, input.LegalDocument);
+            await ProcessCertificatesAsync(profile, input.CertificateFiles);
+        }
+        private async Task ProcessAvatarAsync(TechnicianProfile profile, IFormFile? avatar)
+        {
+            if (avatar == null)
+                return;
+
+            await _fileService.UploadAsync(new FileUploadDto
             {
-                await _fileService.UploadAsync(new FileUploadDto
+                UserId = profile.UserId,
+                File = avatar,
+                ObjectId = profile.Id,
+                ObjectTypeName = RoleNames.Technician,
+                RelationType = FileConstants.Avatar
+            });
+        }
+        private async Task ProcessLegalDocumentAsync(TechnicianProfile profile, IFormFile? legalDocument)
+        {
+            if (legalDocument == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(profile.CitizenId))
+                throw new ValidationException("Bạn chưa nhập số căn cước công dân");
+
+            var images = await ConvertPdfToImagesIfNeeded(legalDocument);
+
+            bool isValid = false;
+
+            foreach (var imgBytes in images)
+            {
+                var ocrText = await _ocrService.ExtractTextAsync(imgBytes);
+
+                bool legal = await _chatbotService.ValidateLegalDocumentAsync(ocrText);
+                bool containsId = ContainsCitizenId(ocrText, profile.CitizenId);
+
+                if (legal && containsId)
                 {
-                    UserId = profile.UserId,
-                    File = input.AvatarFile,
-                    ObjectId = profile.Id,
-                    ObjectTypeName = RoleNames.Technician,
-                    RelationType = FileConstants.Avatar
-                });
+                    isValid = true;
+                    break;
+                }
             }
 
-            if (input.LegalDocument != null)
-            {
-                if (string.IsNullOrWhiteSpace(profile.CitizenId))
-                    throw new ValidationException("Bạn chưa nhập số căn cước công dân");
+            if (!isValid)
+                throw new ValidationException("Tài liệu pháp lý không hợp lệ hoặc không phải của bạn");
 
-                var images = await ConvertPdfToImagesIfNeeded(input.LegalDocument);
-                var flag = false;
+            await _fileService.UploadAsync(new FileUploadDto
+            {
+                UserId = profile.UserId,
+                File = legalDocument,
+                ObjectId = profile.Id,
+                ObjectTypeName = RoleNames.Technician,
+                RelationType = FileConstants.LegalDocument
+            });
+        }
+        private async Task ProcessCertificatesAsync(TechnicianProfile profile,
+            IEnumerable<IFormFile>? certFiles)
+        {
+            if (certFiles == null || !certFiles.Any())
+                return;
+
+            var selectedServices = profile.Services.ToList();
+            var serviceNames = selectedServices.Select(s => s.Name).ToList();
+
+            foreach (var certFile in certFiles)
+            {
+                var images = await ConvertPdfToImagesIfNeeded(certFile);
+                bool matched = false;
+
                 foreach (var imgBytes in images)
                 {
                     var ocrText = await _ocrService.ExtractTextAsync(imgBytes);
-                    if (await _chatbotService.ValidateLegalDocumentAsync(ocrText) && ContainsCitizenId(ocrText, profile.CitizenId))
+
+                    if (await _chatbotService.ValidateCertificateAsync(ocrText, serviceNames))
                     {
-                        flag = true;
+                        matched = true;
                         break;
                     }
                 }
-                if (!flag)
-                {
-                    throw new ValidationException("Tài liệu pháp lý không hợp lệ hoặc không phải của bạn");
-                }
-                await _fileService.UploadAsync(new FileUploadDto
-                {
-                    UserId = profile.UserId,
-                    File = input.LegalDocument,
-                    ObjectId = profile.Id,
-                    ObjectTypeName = RoleNames.Technician,
-                    RelationType = FileConstants.LegalDocument
-                });
+
+                if (!matched)
+                    throw new ValidationException(
+                        $"Chứng chỉ không phù hợp với dịch vụ: {string.Join(", ", serviceNames)}");
             }
 
-            if (input.CertificateFiles != null && input.CertificateFiles.Any())
+            var uploadDtos = certFiles.Select(certFile => new FileUploadDto
             {
-                var selectedServices = profile.Services.ToList();
-                var serviceNames = selectedServices.Select(s => s.Name).ToList();
+                UserId = profile.UserId,
+                File = certFile,
+                ObjectId = profile.Id,
+                ObjectTypeName = RoleNames.Technician,
+                RelationType = FileConstants.TechnicianCertificate
+            });
 
-                foreach (var certFile in input.CertificateFiles)
-                {
-                    var images = await ConvertPdfToImagesIfNeeded(certFile);
-
-                    bool matched = false;
-
-                    foreach (var imgBytes in images)
-                    {
-                        string ocrText = await _ocrService.ExtractTextAsync(imgBytes);
-
-                        bool ok = await _chatbotService.ValidateCertificateAsync(
-                            ocrText,
-                            serviceNames
-                        );
-
-                        if (ok)
-                        {
-                            matched = true;
-                            break;
-                        }
-                    }
-
-                    if (!matched)
-                    {
-                        throw new ValidationException(
-                            $"Chứng chỉ không phù hợp với dịch vụ: {string.Join(", ", serviceNames)}"
-                        );
-                    }
-                }
-                var uploadDtos = input.CertificateFiles.Select(certFile => new FileUploadDto
-                {
-                    UserId = profile.UserId,
-                    File = certFile,
-                    ObjectId = profile.Id,
-                    ObjectTypeName = RoleNames.Technician,
-                    RelationType = FileConstants.TechnicianCertificate
-                });
-                await _fileService.UploadManyAsync(uploadDtos);
-            }
+            await _fileService.UploadManyAsync(uploadDtos);
         }
         private bool ContainsCitizenId(string ocrText, string citizenId)
         {
