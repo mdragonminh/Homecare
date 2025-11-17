@@ -8,6 +8,7 @@ using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Implementations.Internal;
+using HSP.Service.Interfaces;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using MockQueryable;
@@ -19,6 +20,7 @@ namespace HSP.Service.Test.Implementations.Internal
 	{
 		private readonly Mock<IGeocodingService> _mockGeocodingService;
 		private readonly Mock<IRepository<TechnicianProfile, Guid>> _mockTechnicianRepository;
+		private readonly Mock<ISystemSettingService> _mockSystemSettingService;
 		private readonly Mock<IEmailService> _mockEmailService;
 		private readonly Mock<IEmailTemplateService> _mockEmailTemplateService;
 		private readonly Mock<IUserRepository> _mockUserRepository;
@@ -32,7 +34,8 @@ namespace HSP.Service.Test.Implementations.Internal
 		{
 			_mockGeocodingService = new Mock<IGeocodingService>();
 			_mockTechnicianRepository = new Mock<IRepository<TechnicianProfile, Guid>>();
-			_mockEmailService = new Mock<IEmailService>();
+            _mockSystemSettingService = new Mock<ISystemSettingService>();
+            _mockEmailService = new Mock<IEmailService>();
 			_mockEmailTemplateService = new Mock<IEmailTemplateService>();
 			_mockUserRepository = new Mock<IUserRepository>();
 			_mockUrlSettings = new Mock<IOptions<UrlSettingsDto>>();
@@ -51,7 +54,8 @@ namespace HSP.Service.Test.Implementations.Internal
 				_mockUserRepository.Object,
 				_mockUrlSettings.Object,
 				_mockRedisCacheService.Object,
-				_mockUnitOfWork.Object,
+				_mockSystemSettingService.Object,
+                _mockUnitOfWork.Object,
 				_mockLocalizer.Object
 				);
 		}
