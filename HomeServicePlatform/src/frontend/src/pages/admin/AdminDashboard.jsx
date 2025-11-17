@@ -59,7 +59,6 @@ export default function AdminDashboard() {
   const [bookingStatusData, setBookingStatusData] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
   const [topServices, setTopServices] = useState([]);
-  const [recentActivities, setRecentActivities] = useState([]);
   const [customerSatisfaction, setCustomerSatisfaction] = useState(0);
   const [completionRate, setCompletionRate] = useState(0);
 
@@ -169,17 +168,6 @@ export default function AdminDashboard() {
           pendingBookings: pendingCount,
           cancelledBookings: cancelledCount
         }));
-
-        const activities = bookings
-          .slice(0, 10)
-          .map((booking, index) => ({
-            key: index.toString(),
-            activity: `Booking ${(booking.status === 4 || booking.status === 'Completed') ? 'hoàn thành' : 'được tạo'}`,
-            user: booking.customer?.name || 'Khách hàng',
-            time: dayjs(booking.dateCreated).fromNow(),
-            status: (booking.status === 4 || booking.status === 'Completed') ? 'success' : 'pending'
-          }));
-        setRecentActivities(activities);
       }
 
       if (techniciansResponse.success) {
@@ -202,34 +190,6 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
-
-  const activityColumns = [
-    {
-      title: "Hoạt động",
-      dataIndex: "activity",
-      key: "activity",
-    },
-    {
-      title: "Người dùng",
-      dataIndex: "user",
-      key: "user",
-    },
-    {
-      title: "Thời gian",
-      dataIndex: "time",
-      key: "time",
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => (
-        <Tag color={status === "success" ? "green" : "orange"}>
-          {status === "success" ? "Thành công" : "Đang xử lý"}
-        </Tag>
-      ),
-    },
-  ];
 
   return (
     <div>
@@ -400,7 +360,7 @@ export default function AdminDashboard() {
       </Row>
 
       {/* Revenue Chart */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      <Row gutter={[16, 16]}>
         <Col xs={24}>
           <Card title="Doanh thu theo ngày (VNĐ)" loading={loading}>
             <ResponsiveContainer width="100%" height={300}>
@@ -425,20 +385,6 @@ export default function AdminDashboard() {
                 />
               </BarChart>
             </ResponsiveContainer>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Recent Activities */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24}>
-          <Card title="Hoạt động gần đây">
-            <Table
-              columns={activityColumns}
-              dataSource={recentActivities}
-              pagination={false}
-              size="small"
-            />
           </Card>
         </Col>
       </Row>
