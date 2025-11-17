@@ -241,4 +241,7 @@
   <data name="ServiceIsCurrentlyInUse" xml:space="preserve">
     <value>Không thể xóa dịch vụ này vì đang được kỹ thuật viên sử dụng</value>
   </data>
+  <data name="CannotSelectPastDate" xml:space="preserve">
+    <value>Không thể chọn ngày giờ quá khứ</value>
+  </data>
 </root>

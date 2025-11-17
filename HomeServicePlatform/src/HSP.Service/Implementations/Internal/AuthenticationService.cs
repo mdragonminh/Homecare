@@ -308,7 +308,6 @@ namespace HSP.Service.Implementations.Internal
                 try
                 {
                     var user = await CreateUserAsync(input.Email, input.FullName, input.PhoneNumber, input.Password);
-                    var response = await AssignRoleAndSendConfirmationAsync(user, RoleNames.Technician);
                     var technicianProfile = new TechnicianProfile
                     {
                         UserId = user.Id,
@@ -329,8 +328,9 @@ namespace HSP.Service.Implementations.Internal
                     await _technicianRepository.AddAsync(technicianProfile);
                     await _unitOfWork.SaveChangesAsync();
                     await HandleTechnicianFilesAsync(technicianProfile, input);
+                    var resp = await AssignRoleAndSendConfirmationAsync(user, RoleNames.Technician);
                     await transaction.CommitAsync();
-                    return response;
+                    return resp;
                 }
                 catch
                 {

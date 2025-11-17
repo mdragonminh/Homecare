@@ -13,6 +13,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using MockQueryable;
 using Moq;
+using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Service.Test.Implementations.Internal
 {
@@ -112,7 +113,40 @@ namespace HSP.Service.Test.Implementations.Internal
 			Assert.Single(result);
 			Assert.Equal("Tech A", result.First().Name);
 		}
-		[Fact]
+        [Fact]
+        public async Task SearchNearbyTechniciansAsync_WhenServiceIdsNull_ShouldReturnAllWithinDistance()
+        {
+            var tech = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                User = new AppUser { FullName = "Tech A" },
+                Latitude = 21.0169,
+                Longitude = 105.5250,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Services = new List<Core.Entities.Service>() 
+            };
+
+            var input = new SearchTechnicianInput
+            {
+                Address = "Hà Nội",
+                ServiceIds = null,
+                MaxDistanceKm = 50
+            };
+
+            _mockGeocodingService
+                .Setup(g => g.GetCoordinatesForAddressAsync(It.IsAny<string>()))
+                .ReturnsAsync(new CoordinatesDto {Latitude = 21.0169, Longitude = 105.5250 });
+
+            _mockTechnicianRepository
+                .Setup(r => r.GetAll())
+                .Returns(new List<TechnicianProfile> { tech }.BuildMock());
+
+            var result = await _serviceRequestService.SearchNearbyTechniciansAsync(input);
+
+            Assert.Single(result);
+            Assert.Equal("Tech A", result.First().Name);
+        }
+        [Fact]
 		public async Task CreateAndMatchBookingAsync_WhenTechnicianAccepts_ShouldReturnMatchedResult()
 		{
 			var service = new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Điện lạnh" };
@@ -155,18 +189,42 @@ namespace HSP.Service.Test.Implementations.Internal
 					.Setup(x => x.GetAll())
 					.Returns(new List<TechnicianProfile> { technician }
 							.BuildMock());
+            _mockSystemSettingService
+				.Setup(s => s.GetSettingValueAsIntAsync("TechnicianResponseTimeoutSeconds", It.IsAny<int>()))
+				.ReturnsAsync(5);
 
-			_mockRedisCacheService
-					.SetupSequence(r => r.GetAsync<Guid>(It.IsAny<string>()))
-					.ReturnsAsync(technician.Id)
-					.ReturnsAsync(Guid.Empty);
+            _mockSystemSettingService
+                .Setup(s => s.GetSettingValueAsIntAsync("TechnicianInvitationExpirationSeconds", It.IsAny<int>()))
+                .ReturnsAsync(5);
+            string acceptedKey = null;
+            _mockRedisCacheService
+				.Setup(x => x.SetAsync(
+					It.Is<string>(key => key.StartsWith("accept_")),
+					It.IsAny<object>(),
+					It.IsAny<TimeSpan?>()
+				))
+				.Callback<string, object, TimeSpan?>((key, value, ttl) =>
+				{
+					acceptedKey = key.Replace("accept_", "accepted_");
+				})
+				.Returns(Task.CompletedTask);
 
-			_mockRedisCacheService
-					.Setup(r => r.RemoveAsync(It.IsAny<string>()))
-					.Returns(Task.CompletedTask);
+            _mockRedisCacheService
+				 .Setup(x => x.GetAsync<Guid>(It.IsAny<string>()))
+				 .ReturnsAsync(() =>
+				 {
+					 if (acceptedKey != null)
+						 return technician.Id;
 
-			_mockEmailTemplateService
-					.Setup(e => e.RenderAsync(It.IsAny<string>(), It.IsAny<object>()))
+					 return Guid.Empty;
+				 });
+
+            _mockRedisCacheService
+                .Setup(x => x.RemoveAsync(It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            _mockEmailTemplateService
+                    .Setup(e => e.RenderAsync(It.IsAny<string>(), It.IsAny<object>()))
 					.ReturnsAsync("<html>Email mock</html>");
 
 			_mockEmailService
@@ -188,6 +246,104 @@ namespace HSP.Service.Test.Implementations.Internal
 		{
 			await Assert.ThrowsAsync<ArgumentNullException>(() => _serviceRequestService.CreateAndMatchBookingAsync((CustomerCreateBookingDto)null!));
 		}
+        [Fact]
+        public async Task CreateAndMatchBookingAsync_WhenDesiredDateInPast_ShouldThrowValidationException()
+        {
+            var input = new CustomerCreateBookingDto
+            {
+                CustomerId = Guid.NewGuid().ToString(),
+                Address = "Hà Nội",
+                ServiceIds = new List<Guid> { Guid.NewGuid() },
+                DistanceKm = 10,
+                DesireDateTime = DateTime.UtcNow.AddHours(-2)  
+            };
+
+            await Assert.ThrowsAsync<ValidationException>(
+                () => _serviceRequestService.CreateAndMatchBookingAsync(input)
+            );
+        }
+        [Fact]
+        public async Task CreateAndMatchBookingAsync_WhenCannotFoundCoordinates_ShouldThrowException()
+        {
+            var input = new CustomerCreateBookingDto
+            {
+                CustomerId = Guid.NewGuid().ToString(),
+                Address = "Địa chỉ không hợp lệ",
+                ServiceIds = new List<Guid> { Guid.NewGuid() },
+                DistanceKm = 10,
+                DesireDateTime = DateTime.UtcNow.AddHours(1)
+            };
+
+            _mockGeocodingService
+                .Setup(g => g.GetCoordinatesForAddressAsync(It.IsAny<string>()))
+                .ReturnsAsync((CoordinatesDto?)null);
+
+            await Assert.ThrowsAsync<Exception>(
+                () => _serviceRequestService.CreateAndMatchBookingAsync(input)
+            );
+        }
+        [Fact]
+        public async Task CreateAndMatchBookingAsync_WhenAddressIsNull_ShouldThrowArgumentException()
+        {
+            var input = new CustomerCreateBookingDto
+            {
+                CustomerId = Guid.NewGuid().ToString(),
+                Address = null!,
+                ServiceIds = new List<Guid> { Guid.NewGuid() },
+                DistanceKm = 10,
+                DesireDateTime = DateTime.UtcNow.AddHours(1)
+            };
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => _serviceRequestService.CreateAndMatchBookingAsync(input)
+            );
+        }
+        [Fact]
+        public async Task CreateAndMatchBookingAsync_WhenTechnicianHasActiveBooking_ShouldThrowNoAvailableException()
+        {
+            var service = new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Điện lạnh" };
+
+            var technician = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Latitude = 21.01,
+                Longitude = 105.52,
+                Services = new List<Core.Entities.Service> { service },
+                User = new AppUser { FullName = "Tech Busy", Email = "techbusy@mail.com" },
+                Bookings = new List<Booking>
+        {
+            new Booking { Status = BookingStatus.InProgress }
+        }
+            };
+
+            var input = new CustomerCreateBookingDto
+            {
+                CustomerId = Guid.NewGuid().ToString(),
+                Address = "Hà Nội",
+                ServiceIds = new List<Guid> { service.Id },
+                DistanceKm = 20,
+                DesireDateTime = DateTime.UtcNow.AddHours(1)
+            };
+
+            _mockGeocodingService
+                .Setup(g => g.GetCoordinatesForAddressAsync(It.IsAny<string>()))
+                .ReturnsAsync(new CoordinatesDto {Latitude = 21.01, Longitude = 105.52 });
+
+            _mockUserRepository
+                .Setup(x => x.FindByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(new AppUser());
+
+            _mockTechnicianRepository
+                .Setup(r => r.GetAll())
+                .Returns(new List<TechnicianProfile> { technician }.BuildMock());
+
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _serviceRequestService.CreateAndMatchBookingAsync(input)
+            );
+        }
+
+		[Fact]
         public async Task CreateAndMatchBookingAsync_WhenCustomerNotFound_ShouldThrowInvalidOperationException()
 		{
 			var service = new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Điện lạnh" };
@@ -207,6 +363,7 @@ namespace HSP.Service.Test.Implementations.Internal
 					.ReturnsAsync((AppUser?)null!);
 			await Assert.ThrowsAsync<InvalidOperationException>(() => _serviceRequestService.CreateAndMatchBookingAsync(input));
 		}
+		[Fact]
         public async Task CreateAndMatchBookingAsync_WhenTechnicianNotFound_ShouldThrowInvalidOperationException()
 		{
 			var service = new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Điện lạnh" };
@@ -236,7 +393,7 @@ namespace HSP.Service.Test.Implementations.Internal
 							.BuildMock());
 			await Assert.ThrowsAsync<InvalidOperationException>(() => _serviceRequestService.CreateAndMatchBookingAsync(input));
 		}
-		[Fact(Skip = "time consuming test case run successfully already")]
+		[Fact]
 		public async Task CreateAndMatchBookingAsync_WhenNoTechnicianAccepts_ShouldReturnUnmatchedResult()
 		{
 			var service = new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Điện lạnh" };

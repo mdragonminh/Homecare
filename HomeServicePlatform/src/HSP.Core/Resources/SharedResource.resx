@@ -242,4 +242,7 @@
   <data name="ServiceIsCurrentlyInUse" xml:space="preserve">
     <value>Service is currently in use</value>
   </data>
+  <data name="CannotSelectPastDate" xml:space="preserve">
+    <value>Cannot select past date</value>
+  </data>
 </root>

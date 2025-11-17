@@ -19,7 +19,7 @@ namespace HSP.Core.Resources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public partial class SharedResource {
@@ -75,6 +75,15 @@ namespace HSP.Core.Resources {
         public static string CannotFindOrCreateUser {
             get {
                 return ResourceManager.GetString("CannotFindOrCreateUser", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot select past date.
+        /// </summary>
+        public static string CannotSelectPastDate {
+            get {
+                return ResourceManager.GetString("CannotSelectPastDate", resourceCulture);
             }
         }
         

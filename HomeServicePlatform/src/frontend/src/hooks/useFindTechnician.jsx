@@ -80,7 +80,9 @@ export function useFindTechnician(loggedInUser) {
       return;
     }
 
-    const preferredDateTime = `${preferredDate}T${preferredTime}:00Z`;
+    //const preferredDateTime = `${preferredDate}T${preferredTime}:00Z`;
+    const localDateTime = new Date(`${preferredDate}T${preferredTime}:00`);
+    const preferredDateTime = localDateTime.toISOString();
     setIsMatching(true);
     // setTechnicians(null);
     setStatusMessage({

@@ -1,7 +1,7 @@
 ﻿using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
-using HSP.Service.Implementations;
+using HSP.Service.Implementations.Internal;
 using HSP.Service.Interfaces;
 using Microsoft.Extensions.Localization;
 using MockQueryable;
