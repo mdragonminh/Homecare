@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Home, Menu, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -41,12 +40,14 @@ export function Header({
             >
               {t("nav.home")}
             </button>
-            <button
-              onClick={() => navigate("/services")}
-              className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
-            >
-              {t("nav.services")}
-            </button>
+            {loggedInUser?.role !== "technician" && (
+              <button
+                onClick={() => navigate("/services")}
+                className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+              >
+                {t("nav.services")}
+              </button>
+            )}
             {loggedInUser && loggedInUser.role === "customer" && (
               <>
                 <button
@@ -120,13 +121,15 @@ export function Header({
               >
                 {t("nav.home")}
               </button>
-              <a
-                href="/services"
-                className="px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t("nav.services")}
-              </a>
+              {loggedInUser?.role !== "technician" && (
+                <a
+                  href="/services"
+                  className="px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {t("nav.services")}
+                </a>
+              )}
               {loggedInUser && loggedInUser.role === "customer" && (
                 <>
                   <button
