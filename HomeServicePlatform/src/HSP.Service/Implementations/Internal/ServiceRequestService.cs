@@ -28,6 +28,7 @@ namespace HSP.Service.Implementations.Internal
 		private readonly IUserRepository _userRepository;
 		private readonly UrlSettingsDto _urlSettings;
 		private readonly IRedisCacheService _redisCacheService;
+		private readonly ISystemSettingService _systemSettingService;
 		public ServiceRequestService(IGeocodingService geocodingService,
 			IRepository<TechnicianProfile, Guid> technicianRepository,
 			IEmailService emailService,
@@ -35,6 +36,7 @@ namespace HSP.Service.Implementations.Internal
 			IUserRepository userRepository,
 			IOptions<UrlSettingsDto> options,
 			IRedisCacheService redisCacheService,
+			ISystemSettingService systemSettingService,
 			IUnitOfWork unitOfWork, IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_geocodingService = geocodingService;
@@ -44,6 +46,7 @@ namespace HSP.Service.Implementations.Internal
 			_userRepository = userRepository;
 			_urlSettings = options.Value;
 			_redisCacheService = redisCacheService;
+			_systemSettingService = systemSettingService;
 		}
 
 		private async Task<Guid?> GetAcceptedTechnicianAsync(string token)
@@ -79,7 +82,7 @@ namespace HSP.Service.Implementations.Internal
 					.Include(t => t.Bookings)
 					.Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
 					.Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
-					.WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
+					// .WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
 					.Where(t => !t.Bookings.Any(b =>
 					b.Status == BookingStatus.InProgress
 					|| b.Status == BookingStatus.Pending
@@ -110,15 +113,18 @@ namespace HSP.Service.Implementations.Internal
 			AppUser customer,
 			CustomerCreateBookingDto input)
 		{
+			var technicianResponseTimeoutSeconds = await _systemSettingService.GetSettingValueAsIntAsync("TechnicianResponseTimeoutSeconds", 10);
+			var redisExpirationSeconds = await _systemSettingService.GetSettingValueAsIntAsync("TechnicianInvitationExpirationSeconds", 15);
+
 			foreach (var tech in sortedTechnicians)
 			{
 				var token = Guid.NewGuid().ToString("N");
-				await _redisCacheService.SetAsync($"waiting_{token}", "waiting", TimeSpan.FromSeconds(15));
-				await _redisCacheService.SetAsync($"accept_{token}", tech.Technician.Id, TimeSpan.FromSeconds(15));
+				await _redisCacheService.SetAsync($"waiting_{token}", "waiting", TimeSpan.FromSeconds(redisExpirationSeconds));
+				await _redisCacheService.SetAsync($"accept_{token}", tech.Technician.Id, TimeSpan.FromSeconds(redisExpirationSeconds));
 				await SendInvitationEmailAsync(tech, customer, input, token);
 
 				var stopwatch = Stopwatch.StartNew();
-				while (stopwatch.Elapsed < TimeSpan.FromSeconds(60))
+				while (stopwatch.Elapsed < TimeSpan.FromSeconds(technicianResponseTimeoutSeconds))
 				{
 					var acceptedTechId = await GetAcceptedTechnicianAsync(token);
 					if (acceptedTechId.HasValue)
