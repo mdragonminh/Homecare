@@ -131,7 +131,10 @@ namespace HSP.Service.Implementations.Internal
                     Reason = b.Cancellation.Reason,
                     CancelledBy = b.Cancellation.CancelledBy,
                     CancelledAt = b.Cancellation.CancelledAt
-                } : null
+                } : null,
+                TotalPrice = _bookingItemRepository.GetAll()
+                                .Where(item => item.BookingId == b.Id && !item.IsDeleted)
+                                .Sum(item => item.Price)
             });
 
             var pagedResult = await dtoQuery.ToPagedListAsync(input);

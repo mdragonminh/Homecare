@@ -17,6 +17,7 @@ namespace HSP.Core.Dtos.BookingDto
         public DateTime? DateCompleted { get; set; }
         public DateTime DateCreated { get; set; }
         public DateTime DateModified { get; set; }
+        public decimal TotalPrice { get; set; }
 
         // Navigation properties
         public HSP.Core.Dtos.CustomerProfileDto.CustomerProfileDto? Customer { get; set; }
