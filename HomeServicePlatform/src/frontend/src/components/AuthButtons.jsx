@@ -9,7 +9,7 @@ import {
   Settings,
   UserCircle,
   MapPin,
-  Ticket, 
+  Ticket,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -255,20 +255,24 @@ export function AuthButtons({
                     </div>
                   </button>
 
-                  <button
-                    onClick={() => handleNavigate("/list-home")}
-                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-green-50 hover:text-green-600 transition-all duration-200 group"
-                  >
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-green-200 transition-colors">
-                      <MapPin className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <div className="font-medium">{t("ui.manage_homes")}</div>
-                      <div className="text-xs text-green-500">
-                        {t("ui.add_new_delivery_address")}
+                  {loggedInUser.role !== "technician" && (
+                    <button
+                      onClick={() => handleNavigate("/list-home")}
+                      className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-green-50 hover:text-green-600 transition-all duration-200 group"
+                    >
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2 group-hover:bg-green-200 transition-colors">
+                        <MapPin className="w-4 h-4 text-green-600" />
                       </div>
-                    </div>
-                  </button>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium">
+                          {t("ui.manage_homes")}
+                        </div>
+                        <div className="text-xs text-green-500">
+                          {t("ui.add_new_delivery_address")}
+                        </div>
+                      </div>
+                    </button>
+                  )}
 
                   <div className="h-px bg-gray-100 my-2"></div>
 
