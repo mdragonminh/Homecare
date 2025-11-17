@@ -1,7 +1,8 @@
 using HSP.Core.Abstractions.External;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.External;
-using HSP.Service.Implementations;
+using HSP.Service.Implementations.External;
+using HSP.Service.Implementations.Internal;
 using HSP.Service.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Tesseract;
