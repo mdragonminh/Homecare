@@ -322,10 +322,12 @@ namespace HSP.API.Controllers
                 var operators = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.Operator);
                 var equipmentManagers = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.EquipmentManager);
                 var supporters = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.Supporter);
+                var customers = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.Customer);
+                var technicians = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.Technician);
 
                 var statistics = new
                 {
-                    totalAccounts = operators.Count() + equipmentManagers.Count() + supporters.Count(),
+                    totalAccounts = operators.Count() + equipmentManagers.Count() + supporters.Count() + customers.Count() + technicians.Count(),
                     operators = new
                     {
                         total = operators.Count(),
@@ -343,6 +345,18 @@ namespace HSP.API.Controllers
                         total = supporters.Count(),
                         active = supporters.Count(a => a.IsActive),
                         inactive = supporters.Count(a => !a.IsActive)
+                    },
+                    customers = new
+                    {
+                        total = customers.Count(),
+                        active = customers.Count(a => a.IsActive),
+                        inactive = customers.Count(a => !a.IsActive)
+                    },
+                    technicians = new
+                    {
+                        total = technicians.Count(),
+                        active = technicians.Count(a => a.IsActive),
+                        inactive = technicians.Count(a => !a.IsActive)
                     }
                 };
 
