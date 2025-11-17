@@ -6,7 +6,7 @@ using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 
-namespace HSP.Service.Implementations
+namespace HSP.Service.Implementations.Internal
 {
 	public class SystemSettingService : BaseService, ISystemSettingService
 	{
