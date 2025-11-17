@@ -2,11 +2,9 @@ import {
   DashboardOutlined,
   HomeOutlined,
   TeamOutlined,
-  ToolOutlined,
   SettingOutlined,
   CreditCardOutlined,
   CustomerServiceOutlined,
-  ShopOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, Space, Typography } from "antd";
@@ -27,10 +25,7 @@ export default function AdminLayout({ loggedInUser }) {
   const selectedKeys = useMemo(() => {
     if (location.pathname.startsWith("/admin/dashboard")) return ["dashboard"];
     if (location.pathname.startsWith("/admin/accounts")) return ["accounts"];
-    if (location.pathname.startsWith("/admin/account-management")) return ["account-management"];
-    if (location.pathname.startsWith("/admin/technicians")) return ["technicians"];
     if (location.pathname.startsWith("/admin/home-services")) return ["homeservices"];
-    if (location.pathname.startsWith("/admin/service-management")) return ["service-management"];
     if (location.pathname.startsWith("/admin/payments")) return ["payments"];
     if (location.pathname.startsWith("/admin/settings")) return ["settings"];
     return ["dashboard"];
@@ -94,10 +89,7 @@ export default function AdminLayout({ loggedInUser }) {
           onClick={({ key }) => {
             if (key === "dashboard") navigate("/admin/dashboard");
             if (key === "accounts") navigate("/admin/accounts");
-            if (key === "account-management") navigate("/admin/account-management");
-            if (key === "technicians") navigate("/admin/technicians");
             if (key === "homeservices") navigate("/admin/home-services");
-            if (key === "service-management") navigate("/admin/service-management");
             if (key === "payments") navigate("/admin/payments");
             if (key === "settings") navigate("/admin/settings");
           }}
@@ -109,33 +101,27 @@ export default function AdminLayout({ loggedInUser }) {
               style: { marginBottom: 4 },
             },
             {
-              key: "account-management",
+              key: "accounts",
               icon: <UserOutlined />,
-              label: t("admin.menu.account-management", "Quản lý tài khoản"),
+              label: t("admin.menu.accounts", "Quản lý tài khoản"),
               style: { marginBottom: 4 },
             },
             {
-              key: "technicians",
-              icon: <TeamOutlined />,
-              label: t("admin.menu.technicians", "Kỹ thuật viên"),
-              style: { marginBottom: 4 },
-            },
-            {
-              key: "service-management",
+              key: "homeservices",
               icon: <CustomerServiceOutlined />,
-              label: t("admin.menu.service-management", "Quản lý dịch vụ"),
+              label: t("admin.menu.homeservices", "Quản lý dịch vụ"),
               style: { marginBottom: 4 },
             },
             {
               key: "payments",
               icon: <CreditCardOutlined />,
-              label: t("admin.menu.payments", "Quản lý thanh toán"),
+              label: t("admin.menu.payments", "Thanh toán"),
               style: { marginBottom: 4 },
             },
             {
               key: "settings",
               icon: <SettingOutlined />,
-              label: t("admin.menu.settings", "Cài đặt hệ thống"),
+              label: t("admin.menu.settings", "Cài đặt"),
               style: { marginBottom: 4 },
             },
           ]}

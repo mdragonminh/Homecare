@@ -3,67 +3,89 @@ import {
   Card,
   Tabs,
   Table,
-  Tag,
   Space,
   Button,
-  Avatar,
-  Modal,
   Form,
   Input,
   Select,
   message,
-  Spin,
+  Badge,
+  Row,
+  Col,
+  Statistic,
 } from "antd";
 import {
   UserOutlined,
   ToolOutlined,
   CrownOutlined,
-  EyeOutlined,
-  EditOutlined,
-  DeleteOutlined,
   PlusOutlined,
   ReloadOutlined,
-  ExclamationCircleOutlined,
+  TeamOutlined,
+  ShoppingOutlined,
 } from "@ant-design/icons";
 import { accountApi } from "../../services/accountApi";
-
-const { TabPane } = Tabs;
-const { confirm } = Modal;
+import { useTranslation } from "react-i18next";
+import { adminApi } from "../../services/adminApi";
+import { getCustomerColumns, getTechnicianColumns, getStaffColumns } from "../../components/admin/accounts/accountColumns";
+import AccountDetailModal from "../../components/admin/accounts/AccountDetailModal";
+import CreateAccountModal from "../../components/admin/accounts/CreateAccountModal";
+import EditAccountModal from "../../components/admin/accounts/EditAccountModal";
 
 export default function AccountsPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("operator");
   const [loading, setLoading] = useState(false);
+
+  // Data states for each role
+  const [customers, setCustomers] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
   const [operators, setOperators] = useState([]);
   const [equipmentManagers, setEquipmentManagers] = useState([]);
   const [supporters, setSupporters] = useState([]);
+
   const [statistics, setStatistics] = useState(null);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   // Modal states
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [form] = Form.useForm();
 
-  // Load data on component mount and tab change
+  // Technician filters
+  const [technicianFilters, setTechnicianFilters] = useState({
+    searchTerm: "",
+    approvalStatus: undefined,
+  });
+
   useEffect(() => {
-    loadData();
     loadStatistics();
   }, []);
 
   useEffect(() => {
     loadTabData();
-  }, [activeTab]);
+  }, [activeTab, pagination.current, pagination.pageSize]);
 
-  const loadData = async () => {
-    await Promise.all([
-      loadOperators(),
-      loadEquipmentManagers(),
-      loadSupporters(),
-    ]);
-  };
+  // Reload technicians when filters change
+  useEffect(() => {
+    if (activeTab === "technician") {
+      loadTechnicians();
+    }
+  }, [technicianFilters]);
 
   const loadTabData = async () => {
     switch (activeTab) {
+      case "customer":
+        await loadCustomers();
+        break;
+      case "technician":
+        await loadTechnicians();
+        break;
       case "operator":
         await loadOperators();
         break;
@@ -73,6 +95,57 @@ export default function AccountsPage() {
       case "supporter":
         await loadSupporters();
         break;
+    }
+  };
+
+  const loadCustomers = async () => {
+    try {
+      setLoading(true);
+      const result = await adminApi.getAccounts({
+        pageNumber: pagination.current,
+        pageSize: pagination.pageSize,
+        role: "customer",
+      });
+
+      if (result.success) {
+        setCustomers(result.data.items || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: result.data.totalCount || 0,
+        }));
+      } else {
+        message.error(result.message);
+      }
+    } catch (error) {
+      message.error("Lỗi khi tải danh sách khách hàng");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTechnicians = async () => {
+    try {
+      setLoading(true);
+      const result = await adminApi.getTechnicians({
+        pageNumber: pagination.current,
+        pageSize: pagination.pageSize,
+        searchTerm: technicianFilters.searchTerm || undefined,
+        approvalStatus: technicianFilters.approvalStatus,
+      });
+
+      if (result.success) {
+        setTechnicians(result.data.items || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: result.data.totalCount || 0,
+        }));
+      } else {
+        message.error(result.message);
+      }
+    } catch (error) {
+      message.error("Lỗi khi tải danh sách kỹ thuật viên");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,14 +204,21 @@ export default function AccountsPage() {
     try {
       const result = await accountApi.getAccountStatistics();
       if (result.success) {
-        setStatistics(result.data);
+        const data = result.data;
+        setStatistics({
+          operatorCount: data.operators?.total || 0,
+          equipmentManagerCount: data.equipmentManagers?.total || 0,
+          supporterCount: data.supporters?.total || 0,
+          totalAccounts: data.totalAccounts || 0,
+          customerCount: data.customers?.total || 0,
+          technicianCount: data.technicians?.total || 0,
+        });
       }
     } catch (error) {
       console.error("Lỗi khi tải thống kê:", error);
     }
   };
 
-  // Handle actions
   const handleCreate = async (values) => {
     try {
       setLoading(true);
@@ -153,21 +233,17 @@ export default function AccountsPage() {
       } else {
         if (result.errors) {
           const antErrors = Object.keys(result.errors).map((key) => ({
-            name: key.toLowerCase(), 
+            name: key.toLowerCase(),
             errors: result.errors[key],
           }));
-
           form.setFields(antErrors);
-
-          const generalError = antErrors.find(e => e.name === 'general');
+          const generalError = antErrors.find((e) => e.name === "general");
           if (generalError) {
-             message.error(generalError.errors[0]);
+            message.error(generalError.errors[0]);
           }
-
         } else {
           message.error(result.message);
         }
-        
       }
     } catch (error) {
       message.error("Lỗi khi tạo tài khoản");
@@ -197,46 +273,24 @@ export default function AccountsPage() {
     }
   };
 
-  const handleDelete = (record) => {
-    confirm({
-      title: "Xác nhận xóa tài khoản",
-      icon: <ExclamationCircleOutlined />,
-      content: `Bạn có chắc chắn muốn xóa tài khoản "${record.email}"?`,
-      okText: "Xóa",
-      okType: "danger",
-      cancelText: "Hủy",
-      onOk: async () => {
-        try {
-          const result = await accountApi.deleteAccount(record.id);
-          if (result.success) {
-            message.success("Xóa tài khoản thành công!");
-            loadTabData();
-            loadStatistics();
-          } else {
-            message.error(result.message);
-          }
-        } catch (error) {
-          message.error("Lỗi khi xóa tài khoản");
-        }
-      },
-    });
-  };
-
   const handleToggleStatus = async (record) => {
     try {
       let result;
-      if (record.isActive) {
-        result = await accountApi.disableAccount(record.id, {
-          reason: "Vô hiệu hóa bởi admin",
-        });
+      if (record.isActive || record.user?.isActive) {
+        result = await adminApi.suspendAccount(
+          record.id || record.userId,
+          "Vô hiệu hóa bởi admin"
+        );
       } else {
-        result = await accountApi.enableAccount(record.id);
+        result = await adminApi.unsuspendAccount(record.id || record.userId);
       }
 
       if (result.success) {
         message.success(
           `${
-            record.isActive ? "Vô hiệu hóa" : "Kích hoạt"
+            record.isActive || record.user?.isActive
+              ? "Vô hiệu hóa"
+              : "Kích hoạt"
           } tài khoản thành công!`
         );
         loadTabData();
@@ -249,419 +303,412 @@ export default function AccountsPage() {
     }
   };
 
-  const managementAccountColumns = (role) => [
-    {
-      title: "Avatar",
-      dataIndex: "fullName",
-      key: "avatar",
-      width: 60,
-      render: (name) => (
-        <Avatar
-          icon={
-            role === "operator" ? (
-              <CrownOutlined />
-            ) : role === "equipmentmanager" ? (
-              <ToolOutlined />
-            ) : (
-              <UserOutlined />
-            )
-          }
-          style={{
-            backgroundColor:
-              role === "operator"
-                ? "#722ed1"
-                : role === "equipmentmanager"
-                ? "#52c41a"
-                : "#fa8c16",
-          }}
-        />
-      ),
-    },
-    {
-      title: "Username",
-      dataIndex: "username",
-      key: "username",
-    },
-    {
-      title: "Họ tên",
-      dataIndex: "fullName",
-      key: "fullName",
-    },
-    {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-    },
-    {
-      title: "Số điện thoại",
-      dataIndex: "phoneNumber",
-      key: "phoneNumber",
-    },
-    {
-      title: "Phòng ban",
-      dataIndex: "department",
-      key: "department",
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "isActive",
-      key: "isActive",
-      render: (isActive) => (
-        <Tag color={isActive ? "green" : "red"}>
-          {isActive ? "Hoạt động" : "Không hoạt động"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Ngày tạo",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => new Date(date).toLocaleDateString("vi-VN"),
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      width: 150,
-      render: (_, record) => (
-        <Space>
-          {/* <Button
-            type="text"
-            icon={<EyeOutlined />}
-            size="small"
-            title="Xem chi tiết"
-          /> */}
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            size="small"
-            title="Chỉnh sửa"
-            onClick={() => {
-              setSelectedAccount(record);
-              form.setFieldsValue(record);
-              setEditModalVisible(true);
-            }}
-          />
-          <Button
-            type="text"
-            icon={record.isActive ? <DeleteOutlined /> : <ReloadOutlined />}
-            size="small"
-            title={record.isActive ? "Vô hiệu hóa" : "Kích hoạt"}
-            onClick={() => handleToggleStatus(record)}
-          />
-          {/* <Button
-            type="text"
-            icon={<DeleteOutlined />}
-            size="small"
-            danger
-            title="Xóa"
-            onClick={() => handleDelete(record)}
-          /> */}
-        </Space>
-      ),
-    },
-  ];
+  const handleApproveTechnician = async (technicianId) => {
+    try {
+      const result = await adminApi.approveTechnician(technicianId);
+      if (result.success) {
+        message.success("Phê duyệt kỹ thuật viên thành công!");
+        loadTechnicians();
+      } else {
+        message.error(result.message);
+      }
+    } catch (error) {
+      message.error("Lỗi khi phê duyệt");
+    }
+  };
+
+  const handleRejectTechnician = async (technicianId) => {
+    try {
+      const result = await adminApi.rejectTechnician(technicianId);
+      if (result.success) {
+        message.success("Từ chối kỹ thuật viên thành công!");
+        loadTechnicians();
+      } else {
+        message.error(result.message);
+      }
+    } catch (error) {
+      message.error("Lỗi khi từ chối");
+    }
+  };
+
+  const handleViewDetails = async (record) => {
+    if (activeTab === "technician" && record.id) {
+      try {
+        const response = await adminApi.getTechnicianById(record.id);
+        if (response.success) {
+          setSelectedAccount(response.data);
+        } else {
+          message.error(response.message || "Không thể tải chi tiết");
+          setSelectedAccount(record);
+        }
+      } catch (error) {
+        console.error("Error getting technician details:", error);
+        message.error("Lỗi khi tải chi tiết kỹ thuật viên");
+        setSelectedAccount(record);
+      }
+    } else {
+      setSelectedAccount(record);
+    }
+    setDetailModalVisible(true);
+  };
+
+  // Column definitions using imported functions
+  const customerColumns = getCustomerColumns(handleViewDetails, handleToggleStatus);
+
+  const technicianColumns = getTechnicianColumns(
+    handleViewDetails,
+    handleApproveTechnician,
+    handleRejectTechnician,
+    handleToggleStatus
+  );
+
+  // Staff columns (Operator, Equipment Manager, Supporter)
+  const staffColumns = getStaffColumns(
+    handleToggleStatus,
+    setSelectedAccount,
+    form,
+    setEditModalVisible
+  );
 
   const tabItems = [
     {
       key: "operator",
       label: (
         <span>
-          <CrownOutlined />
-          Operator ({operators.length})
+          <UserOutlined /> Operator
         </span>
       ),
       children: (
-        <Spin spinning={loading}>
+        <>
+          <Space style={{ marginBottom: 16 }}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                form.resetFields();
+                form.setFieldValue("role", "operator");
+                setCreateModalVisible(true);
+              }}
+            >
+              Thêm Operator
+            </Button>
+            <Button icon={<ReloadOutlined />} onClick={() => loadOperators()}>
+              Làm mới
+            </Button>
+          </Space>
           <Table
-            columns={managementAccountColumns("operator")}
-            dataSource={operators.map((item) => ({ ...item, key: item.id }))}
+            columns={staffColumns}
+            dataSource={operators}
+            rowKey="id"
+            loading={loading}
             pagination={false}
-            scroll={{ x: 1400 }}
-            size="small"
+            scroll={{ x: 1200 }}
           />
-        </Spin>
+        </>
+      ),
+    },
+    {
+      key: "customer",
+      label: (
+        <span>
+          <TeamOutlined /> Khách hàng
+        </span>
+      ),
+      children: (
+        <Table
+          columns={customerColumns}
+          dataSource={customers}
+          rowKey={(record) => record.id || record.userId}
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            showTotal: (total) => `Tổng ${total} khách hàng`,
+            onChange: (page, pageSize) => {
+              setPagination({
+                current: page,
+                pageSize,
+                total: pagination.total,
+              });
+            },
+          }}
+          scroll={{ x: 1200 }}
+        />
+      ),
+    },
+    {
+      key: "technician",
+      label: (
+        <span>
+          <ToolOutlined /> Kỹ thuật viên
+        </span>
+      ),
+      children: (
+        <>
+          <Space style={{ marginBottom: 16, width: "100%" }} wrap>
+            <Input.Search
+              placeholder="Tìm kiếm theo tên, email, số điện thoại"
+              allowClear
+              style={{ width: 300 }}
+              value={technicianFilters.searchTerm}
+              onChange={(e) =>
+                setTechnicianFilters((prev) => ({
+                  ...prev,
+                  searchTerm: e.target.value,
+                }))
+              }
+              onSearch={() => loadTechnicians()}
+            />
+            <Select
+              placeholder="Lọc theo trạng thái"
+              style={{ width: 180 }}
+              value={technicianFilters.approvalStatus}
+              onChange={(value) =>
+                setTechnicianFilters((prev) => ({
+                  ...prev,
+                  approvalStatus: value,
+                }))
+              }
+              allowClear
+            >
+              <Select.Option value={0}>Chờ phê duyệt</Select.Option>
+              <Select.Option value={1}>Đã phê duyệt</Select.Option>
+              <Select.Option value={2}>Từ chối</Select.Option>
+            </Select>
+            <Button icon={<ReloadOutlined />} onClick={() => loadTechnicians()}>
+              Làm mới
+            </Button>
+          </Space>
+          <Table
+            columns={technicianColumns}
+            dataSource={technicians}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              showSizeChanger: true,
+              showTotal: (total) => `Tổng ${total} kỹ thuật viên`,
+              onChange: (page, pageSize) => {
+                setPagination({
+                  current: page,
+                  pageSize,
+                  total: pagination.total,
+                });
+              },
+            }}
+            scroll={{ x: 1400 }}
+          />
+        </>
       ),
     },
     {
       key: "equipment-manager",
       label: (
         <span>
-          <ToolOutlined />
-          Quản lý thiết bị ({equipmentManagers.length})
+          <ShoppingOutlined /> Quản lý thiết bị
         </span>
       ),
       children: (
-        <Spin spinning={loading}>
+        <>
+          <Space style={{ marginBottom: 16 }}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                form.resetFields();
+                form.setFieldValue("role", "equipmentmanager");
+                setCreateModalVisible(true);
+              }}
+            >
+              Thêm Equipment Manager
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => loadEquipmentManagers()}
+            >
+              Làm mới
+            </Button>
+          </Space>
           <Table
-            columns={managementAccountColumns("equipmentmanager")}
-            dataSource={equipmentManagers.map((item) => ({
-              ...item,
-              key: item.id,
-            }))}
+            columns={staffColumns}
+            dataSource={equipmentManagers}
+            rowKey="id"
+            loading={loading}
             pagination={false}
-            scroll={{ x: 1400 }}
-            size="small"
+            scroll={{ x: 1200 }}
           />
-        </Spin>
+        </>
       ),
     },
     {
       key: "supporter",
       label: (
         <span>
-          <UserOutlined />
-          Supporter ({supporters.length})
+          <CrownOutlined /> Supporter
         </span>
       ),
       children: (
-        <Spin spinning={loading}>
+        <>
+          <Space style={{ marginBottom: 16 }}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                form.resetFields();
+                form.setFieldValue("role", "supporter");
+                setCreateModalVisible(true);
+              }}
+            >
+              Thêm Supporter
+            </Button>
+            <Button icon={<ReloadOutlined />} onClick={() => loadSupporters()}>
+              Làm mới
+            </Button>
+          </Space>
           <Table
-            columns={managementAccountColumns("supporter")}
-            dataSource={supporters.map((item) => ({ ...item, key: item.id }))}
+            columns={staffColumns}
+            dataSource={supporters}
+            rowKey="id"
+            loading={loading}
             pagination={false}
-            scroll={{ x: 1400 }}
-            size="small"
+            scroll={{ x: 1200 }}
           />
-        </Spin>
+        </>
       ),
     },
   ];
 
   return (
-    <div>
-      <div
-        style={{
-          marginBottom: 24,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-        }}
+    <div style={{ padding: "24px" }}>
+      <Card
+        title={
+          <Space>
+            <TeamOutlined style={{ fontSize: 24 }} />
+            <span style={{ fontSize: 20, fontWeight: 600 }}>
+              Quản lý tài khoản
+            </span>
+          </Space>
+        }
+        extra={
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              loadTabData();
+              loadStatistics();
+            }}
+          >
+            Làm mới tất cả
+          </Button>
+        }
       >
-        <div>
-          <h1
-            style={{
-              fontSize: 24,
-              fontWeight: 600,
-              margin: 0,
-              color: "#262626",
-            }}
-          >
-            👥 Quản lý tài khoản quản trị
-          </h1>
-          <p style={{ color: "#8c8c8c", margin: "8px 0 0 0" }}>
-            Quản lý tài khoản Operator, Equipment Manager và Supporter
-          </p>
-        </div>
-        <Button
-          type="primary"
-          size="large"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            form.resetFields();
-            form.setFieldValue("role", "operator");
-            setCreateModalVisible(true);
-          }}
-          style={{
-            backgroundColor: "#1890ff",
-            borderColor: "#1890ff",
-            boxShadow: "0 2px 8px rgba(24, 144, 255, 0.2)",
-          }}
-        >
-          Tạo tài khoản mới
-        </Button>
-      </div>
+        {/* Statistics */}
+        {statistics && (
+          <Row gutter={16} style={{ marginBottom: 24 }}>
+            <Col span={4}>
+              <Card>
+                <Statistic
+                  title="Operator"
+                  value={statistics.operatorCount || 0}
+                  prefix={<UserOutlined />}
+                  valueStyle={{ color: "#722ed1" }}
+                />
+              </Card>
+            </Col>
+            <Col span={4}>
+              <Card>
+                <Statistic
+                  title="Khách hàng"
+                  value={statistics.customerCount || 0}
+                  prefix={<TeamOutlined />}
+                  valueStyle={{ color: "#1890ff" }}
+                />
+              </Card>
+            </Col>
+            <Col span={4}>
+              <Card>
+                <Statistic
+                  title="Kỹ thuật viên"
+                  value={statistics.technicianCount || 0}
+                  prefix={<ToolOutlined />}
+                  valueStyle={{ color: "#52c41a" }}
+                />
+              </Card>
+            </Col>
+            <Col span={4}>
+              <Card>
+                <Statistic
+                  title="Quản lý thiết bị"
+                  value={statistics.equipmentManagerCount || 0}
+                  prefix={<ShoppingOutlined />}
+                  valueStyle={{ color: "#fa8c16" }}
+                />
+              </Card>
+            </Col>
+            <Col span={4}>
+              <Card>
+                <Statistic
+                  title="Supporter"
+                  value={statistics.supporterCount || 0}
+                  prefix={<CrownOutlined />}
+                  valueStyle={{ color: "#eb2f96" }}
+                />
+              </Card>
+            </Col>
+            <Col span={4}>
+              <Card>
+                <Statistic
+                  title="Tổng cộng"
+                  value={statistics.totalAccounts || 0}
+                  prefix={<TeamOutlined />}
+                  valueStyle={{ color: "#13c2c2", fontWeight: "bold" }}
+                />
+              </Card>
+            </Col>
+          </Row>
+        )}
 
-      {/* Statistics Cards */}
-      {statistics && (
-        <div style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 16,
-            }}
-          >
-            <Card size="small" style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 24, fontWeight: 600, color: "#1890ff" }}>
-                {statistics.totalAccounts}
-              </div>
-              <div style={{ color: "#8c8c8c" }}>Tổng tài khoản quản lý</div>
-            </Card>
-
-            <Card size="small" style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 24, fontWeight: 600, color: "#722ed1" }}>
-                {statistics.operators?.total || 0}
-              </div>
-              <div style={{ color: "#8c8c8c" }}>
-                Operator ({statistics.operators?.active || 0} hoạt động)
-              </div>
-            </Card>
-
-            <Card size="small" style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 24, fontWeight: 600, color: "#52c41a" }}>
-                {statistics.equipmentManagers?.total || 0}
-              </div>
-              <div style={{ color: "#8c8c8c" }}>
-                Quản lý thiết bị ({statistics.equipmentManagers?.active || 0}{" "}
-                hoạt động)
-              </div>
-            </Card>
-
-            <Card size="small" style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 24, fontWeight: 600, color: "#fa8c16" }}>
-                {statistics.supporters?.total || 0}
-              </div>
-              <div style={{ color: "#8c8c8c" }}>
-                Supporter ({statistics.supporters?.active || 0} hoạt động)
-              </div>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      <Card style={{ borderRadius: 12 }} styles={{ body: { padding: 0 } }}>
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={tabItems}
-          size="large"
-          style={{ margin: 0 }}
-          tabBarStyle={{
-            margin: 0,
-            paddingLeft: 24,
-            paddingRight: 24,
-            borderBottom: "1px solid #f0f0f0",
-          }}
-        />
+        {/* Tabs */}
+        <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
       </Card>
 
-      {/* Create Account Modal */}
-      <Modal
-        title={
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <PlusOutlined style={{ color: "#1890ff" }} />
-            <span>Tạo tài khoản quản trị mới</span>
-          </div>
-        }
-        open={createModalVisible}
-        onOk={() => form.submit()}
+      {/* Create Modal */}
+      <CreateAccountModal
+        visible={createModalVisible}
+        form={form}
+        loading={loading}
         onCancel={() => {
           setCreateModalVisible(false);
           form.resetFields();
         }}
-        okText="Tạo tài khoản"
-        cancelText="Hủy"
-        confirmLoading={loading}
-        width={700}
-        style={{ top: 20 }}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleCreate}
-          initialValues={{ role: "operator" }}
-        >
-          <Form.Item
-            name="role"
-            label="Vai trò"
-            rules={[{ required: true, message: "Vui lòng chọn vai trò!" }]}
-          >
-            <Select placeholder="Chọn vai trò">
-              <Select.Option value="operator">Operator</Select.Option>
-              <Select.Option value="equipmentmanager">
-                Equipment Manager (Quản lý thiết bị)
-              </Select.Option>
-              <Select.Option value="supporter">Supporter</Select.Option>
-            </Select>
-          </Form.Item>
+        onSubmit={handleCreate}
+      />
 
-          <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
-          >
-            <Form.Item
-              name="email"
-              label="Email"
-              rules={[
-                { required: true, message: "Vui lòng nhập email!" },
-                { type: "email", message: "Email không hợp lệ!" },
-              ]}
-            >
-              <Input placeholder="example@company.com" />
-            </Form.Item>
-
-            <Form.Item
-              name="username"
-              label="Username"
-              rules={[
-                { required: true, message: "Vui lòng nhập username!" },
-                {
-                  pattern: /^[a-zA-Z0-9]+$/,
-                  message: "Username chỉ được chứa chữ cái (a-z) và số (0-9), không chứa dấu cách.",
-                }
-              ]}
-            >
-              <Input placeholder="username123" />
-            </Form.Item>
-          </div>
-
-          <Form.Item
-            name="password"
-            label="Mật khẩu"
-            rules={[
-              { required: true, message: "Vui lòng nhập mật khẩu!" },
-              { min: 8, message: "Mật khẩu phải có ít nhất 8 ký tự!" },
-            ]}
-          >
-            <Input.Password placeholder="Tối thiểu 8 ký tự" />
-          </Form.Item>
-
-          <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
-          >
-            <Form.Item name="fullName" label="Họ tên">
-              <Input placeholder="Nguyễn Văn A" />
-            </Form.Item>
-
-            <Form.Item name="phoneNumber" label="Số điện thoại">
-              <Input placeholder="0901234567" />
-            </Form.Item>
-          </div>
-
-          <Form.Item name="department" label="Phòng ban">
-            <Input placeholder="IT, HR, Admin, ..." />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* Edit Account Modal */}
-      <Modal
-        title="Chỉnh sửa tài khoản"
-        open={editModalVisible}
-        onOk={() => form.submit()}
+      {/* Edit Modal */}
+      <EditAccountModal
+        visible={editModalVisible}
+        form={form}
+        loading={loading}
         onCancel={() => {
           setEditModalVisible(false);
           setSelectedAccount(null);
           form.resetFields();
         }}
-        okText="Cập nhật"
-        cancelText="Hủy"
-        confirmLoading={loading}
-        width={600}
-      >
-        <Form form={form} layout="vertical" onFinish={handleEdit}>
-          <Form.Item name="fullName" label="Họ tên">
-            <Input />
-          </Form.Item>
+        onSubmit={handleEdit}
+      />
 
-          <Form.Item name="phoneNumber" label="Số điện thoại">
-            <Input />
-          </Form.Item>
-
-          <Form.Item name="department" label="Phòng ban">
-            <Input />
-          </Form.Item>
-        </Form>
-      </Modal>
+      {/* Detail Modal */}
+      <AccountDetailModal
+        visible={detailModalVisible}
+        account={selectedAccount}
+        onClose={() => {
+          setDetailModalVisible(false);
+          setSelectedAccount(null);
+        }}
+      />
     </div>
   );
 }

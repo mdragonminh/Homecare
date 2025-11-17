@@ -55,6 +55,7 @@ namespace HSP.DAL.Extensions
 		services.AddScoped<IRepository<ChatMessage, Guid>, Repository<ChatMessage, Guid>>();
 		services.AddScoped<IRepository<ChatAttachment, Guid>, Repository<ChatAttachment, Guid>>();
 		services.AddScoped<IRepository<Payment, Guid>, Repository<Payment, Guid>>();
+		services.AddScoped<IRepository<SystemSetting, Guid>, Repository<SystemSetting, Guid>>();
 
 		services.AddScoped<IUnitOfWork, UnitOfWork>();
 			services.AddScoped<IDbInitializer, DbInitializer>();

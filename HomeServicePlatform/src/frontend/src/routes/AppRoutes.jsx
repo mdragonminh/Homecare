@@ -9,8 +9,6 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminSettingsPage from "../pages/admin/AdminSettingsPage";
 import AccountsPage from "../pages/admin/AccountsPage";
 import HomeServicePage from "../pages/admin/HomeServicePage";
-import AccountManagementPage from "../pages/admin/AccountManagementPage";
-import ServiceManagementPage from "../pages/admin/ServiceManagementPage";
 import PaymentManagementPage from "../pages/admin/PaymentManagementPage";
 import OperatorLayout from "../pages/operator/OperatorLayout";
 import OperatorCustomersPage from "../pages/operator/OperatorCustomersPage";
@@ -200,10 +198,7 @@ export default function AppRoutes({
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/accounts" element={<AccountsPage />} />
-        <Route path="/admin/account-management" element={<AccountManagementPage />} />
-        <Route path="/admin/technicians" element={<OperatorTechniciansPage />} />
         <Route path="/admin/home-services" element={<HomeServicePage />} />
-        <Route path="/admin/service-management" element={<ServiceManagementPage />} />
         <Route path="/admin/payments" element={<PaymentManagementPage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
       </Route>

@@ -327,7 +327,7 @@ namespace HSP.Service.Implementations.Internal
 			await _bookingItemRepository.AddRangeAsync(bookingItems);
 			await _unitOfWork.SaveChangesAsync();
 
-			return new BookingAcceptResultDto { IsSuccess = true, Message = "Xác nhận thành công!" };
-		}
+		return new BookingAcceptResultDto { IsSuccess = true, Message = "Xác nhận thành công!" };
+	}
 	}
 }

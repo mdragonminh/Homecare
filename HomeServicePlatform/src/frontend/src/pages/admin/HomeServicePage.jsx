@@ -7,16 +7,19 @@ import {
   Form,
   Input,
   InputNumber,
+  Tag,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
-  DeleteOutlined,
+  StopOutlined,
+  CheckCircleOutlined,
   ExclamationCircleOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import { toast } from "sonner";
 import { homeApi } from "../../services/homeServiceApi";
+import { systemSettingApi } from "../../services/systemSettingApi";
 
 export default function HomeServicePage() {
   const [data, setData] = useState([]);
@@ -30,6 +33,7 @@ export default function HomeServicePage() {
   const [sorter, setSorter] = useState({ field: null, order: null });
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [basePrice, setBasePrice] = useState(100000); 
   const [form] = Form.useForm();
 
   const [modal, contextHolder] = Modal.useModal();
@@ -52,21 +56,20 @@ export default function HomeServicePage() {
         pageNumber: page,
         pageSize,
         orderBy,
-        search: keyword || null,
+        search: keyword || undefined,
       };
 
       const res = await homeApi.listHomeService(params);
-      if (!res) throw new Error("Empty response");
-
+      
       setData(res.items || []);
       setPagination({
-        current: res.pageNumber || page,
+        current: res.currentPage || page,
         pageSize: res.pageSize || pageSize,
-        total: res.totalCount || res.total || 0,
+        total: res.totalCount || 0,
       });
     } catch (err) {
       toast.error("Không tải được danh sách dịch vụ", {
-        description: err.message,
+        description: err.response?.data?.message || err.message,
       });
     } finally {
       setLoading(false);
@@ -75,7 +78,20 @@ export default function HomeServicePage() {
 
   useEffect(() => {
     fetchData(pagination.current, pagination.pageSize);
+    fetchBasePrice();
   }, []);
+
+  const fetchBasePrice = async () => {
+    try {
+      const res = await systemSettingApi.getSettingByKey("DefaultServiceBasePrice");
+      if (res.success && res.data?.value) {
+        setBasePrice(parseFloat(res.data.value));
+      }
+    } catch (err) {
+      console.error("Failed to fetch base price:", err);
+      // Keep default value if fetch fails
+    }
+  };
 
   const handleSubmit = async (values) => {
     try {
@@ -91,45 +107,51 @@ export default function HomeServicePage() {
       setEditingRecord(null);
       form.resetFields();
       fetchData(pagination.current, pagination.pageSize);
-    } catch {
-      toast.error("Lưu dịch vụ thất bại!");
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.response?.data || err.message || "Lưu dịch vụ thất bại!";
+      toast.error("Lưu dịch vụ thất bại!", {
+        description: errorMessage,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = (record) => {
+  const handleToggleStatus = (record) => {
+    const isDisabling = !record.isDeleted;
     modal.confirm({
       title: (
-        <span className="text-lg font-semibold text-red-600">
-          Xác nhận xóa dịch vụ
+        <span className={`text-lg font-semibold ${isDisabling ? 'text-orange-600' : 'text-green-600'}`}>
+          {isDisabling ? 'Vô hiệu hóa dịch vụ' : 'Kích hoạt dịch vụ'}
         </span>
       ),
       icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
       content: (
         <p className="text-gray-700">
-          Bạn có chắc chắn muốn xóa dịch vụ{" "}
-          <b className="text-red-600">"{record.name}"</b>? <br />
-          Hành động này <b>không thể hoàn tác</b>.
+          Bạn có chắc chắn muốn {isDisabling ? 'vô hiệu hóa' : 'kích hoạt'} dịch vụ{" "}
+          <b className={isDisabling ? 'text-orange-600' : 'text-green-600'}>"{record.name}"</b>?
         </p>
       ),
       okText: "Đồng ý",
       cancelText: "Hủy",
-      okType: "danger",
+      okType: isDisabling ? "danger" : "primary",
       centered: true,
       onOk: async () => {
         try {
-          await homeApi.deleteHomeService(record.id);
-          toast.success("Đã xóa thành công!");
+          await homeApi.updateHomeService(record.id, {
+            ...record,
+            isDeleted: isDisabling,
+          });
+          toast.success(`Đã ${isDisabling ? 'vô hiệu hóa' : 'kích hoạt'} thành công!`);
           fetchData(pagination.current, pagination.pageSize);
         } catch (err) {
           const message =
             err?.response?.data?.message ||
             err?.response?.data ||
             err?.message ||
-            "Xóa thất bại!";
+            `${isDisabling ? 'Vô hiệu hóa' : 'Kích hoạt'} thất bại!`;
 
-          toast.error("Không thể xóa dịch vụ!", {
+          toast.error(`Không thể ${isDisabling ? 'vô hiệu hóa' : 'kích hoạt'} dịch vụ!`, {
             description: message,
           });
         }
@@ -156,8 +178,20 @@ export default function HomeServicePage() {
       ellipsis: true,
     },
     {
+      title: "Trạng thái",
+      dataIndex: "isDeleted",
+      key: "isDeleted",
+      width: 120,
+      render: (isDeleted) => (
+        <Tag color={isDeleted ? "error" : "success"}>
+          {isDeleted ? "Vô hiệu hóa" : "Hoạt động"}
+        </Tag>
+      ),
+    },
+    {
       title: "Thao tác",
       key: "actions",
+      width: 150,
       render: (_, record) => (
         <Space>
           <Button
@@ -170,10 +204,11 @@ export default function HomeServicePage() {
             }}
           />
           <Button
-            icon={<DeleteOutlined />}
-            danger
+            icon={record.isDeleted ? <CheckCircleOutlined /> : <StopOutlined />}
+            type={record.isDeleted ? "primary" : "default"}
+            danger={!record.isDeleted}
             size="small"
-            onClick={() => handleDelete(record)}
+            onClick={() => handleToggleStatus(record)}
           />
         </Space>
       ),
@@ -272,13 +307,31 @@ export default function HomeServicePage() {
           </Form.Item>
 
           <Form.Item
-            label="Giá (₫)"
+            label={
+              <span>
+                Giá (₫)
+                {!editingRecord && (
+                  <span className="text-gray-400 font-normal text-xs ml-2">
+                    (Để trống sẽ dùng giá mặc định: {basePrice.toLocaleString()} ₫)
+                  </span>
+                )}
+              </span>
+            }
             name="price"
-            rules={[{ required: true, message: "Vui lòng nhập giá dịch vụ!" }]}
+            rules={[
+              { required: !!editingRecord, message: "Vui lòng nhập giá dịch vụ!" },
+              {
+                validator: async (_, value) => {
+                  if (value !== undefined && value !== null && value < basePrice) {
+                    throw new Error(`Giá không được thấp hơn giá cơ bản ${basePrice.toLocaleString()} ₫`);
+                  }
+                },
+              },
+            ]}
           >
             <InputNumber
-              min={0}
-              placeholder="Nhập giá (VNĐ)"
+              min={basePrice}
+              placeholder={`Giá tối thiểu: ${basePrice.toLocaleString()} ₫`}
               style={{ width: "100%" }}
               formatter={(value) =>
                 `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
