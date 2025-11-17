@@ -10,7 +10,7 @@ using Moq;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 
-namespace HSP.Service.Test.Implementations.External
+namespace HSP.Service.Test.Implementations.Internal
 {
     public class WarehouseServiceTests
     {

@@ -24,7 +24,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
 
-namespace HSP.Service.Test.Implementations.External
+namespace HSP.Service.Test.Implementations.Internal
 {
     public class AuthenticationServiceTests
     {

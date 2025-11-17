@@ -1,22 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
-using Moq;
-using Xunit;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Localization;
-using HSP.Core.Interfaces.DataAccess;
-using HSP.Core.Abstractions.DataAccess;
-using HSP.Core.Entities;
-using HSP.Core.Resources;
+﻿using HSP.Core.Abstractions.DataAccess;
+using HSP.Core.Constans;
 using HSP.Core.Dtos.AccountDto;
 using HSP.Core.Dtos.Shared;
-using HSP.Core.Constans;
+using HSP.Core.Entities;
+using HSP.Core.Interfaces.DataAccess;
+using HSP.Core.Resources;
 using HSP.Service.Implementations.Internal;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Localization;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+using Xunit;
 
-namespace HSP.Service.Test.Implementations.External
+namespace HSP.Service.Test.Implementations.Internal
 {
     public class AccountManagementServiceTests
     {

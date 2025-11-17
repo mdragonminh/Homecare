@@ -7,7 +7,7 @@ using Microsoft.Extensions.Localization;
 using MockQueryable;
 using Moq;
 
-namespace HSP.Service.Test.Implementations.External
+namespace HSP.Service.Test.Implementations.Internal
 {
 	public class HomeServiceServiceTests
 	{

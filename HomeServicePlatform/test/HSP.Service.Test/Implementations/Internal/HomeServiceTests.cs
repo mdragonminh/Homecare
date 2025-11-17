@@ -11,7 +11,7 @@ using MockQueryable;
 using HSP.Core.Dtos.HomeDto;
 using HSP.Service.Implementations.Internal;
 
-namespace HSP.Service.Test.Implementations.External
+namespace HSP.Service.Test.Implementations.Internal
 {
 	public class HomeServiceTests
 	{

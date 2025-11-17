@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 using MockQueryable;
 using Moq;
 
-namespace HSP.Service.Test.Implementations.External
+namespace HSP.Service.Test.Implementations.Internal
 {
 	public class ServiceRequestServiceTests
 	{

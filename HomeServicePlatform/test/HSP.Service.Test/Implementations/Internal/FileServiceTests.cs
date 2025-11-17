@@ -11,7 +11,7 @@ using MockQueryable;
 using MockQueryable.Moq;
 using Moq;
 
-namespace HSP.Service.Test.Implementations.External
+namespace HSP.Service.Test.Implementations.Internal
 {
 	public class FileServiceTests
 	{
