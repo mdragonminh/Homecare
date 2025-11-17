@@ -43,6 +43,7 @@ namespace HSP.Service.Extensions
 			services.AddScoped<ISePayService, SePayService>();
 			services.AddScoped<IPaymentService, PaymentService>();
 			services.AddScoped<IFeedbackService, FeedbackService>();
+			services.AddScoped<ISystemSettingService, SystemSettingService>();
 			services.AddHttpClient("SePay");
 			services.AddSingleton<TesseractEngine>(sp =>
 			{
