@@ -33,15 +33,15 @@ namespace HSP.Service.Implementations.Internal
 
 		public async Task<FileDto> UploadAsync(FileUploadDto input)
 		{
-			var file = input.File ?? throw new ArgumentException("Invalid file upload");
+			var file = input.File ?? throw new ArgumentException(_localizer["InvalidFileUpload"]);
 			var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 			if (!FileConstants.AllowedImageExtensions
 				.Concat(FileConstants.AllowedDocumentExtensions)
 				.Contains(extension))
-				throw new InvalidOperationException($"Unsupported file type: {extension}");
+				throw new InvalidOperationException(_localizer["UnsupportedFileType", extension]);
 
 			if (file.Length > FileConstants.MaxFileSize)
-				throw new InvalidOperationException("File too large");
+				throw new InvalidOperationException(_localizer["FileTooLarge"]);
 
 			var uploadFolder = Path.Combine(_environment.WebRootPath ?? "wwwroot", FileConstants.UploadRoot, input.ObjectTypeName);
 			Directory.CreateDirectory(uploadFolder);
@@ -55,7 +55,7 @@ namespace HSP.Service.Implementations.Internal
 				await file.CopyToAsync(stream);
 
 			var objectType = await _objectTypeRepository.GetAll().FirstOrDefaultAsync(x => x.Name == input.ObjectTypeName)
-					?? throw new Exception($"ObjectType '{input.ObjectTypeName}' not found");
+					?? throw new Exception(_localizer["ObjectTypeNotFound", input.ObjectTypeName]);
 			var fileEntity = new Core.Entities.File
 			{
 				FileName = file.FileName,
@@ -107,7 +107,7 @@ namespace HSP.Service.Implementations.Internal
 		public async Task<IEnumerable<FileDto>> GetFilesAsync(Guid objectId, string objectTypeName)
 		{
 			var objectType = await _objectTypeRepository.GetAll().FirstOrDefaultAsync(x => x.Name == objectTypeName)
-					?? throw new Exception($"ObjectType '{objectTypeName}' not found");
+					?? throw new Exception(_localizer["ObjectTypeNotFound", objectTypeName]);
 
 			return await _fileRelationRepository.GetAll()
 					.Include(fr => fr.File)
@@ -126,7 +126,7 @@ namespace HSP.Service.Implementations.Internal
 		public async Task DeleteAsync(Guid fileId)
 		{
 			var file = await _fileRepository.GetAll().FirstOrDefaultAsync(f => f.Id == fileId)
-					?? throw new Exception("File not found");
+					?? throw new Exception(_localizer["FileNotFound"]);
 
 			var fullPath = Path.Combine(_environment.WebRootPath ?? "wwwroot", file.FilePath.TrimStart('/'));
 			if (System.IO.File.Exists(fullPath))
@@ -145,7 +145,7 @@ namespace HSP.Service.Implementations.Internal
 				var fullPath = GetPhysicalPath(relativePath);
 				if (!System.IO.File.Exists(fullPath))
 				{
-					throw new FileNotFoundException("Không tìm thấy file", fullPath);
+					throw new FileNotFoundException(_localizer["FileNotFound"], fullPath);
 				}
 
 				var contentType = GetMimeType(fullPath);

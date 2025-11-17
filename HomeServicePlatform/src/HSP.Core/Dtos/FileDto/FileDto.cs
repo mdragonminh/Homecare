@@ -1,16 +1,22 @@
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
+using HSP.Core.Resources;
+
 namespace HSP.Core.Dtos.FileDto
 {
 	public class FileUploadDto
 	{
-		[Required]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "UserIdRequired")]
 		public Guid UserId { get; set; }
-		[Required]
+
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "FileIsRequired")]
 		public IFormFile File { get; set; }
+
 		public Guid ObjectId { get; set; }
-		[Required]
+
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ObjectTypeNameIsRequired")]
 		public string ObjectTypeName { get; set; }
+
 		public string RelationType { get; set; }
 	}
 

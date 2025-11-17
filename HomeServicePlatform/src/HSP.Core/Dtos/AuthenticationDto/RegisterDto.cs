@@ -27,7 +27,9 @@ namespace HSP.Service.Dtos.AuthenticationDto
 	public class RegisterResponseDto
 	{
 		public Guid UserId { get; set; }
-		public string Email { get; set; } = string.Empty;
+        [Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "EmailIsRequired")]
+        [EmailAddress(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "InvalidEmailFormat")]
+        public string Email { get; set; } = string.Empty;
 		public string EmailConfirmToken { get; set; } = string.Empty;
 	}
 	public class RegisterTechnicianRequestDto : RegisterRequestDto
@@ -35,15 +37,15 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsIsRequired")]
 		[Range(0, 50, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsRange")]
 		public int ExperienceYears { get; set; }
-		[Required]
-		[MaxLength(12)]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "CitizenIdRequired")]
+		[MaxLength(12, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "CitizenIdMaxLength")]
 		public string CitizenId { get; set; }
-		[Required]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ServiceIdsIsRequired")]
 		public List<Guid> ServiceIds { get; set; } = new List<Guid>();
-		[Required]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "AddressIsRequired")]
 		public string Address {  get; set; }
 		public IFormFile AvatarFile { get; set; }
-		[Required]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "LegalDocumentIsRequired")]
 		public IFormFile LegalDocument { get; set; }
         public List<IFormFile> CertificateFiles { get; set; } = new List<IFormFile>();
 	}

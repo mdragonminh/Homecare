@@ -21,7 +21,7 @@ namespace HSP.Service.Implementations.Internal
 		{
 			if (input == null)
 			{
-				throw new ArgumentNullException("input parameter cannot be null");
+				throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
 			}
 			var technician = await _technicianProfileRepository.GetAll()
 				.FirstOrDefaultAsync(x => x.UserId == CurrentTechId && x.ApprovalStatus == TechnicianApprovalStatus.Approved);

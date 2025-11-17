@@ -5,8 +5,8 @@ namespace HSP.Core.Dtos.AuthenticationDto
 {
 	public class ForgetPasswordDto
 	{
-		[Required]
-		[EmailAddress]
+        [Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "EmailIsRequired")]
+        [EmailAddress]
 		public string Email { get; set; } = string.Empty;
 	}
 	public class ResetPasswordDto

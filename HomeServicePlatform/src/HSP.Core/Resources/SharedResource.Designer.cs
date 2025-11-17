@@ -61,6 +61,24 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Add password failed.
+        /// </summary>
+        public static string AddPasswordFailed {
+            get {
+                return ResourceManager.GetString("AddPasswordFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Address field is required.
+        /// </summary>
+        public static string AddressIsRequired {
+            get {
+                return ResourceManager.GetString("AddressIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Add to role failed.
         /// </summary>
         public static string AddToRoleFailed {
@@ -88,6 +106,15 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Certificate does not match services: {0}.
+        /// </summary>
+        public static string CertificateMismatch {
+            get {
+                return ResourceManager.GetString("CertificateMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to You ARE the virtual assistant for Home Service Platform.
         ///    ## Role and Rules:
         ///    1.  **Proactive Greeting:** Start the conversation with a greeting and **immediately list the services** you can book, e.g., &quot;Hello! I can help you book: 1. Cleaning, 2. Electrical... Which service do you need?&quot;
@@ -110,11 +137,74 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Citizen ID must not exceed 12 characters.
+        /// </summary>
+        public static string CitizenIdMaxLength {
+            get {
+                return ResourceManager.GetString("CitizenIdMaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Citizen ID is required.
+        /// </summary>
+        public static string CitizenIdRequired {
+            get {
+                return ResourceManager.GetString("CitizenIdRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email confirmation failed.
+        /// </summary>
+        public static string ConfirmEmail_Failed {
+            get {
+                return ResourceManager.GetString("ConfirmEmail_Failed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid token.
+        /// </summary>
+        public static string ConfirmEmail_InvalidToken {
+            get {
+                return ResourceManager.GetString("ConfirmEmail_InvalidToken", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email confirmed.
+        /// </summary>
+        public static string ConfirmEmail_Success {
+            get {
+                return ResourceManager.GetString("ConfirmEmail_Success", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Token expired.
+        /// </summary>
+        public static string ConfirmEmail_TokenExpired {
+            get {
+                return ResourceManager.GetString("ConfirmEmail_TokenExpired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The Confirm password field is required.
         /// </summary>
         public static string ConfirmPasswordIsRequired {
             get {
                 return ResourceManager.GetString("ConfirmPasswordIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not find coordinates for the provided address..
+        /// </summary>
+        public static string Coordinates_NotFound {
+            get {
+                return ResourceManager.GetString("Coordinates_NotFound", resourceCulture);
             }
         }
         
@@ -128,11 +218,38 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The CustomerId field is required.
+        /// </summary>
+        public static string CustomerIdIsRequired {
+            get {
+                return ResourceManager.GetString("CustomerIdIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The DesireDateTime field is required.
+        /// </summary>
+        public static string DesireDateTimeIsRequired {
+            get {
+                return ResourceManager.GetString("DesireDateTimeIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Email already exist.
         /// </summary>
         public static string EmailAlreadyExists {
             get {
                 return ResourceManager.GetString("EmailAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Please confirm your email.
+        /// </summary>
+        public static string EmailConfirmationSubject {
+            get {
+                return ResourceManager.GetString("EmailConfirmationSubject", resourceCulture);
             }
         }
         
@@ -200,6 +317,33 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File is required.
+        /// </summary>
+        public static string FileIsRequired {
+            get {
+                return ResourceManager.GetString("FileIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File not found.
+        /// </summary>
+        public static string FileNotFound {
+            get {
+                return ResourceManager.GetString("FileNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File too large.
+        /// </summary>
+        public static string FileTooLarge {
+            get {
+                return ResourceManager.GetString("FileTooLarge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The Full name field is required.
         /// </summary>
         public static string FullNameIsRequired {
@@ -227,11 +371,173 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Home address must not exceed 200 characters.
+        /// </summary>
+        public static string Home_Address_MaxLength {
+            get {
+                return ResourceManager.GetString("Home_Address_MaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Home address is required.
+        /// </summary>
+        public static string Home_Address_Required {
+            get {
+                return ResourceManager.GetString("Home_Address_Required", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Home name must not exceed 100 characters.
+        /// </summary>
+        public static string Home_Name_MaxLength {
+            get {
+                return ResourceManager.GetString("Home_Name_MaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Home name is required.
+        /// </summary>
+        public static string Home_Name_Required {
+            get {
+                return ResourceManager.GetString("Home_Name_Required", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Home not found or you do not have permission to perform this action..
+        /// </summary>
+        public static string Home_NotFoundOrNoPermission {
+            get {
+                return ResourceManager.GetString("Home_NotFoundOrNoPermission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Brand must not exceed 100 characters.
+        /// </summary>
+        public static string HomeItem_Brand_MaxLength {
+            get {
+                return ResourceManager.GetString("HomeItem_Brand_MaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Please select a home for the item.
+        /// </summary>
+        public static string HomeItem_HomeId_Required {
+            get {
+                return ResourceManager.GetString("HomeItem_HomeId_Required", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Model number must not exceed 100 characters.
+        /// </summary>
+        public static string HomeItem_ModelNumber_MaxLength {
+            get {
+                return ResourceManager.GetString("HomeItem_ModelNumber_MaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item name must not exceed 100 characters.
+        /// </summary>
+        public static string HomeItem_Name_MaxLength {
+            get {
+                return ResourceManager.GetString("HomeItem_Name_MaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item name is required.
+        /// </summary>
+        public static string HomeItem_Name_Required {
+            get {
+                return ResourceManager.GetString("HomeItem_Name_Required", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Notes must not exceed 1000 characters.
+        /// </summary>
+        public static string HomeItem_Notes_MaxLength {
+            get {
+                return ResourceManager.GetString("HomeItem_Notes_MaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Home item not found or you do not have permission to perform this action..
+        /// </summary>
+        public static string HomeItem_NotFoundOrNoPermission {
+            get {
+                return ResourceManager.GetString("HomeItem_NotFoundOrNoPermission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Serial number must not exceed 100 characters.
+        /// </summary>
+        public static string HomeItem_SerialNumber_MaxLength {
+            get {
+                return ResourceManager.GetString("HomeItem_SerialNumber_MaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item type must not exceed 50 characters.
+        /// </summary>
+        public static string HomeItem_Type_MaxLength {
+            get {
+                return ResourceManager.GetString("HomeItem_Type_MaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item type is required.
+        /// </summary>
+        public static string HomeItem_Type_Required {
+            get {
+                return ResourceManager.GetString("HomeItem_Type_Required", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User does not have access to these home items..
+        /// </summary>
+        public static string HomeItems_AccessDenied {
+            get {
+                return ResourceManager.GetString("HomeItems_AccessDenied", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service not found.
+        /// </summary>
+        public static string HomeService_NotFound {
+            get {
+                return ResourceManager.GetString("HomeService_NotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Input cannot be null.
         /// </summary>
         public static string InputCannotBeNull {
             get {
                 return ResourceManager.GetString("InputCannotBeNull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid email.
+        /// </summary>
+        public static string InvalidEmail {
+            get {
+                return ResourceManager.GetString("InvalidEmail", resourceCulture);
             }
         }
         
@@ -254,6 +560,24 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid email or phone.
+        /// </summary>
+        public static string InvalidEmailOrPhone {
+            get {
+                return ResourceManager.GetString("InvalidEmailOrPhone", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid file upload.
+        /// </summary>
+        public static string InvalidFileUpload {
+            get {
+                return ResourceManager.GetString("InvalidFileUpload", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid password.
         /// </summary>
         public static string InvalidPassword {
@@ -272,6 +596,24 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Legal document is invalid or not yours.
+        /// </summary>
+        public static string LegalDocumentInvalid {
+            get {
+                return ResourceManager.GetString("LegalDocumentInvalid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The Legal Document field is required.
+        /// </summary>
+        public static string LegalDocumentIsRequired {
+            get {
+                return ResourceManager.GetString("LegalDocumentIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No available technician found.
         /// </summary>
         public static string NoAvailableTechnicianFound {
@@ -286,6 +628,24 @@ namespace HSP.Core.Resources {
         public static string NoAvailableTechniciansFound {
             get {
                 return ResourceManager.GetString("NoAvailableTechniciansFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Object type name is required.
+        /// </summary>
+        public static string ObjectTypeNameIsRequired {
+            get {
+                return ResourceManager.GetString("ObjectTypeNameIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ObjectType &apos;{0}&apos; not found.
+        /// </summary>
+        public static string ObjectTypeNotFound {
+            get {
+                return ResourceManager.GetString("ObjectTypeNotFound", resourceCulture);
             }
         }
         
@@ -326,6 +686,24 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Password reset failed.
+        /// </summary>
+        public static string PasswordResetFailed {
+            get {
+                return ResourceManager.GetString("PasswordResetFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password reset request.
+        /// </summary>
+        public static string PasswordResetSubject {
+            get {
+                return ResourceManager.GetString("PasswordResetSubject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Password and Confirm Password do not match.
         /// </summary>
         public static string PasswordsDoNotMatch {
@@ -362,11 +740,74 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Service description must not exceed 500 characters.
+        /// </summary>
+        public static string ServiceDescriptionMaxLength {
+            get {
+                return ResourceManager.GetString("ServiceDescriptionMaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The ServiceIds field is required.
+        /// </summary>
+        public static string ServiceIdsIsRequired {
+            get {
+                return ResourceManager.GetString("ServiceIdsIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Service is currently in use.
         /// </summary>
         public static string ServiceIsCurrentlyInUse {
             get {
                 return ResourceManager.GetString("ServiceIsCurrentlyInUse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service name must not exceed 100 characters.
+        /// </summary>
+        public static string ServiceNameMaxLength {
+            get {
+                return ResourceManager.GetString("ServiceNameMaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service name is required.
+        /// </summary>
+        public static string ServiceNameRequired {
+            get {
+                return ResourceManager.GetString("ServiceNameRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service price ({0:N0} VND) cannot be less than the base price ({1:N0} VND).
+        /// </summary>
+        public static string ServicePrice_LessThanBase {
+            get {
+                return ResourceManager.GetString("ServicePrice_LessThanBase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service price must be a non-negative number.
+        /// </summary>
+        public static string ServicePriceRange {
+            get {
+                return ResourceManager.GetString("ServicePriceRange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Service price is required.
+        /// </summary>
+        public static string ServicePriceRequired {
+            get {
+                return ResourceManager.GetString("ServicePriceRequired", resourceCulture);
             }
         }
         
@@ -380,11 +821,47 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Technician not found or not approved.
+        /// </summary>
+        public static string TechnicianNotFound {
+            get {
+                return ResourceManager.GetString("TechnicianNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported file type: {0}.
+        /// </summary>
+        public static string UnsupportedFileType {
+            get {
+                return ResourceManager.GetString("UnsupportedFileType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User already has a password.
+        /// </summary>
+        public static string UserAlreadyHasPassword {
+            get {
+                return ResourceManager.GetString("UserAlreadyHasPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to User creation failed.
         /// </summary>
         public static string UserCreationFailed {
             get {
                 return ResourceManager.GetString("UserCreationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to UserId is required.
+        /// </summary>
+        public static string UserIdRequired {
+            get {
+                return ResourceManager.GetString("UserIdRequired", resourceCulture);
             }
         }
         

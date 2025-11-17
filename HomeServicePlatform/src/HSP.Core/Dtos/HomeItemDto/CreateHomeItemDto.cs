@@ -1,24 +1,25 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using HSP.Core.Resources;
 
 namespace HSP.Core.Dtos.HomeItemDto
 {
 	public class CreateHomeItemDto
 	{
-		[Required(ErrorMessage = "Tên vật dụng không được để trống.")]
-		[StringLength(100, ErrorMessage = "Tên vật dụng không được vượt quá 100 ký tự.")]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "HomeItem_Name_Required")]
+		[StringLength(100, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "HomeItem_Name_MaxLength")]
 		public string Name { get; set; }
-		[StringLength(100, ErrorMessage = "Thương hiệu không được vượt quá 100 ký tự.")]
+		[StringLength(100, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "HomeItem_Brand_MaxLength")]
 		public string? Brand { get; set; }
-		[Required(ErrorMessage = "Loại vật dụng không được để trống.")]
-		[StringLength(50, ErrorMessage = "Loại vật dụng không được vượt quá 50 ký tự.")]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "HomeItem_Type_Required")]
+		[StringLength(50, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "HomeItem_Type_MaxLength")]
 		public string Type { get; set; }
-		[StringLength(100, ErrorMessage = "Số model không được vượt quá 100 ký tự.")]
+		[StringLength(100, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "HomeItem_ModelNumber_MaxLength")]
 		public string? ModelNumber { get; set; }
-		[StringLength(100, ErrorMessage = "Số sê-ri không được vượt quá 100 ký tự.")]
+		[StringLength(100, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "HomeItem_SerialNumber_MaxLength")]
 		public string? SerialNumber { get; set; }
-		[StringLength(1000, ErrorMessage = "Ghi chú không được vượt quá 1000 ký tự.")]
+		[StringLength(1000, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "HomeItem_Notes_MaxLength")]
 		public string? Notes { get; set; }
-		[Required(ErrorMessage = "Vui lòng chọn nhà cho vật dụng.")]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "HomeItem_HomeId_Required")]
 		public Guid HomeId { get; set; }
 	}
 }

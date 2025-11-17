@@ -27,7 +27,7 @@ namespace HSP.Service.Implementations.Internal
 		{
 			if (input == null)
 			{
-				throw new ArgumentException("input parameter can not be null");
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
 			}
 			await VerifyHomeOwnershipAsync(input.HomeId, userId);
 			var newHomeItem = new HomeItem
@@ -136,7 +136,7 @@ namespace HSP.Service.Implementations.Internal
 					.AnyAsync(h => h.Id == homeId && h.CustomerProfile.Id.Equals(userId));
 			if (!isOwner)
 			{
-				throw new UnauthorizedAccessException("User does not have access to these home items.");
+				throw new UnauthorizedAccessException(_localizer["HomeItems_AccessDenied"]);
 			}
 		}
 		private async Task<HomeItem> GetOwnedHomeItemAsync(Guid itemId, Guid userId)
@@ -148,7 +148,7 @@ namespace HSP.Service.Implementations.Internal
 
 			if (homeItem == null)
 			{
-				throw new ValidationException("Home item not found or you do not have permission to delete this home item.");
+				throw new ValidationException(_localizer["HomeItem_NotFoundOrNoPermission"]);
 			}
 
 			return homeItem;

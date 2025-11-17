@@ -1,17 +1,18 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using HSP.Core.Resources;
 
 namespace HSP.Core.Dtos.ServiceRequestDto
 {
 	public class CustomerCreateBookingDto
 	{
-		[Required]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "AddressIsRequired")]
 		public string Address { get; set; }
-		[Required]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ServiceIdsIsRequired")]
 		public List<Guid> ServiceIds { get; set; }
-		[Required]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "CustomerIdIsRequired")]
 		public string CustomerId { get; set; }
 		public double DistanceKm { get; set; } = 50;
-		[Required]
+		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "DesireDateTimeIsRequired")]
 		public DateTime DesireDateTime { get; set; }
 	}
 	public class MatchedBookingResultDto

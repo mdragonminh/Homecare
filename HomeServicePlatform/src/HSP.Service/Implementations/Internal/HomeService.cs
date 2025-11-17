@@ -28,12 +28,12 @@ namespace HSP.Service.Implementations.Internal
 		{
 			if (input == null)
 			{
-				throw new ArgumentException("input parameter can not be null");
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
 			}
 			var coordinates = await _geocodingService.GetCoordinatesForAddressAsync(input.Address);
 			if (coordinates == null)
 			{
-				throw new ValidationException("Could not find coordinates for the provided address.");
+				throw new ValidationException(_localizer["Coordinates_NotFound"]);
 			}
 			var newHome = new Home
 			{
@@ -55,7 +55,7 @@ namespace HSP.Service.Implementations.Internal
 				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerId.Equals(userId));
 			if (home == null)
 			{
-				throw new ValidationException("Home not found or you do not have permission to delete this home.");
+				throw new ValidationException(_localizer["Home_NotFoundOrNoPermission"]);
 			}
 			await _homeRepository.DeleteAsync(home.Id);
 			await _unitOfWork.SaveChangesAsync();
@@ -88,7 +88,7 @@ namespace HSP.Service.Implementations.Internal
 				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.Id.Equals(userId));
 			if (query == null)
 			{
-				throw new ValidationException("Home not found or you do not have permission to view this home.");
+				throw new ValidationException(_localizer["Home_NotFoundOrNoPermission"]);
 			}
 			var homeDto = new HomeDto
 			{
@@ -106,14 +106,14 @@ namespace HSP.Service.Implementations.Internal
 		{
 			if (input == null)
 			{
-				throw new ArgumentException("input parameter can not be null");
+				throw new ArgumentException(_localizer["InputCannotBeNull"]);
 			}
 			var homeToUpdate = await _homeRepository.GetAll()
 				.Include(x => x.CustomerProfile)
 				.FirstOrDefaultAsync(x => x.Id.Equals(homeId) && x.CustomerProfile.Id.Equals(userId));
 			if (homeToUpdate == null)
 			{
-				throw new ValidationException("Home not found or you do not have permission to delete this home.");
+				throw new ValidationException(_localizer["Home_NotFoundOrNoPermission"]);
 			}
 			var flag = false;
 			if (input.Name != homeToUpdate.Name)
@@ -126,7 +126,7 @@ namespace HSP.Service.Implementations.Internal
 				var coordinates = await _geocodingService.GetCoordinatesForAddressAsync(input.Address);
 				if (coordinates == null)
 				{
-					throw new ValidationException("Could not find coordinates for the provided address.");
+					throw new ValidationException(_localizer["Coordinates_NotFound"]);
 				}
 				homeToUpdate.Address = input.Address;
 				homeToUpdate.Latitude = coordinates.Latitude;

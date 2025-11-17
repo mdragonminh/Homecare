@@ -24,7 +24,7 @@ namespace HSP.Service.Implementations.Internal
 		{
 			if (input == null)
 			{
-				throw new ArgumentNullException(nameof(input));
+				throw new ArgumentNullException(nameof(input), _localizer["InputCannotBeNull"]);
 			}
 			
 			var basePrice = await _systemSettingService.GetSettingValueAsDecimalAsync("DefaultServiceBasePrice", 100000);
@@ -32,7 +32,7 @@ namespace HSP.Service.Implementations.Internal
 			
 			if (servicePrice < basePrice)
 			{
-				throw new InvalidOperationException($"Service price ({servicePrice:N0} VND) cannot be less than the base price ({basePrice:N0} VND)");
+				throw new InvalidOperationException(string.Format(_localizer["ServicePrice_LessThanBase"], servicePrice, basePrice));
 			}
 			
 			var newService = new Core.Entities.Service
@@ -70,7 +70,7 @@ namespace HSP.Service.Implementations.Internal
 			var service = await _homeServiceRepository.GetByIdAsync(id);
 			if (service == null)
 			{
-				throw new KeyNotFoundException("home service not found");
+				throw new KeyNotFoundException(_localizer["HomeService_NotFound"]);
 			}
 			var serviceDto = new AdminHomeServiceDto
 			{
@@ -86,19 +86,19 @@ namespace HSP.Service.Implementations.Internal
 		{
 			if (input == null)
 			{
-				throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
+				throw new ArgumentNullException(nameof(input), _localizer["InputCannotBeNull"]);
 			}
 			var existingService = await _homeServiceRepository.GetAll().IgnoreQueryFilters()
 				.FirstOrDefaultAsync(x => x.Id.Equals(id));
 			if (existingService == null)
 			{
-				throw new KeyNotFoundException("Service not found");
+				throw new KeyNotFoundException(_localizer["HomeService_NotFound"]);
 			}
 			
 			var basePrice = await _systemSettingService.GetSettingValueAsDecimalAsync("DefaultServiceBasePrice", 100000);
 			if (input.Price < basePrice)
 			{
-				throw new InvalidOperationException($"Service price ({input.Price:N0} VND) cannot be less than the base price ({basePrice:N0} VND)");
+				throw new InvalidOperationException(string.Format(_localizer["ServicePrice_LessThanBase"], input.Price, basePrice));
 			}
 			
 			var flag = false;
@@ -137,7 +137,7 @@ namespace HSP.Service.Implementations.Internal
 				.FirstOrDefaultAsync(hs => hs.Id.Equals(id));
 			if (homeService == null)
 			{
-				throw new KeyNotFoundException("Service not found");
+				throw new KeyNotFoundException(_localizer["HomeService_NotFound"]);
 			}
 			var isInUse = homeService.Technicians?.Where(x => x.ApprovalStatus == Core.Enums.TechnicianApprovalStatus.Approved).Any() ?? false;
 			if (isInUse)

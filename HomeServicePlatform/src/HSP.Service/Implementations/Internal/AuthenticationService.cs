@@ -70,24 +70,24 @@ namespace HSP.Service.Implementations.Internal
             var user = await _userRepository.FindByIdAsync(userId);
             if (user == null)
             {
-                return new ConfirmEmailResultDto { Success = false, Error = "UserNotFound", Message = "User not found" };
+                return new ConfirmEmailResultDto { Success = false, Error = "UserNotFound", Message = _localizer["UserNotFound"] };
             }
             var result = await _userRepository.ConfirmEmailAsync(user, token);
             if (result.Succeeded)
             {
-                return new ConfirmEmailResultDto { Success = true, Message = "Email confirmed" };
+                return new ConfirmEmailResultDto { Success = true, Message = _localizer["ConfirmEmail_Success"] };
             }
             if (result.Errors.Any(e => e.Code.Contains("InvalidToken")))
             {
-                return new ConfirmEmailResultDto { Success = false, Error = "InvalidToken", Message = "Invalid token" };
+                return new ConfirmEmailResultDto { Success = false, Error = "InvalidToken", Message = _localizer["ConfirmEmail_InvalidToken"] };
             }
 
             if (result.Errors.Any(e => e.Code.Contains("TokenExpired")))
             {
-                return new ConfirmEmailResultDto { Success = false, Error = "TokenExpired", Message = "Token expired" };
+                return new ConfirmEmailResultDto { Success = false, Error = "TokenExpired", Message = _localizer["ConfirmEmail_TokenExpired"] };
             }
 
-            return new ConfirmEmailResultDto { Success = false, Error = "UnknownError", Message = "Email confirmation failed" };
+            return new ConfirmEmailResultDto { Success = false, Error = "UnknownError", Message = _localizer["ConfirmEmail_Failed"] };
         }
 
         public async Task<LoginResponseDto> Login(LoginRequestDto input)
@@ -113,7 +113,7 @@ namespace HSP.Service.Implementations.Internal
 
             if (user == null)
             {
-                throw new ValidationException(_localizer["InvalidEmail"]);
+                throw new ValidationException(_localizer["InvalidEmailOrPhone"]);
             }
             if (!user.EmailConfirmed)
             {
@@ -418,7 +418,7 @@ namespace HSP.Service.Implementations.Internal
                 return;
 
             if (string.IsNullOrWhiteSpace(profile.CitizenId))
-                throw new ValidationException("Bạn chưa nhập số căn cước công dân");
+                throw new ValidationException(_localizer["CitizenIdRequired"]);
 
             var images = await ConvertPdfToImagesIfNeeded(legalDocument);
 
@@ -439,7 +439,7 @@ namespace HSP.Service.Implementations.Internal
             }
 
             if (!isValid)
-                throw new ValidationException("Tài liệu pháp lý không hợp lệ hoặc không phải của bạn");
+                throw new ValidationException(_localizer["LegalDocumentInvalid"]);
 
             await _fileService.UploadAsync(new FileUploadDto
             {
@@ -476,8 +476,7 @@ namespace HSP.Service.Implementations.Internal
                 }
 
                 if (!matched)
-                    throw new ValidationException(
-                        $"Chứng chỉ không phù hợp với dịch vụ: {string.Join(", ", serviceNames)}");
+                    throw new ValidationException(_localizer["CertificateMismatch", string.Join(", ", serviceNames)]);
             }
 
             var uploadDtos = certFiles.Select(certFile => new FileUploadDto
@@ -561,20 +560,20 @@ namespace HSP.Service.Implementations.Internal
         {
             if (userId == Guid.Empty || input == null)
             {
-                throw new ArgumentNullException("input is null");
+                throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
             }
             if (input.NewPassword != input.ConfirmPassword)
             {
-                throw new ValidationException("Password and Confirm Password do not match");
+                throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
             }
             var user = await _userRepository.FindByIdAsync(userId);
-            if (user == null) throw new ValidationException("User not found");
+            if (user == null) throw new ValidationException(_localizer["UserNotFound"]);
             if (!string.IsNullOrEmpty(user.PasswordHash))
             {
-                throw new ValidationException("User already has a password");
+                throw new ValidationException(_localizer["UserAlreadyHasPassword"]);
             }
             var result = await _userRepository.AddPasswordAsync(user, input.NewPassword);
-            if (!result.Succeeded) throw new Exception("Add password failed");
+            if (!result.Succeeded) throw new Exception(_localizer["AddPasswordFailed"]);
             return result.Succeeded;
         }
         public async Task<Guid> CreateOperatorAsync(CreateOperatorRequestDto input)
