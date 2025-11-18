@@ -157,7 +157,7 @@ namespace HSP.Service.Implementations.Internal
 			return true;
 		}
 
-		public async Task<bool> RejectTechnicianAsync(Guid technicianProfileId, string rejectedBy)
+		public async Task<bool> RejectTechnicianAsync(Guid technicianProfileId, string rejectedBy, string rejectionReason)
 		{
 			var technician = await _technicianProfileRepository.GetAll()
 					.FirstOrDefaultAsync(x => x.Id == technicianProfileId);
@@ -172,7 +172,8 @@ namespace HSP.Service.Implementations.Internal
 				throw new ValidationException("Technician is already rejected.");
 			}
 
-			technician.ApprovalStatus = TechnicianApprovalStatus.Rejected;
+			technician.RejectionReason = rejectionReason;
+            technician.ApprovalStatus = TechnicianApprovalStatus.Rejected;
 			technician.ApprovedAt = DateTime.UtcNow;
 			technician.ApprovedBy = rejectedBy;
 			technician.DateModified = DateTime.UtcNow;
@@ -215,7 +216,7 @@ namespace HSP.Service.Implementations.Internal
 			return result;
 		}
 
-		public async Task<bool> RejectTechnicianWithNotificationAsync(Guid technicianProfileId, string rejectedBy)
+		public async Task<bool> RejectTechnicianWithNotificationAsync(Guid technicianProfileId, string rejectedBy, string rejectionReason)
 		{
 			// Get technician details before rejection
 			var technicianDetail = await GetTechnicianByIdAsync(technicianProfileId);
@@ -225,7 +226,7 @@ namespace HSP.Service.Implementations.Internal
 			}
 
 			// Reject technician
-			var result = await RejectTechnicianAsync(technicianProfileId, rejectedBy);
+			var result = await RejectTechnicianAsync(technicianProfileId, rejectedBy, rejectionReason);
 			if (result)
 			{
 				// Send rejection email notification
