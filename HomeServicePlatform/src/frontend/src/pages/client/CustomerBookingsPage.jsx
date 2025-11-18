@@ -104,12 +104,12 @@ const CustomerBookingsPage = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      0: { text: "Chờ xác nhận", color: "bg-yellow-100 text-yellow-800", icon: Clock },
+      0: { text: "Chờ xử lý", color: "bg-yellow-100 text-yellow-800", icon: Clock },
       1: { text: "Đã xác nhận", color: "bg-blue-100 text-blue-800", icon: CheckCircle },
-      2: { text: "Đang thực hiện", color: "bg-purple-100 text-purple-800", icon: AlertCircle },
-      3: { text: "Hoàn thành", color: "bg-green-100 text-green-800", icon: CheckCircle },
-      4: { text: "Đã hủy", color: "bg-red-100 text-red-800", icon: XCircle },
-      5: { text: "Bị từ chối", color: "bg-gray-100 text-gray-800", icon: XCircle },
+      2: { text: "Đang đến", color: "bg-indigo-100 text-indigo-800", icon: AlertCircle },
+      3: { text: "Đang thực hiện", color: "bg-purple-100 text-purple-800", icon: AlertCircle },
+      4: { text: "Hoàn thành", color: "bg-green-100 text-green-800", icon: CheckCircle },
+      5: { text: "Đã hủy", color: "bg-red-100 text-red-800", icon: XCircle },
     };
 
     const config = statusConfig[status] || statusConfig[0];
@@ -171,11 +171,12 @@ const CustomerBookingsPage = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Tất cả</option>
-                <option value="0">Chờ xác nhận</option>
+                <option value="0">Chờ xử lý</option>
                 <option value="1">Đã xác nhận</option>
-                <option value="2">Đang thực hiện</option>
-                <option value="3">Hoàn thành</option>
-                <option value="4">Đã hủy</option>
+                <option value="2">Đang đến</option>
+                <option value="3">Đang thực hiện</option>
+                <option value="4">Hoàn thành</option>
+                <option value="5">Đã hủy</option>
               </select>
             </div>
             <button
