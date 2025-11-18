@@ -151,4 +151,19 @@ export const bookingApi = {
     );
     return response.data;
   },
+
+  getAllBookingsForTechnician: async (technicianId) => {
+    try {
+      const response = await axiosClient.get(
+        `/ServiceRequest/technician-feedbacks/${technicianId}`
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error("Error fetching technician bookings:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to fetch bookings",
+      };
+    }
+  },
 };

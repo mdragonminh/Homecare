@@ -116,6 +116,29 @@ export const technicianApi = {
     }
   },
 
+  getTechnicianProfile: async (id) => {
+    try {
+      const response = await axiosClient.get(
+        `/ServiceRequest/technician-profile/${id}`
+      );
+
+      if (ENABLE_DEBUG)
+        console.log("Lấy thông tin kỹ thuật viên công khai thành công:", response.data);
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error("Lấy thông tin kỹ thuật viên công khai lỗi:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          error.message ||
+          "Lỗi khi lấy thông tin kỹ thuật viên",
+      };
+    }
+  },
+
   approveTechnician: async (id) => {
     try {
       const jwtToken = localStorage.getItem("jwtToken");
