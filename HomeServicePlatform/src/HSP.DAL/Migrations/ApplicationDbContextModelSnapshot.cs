@@ -831,6 +831,32 @@ namespace HSP.DAL.Migrations
                     b.ToTable("Payments");
                 });
 
+            modelBuilder.Entity("HSP.Core.Entities.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Expires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("HSP.Core.Entities.Service", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1189,7 +1215,7 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
-                    b.ToTable("UserTokens", (string)null);
+                    b.ToTable((string)null);
                 });
 
             modelBuilder.Entity("ServiceTechnicianProfile", b =>
@@ -1423,6 +1449,17 @@ namespace HSP.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("Booking");
+                });
+
+            modelBuilder.Entity("HSP.Core.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("HSP.Core.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.TechnicianProfile", b =>

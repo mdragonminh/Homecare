@@ -64,76 +64,83 @@ namespace HSP.Service.Implementations.External
 
 		public async Task<TokenResponseDto> GenerateTokenPairAsync(UserDto input)
 		{
-			if (input == null)
-				throw new ArgumentNullException(nameof(input));
-			var user = await _userRepository.FindByIdAsync(input.Id)
-				?? throw new InvalidOperationException("User not found");
-			var roles = await _userRepository.GetRolesAsync(user);
-            var claims = new List<Claim>
+            var user = await _userRepository.FindByIdAsync(input.Id)
+           ?? throw new InvalidOperationException("User not found");
+
+            var roles = await _userRepository.GetRolesAsync(user);
+
+            string accessToken = GenerateAccessToken(user, roles);
+            string refreshToken = GenerateRefreshToken();
+
+            var refreshExpires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationInDays);
+
+            await _userRepository.RemoveAllTokensForUserAsync(user.Id);
+
+            await _userRepository.AddRefreshTokenAsync(user.Id, refreshToken, refreshExpires);
+
+            return new TokenResponseDto
             {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Email, user.Email??string.Empty),
-                        new Claim(ClaimTypes.Name, user.FullName),
-                };
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
+                RefreshTokenExpiresAt = refreshExpires
+            };
+        }
+        private string GenerateAccessToken(AppUser user, IList<string> roles)
+        {
+            var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+            new Claim(ClaimTypes.Name, user.FullName ?? string.Empty)
+        };
+
             foreach (var role in roles)
-				claims.Add(new Claim(ClaimTypes.Role, role));
-			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
-			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                claims.Add(new Claim(ClaimTypes.Role, role));
 
-			var accessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes);
-			var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationInDays);
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-			var jwt = new JwtSecurityToken(
-				issuer: _jwtSettings.Issuer,
-				audience: _jwtSettings.Audience,
-				claims: claims,
-				expires: accessTokenExpiresAt,
-				signingCredentials: creds
-			);
+            var jwt = new JwtSecurityToken(
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpirationInMinutes),
+                signingCredentials: creds);
 
-			string accessToken = new JwtSecurityTokenHandler().WriteToken(jwt);
-			string refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-			var existingToken = await _userRepository.GetAuthenticationTokenAsync(user, "Default", "RefreshToken");
+            return new JwtSecurityTokenHandler().WriteToken(jwt);
+        }
+        private string GenerateRefreshToken()
+        {
+            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        }
 
-			if (!string.IsNullOrEmpty(existingToken))
-			{
-				await _userRepository.RemoveAuthenticationTokenAsync(user, "Default", "RefreshToken");
-			}
-			await _userRepository.SetAuthenticationTokenAsync(user, "Default", "RefreshToken", refreshToken);
-			return new TokenResponseDto
-			{
-				AccessToken = accessToken,
-				RefreshToken = refreshToken,
-				AccessTokenExpiresAt = accessTokenExpiresAt,
-				RefreshTokenExpiresAt = refreshTokenExpiresAt
-			};
-		}
-
-		public async Task<TokenResponseDto> RefreshTokenAsync(string refreshToken)
+        public async Task<TokenResponseDto> RefreshTokenAsync(string refreshToken)
 		{
-			if (string.IsNullOrEmpty(refreshToken))
-				throw new UnauthorizedAccessException("Refresh token is missing.");
+            var tokenEntity = await _userRepository.GetRefreshTokenAsync(refreshToken);
 
-			var user = await _userRepository.FindByTokenAsync(refreshToken);
+            if (tokenEntity == null || tokenEntity.IsExpired)
+                throw new UnauthorizedAccessException("Invalid refresh token.");
 
-			if (user == null)
-				throw new UnauthorizedAccessException("Invalid refresh token.");
+            var user = await _userRepository.FindByIdAsync(tokenEntity.UserId)
+                ?? throw new UnauthorizedAccessException("User not found.");
 
-			await _userRepository.RemoveAuthenticationTokenAsync(user, "Default", "RefreshToken");
-			return await GenerateTokenPairAsync(new UserDto
-			{
-				Id = user.Id,
-				Email = user.Email ?? string.Empty,
-				FullName = user.FullName ?? string.Empty
-			});
-		}
+            await _userRepository.RevokeRefreshTokenAsync(refreshToken);
+
+            return await GenerateTokenPairAsync(new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email ?? "",
+                FullName = user.FullName ?? ""
+            });
+        }
 
 		public async Task<bool> RevokeRefreshTokenAsync(Guid userId)
 		{
 			var user = await _userRepository.FindByIdAsync(userId)
 				?? throw new UnauthorizedAccessException("User not found.");
 
-			await _userRepository.RemoveAuthenticationTokenAsync(user, "Default", "RefreshToken");
+			await _userRepository.RemoveAllTokensForUserAsync(userId);
 			return true;
 		}
 	}
