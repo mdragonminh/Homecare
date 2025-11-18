@@ -12,6 +12,7 @@ namespace HSP.Core.Entities
 		public Guid UserId { get; set; }
 		[ForeignKey("UserId")]
 		public AppUser User { get; set; } = null!;
+		[Required]
 		[MaxLength(12)]
 		public string? CitizenId { get; set; }
 		[Range(-90, 90)]
