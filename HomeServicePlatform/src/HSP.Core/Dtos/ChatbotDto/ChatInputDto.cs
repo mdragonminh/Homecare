@@ -23,7 +23,7 @@ namespace HSP.Core.Dtos.ChatbotDto
         public string Address { get; set; }
 
         [JsonPropertyName("DesireDateTime")]
-        public DateTime DesireDateTime { get; set; }
+        public DateTimeOffset DesireDateTime { get; set; }
 
         [JsonPropertyName("ServiceIds")]
         public List<string> ServiceIds { get; set; }

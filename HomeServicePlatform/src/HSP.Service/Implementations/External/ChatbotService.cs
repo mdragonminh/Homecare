@@ -254,7 +254,7 @@ namespace HSP.Service.Implementations.External
                     var bookingDto = new CustomerCreateBookingDto
                     {
                         Address = gptArgs.Address,
-                        DesireDateTime = gptArgs.DesireDateTime,
+                        DesireDateTime = gptArgs.DesireDateTime.ToUniversalTime().DateTime,
                         ServiceIds = gptArgs.ServiceIds.Select(Guid.Parse).ToList(),
                         CustomerId = customerIdString
                     };
