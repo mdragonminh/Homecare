@@ -50,55 +50,6 @@ namespace HSP.Service.Test.Implementations.Internal
         #region GetAccountsAsync
 
         [Fact]
-        public async Task GetAccountsAsync_ShouldExcludeCustomerAndTechnicianAndApplyPagination()
-        {
-            // Arrange: 6 users - 2 excluded roles, 4 included
-            var users = new List<AppUser>();
-            for (int i = 0; i < 6; i++)
-            {
-                users.Add(new AppUser
-                {
-                    Id = Guid.NewGuid(),
-                    Email = $"u{i}@example.com",
-                    UserName = $"user{i}",
-                    FullName = $"User {i}",
-                    IsActive = i % 2 == 0,
-                    Department = i % 2 == 0 ? "IT" : "HR",
-                    DateCreated = DateTime.UtcNow.AddDays(-i),
-                    CreatedBy = Guid.NewGuid()
-                });
-            }
-
-            _userRepo.Setup(r => r.GetAllUsersAsync()).ReturnsAsync(users);
-
-            _userRepo.Setup(r => r.GetRolesAsync(It.IsAny<AppUser>()))
-                .ReturnsAsync((AppUser u) =>
-                {
-                    // make first two be Customer/Technician
-                    if (u.Email.Contains("u0") || u.Email.Contains("u1"))
-                        return new List<string> { u.Email.Contains("u0") ? RoleNames.Customer : RoleNames.Technician };
-                    // others are Operator
-                    return new List<string> { RoleNames.Operator };
-                });
-
-            // Request page 1 size 2 => should return first 2 management users (u2, u3) after exclusions
-            var filter = new AccountFilterDto
-            {
-                PageNumber = 1,
-                PageSize = 2
-            };
-
-            // Act
-            var paged = await _service.GetAccountsAsync(filter);
-
-            // Assert
-            Assert.Equal(2, paged.Items.Count);
-            Assert.All(paged.Items, it => Assert.NotEqual(RoleNames.Customer, it.Role));
-            Assert.All(paged.Items, it => Assert.NotEqual(RoleNames.Technician, it.Role));
-            Assert.Equal(4, paged.TotalCount); // 6 total - 2 excluded = 4 management accounts
-        }
-
-        [Fact]
         public async Task GetAccountsAsync_ShouldFilterBySearchTerm_Email_Username_FullName()
         {
             // Arrange

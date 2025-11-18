@@ -62,12 +62,10 @@ namespace HSP.Service.Test.Implementations.Internal
             );
         }
 
-        // Helper để mock RoleManager
         private static Mock<RoleManager<AppRole>> MockRoleManager()
         {
             var store = new Mock<IRoleStore<AppRole>>();
 
-            // Provide non-null values for RoleManager constructor to avoid CS8625.
             var roleValidators = new List<IRoleValidator<AppRole>>();
             var lookupNormalizer = Mock.Of<ILookupNormalizer>();
             var identityErrors = new IdentityErrorDescriber();
@@ -82,9 +80,6 @@ namespace HSP.Service.Test.Implementations.Internal
             );
         }
 
-        // ============================================================
-        //  ✅ TEST: GetCustomerByUserIdAsync
-        // ============================================================
 
         [Fact]
         //  Kiểm tra khi truyền vào userId không hợp lệ (không phải Guid)
@@ -171,11 +166,6 @@ namespace HSP.Service.Test.Implementations.Internal
 
 
 
-
-        // ============================================================
-        //  ✅ TEST: RequestEmailChangeAsync
-        // ============================================================
-
         [Fact]
         //  Kiểm tra khi userId không hợp lệ (RequestEmailChangeAsync)
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenInvalidUserId()
@@ -221,9 +211,7 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Contains("Email xác thực", result.Message);
         }
 
-        // ============================================================
-        //  ✅ TEST: ConfirmEmailChangeAsync
-        // ============================================================
+
 
         [Fact]
         // Kiểm tra khi token xác nhận email không hợp lệ (ConfirmEmailChangeAsync)
@@ -234,9 +222,6 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.False(result.Success);
             Assert.Contains("Lỗi khi xác nhận", result.Message);
         }
-        // ============================================================
-        // ✅ TEST: RequestEmailChangeAsync (bổ sung)
-        // ============================================================
 
         [Fact]
         // Kiểm tra khi email mới trùng với email hiện tại
@@ -252,10 +237,8 @@ namespace HSP.Service.Test.Implementations.Internal
 
             _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
 
-            // Act
             var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "thanhlongnguyen@gmail.com");
 
-            // Assert
             Assert.False(result.Success);
             Assert.Contains("Email mới không được trùng với email hiện tại", result.Message);
         }
@@ -290,9 +273,6 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Contains("Email này đã được sử dụng bởi tài khoản khác", result.Message);
         }
 
-        // ============================================================
-        // ✅ TEST: ConfirmEmailChangeAsync (bổ sung)
-        // ============================================================
 
         [Fact]
         // Kiểm tra khi token xác nhận email hợp lệ và đổi email thành công
@@ -327,10 +307,8 @@ namespace HSP.Service.Test.Implementations.Internal
             _userRepoMock.Setup(x => x.UpdateAccount(It.IsAny<AppUser>()))
                          .ReturnsAsync(IdentityResult.Success);
 
-            // Act
             var result = await _service.ConfirmEmailChangeAsync(user.Id.ToString(), base64Token);
 
-            // Assert
             Assert.True(result.Success);
             Assert.Equal("Email đã được thay đổi thành công", result.Message);
             Assert.Equal(newEmail, result.NewEmail);
@@ -403,7 +381,6 @@ namespace HSP.Service.Test.Implementations.Internal
             _userRepoMock.Setup(x => x.GenerateChangeEmailTokenAsync(user, "thanhlong@gmail.com")).ReturnsAsync("FAKE_TOKEN");
             _configMock.Setup(x => x["UrlSettings:FrontendEmailChange"]).Returns("https://example.com/confirm");
 
-            // 🔴 Giả lập lỗi gửi email
             _emailServiceMock.Setup(x => x.SendEmailAsync(It.IsAny<EmailDto>()))
                              .ThrowsAsync(new Exception("SMTP error"));
 
@@ -456,11 +433,9 @@ namespace HSP.Service.Test.Implementations.Internal
         // Kiểm tra khi userId không hợp lệ (UpdateCustomerAsync)
         public async Task UpdateCustomerAsync_ShouldThrow_WhenInvalidUserId()
         {
-            // Arrange
             string invalidUserId = "not-a-guid";
             var updateDto = new UpdateAppUserDto {FullName = "Thanh Long Nguyen", PhoneNumber = "0973775247" };
 
-            // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
                 _service.UpdateCustomerAsync(invalidUserId, updateDto));
         }
@@ -469,14 +444,12 @@ namespace HSP.Service.Test.Implementations.Internal
         // Kiểm tra khi không tìm thấy người dùng theo userId
         public async Task UpdateCustomerAsync_ShouldThrow_WhenUserNotFound()
         {
-            // Arrange
             string validUserId = Guid.NewGuid().ToString();
             var updateDto = new UpdateAppUserDto { FullName = "Thanh Long Nguyen", PhoneNumber = "0973775247" };
 
             _userRepoMock.Setup(r => r.FindByIdAsync(It.IsAny<Guid>()))
                          .ReturnsAsync((AppUser?)null);
 
-            // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _service.UpdateCustomerAsync(validUserId, updateDto));
         }
@@ -485,7 +458,6 @@ namespace HSP.Service.Test.Implementations.Internal
         // Kiểm tra khi cập nhật thông tin người dùng thất bại
         public async Task UpdateCustomerAsync_ShouldThrow_WhenUpdateFails()
         {
-            // Arrange
             var user = new AppUser
             {
                 Id = Guid.NewGuid(),
@@ -503,7 +475,6 @@ namespace HSP.Service.Test.Implementations.Internal
             _userRepoMock.Setup(r => r.UpdateAccount(user))
                          .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "DB error" }));
 
-            // Act & Assert
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _service.UpdateCustomerAsync(user.Id.ToString(), updateDto));
 
@@ -514,7 +485,6 @@ namespace HSP.Service.Test.Implementations.Internal
         // Kiểm tra khi cập nhật thông tin người dùng thành công → trả về user đã cập nhật
         public async Task UpdateCustomerAsync_ShouldReturnUpdatedUser_WhenSuccess()
         {
-            // Arrange
             var userId = Guid.NewGuid();
             var user = new AppUser
             {
@@ -536,21 +506,17 @@ namespace HSP.Service.Test.Implementations.Internal
                 PhoneNumber = "0973775247" // new phone
             };
 
-            // Mock FindByIdAsync cho UpdateCustomerAsync
             _userRepoMock.Setup(r => r.FindByIdAsync(userId))
                          .ReturnsAsync(user);
 
-            // Mock UpdateAccount thành công
             _userRepoMock.Setup(r => r.UpdateAccount(It.IsAny<AppUser>()))
                          .ReturnsAsync(IdentityResult.Success);
 
-            // Mock GetUsersAsQueryable cho GetCustomerByUserIdAsync (được gọi ở cuối)
             var usersList = new List<AppUser> { user };
             var usersMock = usersList.BuildMock();
             _userRepoMock.Setup(r => r.GetUsersAsQueryable())
                          .Returns(usersMock);
 
-            // Mock GetUserAvatarUrlAsync - ObjectType repository
             var objectTypes = new List<ObjectType>
             {
                 new ObjectType { Id = Guid.NewGuid(), Name = "User" }
@@ -559,7 +525,6 @@ namespace HSP.Service.Test.Implementations.Internal
             _objTypeRepoMock.Setup(r => r.GetAll())
                            .Returns(objectTypesMock);
 
-            // Mock GetUserAvatarUrlAsync - FileRelation repository (không có avatar)
             var fileRelations = new List<FileRelation>();
             var fileRelationsMock = fileRelations.BuildMock();
             _fileRelRepoMock.Setup(r => r.GetAll())
