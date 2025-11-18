@@ -7,6 +7,7 @@ import {
   SettingOutlined,
   HomeOutlined,
   ToolOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
@@ -23,6 +24,8 @@ export default function OperatorLayout({ loggedInUser }) {
   const selectedKeys = useMemo(() => {
     if (location.pathname.startsWith("/operator/customers"))
       return ["customers"];
+    if (location.pathname.startsWith("/operator/bookings"))
+      return ["bookings"];
     if (location.pathname.startsWith("/operator/technicians"))
       return ["technicians"];
     if (location.pathname.startsWith("/operator/settings")) return ["settings"];
@@ -92,6 +95,7 @@ export default function OperatorLayout({ loggedInUser }) {
           style={{ borderRight: "none", marginTop: 8 }}
           onClick={({ key }) => {
             if (key === "customers") navigate("/operator/customers");
+            if (key === "bookings") navigate("/operator/bookings");
             if (key === "technicians") navigate("/operator/technicians");
             if (key === "settings") navigate("/operator/settings");
           }}
@@ -100,6 +104,12 @@ export default function OperatorLayout({ loggedInUser }) {
               key: "customers",
               icon: <UserOutlined />,
               label: t("operator.menu.customers", "Customers"),
+              style: { marginBottom: 4 },
+            },
+            {
+              key: "bookings",
+              icon: <CalendarOutlined />,
+              label: t("operator.menu.bookings", "Bookings"),
               style: { marginBottom: 4 },
             },
             {

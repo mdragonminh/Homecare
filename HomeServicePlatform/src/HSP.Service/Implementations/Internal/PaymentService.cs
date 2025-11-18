@@ -180,6 +180,11 @@ namespace HSP.Service.Implementations.Internal
 				query = query.Where(p => p.BookingId == filter.BookingId.Value);
 			}
 
+			if (filter.CustomerId.HasValue)
+			{
+				query = query.Where(p => p.Booking.CustomerId == filter.CustomerId.Value);
+			}
+
 			if (filter.Status.HasValue)
 			{
 				query = query.Where(p => p.Status == filter.Status.Value);

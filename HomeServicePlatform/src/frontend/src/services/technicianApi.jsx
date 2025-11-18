@@ -150,7 +150,7 @@ export const technicianApi = {
     }
   },
 
-  rejectTechnician: async (id) => {
+  rejectTechnician: async (id, body) => {
     try {
       const jwtToken = localStorage.getItem("jwtToken");
       if (!jwtToken) {
@@ -159,7 +159,7 @@ export const technicianApi = {
 
       const response = await axiosClient.post(
         `/TechnicianManagement/technicians/${id}/reject`,
-        {},
+        body,
         {
           headers: {
             Authorization: `Bearer ${jwtToken}`,

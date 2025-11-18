@@ -74,12 +74,18 @@ namespace HSP.API.Controllers
         }
 
         [HttpPost("technicians/{id}/reject")]
-        public async Task<IActionResult> RejectTechnician(Guid id)
+        public async Task<IActionResult> RejectTechnician(Guid id, [FromBody] TechnicianRejectDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
                 var rejectedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
-                var result = await _technicianProfileService.RejectTechnicianWithNotificationAsync(id, rejectedBy);
+                // 💡 Truyền thêm lý do từ request vào service
+                var result = await _technicianProfileService.RejectTechnicianWithNotificationAsync(id, rejectedBy, dto.RejectionReason);
 
                 if (!result)
                 {
@@ -126,12 +132,13 @@ namespace HSP.API.Controllers
         {
             try
             {
+                string reason = "Từ chối hàng loạt bởi quản trị viên";
                 var rejectedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
                 var successCount = 0;
 
                 foreach (var id in technicianIds)
                 {
-                    var result = await _technicianProfileService.RejectTechnicianWithNotificationAsync(id, rejectedBy);
+                    var result = await _technicianProfileService.RejectTechnicianWithNotificationAsync(id, rejectedBy, reason);
                     if (result) successCount++;
                 }
 

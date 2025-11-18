@@ -12,6 +12,8 @@ import HomeServicePage from "../pages/admin/HomeServicePage";
 import PaymentManagementPage from "../pages/admin/PaymentManagementPage";
 import OperatorLayout from "../pages/operator/OperatorLayout";
 import OperatorCustomersPage from "../pages/operator/OperatorCustomersPage";
+import OperatorBookingsPage from "../pages/operator/OperatorBookingsPage";
+import OperatorBookingDetailPage from "../pages/operator/OperatorBookingDetailPage";
 import OperatorTechniciansPage from "../pages/operator/OperatorTechniciansPage";
 import OperatorSettingsPage from "../pages/operator/OperatorSettingsPage";
 import Layout from "../layouts/Layout";
@@ -216,6 +218,8 @@ export default function AppRoutes({
       >
         <Route path="/operator" element={<Navigate to="/operator/customers" replace />} />
         <Route path="/operator/customers" element={<OperatorCustomersPage />} />
+        <Route path="/operator/bookings" element={<OperatorBookingsPage />} />
+        <Route path="/operator/bookings/:id" element={<OperatorBookingDetailPage />} />
         <Route path="/operator/technicians" element={<OperatorTechniciansPage />} />
         <Route path="/operator/settings" element={<OperatorSettingsPage />} />
       </Route>

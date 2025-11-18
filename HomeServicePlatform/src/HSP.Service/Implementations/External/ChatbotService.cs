@@ -116,7 +116,7 @@ namespace HSP.Service.Implementations.External
         private async Task<(SystemChatMessage, ChatTool)> PrepareChatContextAsync()
         {
             var availableServices = await _serviceRepository.GetAll()
-                .Select(s => new { s.Id, s.Name })
+                .Select(s => new { s.Id, s.Name, s.Price })
                 .ToListAsync();
             var servicesJsonForPrompt = JsonSerializer.Serialize(availableServices);
 

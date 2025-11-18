@@ -26,7 +26,10 @@ namespace HSP.Core.Entities
 		[Range(0, 50)]
 		public int ExperienceYears { get; set; }
 
-		[Required]
+        [MaxLength(500)]
+        public string? RejectionReason { get; set; }
+
+        [Required]
 		public TechnicianApprovalStatus ApprovalStatus { get; set; } = TechnicianApprovalStatus.Pending;
 		public DateTime? ApprovedAt { get; set; }
 		public string? ApprovedBy { get; set; }

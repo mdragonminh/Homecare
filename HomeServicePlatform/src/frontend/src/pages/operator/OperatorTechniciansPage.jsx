@@ -46,6 +46,7 @@ export default function OperatorTechniciansPage() {
   const [approveModalVisible, setApproveModalVisible] = useState(false);
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   // Tải dữ liệu technicians từ API
   const loadTechnicians = async () => {
@@ -169,16 +170,28 @@ export default function OperatorTechniciansPage() {
   };
 
   const confirmReject = async () => {
+    if (!rejectionReason.trim()) {
+      message.error("Vui lòng nhập lý do từ chối.");
+      return;
+    }
+
     try {
       setLoading(true);
+      
+      const requestBody = {
+        rejectionReason: rejectionReason.trim(),
+      };
+      
       const response = await technicianApi.rejectTechnician(
-        selectedTechnicianId
+        selectedTechnicianId,
+        requestBody 
       );
+
       if (response.success) {
         message.success("Đã từ chối thành công kỹ thuật viên");
         setRejectModalVisible(false);
         setSelectedTechnicianId(null);
-        // Reload dữ liệu để cập nhật trạng thái
+        setRejectionReason("");
         loadTechnicians();
       } else {
         message.error(response.message || "Không thể từ chối kỹ thuật viên");
@@ -559,6 +572,7 @@ export default function OperatorTechniciansPage() {
         onCancel={() => {
           setRejectModalVisible(false);
           setSelectedTechnicianId(null);
+          setRejectionReason("");
         }}
         okText="Từ chối"
         cancelText="Hủy"
@@ -570,7 +584,13 @@ export default function OperatorTechniciansPage() {
             style={{ color: "#faad14", fontSize: 22 }}
           />
           <span>Bạn có chắc chắn muốn từ chối kỹ thuật viên này?</span>
-        </div>
+        </div><br></br>
+        <Input.TextArea
+            rows={4}
+            placeholder="Nhập lý do từ chối"
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+          />
       </Modal>
     </div>
   );
