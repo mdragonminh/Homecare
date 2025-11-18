@@ -89,7 +89,7 @@ function TechnicianRegister({ loggedInUser }) {
           submitting ? "opacity-50" : ""
         }`}
       >
-        <main className="flex-1 py-8">
+        <main className="flex-1">
           <div
             className="relative py-16"
             style={{
