@@ -10,17 +10,21 @@ import {
   Select,
   message,
   Spin,
+  Modal,
 } from "antd";
 import {
   UserOutlined,
   EyeOutlined,
   EditOutlined,
-  DeleteOutlined,
+  StopOutlined,
+  CheckCircleOutlined,
   SearchOutlined,
   ReloadOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { accountApi } from "../../services/accountApi";
+import CustomerDetailModal from "../../components/operator/CustomerDetailModal";
 
 const { Search } = Input;
 const { Option } = Select;
@@ -32,6 +36,8 @@ export default function OperatorCustomersPage() {
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -77,13 +83,15 @@ export default function OperatorCustomersPage() {
         const transformedCustomers = customerList.map((customer) => ({
           key: customer.id,
           id: customer.id?.substring(0, 8) + "..." || "N/A",
+          fullId: customer.id, 
           name: customer.fullName || "N/A",
           email: customer.email || "N/A",
           phone: customer.phoneNumber || "N/A",
           address: "Chưa cập nhật", // CustomerProfile API doesn't return address
-          status: "active", // Assume active since they are in the system
+          status: customer.isActive !== false ? "active" : "inactive", 
           joinDate: new Date(customer.dateCreated).toLocaleDateString("vi-VN"),
           totalServices: customer.totalHomes || 0, // Use totalHomes as service count
+          isActive: customer.isActive !== false,
         }));
 
         setCustomers(transformedCustomers);
@@ -126,6 +134,53 @@ export default function OperatorCustomersPage() {
       pageSize: paginationConfig.pageSize,
       total: paginationConfig.total,
     });
+  };
+
+  const handleViewDetails = (record) => {
+    setSelectedCustomer(record);
+    setDetailModalVisible(true);
+  };
+
+  const handleDisableAccount = (record) => {
+    Modal.confirm({
+      title: "Xác nhận vô hiệu hóa tài khoản",
+      icon: <ExclamationCircleOutlined />,
+      content: `Bạn có chắc chắn muốn vô hiệu hóa tài khoản của "${record.name}"?`,
+      okText: "Xác nhận",
+      cancelText: "Hủy",
+      okType: "danger",
+      onOk: async () => {
+        try {
+          const result = await accountApi.disableAccount(record.fullId, {
+            reason: "Vô hiệu hóa bởi operator",
+          });
+          if (result.success) {
+            message.success("Vô hiệu hóa tài khoản thành công");
+            loadCustomers();
+          } else {
+            message.error(result.message || "Lỗi khi vô hiệu hóa tài khoản");
+          }
+        } catch (error) {
+          message.error("Lỗi khi vô hiệu hóa tài khoản");
+          console.error("Disable account error:", error);
+        }
+      },
+    });
+  };
+
+  const handleEnableAccount = async (record) => {
+    try {
+      const result = await accountApi.enableAccount(record.fullId);
+      if (result.success) {
+        message.success("Kích hoạt tài khoản thành công");
+        loadCustomers();
+      } else {
+        message.error(result.message || "Lỗi khi kích hoạt tài khoản");
+      }
+    } catch (error) {
+      message.error("Lỗi khi kích hoạt tài khoản");
+      console.error("Enable account error:", error);
+    }
   };
 
   const columns = [
@@ -175,18 +230,35 @@ export default function OperatorCustomersPage() {
     {
       title: "Thao tác",
       key: "action",
-      width: 150,
+      width: 180,
       render: (_, record) => (
         <Space>
-          <Button type="text" icon={<EyeOutlined />} size="small" />
-          <Button type="text" icon={<EditOutlined />} size="small" />
           <Button
             type="text"
-            icon={<DeleteOutlined />}
+            icon={<EyeOutlined />}
             size="small"
-            danger
-            disabled={record.status === "active" && record.totalServices > 0}
+            onClick={() => handleViewDetails(record)}
+            title="Xem chi tiết"
           />
+          {record.isActive ? (
+            <Button
+              type="text"
+              icon={<StopOutlined />}
+              size="small"
+              danger
+              onClick={() => handleDisableAccount(record)}
+              title="Vô hiệu hóa"
+            />
+          ) : (
+            <Button
+              type="text"
+              icon={<CheckCircleOutlined />}
+              size="small"
+              style={{ color: "#52c41a" }}
+              onClick={() => handleEnableAccount(record)}
+              title="Kích hoạt"
+            />
+          )}
         </Space>
       ),
     },
@@ -269,6 +341,16 @@ export default function OperatorCustomersPage() {
           />
         </Spin>
       </Card>
+
+      {/* Customer Detail Modal */}
+      <CustomerDetailModal
+        visible={detailModalVisible}
+        customer={selectedCustomer}
+        onClose={() => {
+          setDetailModalVisible(false);
+          setSelectedCustomer(null);
+        }}
+      />
     </div>
   );
 }
