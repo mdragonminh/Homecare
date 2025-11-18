@@ -1,6 +1,6 @@
 // fileName: FindTechnicianPage.jsx
 
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFindTechnician } from "../../../hooks/useFindTechnician.jsx";
 import {
@@ -20,18 +20,28 @@ import {
   ChevronDown,
   Wrench,
   Locate,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import MapDisplay from "../../../components/findTechnician/MapDisplay.jsx";
 import AddHomeModal from "../home/AddHome.jsx";
 import EditHomeModal from "../home/EditHomePage.jsx";
+import TechnicianDetailModal from "../../../components/client/TechnicianDetailModal.jsx";
 
 export function FindTechnicianPage({ loggedInUser }) {
   const { t } = useTranslation();
+  const [technicianDetailModalVisible, setTechnicianDetailModalVisible] = useState(false);
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState(null);
+  
   const handleHomeAddedSuccess = () => {
     toast.success(t("success.home_added"));
     reloadHomeData();
     setIsAddHomeModalOpen(false);
+  };
+  
+  const handleViewTechnicianDetails = (technicianId) => {
+    setSelectedTechnicianId(technicianId);
+    setTechnicianDetailModalVisible(true);
   };
   const {
     homes,
@@ -580,14 +590,30 @@ export function FindTechnicianPage({ loggedInUser }) {
                     </div>
                   </div>
                 </div>
-                <button className="text-sm px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-sm w-full sm:w-auto">
-                  {t("ui.select_technician")}
-                </button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button 
+                    onClick={() => handleViewTechnicianDetails(tech.id)}
+                    className="text-sm px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-all shadow-sm flex items-center gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    {t("ui.view_details", { defaultValue: "Xem chi tiết" })}
+                  </button>
+                  <button className="text-sm px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-sm flex-1 sm:flex-initial">
+                    {t("ui.select_technician")}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      {/* Technician Detail Modal */}
+      <TechnicianDetailModal
+        visible={technicianDetailModalVisible}
+        onClose={() => setTechnicianDetailModalVisible(false)}
+        technicianId={selectedTechnicianId}
+      />
 
       {/* Matching Overlay */}
       {isMatching && (
