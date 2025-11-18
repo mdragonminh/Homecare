@@ -2,26 +2,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus,
   Search,
-  Eye,
   Pencil,
   Trash2,
-  Home,
-  Filter,
+  Home, 
   MapPin,
-  User,
-  Building,
   ChevronLeft,
   ChevronRight,
-  Wrench,
-  Building2,
-  Map,
-  CheckCircle,
   Settings,
-  Bed,
-  Maximize,
   Loader2,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { homeApi } from "../../../services/homeApi";
 import AddAddressPage from "./AddHome";
@@ -49,112 +37,6 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-const homeTypes = ["apartment", "house", "villa", "condo"];
-
-const homeTypeLabels = {
-  all: "ui.all",
-  apartment: "ui.apartment",
-  house: "ui.house",
-  villa: "ui.villa",
-  condo: "ui.condo",
-};
-
-const homeTypeIcons = {
-  all: <Building className="w-4 h-4 text-current" />,
-  apartment: <Building2 className="w-4 h-4 text-current" />,
-  house: <Home className="w-4 h-4 text-current" />,
-  villa: <Map className="w-4 h-4 text-current" />,
-  condo: <Building className="w-4 h-4 text-current" />,
-};
-
-/**
- * FilterDropdown component
- */
-const FilterDropdown = ({
-  t,
-  filterType,
-  setFilterType,
-  homeTypeLabels,
-  homeTypeIcons,
-  className = "",
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const currentLabelKey = homeTypeLabels[filterType] || homeTypeLabels.all;
-  const currentLabel = t(currentLabelKey);
-
-  const toggleDropdown = () => setIsOpen(!isOpen);
-
-  const handleSelect = (type) => {
-    setFilterType(type);
-    setIsOpen(false);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        isOpen &&
-        event.target.closest(".filter-dropdown-container") === null
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
-
-  return (
-    <div className={`relative filter-dropdown-container ${className}`}>
-      <button
-        onClick={toggleDropdown}
-        className="flex items-center justify-between gap-3 px-4 py-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-sm w-full text-gray-700 h-12"
-      >
-        <span className="font-medium">{currentLabel}</span>
-        {isOpen ? (
-          <ChevronUp size={18} className="text-gray-600" />
-        ) : (
-          <ChevronDown size={18} className="text-gray-600" />
-        )}
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-full sm:w-48 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 transition-opacity duration-200">
-          <div
-            className="py-1"
-            role="menu"
-            aria-orientation="vertical"
-            aria-labelledby="options-menu"
-          >
-            {["all", ...homeTypes].map((type) => (
-              <button
-                key={type}
-                onClick={() => handleSelect(type)}
-                className={`flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 text-left hover:bg-gray-100 transition-colors ${
-                  type === filterType
-                    ? "bg-blue-50 text-blue-700 font-semibold"
-                    : ""
-                }`}
-                role="menuitem"
-              >
-                <div
-                  className={
-                    type === filterType ? "text-blue-600" : "text-gray-700"
-                  }
-                >
-                  {homeTypeIcons[type]}
-                </div>
-                {t(homeTypeLabels[type])}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 export default function HomeManagementPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -164,7 +46,6 @@ export default function HomeManagementPage() {
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all");
   const [homeToDelete, setHomeToDelete] = useState(null);
   const [homeToEdit, setHomeToEdit] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -177,7 +58,7 @@ export default function HomeManagementPage() {
   const abortControllerRef = useRef(null);
 
   const fetchHomes = useCallback(
-    async (page = 1, search = "", type = "all") => {
+    async (page = 1, search = "") => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -188,14 +69,15 @@ export default function HomeManagementPage() {
         setIsFetching(true);
         setError(null);
 
-        const res = await homeApi.getHomesOfCurrentUser(page, 6, search, type, {
+        // Bỏ tham số 'type' khỏi API call
+        const res = await homeApi.getHomesOfCurrentUser(page, 6, search, null, {
           signal: controller.signal,
         });
 
         if (res && res.success) {
           const mappedHomes = (res.data.items || []).map((item) => ({
             ...item,
-            type: item.type ? item.type.toLowerCase() : "house",
+            type: item.type ? item.type.toLowerCase() : "apartment", 
           }));
 
           setHomes(mappedHomes);
@@ -225,12 +107,12 @@ export default function HomeManagementPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchTerm, filterType]);
+  }, [debouncedSearchTerm]);
 
   useEffect(() => {
-    fetchHomes(currentPage, debouncedSearchTerm, filterType);
+    fetchHomes(currentPage, debouncedSearchTerm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, debouncedSearchTerm, filterType]);
+  }, [currentPage, debouncedSearchTerm]);
 
   const handleCloseAddModal = () => {
     setShowAddModal(false);
@@ -239,12 +121,12 @@ export default function HomeManagementPage() {
   const handleHomeAdded = () => {
     setShowAddModal(false);
     toast.success(t("success.home_added"));
-    fetchHomes(currentPage, debouncedSearchTerm, filterType);
+    fetchHomes(currentPage, debouncedSearchTerm);
   };
 
   const handleHomeEdited = () => {
     setHomeToEdit(null);
-    fetchHomes(currentPage, debouncedSearchTerm, filterType);
+    fetchHomes(currentPage, debouncedSearchTerm);
   };
 
   const handleDelete = async () => {
@@ -255,7 +137,7 @@ export default function HomeManagementPage() {
         toast.success(t("success.home_deleted"));
         const nextPage =
           currentPage > 1 && homes.length === 1 ? currentPage - 1 : currentPage;
-        fetchHomes(nextPage, debouncedSearchTerm, filterType);
+        fetchHomes(nextPage, debouncedSearchTerm);
       } else {
         toast.error(res.message || t("error.delete_failed"));
       }
@@ -339,7 +221,7 @@ export default function HomeManagementPage() {
     );
   };
 
-  // Error Panel (GIỮ NGUYÊN MÀU XANH CHO NÚT TRY AGAIN)
+  // Error Panel
   if (error && !homeToDelete) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-blue-50">
@@ -353,7 +235,7 @@ export default function HomeManagementPage() {
             onClick={() => {
               setError(null);
               setCurrentPage(1);
-              fetchHomes(1, debouncedSearchTerm, filterType);
+              fetchHomes(1, debouncedSearchTerm);
             }}
             className="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:shadow-lg hover:shadow-blue-600/50 transition-all"
           >
@@ -375,7 +257,6 @@ export default function HomeManagementPage() {
           >
             <ChevronLeft size={20} />
           </button>
-          {/* TIÊU ĐỀ ĐÃ CHỈNH SỬA KÍCH THƯỚC */}
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-3 ml-4">
             {t("ui.home_management")}
           </h1>
@@ -388,6 +269,7 @@ export default function HomeManagementPage() {
             </span>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:flex-1 items-center">
+            {/* SEARCH INPUT */}
             <div className="relative flex-grow w-full sm:w-auto">
               <div className="absolute left-4 top-1/2 -translate-y-1/2">
                 <Search className="text-gray-400" size={22} />
@@ -399,18 +281,11 @@ export default function HomeManagementPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <FilterDropdown
-              t={t}
-              filterType={filterType}
-              setFilterType={setFilterType}
-              homeTypeLabels={homeTypeLabels}
-              homeTypeIcons={homeTypeIcons}
-              className="w-full sm:w-48 flex-shrink-0"
-            />
 
+            {/* ADD NEW BUTTON */}
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold shadow-md h-12 w-full sm:w-36"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold shadow-md h-12 w-full sm:w-36 flex-shrink-0"
             >
               <Plus size={20} />
               <span>{t("ui.add_new")}</span>
@@ -427,25 +302,27 @@ export default function HomeManagementPage() {
           )}
 
           {initialLoading && isFetching ? (
+            /* LOADING SKELETON */
             <div className="divide-y divide-gray-100">
               {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
                   className="animate-pulse p-6 flex justify-between items-start gap-4"
                 >
+                  {/* ... (Skeleton unchanged) ... */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="h-6 bg-gray-200 rounded w-48"></div>
-                      <div className="h-4 bg-gray-200 rounded w-20"></div>
+                      <div className="w-10 h-10 bg-gray-200 rounded-xl flex-shrink-0"></div> {/* Icon placeholder */}
+                      <div className="h-6 bg-gray-200 rounded w-48"></div> {/* Name placeholder */}
                     </div>
-                    <div className="h-4 bg-gray-200 rounded w-full max-w-lg mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-full max-w-lg mb-2 ml-14"></div> {/* Address placeholder */}
                   </div>
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <div className="w-32 h-9 bg-gray-200 rounded-xl"></div>
                     <div className="flex gap-4">
-                      <div className="w-16 h-4 bg-gray-200 rounded"></div>
+                      <div className="w-12 h-4 bg-gray-200 rounded"></div>
                       <div className="w-12 h-4 bg-gray-200 rounded"></div>
                     </div>
-                    <div className="w-24 h-9 bg-gray-200 rounded-lg mt-2"></div>
                   </div>
                 </div>
               ))}
@@ -465,7 +342,6 @@ export default function HomeManagementPage() {
               <button
                 onClick={() => {
                   setSearchTerm("");
-                  setFilterType("all");
                 }}
                 className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm"
               >
@@ -473,36 +349,36 @@ export default function HomeManagementPage() {
               </button>
             </div>
           ) : (
-            /* RENDER HOME CARDS */
+            /* RENDER HOME CARDS (REDESIGNED) */
             <div className="divide-y divide-gray-100">
               {homes.map((home) => (
                 <div
                   key={home.id}
                   className="p-6 transition-all duration-200 hover:bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
                 >
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="text-xl font-bold text-gray-900 truncate">
+                  
+                  {/* HOME INFO BLOCK (Icon + Name + Address) */}
+                  <div className="flex items-start flex-1 min-w-0 gap-4">
+                    {/* PROMIMENT ICON */}
+                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0">
+                      <Home size={20} />
+                    </div>
+                    
+                    <div className="flex flex-col flex-1 min-w-0">
+                      {/* NAME */}
+                      <div className="text-xl font-bold text-gray-900 truncate leading-snug">
                         {home.name || t("ui.property_title")}
                       </div>
-
-                      <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full flex-shrink-0">
-                        {homeTypeIcons[home.type] || homeTypeIcons["house"]}
-                        {t(
-                          homeTypeLabels[home.type] || homeTypeLabels["house"]
-                        )}
+                      
+                      {/* ADDRESS */}
+                      <div className="flex items-start gap-2 text-sm text-gray-600 mt-2">
+                        <MapPin size={16} className="text-gray-400 flex-shrink-0 mt-0.5" />
+                        <span className="break-words font-medium">{home.address}</span>
                       </div>
-                    </div>
-
-                    <div className="flex items-start gap-2 text-base text-gray-700 mt-1">
-                      <MapPin
-                        size={16}
-                        className="text-gray-400 flex-shrink-0 mt-0.5"
-                      />
-                      <span className="break-words">{home.address}</span>
                     </div>
                   </div>
 
+                  {/* ACTION BUTTONS BLOCK */}
                   <div className="flex flex-col items-start sm:items-end gap-3 flex-shrink-0 w-full sm:w-auto mt-4 sm:mt-0">
                     <button
                       onClick={() => navigate(`/home-items/${home.id}`)}

@@ -183,5 +183,43 @@ namespace HSP.DAL.Repositories
         {
             return await _userManager.ChangeEmailAsync(user, newEmail, token);
         }
+
+        public async Task AddRefreshTokenAsync(Guid userId, string token, DateTime expires)
+        {
+            var entity = new RefreshToken
+            {
+                UserId = userId,
+                Token = token,
+                Expires = expires,
+                IsRevoked = false
+            };
+
+            await _context.RefreshTokens.AddAsync(entity);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<RefreshToken?> GetRefreshTokenAsync(string token)
+        {
+            return await _context.RefreshTokens
+                .FirstOrDefaultAsync(x => x.Token == token && !x.IsRevoked);
+        }
+
+        public async Task RevokeRefreshTokenAsync(string token)
+        {
+            var entity = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.Token == token);
+
+            if (entity != null)
+            {
+                entity.IsRevoked = true;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task RemoveAllTokensForUserAsync(Guid userId)
+        {
+            var tokens = _context.RefreshTokens.Where(x => x.UserId == userId);
+            _context.RefreshTokens.RemoveRange(tokens);
+            await _context.SaveChangesAsync();
+        }
     }
 }

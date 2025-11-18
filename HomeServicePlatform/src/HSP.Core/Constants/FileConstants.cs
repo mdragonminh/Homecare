@@ -4,7 +4,7 @@
 	{
 		public static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png" };
 		public static readonly string[] AllowedDocumentExtensions = { ".pdf" };
-		public const long MaxFileSize = 10 * 1024 * 1024; 
+		public const long MaxFileSize = 5 * 1024 * 1024; 
 		public const string UploadRoot = "uploads";
 		public const string Avatar = "avatar";
 		public const string TechnicianCertificate = "certificate";

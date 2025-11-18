@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HSP.Core.Entities
 {
-	[Table("AppUsers")]
+	[Table("Users")]
 	public class AppUser : IdentityUser<Guid>, IDateTracking, IUserTracking
 	{
 		[Required]

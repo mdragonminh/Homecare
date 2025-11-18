@@ -43,7 +43,6 @@ namespace HSP.Service.Implementations.Internal
 		{
 			var query = _bookingRepository.GetAll(
 					b => b.Customer
-					//b => b.Service
 			);
 
 			// Apply filters
@@ -52,7 +51,6 @@ namespace HSP.Service.Implementations.Internal
 				query = query.Where(b =>
 						(b.Customer != null && b.Customer.UserName != null &&
 						 b.Customer.UserName.Contains(input.SearchTerm)) ||
-						//b.Service.Name.Contains(input.SearchTerm) ||
 						(b.ProblemDescription != null && b.ProblemDescription.Contains(input.SearchTerm)));
 			}
 
@@ -92,7 +90,6 @@ namespace HSP.Service.Implementations.Internal
                 Id = b.Id,
                 CustomerProfileId = b.CustomerId,
                 TechnicianId = b.TechnicianId,
-                //ServiceId = b.ServiceId,
                 DesiredDate = b.DesiredDate.Value,
                 ProblemDescription = b.ProblemDescription,
                 Status = b.Status,
@@ -113,12 +110,6 @@ namespace HSP.Service.Implementations.Internal
                     Email = b.Technician.User != null ? b.Technician.User.Email : null,
                     PhoneNumber = b.Technician.User != null ? b.Technician.User.PhoneNumber : null
                 } : null,
-                //Service = new HSP.Core.Dtos.ServiceDto.HomeServiceDto
-                //{
-                //	//Id = b.Service.Id,
-                //	//Name = b.Service.Name,
-                //	//BasePrice = b.Service.BasePrice
-                //},
                 Feedback = b.Feedback != null ? new BookingFeedbackResponseDto
                 {
                     BookingId = b.Feedback.BookingId,
@@ -147,7 +138,6 @@ namespace HSP.Service.Implementations.Internal
 		var booking = await _bookingRepository.GetAll(
 				b => b.Customer,
                 b => b.Payments
-        //b => b.Service
         ).FirstOrDefaultAsync(b => b.Id == bookingId);
 
 		if (booking == null)
@@ -174,7 +164,6 @@ namespace HSP.Service.Implementations.Internal
 			Id = booking.Id,
 			CustomerProfileId = booking.CustomerId,
 			TechnicianId = booking.TechnicianId,
-			//ServiceId = booking.ServiceId,
 			DesiredDate = booking.DesiredDate.Value,
 			ProblemDescription = booking.ProblemDescription,
 			Status = booking.Status,
@@ -187,8 +176,6 @@ namespace HSP.Service.Implementations.Internal
 			TechnicianName = technician?.User?.UserName,
 			TechnicianEmail = technician?.User?.Email,
 			TechnicianPhone = technician?.User?.PhoneNumber,
-			//ServiceName = booking.Service.Name,
-			//ServiceBasePrice = booking.Service.BasePrice,
 			Items = bookingItems.Select(i => new BookingItemDto
 			{
 				Id = i.Id,
@@ -324,7 +311,7 @@ namespace HSP.Service.Implementations.Internal
 			{
 				Booking = newBooking,
 				ServiceId = s.Id,
-				Price = 0, 
+				Price = s.Price, 
 			}).ToList();
 			await _bookingRepository.AddAsync(newBooking);
 			await _bookingItemRepository.AddRangeAsync(bookingItems);
