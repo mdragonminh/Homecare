@@ -1,4 +1,5 @@
-﻿using HSP.Core.Dtos.OcrDto;
+﻿using HSP.Core.Constants;
+using HSP.Core.Dtos.OcrDto;
 using HSP.Service.Interfaces;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -12,11 +13,8 @@ namespace HSP.Service.Implementations.External
 {
 	public class OcrService : IOcrService
 	{
-		private readonly TesseractEngine _engine;
-
-		public OcrService(TesseractEngine engine)
+        public OcrService()
 		{
-			_engine = engine;
 		}
         public async Task<CccdDataDto> ScanCccdAsync(byte[] imageData)
         {
@@ -34,7 +32,13 @@ namespace HSP.Service.Implementations.External
                 FullName = fullName
             };
         }
-
+        public async Task<string> ExtractTextAsync(byte[] imageData)
+        {
+            using var image = Image.Load<Rgba32>(imageData);
+            var preprocessed = Preprocess(image.Clone());
+            var text = await OcrFull(preprocessed);
+            return text;
+        }
         private Image<Rgba32> Preprocess(Image<Rgba32> img)
         {
             img.Mutate(x =>
@@ -48,16 +52,17 @@ namespace HSP.Service.Implementations.External
 
             return img;
         }
-
         private async Task<string> OcrFull(Image<Rgba32> img)
         {
             using var ms = new MemoryStream();
             await img.SaveAsPngAsync(ms);
-
             using var pix = Pix.LoadFromMemory(ms.ToArray());
-            _engine.DefaultPageSegMode = PageSegMode.Auto;
 
-            using var page = _engine.Process(pix);
+            using var engine = new TesseractEngine(Path.Combine(AppContext.BaseDirectory, OcrConstants.TesseractDataPath),
+                OcrConstants.TesseractLanguage, EngineMode.Default);
+            engine.DefaultPageSegMode = PageSegMode.Auto;
+
+            using var page = engine.Process(pix);
             string text = page.GetText() ?? string.Empty;
 
             text = text.Replace("\r", "");
@@ -65,13 +70,11 @@ namespace HSP.Service.Implementations.External
 
             return text.Trim();
         }
-
         private string ExtractIdNumber(string text)
         {
             var match = Regex.Match(text, @"\b\d{12}\b");
             return match.Success ? match.Value : "";
         }
-
         private string ExtractFullName(string rawText)
         {
             if (string.IsNullOrWhiteSpace(rawText))
@@ -103,7 +106,6 @@ namespace HSP.Service.Implementations.External
 
             return string.Empty;
         }
-
         private string ConvertToName(string line)
         {
             if (string.IsNullOrWhiteSpace(line))
@@ -122,7 +124,6 @@ namespace HSP.Service.Implementations.External
 
             return Regex.Replace(match.Value, @"\s+", " ").Trim();
         }
-
         private string RemoveDiacritics(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -139,14 +140,6 @@ namespace HSP.Service.Implementations.External
             }
 
             return sb.ToString().Normalize(NormalizationForm.FormC);
-        }
-
-        public async Task<string> ExtractTextAsync(byte[] imageData)
-        {
-            using var image = Image.Load<Rgba32>(imageData);
-            var preprocessed = Preprocess(image.Clone());
-            var text = await OcrFull(preprocessed);
-            return text;
         }
     }
 }

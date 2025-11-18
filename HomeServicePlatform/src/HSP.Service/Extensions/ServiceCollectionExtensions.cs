@@ -46,26 +46,6 @@ namespace HSP.Service.Extensions
 			services.AddScoped<IFeedbackService, FeedbackService>();
 			services.AddScoped<ISystemSettingService, SystemSettingService>();
 			services.AddHttpClient("SePay");
-			services.AddSingleton<TesseractEngine>(sp =>
-			{
-				var tessdataPath = Path.Combine(AppContext.BaseDirectory, "tessdata");
-
-				if (!Directory.Exists(tessdataPath))
-				{
-					throw new DirectoryNotFoundException($"Không tìm thấy thư mục 'tessdata' tại: {tessdataPath}. " +
-							"Hãy đảm bảo bạn đã tạo thư mục 'tessdata' trong HSP.API và set 'Copy if newer'.");
-				}
-
-				try
-				{
-					return new TesseractEngine(tessdataPath, "vie+eng", EngineMode.Default);
-				}
-				catch (TesseractException ex)
-				{
-					Console.WriteLine(ex.Message);
-					throw;
-				}
-			});
 			services.AddScoped<IOcrService, OcrService>();
 			return services;
 		}

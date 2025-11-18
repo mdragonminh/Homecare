@@ -513,14 +513,6 @@ namespace HSP.Service.Implementations.Internal
 
             return false;
         }
-
-        private async Task<byte[]> GetBytesAsync(IFormFile certFile)
-        {
-            using var ms = new MemoryStream();
-            await certFile.CopyToAsync(ms);
-            return ms.ToArray();
-        }
-
         private async Task<List<byte[]>> ConvertPdfToImagesIfNeeded(IFormFile file)
         {
             var result = new List<byte[]>();
@@ -554,6 +546,12 @@ namespace HSP.Service.Implementations.Internal
             }
 
             return result;
+        }
+        private async Task<byte[]> GetBytesAsync(IFormFile certFile)
+        {
+            using var ms = new MemoryStream();
+            await certFile.CopyToAsync(ms);
+            return ms.ToArray();
         }
 
         public async Task<bool> AddPasswordAsync(Guid userId, AddPasswordDto input)
