@@ -636,6 +636,9 @@ namespace HSP.Service.Test.Implementations.Internal
                 .ReturnsAsync(existingUser);
             _mockUserRepository.Setup(x => x.ConfirmEmailAsync(existingUser, token))
                 .ReturnsAsync(IdentityResult.Success);
+            _mockLocalizer
+                .Setup(x => x["ConfirmEmail_Success"])
+                .Returns(new LocalizedString("ConfirmEmail_Success", "Email confirmed"));
             var result = await _authenticationService.ConfirmEmail(userId, token);
             Assert.NotNull(result);
             Assert.IsType<ConfirmEmailResultDto>(result);
@@ -653,6 +656,9 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockUserRepository
                 .Setup(x => x.FindByIdAsync(userId))
                 .ReturnsAsync((AppUser?)null);
+            _mockLocalizer
+                .Setup(x => x["UserNotFound"])
+                .Returns(new LocalizedString("UserNotFound", "User not found"));
             var result = await _authenticationService.ConfirmEmail(userId, token);
             Assert.NotNull(result);
             Assert.IsType<ConfirmEmailResultDto>(result);
@@ -682,6 +688,9 @@ namespace HSP.Service.Test.Implementations.Internal
                     Code = "TokenExpired",
                     Description = "The token is invalid or has expired."
                 }));
+            _mockLocalizer
+                .Setup(x => x["ConfirmEmail_TokenExpired"])
+                .Returns(new LocalizedString("ConfirmEmail_TokenExpired", "Token expired"));
             var result = await _authenticationService.ConfirmEmail(userId, token);
             Assert.NotNull(result);
             Assert.IsType<ConfirmEmailResultDto>(result);
@@ -711,6 +720,9 @@ namespace HSP.Service.Test.Implementations.Internal
                     Code = "InvalidToken",
                     Description = "The token is invalid"
                 }));
+            _mockLocalizer
+                .Setup(x => x["ConfirmEmail_InvalidToken"])
+                .Returns(new LocalizedString("ConfirmEmail_InvalidToken", "Invalid token"));
             var result = await _authenticationService.ConfirmEmail(userId, token);
             Assert.NotNull(result);
             Assert.IsType<ConfirmEmailResultDto>(result);
@@ -742,6 +754,9 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockUserRepository
                     .Setup(x => x.ConfirmEmailAsync(existingUser, token))
                     .ReturnsAsync(IdentityResult.Failed(identityError));
+            _mockLocalizer
+                .Setup(x => x["ConfirmEmail_Failed"])
+                .Returns(new LocalizedString("ConfirmEmail_Failed", "Email confirmation failed"));
 
             var result = await _authenticationService.ConfirmEmail(userId, token);
 
