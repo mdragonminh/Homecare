@@ -260,8 +260,8 @@
     "getting_current_location": "Getting current location...",
     "preferred_time_label": "Preferred Time",
     "preferred_date_label": "Preferred Date",
-    "match_technician_button": "Request & Match Now"
-    
+    "match_technician_button": "Request & Match Now",
+    "setting_password": "Setting password..."
   },
   "form": {
     "label": {
@@ -341,7 +341,8 @@
     "password_strong": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character",
     "new_password_required": "Please enter new password",
     "address_required": "Please enter address",
-    "missing_booking_info_datetime": "Please enter address, select service, radius, date and time."
+    "missing_booking_info_datetime": "Please enter address, select service, radius, date and time.",
+    "password_format": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character"
   },
   "success": {
     "registration": "You have registered successfully. Please check your email to verify and log in.",

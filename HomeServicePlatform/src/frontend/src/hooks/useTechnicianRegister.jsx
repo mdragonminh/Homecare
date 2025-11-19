@@ -571,11 +571,6 @@ export default function useTechnicianRegister(loggedInUser) {
         "technician_register.validation.experience_required_error"
       );
     }
-    if (formData.specializations.length === 0) {
-      errors.specializations = t(
-        "technician_register.validation.specialization_required_error"
-      );
-    }
     if (!formData.avatarFile) {
       errors.avatarFile = t(
         "technician_register.validation.avatar_required_error"
