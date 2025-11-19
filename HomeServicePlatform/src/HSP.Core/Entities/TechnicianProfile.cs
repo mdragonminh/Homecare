@@ -14,7 +14,7 @@ namespace HSP.Core.Entities
 		public AppUser User { get; set; } = null!;
 		[Required]
 		[MaxLength(12)]
-		public string? CitizenId { get; set; }
+		public string CitizenId { get; set; } = null!;
 		[Range(-90, 90)]
 		public double Latitude { get; set; }
 		[Range(-180, 180)]

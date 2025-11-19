@@ -20,7 +20,6 @@ namespace HSP.Core.Entities
 		public Guid? CreatedBy { get; set; }
 		public Guid? ModifiedBy { get; set; }
 		public ICollection<TechnicianProfile> Technicians { get; set; } = new List<TechnicianProfile>();
-		public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 		public ICollection<BookingItem> BookingItems { get; set; } = new List<BookingItem>();
 	}
 }

@@ -28,6 +28,5 @@ namespace HSP.Core.Entities
 		public DateTime DateCreated { get; set; } = DateTime.UtcNow;
 		public DateTime DateModified { get; set; }
 		public ICollection<Home> Homes { get; set; } = new List<Home>();
-		public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 	}
 }
