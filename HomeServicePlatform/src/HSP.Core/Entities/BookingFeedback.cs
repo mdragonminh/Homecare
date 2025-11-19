@@ -1,10 +1,9 @@
-﻿using HSP.Core.Abstractions.Entity;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HSP.Core.Entities
 {
-	public class BookingFeedback : BaseEntity<Guid>
+	public class BookingFeedback 
     {
 		public Guid BookingId { get; set; }
 		[ForeignKey("BookingId")]
