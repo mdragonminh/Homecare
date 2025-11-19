@@ -208,7 +208,7 @@
     <value>Invalid phone number format</value>
   </data>
 	<data name="PhoneNumberMaxLength" xml:space="preserve">
-    <value>Phone number cannot exceed 20 characters</value>
+    <value>Phone number cannot exceed more than 10 numbers</value>
   </data>
 	<data name="EmailOrPhoneIsRequired" xml:space="preserve">
     <value>The Email or Phone Number field is required</value>

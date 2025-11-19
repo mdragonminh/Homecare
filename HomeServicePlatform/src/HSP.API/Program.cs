@@ -1,4 +1,5 @@
 ﻿using HSP.API.Extensions;
+using HSP.API.Hubs;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Resources;
@@ -8,107 +9,100 @@ using HSP.Service.Extensions;
 
 namespace HSP.API
 {
-	public class Program
-	{
-		public static async Task Main(string[] args)
-		{
-			var builder = WebApplication.CreateBuilder(args);
-			builder.Services.Configure<RequestLocalizationOptions>(options =>
-			{
-				var localizationSettings = builder.Configuration
-																					.GetSection("LocalizationSettings")
-																					.Get<LocalizationSettingsDto>();
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+            builder.Services.Configure<RequestLocalizationOptions>(options =>
+            {
+                var localizationSettings = builder.Configuration
+                                                                                    .GetSection("LocalizationSettings")
+                                                                                    .Get<LocalizationSettingsDto>();
 
-				if (localizationSettings != null && localizationSettings.SupportedCultures?.Length > 0)
-				{
-					options.SetDefaultCulture(localizationSettings.DefaultCulture);
-					options.AddSupportedCultures(localizationSettings.SupportedCultures);
-					options.AddSupportedUICultures(localizationSettings.SupportedCultures);
-				}
-			});
+                if (localizationSettings != null && localizationSettings.SupportedCultures?.Length > 0)
+                {
+                    options.SetDefaultCulture(localizationSettings.DefaultCulture);
+                    options.AddSupportedCultures(localizationSettings.SupportedCultures);
+                    options.AddSupportedUICultures(localizationSettings.SupportedCultures);
+                }
+            });
 
-			builder.Services.AddLocalization();
-			// Add services to the container.
-			builder.Services.AddControllers().AddDataAnnotationsLocalization(options =>
-			{
-				options.DataAnnotationLocalizerProvider = (type, factory) =>
-						factory.Create(typeof(SharedResource));
-			}); ;
-			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-			builder.Services.AddEndpointsApiExplorer();
-			builder.Services.AddSwaggerGen();
+            builder.Services.AddLocalization();
+            // Add services to the container.
+            builder.Services.AddControllers().AddDataAnnotationsLocalization(options =>
+            {
+                options.DataAnnotationLocalizerProvider = (type, factory) =>
+                        factory.Create(typeof(SharedResource));
+            }); ;
+            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
 
 
-			builder.Services.AddCors(options =>
-			{
-				options.AddPolicy(CorsConstants.AllowFrontendPolicy,
-						policy =>
-						{
-							policy.WithOrigins("http://localhost:5173")
-								.AllowAnyHeader()
-								.AllowAnyMethod()
-								.AllowCredentials();
-						});
-			});
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy(CorsConstants.AllowFrontendPolicy,
+                        policy =>
+                        {
+                            policy.WithOrigins("http://localhost:5173")
+                                .AllowAnyHeader()
+                                .AllowAnyMethod()
+                                .AllowCredentials();
+                        });
+            });
 
-		builder.Services.Configure<SmtpConfigurationDto>(builder.Configuration.GetSection("Smtp"));
-		builder.Services.Configure<JwtSettingsDto>(builder.Configuration.GetSection("JwtSettings"));
-		builder.Services.Configure<GoogleAuthConfigurationDto>(builder.Configuration.GetSection("Google"));
-		builder.Services.Configure<GoogleMapConfigurationDto>(builder.Configuration.GetSection("GoogleMaps"));
-		builder.Services.Configure<LocalizationSettingsDto>(builder.Configuration.GetSection("LocalizationSettings"));
-		builder.Services.Configure<UrlSettingsDto>(builder.Configuration.GetSection("UrlSettings"));
-			builder.Services.Configure<OpenAISettingsDto>(builder.Configuration.GetSection("OpenAI"));
-		builder.Services.Configure<SePayConfigurationDto>(builder.Configuration.GetSection("SePay"));
-		builder.Services.AddRazorTemplating();
-			builder.Services.AddStackExchangeRedisCache(options =>
-			{
-				options.Configuration = builder.Configuration.GetConnectionString("Redis");
-				options.InstanceName = "HSP_";
-			});
+            builder.Services.Configure<SmtpConfigurationDto>(builder.Configuration.GetSection("Smtp"));
+            builder.Services.Configure<JwtSettingsDto>(builder.Configuration.GetSection("JwtSettings"));
+            builder.Services.Configure<GoogleAuthConfigurationDto>(builder.Configuration.GetSection("Google"));
+            builder.Services.Configure<GoogleMapConfigurationDto>(builder.Configuration.GetSection("GoogleMaps"));
+            builder.Services.Configure<LocalizationSettingsDto>(builder.Configuration.GetSection("LocalizationSettings"));
+            builder.Services.Configure<UrlSettingsDto>(builder.Configuration.GetSection("UrlSettings"));
+            builder.Services.Configure<OpenAISettingsDto>(builder.Configuration.GetSection("OpenAI"));
+            builder.Services.Configure<SePayConfigurationDto>(builder.Configuration.GetSection("SePay"));
+            builder.Services.AddRazorTemplating();
+            builder.Services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = builder.Configuration.GetConnectionString("Redis");
+                options.InstanceName = "HSP_";
+            });
 
-			builder.Services.AddDALServices(builder.Configuration);
-			builder.Services.AddServiceServices();
-			builder.Services.AddUserAuthentication(builder.Configuration);
-			
-			// Add HttpClient for internal API calls
-			builder.Services.AddHttpClient();
+            builder.Services.AddDALServices(builder.Configuration);
+            builder.Services.AddServiceServices();
+            builder.Services.AddUserAuthentication(builder.Configuration);
 
-			var app = builder.Build();
+            builder.Services.AddSignalR();
 
-			// Configure the HTTP request pipeline.
-			if (app.Environment.IsDevelopment())
-			{
-				app.UseDeveloperExceptionPage();
-				app.UseSwagger();
-				app.UseSwaggerUI();
-			}
-			await using (var scope = app.Services.CreateAsyncScope())
-			{
-				var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-				await initializer.InitializeAsync();
-			}
+            var app = builder.Build();
 
-			if (!app.Environment.IsDevelopment())
-			{
-				app.UseHttpsRedirection();
-			}
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+            await using (var scope = app.Services.CreateAsyncScope())
+            {
+                var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
+                await initializer.InitializeAsync();
+            }
 
-			app.UseStaticFiles();
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseCors(CorsConstants.AllowFrontendPolicy);
+            app.UseWebSockets();
+            app.UseRequestLocalization();
+            app.UseAuthentication();
+            app.UseAuthorization();
 
-			app.UseRouting();
-			
-			app.UseCors(CorsConstants.AllowFrontendPolicy);
-			
-			app.UseWebSockets();
-
-			app.UseRequestLocalization();
-
-			app.UseAuthentication();
-			app.UseAuthorization();
-
-			app.MapControllers();
-
-			app.Run();
-		}
-	}
+            app.MapHub<ChatHub>("/hubs/chat");
+            app.MapControllers();
+            app.Run();
+        }
+    }
 }

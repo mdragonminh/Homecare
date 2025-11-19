@@ -147,6 +147,18 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Equal("Tech A", result.First().Name);
         }
         [Fact]
+        public async Task SearchNearbyTechniciansAsync_WhenAddressIsNull_ShouldThrow()
+        {
+            var input = new SearchTechnicianInput
+            {
+                Address = null,
+                MaxDistanceKm = 10
+            };
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => _serviceRequestService.SearchNearbyTechniciansAsync(input));
+        }
+        [Fact]
 		public async Task CreateAndMatchBookingAsync_WhenTechnicianAccepts_ShouldReturnMatchedResult()
 		{
 			var service = new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Điện lạnh" };

@@ -16,31 +16,30 @@ namespace HSP.API.Controllers
 		{
 			_fileService = fileService;
 		}
-		//[HttpPost("upload")]
-		//[RequestSizeLimit(20_000_000)] 
-		//public async Task<IActionResult> Upload([FromForm] FileUploadDto input)
-		//{
-		//	if (!ModelState.IsValid)
-		//		return BadRequest("không có file nào được upload");
+		[HttpPost("upload")]
+		public async Task<IActionResult> Upload(FileUploadDto input)
+		{
+			if (!ModelState.IsValid)
+				return BadRequest("không có file nào được upload");
 
-		//	try
-		//	{
-		//		var result = await _fileService.UploadAsync(input);
-		//		return Ok(result);
-		//	}
-		//	catch (ArgumentException ex)
-		//	{
-		//		return BadRequest(new { message = ex.Message });
-		//	}
-		//	catch (InvalidOperationException ex)
-		//	{
-		//		return BadRequest(new { message = ex.Message });
-		//	}
-		//	catch (Exception ex)
-		//	{
-		//		return StatusCode(500, ex.Message);
-		//	}
-		//}
+			try
+			{
+				var result = await _fileService.UploadAsync(input);
+				return Ok(result);
+			}
+			catch (ArgumentException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+		}
 		//[HttpPost("upload-many")]
 		//[RequestSizeLimit(50_000_000)] 
 		//public async Task<IActionResult> UploadMany([FromForm] List<IFormFile> files, [FromForm] Guid objectId, [FromForm] string objectTypeName)

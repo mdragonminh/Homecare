@@ -232,7 +232,7 @@ namespace HSP.Service.Implementations.Internal
         {
             try
             {
-                var emailRegex = new System.Text.RegularExpressions.Regex(@"^[^\s@]+@[^\s@]+\.[^\s@]+$");
+                var emailRegex = new Regex(@"^[\w\.\-+]+@([\w\-]+\.)+[\w\-]{2,}$");
                 return emailRegex.IsMatch(input);
             }
             catch
@@ -279,7 +279,8 @@ namespace HSP.Service.Implementations.Internal
         {
             if (input == null)
                 throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
-
+            if (!IsValidEmail(input.Email))
+                throw new ValidationException(_localizer["InvalidEmailFormat"]);
             if (input.Password != input.ConfirmPassword)
                 throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
 
@@ -295,7 +296,8 @@ namespace HSP.Service.Implementations.Internal
         {
             if (input == null)
                 throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
-
+            if (!IsValidEmail(input.Email))
+                throw new ValidationException(_localizer["InvalidEmailFormat"]);
             if (input.Password != input.ConfirmPassword)
                 throw new ValidationException(_localizer["PasswordsDoNotMatch"]);
 

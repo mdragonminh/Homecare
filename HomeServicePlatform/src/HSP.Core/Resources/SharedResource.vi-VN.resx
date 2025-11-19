@@ -208,7 +208,7 @@
     <value>Định dạng số điện thoại không hợp lệ</value>
   </data>
   <data name="PhoneNumberMaxLength" xml:space="preserve">
-    <value>Số điện thoại không được vượt quá 20 ký tự</value>
+    <value>Số điện thoại không được vượt quá 10 số</value>
   </data>
   <data name="EmailOrPhoneIsRequired" xml:space="preserve">
     <value>Trường Email hoặc Số điện thoại là bắt buộc</value>

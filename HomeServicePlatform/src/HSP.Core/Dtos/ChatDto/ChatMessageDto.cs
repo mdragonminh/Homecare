@@ -1,31 +1,45 @@
+using Microsoft.AspNetCore.Http;
+
 namespace HSP.Core.Dtos.ChatDto
 {
-	public class ChatMessageDto
-	{
-		public Guid Id { get; set; }
-		public Guid ConversationId { get; set; }
-		public Guid SenderId { get; set; }
-		public string SenderName { get; set; } = string.Empty;
-		public Guid ReceiverId { get; set; }
-		public string ReceiverName { get; set; } = string.Empty;
-		public string? Content { get; set; }
-		public List<ChatAttachmentDto> Attachments { get; set; } = new List<ChatAttachmentDto>();
-		public DateTime SentAt { get; set; }
-		public bool IsRead { get; set; }
-		public bool IsSentByCurrentUser { get; set; }
-	}
+    public class MessageResponseDto
+    {
+        public Guid Id { get; set; }
+        public string? Content { get; set; }
+        public Guid SenderId { get; set; }
+        public DateTime SentAt { get; set; }
+        public List<AttachmentCreateDto> Attachments { get; set; } = new();
+    }
+    public class AttachmentCreateDto
+    {
+        public string FileName { get; set; } = "";
+        public string FileUrl { get; set; } = "";
+        public long FileSize { get; set; }
+        public string? FileType { get; set; }
+    }
+    public class SendMessageRequestDto
+    {
+        public Guid ConversationId { get; set; }
+        public string? Content { get; set; }
+        public List<AttachmentCreateDto>? Attachments { get; set; }
+    }
 
-	public class SendChatMessageDto
+    public class MarkMessageReadDto
 	{
 		public Guid ConversationId { get; set; }
-		public Guid ReceiverId { get; set; }
-		public string? Content { get; set; }
-		public List<ChatAttachmentCreateDto>? Attachments { get; set; }
+		public Guid UserId { get; set; }
 	}
-
-	public class MarkMessageReadDto
-	{
-		public Guid ConversationId { get; set; }
-		public Guid MessageId { get; set; }
-	}
+    public class ConversationListDto
+    {
+        public Guid Id { get; set; }
+        public Guid CustomerId { get; set; }
+        public string? CustomerName { get; set; }
+        public Guid TechnicianId { get; set; }
+        public string? TechnicianName { get; set; }
+        public Guid? BookingId { get; set; }
+        public string? BookingDescription { get; set; }
+        public MessageResponseDto? LastMessage { get; set; }
+        public int UnreadCount { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
 }

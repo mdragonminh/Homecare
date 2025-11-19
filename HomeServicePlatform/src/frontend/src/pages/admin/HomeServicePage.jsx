@@ -221,7 +221,7 @@ export default function HomeServicePage() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 rounded-2xl shadow-sm border border-gray-200">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
         <div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-1">

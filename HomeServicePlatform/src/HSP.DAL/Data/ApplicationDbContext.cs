@@ -43,6 +43,7 @@ namespace HSP.DAL.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
             builder.Entity<AppUser>().ToTable("Users");
             builder.Entity<AppRole>().ToTable("Roles");
             builder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
@@ -52,83 +53,94 @@ namespace HSP.DAL.Data
             builder.Entity<IdentityRoleClaim<Guid>>().ToTable((string)null);
 
             builder.Entity<AppUser>()
-                    .HasIndex(u => u.NormalizedUserName).IsUnique();
+                   .HasIndex(u => u.NormalizedUserName).IsUnique();
             builder.Entity<AppUser>()
-                    .HasIndex(u => u.NormalizedEmail);
+                   .HasIndex(u => u.NormalizedEmail);
 
             builder.Entity<TechnicianProfile>()
-            .HasOne(p => p.User)
-            .WithOne(u => u.TechnicianProfile)
-            .HasForeignKey<TechnicianProfile>(p => p.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+                   .HasOne(p => p.User)
+                   .WithOne(u => u.TechnicianProfile)
+                   .HasForeignKey<TechnicianProfile>(p => p.UserId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
             builder.Entity<Home>()
-            .HasOne(h => h.CustomerProfile)
-            .WithMany(cp => cp.Homes)
-            .HasForeignKey(h => h.CustomerId)
-            .OnDelete(DeleteBehavior.Cascade);
+                   .HasOne(h => h.CustomerProfile)
+                   .WithMany(cp => cp.Homes)
+                   .HasForeignKey(h => h.CustomerId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
             builder.Entity<Home>()
-                .HasMany(h => h.HomeItems)
-                .WithOne(hi => hi.Home)
-                .HasForeignKey(hi => hi.HomeId)
-                .OnDelete(DeleteBehavior.Cascade);
+                   .HasMany(h => h.HomeItems)
+                   .WithOne(hi => hi.Home)
+                   .HasForeignKey(hi => hi.HomeId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
             builder.Entity<File>()
-                    .HasMany(f => f.FileRelations)
-                    .WithOne(fr => fr.File)
-                    .HasForeignKey(fr => fr.FileId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                   .HasMany(f => f.FileRelations)
+                   .WithOne(fr => fr.File)
+                   .HasForeignKey(fr => fr.FileId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
             builder.Entity<ObjectType>()
-                    .HasMany(ot => ot.FileRelations)
-                    .WithOne(fr => fr.ObjectType)
-                    .HasForeignKey(fr => fr.ObjectTypeId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                   .HasMany(ot => ot.FileRelations)
+                   .WithOne(fr => fr.ObjectType)
+                   .HasForeignKey(fr => fr.ObjectTypeId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<FileRelation>()
-                    .HasIndex(fr => new { fr.ObjectTypeId, fr.ObjectId });
+                   .HasIndex(fr => new { fr.ObjectTypeId, fr.ObjectId });
+
             builder.Entity<TechnicianProfile>()
-                    .HasMany(t => t.Services)
-                    .WithMany(s => s.Technicians)
-                    .UsingEntity(j => j.ToTable("TechnicianServices"));
+                   .HasMany(t => t.Services)
+                   .WithMany(s => s.Technicians)
+                   .UsingEntity(j => j.ToTable("TechnicianServices"));
+
             builder.Entity<Booking>(entity =>
             {
                 entity.HasOne(b => b.Customer)
-                            .WithMany()
-                            .HasForeignKey(b => b.CustomerId)
-                            .OnDelete(DeleteBehavior.Restrict);
+                      .WithMany()
+                      .HasForeignKey(b => b.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(b => b.Technician)
-                            .WithMany(t => t.Bookings)
-                            .HasForeignKey(b => b.TechnicianId)
-                            .OnDelete(DeleteBehavior.Restrict);
+                      .WithMany(t => t.Bookings)
+                      .HasForeignKey(b => b.TechnicianId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasMany(b => b.Items)
-                            .WithOne(i => i.Booking)
-                            .HasForeignKey(i => i.BookingId)
-                            .OnDelete(DeleteBehavior.Cascade);
+                      .WithOne(i => i.Booking)
+                      .HasForeignKey(i => i.BookingId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
+
             builder.Entity<BookingItem>()
-                    .HasOne(i => i.Service)
-                    .WithMany(s => s.BookingItems)
-                    .HasForeignKey(i => i.ServiceId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                   .HasOne(i => i.Service)
+                   .WithMany(s => s.BookingItems)
+                   .HasForeignKey(i => i.ServiceId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<BookingFeedback>()
-                    .HasKey(f => f.BookingId);
+                   .HasKey(f => f.BookingId);
             builder.Entity<BookingFeedback>()
-                    .HasOne(f => f.Booking)
-                    .WithOne(b => b.Feedback)
-                    .HasForeignKey<BookingFeedback>(f => f.BookingId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                   .HasOne(f => f.Booking)
+                   .WithOne(b => b.Feedback)
+                   .HasForeignKey<BookingFeedback>(f => f.BookingId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
             builder.Entity<BookingCancellation>()
-                    .HasKey(c => c.BookingId);
+                   .HasKey(c => c.BookingId);
             builder.Entity<BookingCancellation>()
-                    .HasOne(c => c.Booking)
-                    .WithOne(b => b.Cancellation)
-                    .HasForeignKey<BookingCancellation>(c => c.BookingId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                   .HasOne(c => c.Booking)
+                   .WithOne(b => b.Cancellation)
+                   .HasForeignKey<BookingCancellation>(c => c.BookingId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
             builder.Entity<Payment>(entity =>
             {
                 entity.HasOne(p => p.Booking)
-                    .WithMany(b => b.Payments)
-                    .HasForeignKey(p => p.BookingId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                      .WithMany(b => b.Payments)
+                      .HasForeignKey(p => p.BookingId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(p => p.BookingId);
                 entity.HasIndex(p => p.SePayOrderId);
@@ -136,99 +148,97 @@ namespace HSP.DAL.Data
                 entity.HasIndex(p => p.Status);
                 entity.HasIndex(p => p.DateCreated);
             });
+
             builder.Entity<Warehouse>()
-                    .HasMany(w => w.Equipments)
-                    .WithOne(e => e.Warehouse)
-                    .HasForeignKey(e => e.WarehouseId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                   .HasMany(w => w.Equipments)
+                   .WithOne(e => e.Warehouse)
+                   .HasForeignKey(e => e.WarehouseId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<Warehouse>()
-                .HasOne(w => w.Manager)
-                .WithMany()
-                .HasForeignKey(w => w.ManagerId)
-                .OnDelete(DeleteBehavior.Restrict);
+                   .HasOne(w => w.Manager)
+                   .WithMany()
+                   .HasForeignKey(w => w.ManagerId)
+                   .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Ticket>()
-                    .HasOne(t => t.Equipment)
-                    .WithMany()
-                    .HasForeignKey(t => t.EquipmentId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                   .HasOne(t => t.Equipment)
+                   .WithMany()
+                   .HasForeignKey(t => t.EquipmentId)
+                   .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Ticket>()
-                    .HasOne(t => t.Supporter)
-                    .WithMany()
-                    .HasForeignKey(t => t.SupporterId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                   .HasOne(t => t.Supporter)
+                   .WithMany()
+                   .HasForeignKey(t => t.SupporterId)
+                   .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Ticket>()
-                    .HasOne(t => t.Technician)
-                    .WithMany()
-                    .HasForeignKey(t => t.TechnicianId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            builder.Entity<SystemSetting>(entity =>
-            {
-                entity.HasIndex(s => s.Key).IsUnique();
-                entity.HasIndex(s => s.Group);
-                entity.HasIndex(s => new { s.Group, s.Key });
-            });
-            builder.Entity<AuditLog>(entity =>
-            {
-                entity.HasIndex(a => a.UserId);
-                entity.HasIndex(a => a.EntityType);
-                entity.HasIndex(a => a.Action);
-                entity.HasIndex(a => a.DateCreated);
-                entity.HasIndex(a => new { a.EntityType, a.EntityId });
-                entity.HasOne(a => a.User)
-                    .WithMany()
-                    .HasForeignKey(a => a.UserId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
+                   .HasOne(t => t.Technician)
+                   .WithMany()
+                   .HasForeignKey(t => t.TechnicianId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<SystemSetting>()
+                   .HasIndex(s => s.Key).IsUnique();
+            builder.Entity<SystemSetting>()
+                   .HasIndex(s => s.Group);
+            builder.Entity<SystemSetting>()
+                   .HasIndex(s => new { s.Group, s.Key });
+
+            builder.Entity<AuditLog>()
+                   .HasIndex(a => a.UserId);
+            builder.Entity<AuditLog>()
+                   .HasIndex(a => a.EntityType);
+            builder.Entity<AuditLog>()
+                   .HasIndex(a => a.Action);
+            builder.Entity<AuditLog>()
+                   .HasIndex(a => a.DateCreated);
+            builder.Entity<AuditLog>()
+                   .HasIndex(a => new { a.EntityType, a.EntityId });
+
+            builder.Entity<AuditLog>()
+                   .HasOne(a => a.User)
+                   .WithMany()
+                   .HasForeignKey(a => a.UserId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<ChatConversation>(entity =>
             {
                 entity.HasMany(c => c.Messages)
-                            .WithOne(m => m.Conversation)
-                            .HasForeignKey(m => m.ConversationId)
-                            .OnDelete(DeleteBehavior.Cascade);
+                      .WithOne(m => m.Conversation)
+                      .HasForeignKey(m => m.ConversationId)
+                      .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(c => c.Customer)
-                            .WithMany()
-                            .HasForeignKey(c => c.CustomerId)
-                            .OnDelete(DeleteBehavior.Restrict);
+                      .WithMany()
+                      .HasForeignKey(c => c.CustomerId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(c => c.Technician)
-                            .WithMany()
-                            .HasForeignKey(c => c.TechnicianId)
-                            .OnDelete(DeleteBehavior.Restrict);
+                      .WithMany()
+                      .HasForeignKey(c => c.TechnicianId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(c => c.Booking)
-                            .WithMany()
-                            .HasForeignKey(c => c.BookingId)
-                            .OnDelete(DeleteBehavior.SetNull);
-
-                entity.HasOne(c => c.LastMessage)
-                            .WithMany()
-                            .HasForeignKey(c => c.LastMessageId)
-                            .OnDelete(DeleteBehavior.Restrict);
-                entity.HasIndex(c => new { c.CustomerId, c.TechnicianId }).IsUnique();
+                      .WithMany()
+                      .HasForeignKey(c => c.BookingId)
+                      .OnDelete(DeleteBehavior.SetNull);
                 entity.HasIndex(c => c.CreatedAt);
+                entity.HasIndex(c => c.BookingId).IsUnique();
             });
 
             builder.Entity<ChatMessage>(entity =>
             {
                 entity.HasMany(m => m.Attachments)
-                            .WithOne(a => a.Message)
-                            .HasForeignKey(a => a.MessageId)
-                            .OnDelete(DeleteBehavior.Cascade);
+                      .WithOne(a => a.Message)
+                      .HasForeignKey(a => a.MessageId)
+                      .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(m => m.Sender)
-                            .WithMany()
-                            .HasForeignKey(m => m.SenderId)
-                            .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(m => m.Receiver)
-                            .WithMany()
-                            .HasForeignKey(m => m.ReceiverId)
-                            .OnDelete(DeleteBehavior.Restrict);
-
+                      .WithMany()
+                      .HasForeignKey(m => m.SenderId)
+                      .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(m => m.ConversationId);
                 entity.HasIndex(m => m.SenderId);
                 entity.HasIndex(m => m.SentAt);
@@ -237,12 +247,13 @@ namespace HSP.DAL.Data
             builder.Entity<ChatAttachment>(entity =>
             {
                 entity.HasOne(a => a.Message)
-                            .WithMany(m => m.Attachments)
-                            .HasForeignKey(a => a.MessageId)
-                            .OnDelete(DeleteBehavior.Cascade);
+                      .WithMany(m => m.Attachments)
+                      .HasForeignKey(a => a.MessageId)
+                      .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(a => a.MessageId);
             });
+
             builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
             builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
             builder.Entity<TechnicianProfile>().HasQueryFilter(tp => !tp.IsDeleted);

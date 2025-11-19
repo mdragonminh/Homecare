@@ -128,7 +128,7 @@ namespace HSP.Service.Implementations.Internal
 			var file = await _fileRepository.GetAll().FirstOrDefaultAsync(f => f.Id == fileId)
 					?? throw new Exception(_localizer["FileNotFound"]);
 
-			var fullPath = Path.Combine(_environment.WebRootPath ?? "wwwroot", file.FilePath.TrimStart('/'));
+			var fullPath = Path.Combine(_environment.WebRootPath, file.FilePath.TrimStart('/'));
 			if (System.IO.File.Exists(fullPath))
 				System.IO.File.Delete(fullPath);
 
