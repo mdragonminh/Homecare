@@ -12,16 +12,13 @@ namespace HSP.Service.Implementations.Internal
     public class FeedbackService : BaseService, IFeedbackService
     {
         private readonly IRepository<Booking, Guid> _bookingRepository;
-        private readonly IRepository<BookingFeedback, Guid> _feedbackRepository;
 
         public FeedbackService(
             IRepository<Booking, Guid> bookingRepository,
-            IRepository<BookingFeedback, Guid> feedbackRepository,
             IUnitOfWork unitOfWork,
             IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
         {
             _bookingRepository = bookingRepository;
-            _feedbackRepository = feedbackRepository;
         }
 
         public async Task<BookingFeedbackResponseDto> CreateFeedbackAsync(Guid bookingId, CreateFeedbackDto input, string userId)
@@ -53,13 +50,11 @@ namespace HSP.Service.Implementations.Internal
 
             var newFeedback = new BookingFeedback
             {
-                Id = Guid.NewGuid(),
                 BookingId = bookingId,
                 Rating = input.Rating,
                 Comment = input.Comment
             };
-
-            await _feedbackRepository.AddAsync(newFeedback);
+            booking.Feedback = newFeedback;
             await _unitOfWork.SaveChangesAsync(); 
 
             return new BookingFeedbackResponseDto
