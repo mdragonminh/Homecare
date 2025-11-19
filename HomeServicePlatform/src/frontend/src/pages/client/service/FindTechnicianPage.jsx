@@ -598,9 +598,9 @@ export function FindTechnicianPage({ loggedInUser }) {
                     <Eye className="h-4 w-4" />
                     {t("ui.view_details", { defaultValue: "Xem chi tiết" })}
                   </button>
-                  <button className="text-sm px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-sm flex-1 sm:flex-initial">
+                  {/* <button className="text-sm px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-sm flex-1 sm:flex-initial">
                     {t("ui.select_technician")}
-                  </button>
+                  </button> */}
                 </div>
               </li>
             ))}
