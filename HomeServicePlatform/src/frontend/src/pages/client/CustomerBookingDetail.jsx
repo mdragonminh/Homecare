@@ -87,7 +87,10 @@ export default function CustomerBookingDetail() {
 
   const paymentInfo = getPaymentInfo(booking.payments)
 
-  const canRateBooking = booking.status === BookingStatus.Completed && paymentInfo.isPaid && !booking.feedback
+  const canRateBooking = 
+    (booking.status === BookingStatus.Completed || booking.status === BookingStatus.Confirmed) 
+    && paymentInfo.isPaid 
+    && !booking.feedback
 
   const primaryPayment = booking.payments && booking.payments.length > 0 ? booking.payments[0] : null
 
@@ -115,7 +118,11 @@ export default function CustomerBookingDetail() {
                 <StarSolid className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900">Dịch vụ đã hoàn thành!</p>
+                <p className="font-semibold text-gray-900">
+                  {booking.status === BookingStatus.Completed 
+                    ? "Dịch vụ đã hoàn thành!" 
+                    : "Dịch vụ đã được xác nhận!"}
+                </p>                
                 <p className="text-sm text-gray-600">Hãy chia sẻ trải nghiệm của bạn</p>
               </div>
             </div>
