@@ -430,6 +430,60 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
+        public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenTokenPartsNotThree()
+        {
+            // Arrange
+            var userId = Guid.NewGuid().ToString();
+            string invalidToken = Convert.ToBase64String(Encoding.UTF8.GetBytes("only_two_parts"));
+
+            // Act
+            var result = await _service.ConfirmEmailChangeAsync(userId, invalidToken);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("Token không hợp lệ", result.Message);
+        }
+
+        [Fact]
+        public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenTokenUserIdDoesNotMatch()
+        {
+            // Arrange
+            var userId = Guid.NewGuid().ToString();
+            var wrongUserIdInToken = Guid.NewGuid().ToString();
+            string tokenString = $"{wrongUserIdInToken}:newemail@example.com:FAKE_TOKEN";
+            string base64Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(tokenString));
+
+            // Act
+            var result = await _service.ConfirmEmailChangeAsync(userId, base64Token);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("Token không khớp với người dùng", result.Message);
+        }
+
+        [Fact]
+        public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenUserIdInvalidGuid()
+        {
+            // Arrange
+            string invalidUserId = "not-a-guid";
+            string tokenString = $"{invalidUserId}:newemail@example.com:FAKE_TOKEN";
+            string base64Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(tokenString));
+
+            // Act
+            var result = await _service.ConfirmEmailChangeAsync(invalidUserId, base64Token);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("User ID không hợp lệ", result.Message);
+        }
+
+
+
+
+
+
+
+        [Fact]
         // Kiểm tra khi userId không hợp lệ (UpdateCustomerAsync)
         public async Task UpdateCustomerAsync_ShouldThrow_WhenInvalidUserId()
         {
@@ -551,7 +605,214 @@ namespace HSP.Service.Test.Implementations.Internal
 
         }
 
+        [Fact]
+        public async Task GetCustomersAsync_ShouldReturnEmpty_WhenCustomerRoleNotFound()
+        {
+            // Arrange
+            _roleManagerMock.Setup(r => r.FindByNameAsync("Customer"))
+                            .ReturnsAsync((AppRole?)null);
 
+            // Act
+            var result = await _service.GetCustomersAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result.Items);
+            Assert.Equal(0, result.TotalCount);
+        }
+
+        [Fact]
+        public async Task GetCustomersAsync_ShouldReturnPagedCustomers_WhenRoleExists()
+        {
+            // Arrange
+            var customerRole = new AppRole { Name = "Customer" };
+            _roleManagerMock.Setup(r => r.FindByNameAsync("Customer"))
+                            .ReturnsAsync(customerRole);
+
+            var user1 = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Nguyen Van A",
+                Email = "a@example.com",
+                PhoneNumber = "0123456789",
+                IsActive = true,
+                DateCreated = DateTime.UtcNow.AddDays(-2),
+                Homes = new List<Home> { new Home { Id = Guid.NewGuid(), IsDeleted = false } }
+            };
+            var user2 = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Nguyen Van B",
+                Email = "b@example.com",
+                PhoneNumber = "0987654321",
+                IsActive = true,
+                DateCreated = DateTime.UtcNow.AddDays(-1),
+                Homes = new List<Home>()
+            };
+
+            var users = new List<AppUser> { user1, user2 };
+            var usersMock = users.BuildMock();
+            _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(usersMock);
+
+            _userRepoMock.Setup(r => r.GetUsersInRoleAsync("Customer"))
+                         .ReturnsAsync(users);
+
+            // Mock GetUserAvatarUrlAsync
+            _fileRelRepoMock.Setup(r => r.GetAll()).Returns(new List<FileRelation>().BuildMock());
+            _objTypeRepoMock.Setup(r => r.GetAll()).Returns(new List<ObjectType>().BuildMock());
+
+            // Act
+            var result = await _service.GetCustomersAsync(pageNumber: 1, pageSize: 10);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.TotalCount);
+            Assert.Contains(result.Items, u => u.FullName == "Nguyen Van A");
+            Assert.Contains(result.Items, u => u.FullName == "Nguyen Van B");
+            Assert.Equal(1, result.Items.First(u => u.Id == user1.Id).TotalHomes);
+            Assert.Equal(0, result.Items.First(u => u.Id == user2.Id).TotalHomes);
+        }
+
+        //[Fact]
+        //public async Task GetCustomersAsync_ShouldFilterBySearchTerm()
+        //{
+        //    // Arrange
+        //    var customerRole = new AppRole { Name = "Customer" };
+        //    _roleManagerMock.Setup(r => r.FindByNameAsync("Customer")).ReturnsAsync(customerRole);
+
+        //    var user1 = new AppUser
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        FullName = "Nguyen Van A",
+        //        Email = "a@example.com",
+        //        PhoneNumber = "0123456789",
+        //        IsActive = true,
+        //        Homes = new List<Home>()
+        //    };
+        //    var user2 = new AppUser
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        FullName = "Le Thi B",
+        //        Email = "b@example.com",
+        //        PhoneNumber = "0987654321",
+        //        IsActive = true,
+        //        Homes = new List<Home>()
+        //    };
+
+        //    var allUsers = new List<AppUser> { user1, user2 };
+
+        //    // Build IQueryable mock hỗ trợ EF Core async
+        //    var usersMock = allUsers.BuildMock(); // BuildMock() của MockQueryable.Moq
+
+        //    _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(usersMock);
+
+        //    _userRepoMock.Setup(r => r.GetUsersInRoleAsync("Customer")).ReturnsAsync(allUsers);
+
+        //    // Act
+        //    var result = await _service.GetCustomersAsync(searchTerm: "Nguyen");
+
+        //    // Assert
+        //    Assert.Single(result.Items);
+        //    Assert.Equal("Nguyen Van A", result.Items[0].FullName);
+        //}
+
+
+
+
+        [Fact]
+        public async Task GetDebugInfoAsync_ShouldReturnError_WhenCustomerRoleNotFound()
+        {
+            // Arrange
+            _roleManagerMock.Setup(r => r.FindByNameAsync("Customer"))
+                            .ReturnsAsync((AppRole?)null);
+
+            // Act
+            var result = await _service.GetDebugInfoAsync();
+
+            // Assert
+            Assert.NotNull(result);
+
+            // Dùng reflection lấy giá trị các property
+            var resultType = result.GetType();
+            var error = resultType.GetProperty("Error")!.GetValue(result);
+            var totalCustomers = resultType.GetProperty("TotalCustomers")!.GetValue(result);
+            var customers = resultType.GetProperty("Customers")!.GetValue(result) as IEnumerable<object>;
+
+            Assert.Equal("Customer role not found", error);
+            Assert.Equal(0, totalCustomers);
+            Assert.NotNull(customers);
+            Assert.Empty(customers!);
+        }
+
+
+        [Fact]
+        public async Task GetDebugInfoAsync_ShouldReturnActiveCustomers_WhenRoleExists()
+        {
+            // Arrange
+            var customerRole = new AppRole { Name = "Customer" };
+            _roleManagerMock.Setup(r => r.FindByNameAsync("Customer")).ReturnsAsync(customerRole);
+
+            var activeUser = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Active User",
+                Email = "active@example.com",
+                IsActive = true,
+                DateCreated = DateTime.UtcNow
+            };
+            var inactiveUser = new AppUser
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Inactive User",
+                Email = "inactive@example.com",
+                IsActive = false,
+                DateCreated = DateTime.UtcNow
+            };
+
+            var allUsers = new List<AppUser> { activeUser, inactiveUser };
+            _userRepoMock.Setup(r => r.GetUsersInRoleAsync("Customer")).ReturnsAsync(allUsers);
+
+            // Act
+            var result = await _service.GetDebugInfoAsync();
+
+            // Assert using reflection
+            var resultType = result.GetType();
+            var totalCustomers = (int)resultType.GetProperty("TotalCustomers")!.GetValue(result)!;
+            var customers = (IEnumerable<object>)resultType.GetProperty("Customers")!.GetValue(result)!;
+
+            Assert.Equal(1, totalCustomers);
+            var customerList = customers.ToList();
+            Assert.Single(customerList);
+
+            var firstCustomer = customerList[0];
+            var firstCustomerType = firstCustomer.GetType();
+            var fullName = (string)firstCustomerType.GetProperty("FullName")!.GetValue(firstCustomer)!;
+
+            Assert.Equal("Active User", fullName);
+        }
+
+
+        [Fact]
+        public async Task GetDebugInfoAsync_ShouldReturnError_WhenExceptionThrown()
+        {
+            // Arrange
+            var exceptionMessage = "Test exception";
+            _roleManagerMock.Setup(r => r.FindByNameAsync("Customer"))
+                            .ThrowsAsync(new Exception(exceptionMessage));
+
+            // Act
+            var result = await _service.GetDebugInfoAsync();
+
+            // Assert using reflection
+            var resultType = result.GetType();
+            var error = (string)resultType.GetProperty("Error")!.GetValue(result)!;
+            var totalCustomers = (int)resultType.GetProperty("TotalCustomers")!.GetValue(result)!;
+            var customers = (IEnumerable<object>)resultType.GetProperty("Customers")!.GetValue(result)!;
+
+            Assert.Equal(exceptionMessage, error);
+            Assert.Equal(0, totalCustomers);
+            Assert.Empty(customers);
+        }
 
 
     }
