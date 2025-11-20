@@ -86,31 +86,43 @@ namespace HSP.Service.Implementations.Internal
         {
             var technician = await _technicianProfileRepository.GetAll()
                     .Include(x => x.User)
-                    .Include(x => x.Services) 
+                    .Include(x => x.Services)
                     .FirstOrDefaultAsync(x => x.Id == id);
 
             if (technician == null)
                 return null;
 
             var objectType = await _objectTypeRepository.GetAll()
-                .FirstOrDefaultAsync(x => x.Name == RoleNames.Technician); 
+                .FirstOrDefaultAsync(x => x.Name == RoleNames.Technician);
 
             List<TechnicianFileDto> certificateFiles = new List<TechnicianFileDto>();
+            TechnicianFileDto? legalFile = null;
+
             if (objectType != null)
             {
-                certificateFiles = await _fileRelationRepository.GetAll()
+                var allFiles = await _fileRelationRepository.GetAll()
                     .Include(fr => fr.File)
                     .Where(fr => fr.ObjectId == technician.Id &&
                                  fr.ObjectTypeId == objectType.Id &&
-                                 fr.RelationType == FileConstants.TechnicianCertificate) 
-                    .Select(fr => new TechnicianFileDto
-                    {
-                        Id = fr.File.Id,
-                        FileName = fr.File.FileName,
-                        FilePath = fr.File.FilePath, 
-                        FileType = fr.File.FileType
+                                 (fr.RelationType == FileConstants.TechnicianCertificate ||
+                                  fr.RelationType == FileConstants.LegalDocument))
+                    .Select(fr => new {
+                        Type = fr.RelationType,
+                        Dto = new TechnicianFileDto
+                        {
+                            Id = fr.File.Id,
+                            FileName = fr.File.FileName,
+                            FilePath = fr.File.FilePath,
+                            FileType = fr.File.FileType
+                        }
                     })
                     .ToListAsync();
+
+                certificateFiles = allFiles.Where(x => x.Type == FileConstants.TechnicianCertificate)
+                                           .Select(x => x.Dto).ToList();
+
+                legalFile = allFiles.Where(x => x.Type == FileConstants.LegalDocument)
+                                        .Select(x => x.Dto).FirstOrDefault();
             }
 
             return new TechnicianProfileResponseDto
@@ -129,7 +141,8 @@ namespace HSP.Service.Implementations.Internal
                 DateCreated = technician.DateCreated,
                 DateModified = technician.DateModified,
                 Services = technician.Services.Select(s => new TechnicianServiceDto { Id = s.Id, Name = s.Name }).ToList(),
-                CertificateFiles = certificateFiles
+                CertificateFiles = certificateFiles,
+                LegalDocument = legalFile 
             };
         }
 

@@ -19,6 +19,7 @@ namespace HSP.Core.Dtos.TechnicianProfileDto
         public DateTime DateModified { get; set; }
         public List<TechnicianServiceDto> Services { get; set; } = new List<TechnicianServiceDto>();
         public List<TechnicianFileDto> CertificateFiles { get; set; } = new List<TechnicianFileDto>();
+        public TechnicianFileDto? LegalDocument { get; set; }
     }
 
     public class TechnicianServiceDto
