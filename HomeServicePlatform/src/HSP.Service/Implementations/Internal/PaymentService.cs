@@ -307,6 +307,16 @@ namespace HSP.Service.Implementations.Internal
 			payment.DateModified = DateTime.UtcNow;
 
 			_paymentRepository.Update(payment);
+			
+			var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
+			if (booking != null && booking.Status != BookingStatus.Completed 
+			&& booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
+			{
+				booking.Status = BookingStatus.Completed;
+				booking.DateModified = DateTime.UtcNow;
+				_bookingRepository.Update(booking);
+			}
+			
 			await _unitOfWork.SaveChangesAsync();
 
 			return true;
@@ -357,6 +367,15 @@ namespace HSP.Service.Implementations.Internal
 				payment.PaidAt = DateTime.UtcNow;
 				payment.TransactionId = callback.TransactionRef;
 				payment.SePayTransactionRef = callback.TransactionRef;
+				
+				var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
+				if (booking != null && booking.Status != BookingStatus.Completed 
+			&& booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
+				{
+					booking.Status = BookingStatus.Completed;
+					booking.DateModified = DateTime.UtcNow;
+					_bookingRepository.Update(booking);
+				}
 			}
 			else if (callback.Status?.ToLower() == "failed")
 			{
@@ -395,6 +414,15 @@ namespace HSP.Service.Implementations.Internal
 			if (input.Status == PaymentStatus.Completed)
 			{
 				payment.PaidAt = DateTime.UtcNow;
+				
+				var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
+				if (booking != null && booking.Status != BookingStatus.Completed 
+			&& booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
+				{
+					booking.Status = BookingStatus.Completed;
+					booking.DateModified = DateTime.UtcNow;
+					_bookingRepository.Update(booking);
+				}
 			}
 
 			payment.DateModified = DateTime.UtcNow;
@@ -464,6 +492,16 @@ namespace HSP.Service.Implementations.Internal
 					payment.DateModified = DateTime.UtcNow;
 
 					_paymentRepository.Update(payment);
+					
+					var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
+					if (booking != null && booking.Status != BookingStatus.Completed 
+					&& booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
+					{
+						booking.Status = BookingStatus.Completed;
+						booking.DateModified = DateTime.UtcNow;
+						_bookingRepository.Update(booking);
+					}
+					
 					await _unitOfWork.SaveChangesAsync();
 				}
 			}
