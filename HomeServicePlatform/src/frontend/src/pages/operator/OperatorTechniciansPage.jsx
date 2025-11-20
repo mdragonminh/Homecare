@@ -115,25 +115,25 @@ export default function OperatorTechniciansPage() {
   }, [searchTerm, statusFilter, technicians]);
 
   const handleViewDetails = async (technician) => {
-  // Nếu cần thông tin chi tiết hơn, gọi API getTechnicianById
-  try {
-    const response = await technicianApi.getTechnicianById(technician.id);
-    if (response.success) {
-      // response.data đã là dữ liệu đầy đủ, chứa:
-      // { id, fullName, email, experienceYears, services: [...], certificateFiles: [...] }
-      setTechnicianDetail(response.data); // <-- CHỈ CẦN SET TRỰC TIẾP
-    } else {
-      message.error(response.message || "Không thể tải chi tiết");
+    // Nếu cần thông tin chi tiết hơn, gọi API getTechnicianById
+    try {
+      const response = await technicianApi.getTechnicianById(technician.id);
+      if (response.success) {
+        // response.data đã là dữ liệu đầy đủ, chứa:
+        // { id, fullName, email, experienceYears, services: [...], certificateFiles: [...] }
+        setTechnicianDetail(response.data); // <-- CHỈ CẦN SET TRỰC TIẾP
+      } else {
+        message.error(response.message || "Không thể tải chi tiết");
+        setTechnicianDetail(technician); // Fallback
+      }
+    } catch (error) {
+      console.error("Error getting technician details:", error);
+      message.error("Lỗi khi tải chi tiết kỹ thuật viên");
       setTechnicianDetail(technician); // Fallback
     }
-  } catch (error) {
-    console.error("Error getting technician details:", error);
-    message.error("Lỗi khi tải chi tiết kỹ thuật viên");
-    setTechnicianDetail(technician); // Fallback
-  }
-  // Force re-render by setting to false first then true
-  setDetailModalVisible(false);
-  setTimeout(() => setDetailModalVisible(true), 10);
+    // Force re-render by setting to false first then true
+    setDetailModalVisible(false);
+    setTimeout(() => setDetailModalVisible(true), 10);
   };
 
   const handleApprove = (technicianId) => {
@@ -177,14 +177,14 @@ export default function OperatorTechniciansPage() {
 
     try {
       setLoading(true);
-      
+
       const requestBody = {
         rejectionReason: rejectionReason.trim(),
       };
-      
+
       const response = await technicianApi.rejectTechnician(
         selectedTechnicianId,
-        requestBody 
+        requestBody
       );
 
       if (response.success) {
@@ -413,7 +413,7 @@ export default function OperatorTechniciansPage() {
                       <Tag
                         key={service.id}
                         color="blue"
-                        className="text-[13px] px-2 py-1" 
+                        className="text-[13px] px-2 py-1"
                       >
                         {service.name}
                       </Tag>
@@ -430,88 +430,167 @@ export default function OperatorTechniciansPage() {
                     Chứng chỉ
                   </div>
                   <div className="flex flex-col gap-2.5">
-                    {technicianDetail.certificateFiles.map(
-                      (file, index) => {
-                        return (
-                          <div
-                            key={file.id}
-                            className="flex items-center gap-3 px-4 py-3 border border-sky-100 rounded-lg bg-sky-50 transition-all duration-300 ease-in-out shadow-sm hover:bg-sky-100 hover:border-blue-500 hover:shadow-md hover:-translate-y-px"
-                          >
-                            <div
-                              className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center text-base shadow-md shadow-blue-500/30"
-                            >
-                              📜
-                            </div>
-                            <div className="flex-1">
-                              <div className="text-sm text-gray-800 font-medium mb-0.5">
-                                {file.fileName}
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                Chứng chỉ #{index + 1}
-                              </div>
-                            </div>
-                            <Space size={8}>
-                              <Button
-                                size="small"
-                                type="text"
-                                onClick={() => {
-                                  const previewUrl =
-                                    adminApi.previewFile(file.filePath);
-                                  window.open(previewUrl, "_blank");
-                                }}
-                                style={{
-                                  padding: "6px 12px",
-                                  height: "auto",
-                                  color: "#1890ff",
-                                  fontWeight: 500,
-                                  borderRadius: 6,
-                                  border: "1px solid #d9d9d9",
-                                }}
-                              >
-                                Xem
-                              </Button>
-                              <Button
-                                size="small"
-                                type="primary"
-                                onClick={async () => {
-                                  try {
-                                    const result = await adminApi.downloadFile(
-                                      file.filePath
-                                    );
-                                    if (result.success) {
-                                      toast.success("Tải xuống thành công!");
-                                    } else {
-                                      toast.error(
-                                        result.message || "Tải xuống thất bại!"
-                                      );
-                                    }
-                                  } catch (error) {
-                                    toast.error("Có lỗi xảy ra khi tải xuống!");
-                                  }
-                                }}
-                                style={{
-                                  padding: "6px 12px",
-                                  height: "auto",
-                                  fontSize: 12,
-                                  fontWeight: 500,
-                                  borderRadius: 6,
-                                  background:
-                                    "linear-gradient(135deg, #52c41a 0%, #73d13d 100%)",
-                                  border: "none",
-                                  boxShadow: "0 2px 4px rgba(82,196,26,0.3)",
-                                }}
-                              >
-                                Tải xuống
-                              </Button>
-                            </Space>
+                    {technicianDetail.certificateFiles.map((file, index) => {
+                      return (
+                        <div
+                          key={file.id}
+                          className="flex items-center gap-3 px-4 py-3 border border-sky-100 rounded-lg bg-sky-50 transition-all duration-300 ease-in-out shadow-sm hover:bg-sky-100 hover:border-blue-500 hover:shadow-md hover:-translate-y-px"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center text-base shadow-md shadow-blue-500/30">
+                            📜
                           </div>
-                        );
-                      }
-                    )}
+                          <div className="flex-1">
+                            <div className="text-sm text-gray-800 font-medium mb-0.5">
+                              {file.fileName}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              Chứng chỉ #{index + 1}
+                            </div>
+                          </div>
+                          <Space size={8}>
+                            <Button
+                              size="small"
+                              type="text"
+                              onClick={() => {
+                                const previewUrl = adminApi.previewFile(
+                                  file.filePath
+                                );
+                                window.open(previewUrl, "_blank");
+                              }}
+                              style={{
+                                padding: "6px 12px",
+                                height: "auto",
+                                color: "#1890ff",
+                                fontWeight: 500,
+                                borderRadius: 6,
+                                border: "1px solid #d9d9d9",
+                              }}
+                            >
+                              Xem
+                            </Button>
+                            <Button
+                              size="small"
+                              type="primary"
+                              onClick={async () => {
+                                try {
+                                  const result = await adminApi.downloadFile(
+                                    file.filePath
+                                  );
+                                  if (result.success) {
+                                    toast.success("Tải xuống thành công!");
+                                  } else {
+                                    toast.error(
+                                      result.message || "Tải xuống thất bại!"
+                                    );
+                                  }
+                                } catch (error) {
+                                  toast.error("Có lỗi xảy ra khi tải xuống!");
+                                }
+                              }}
+                              style={{
+                                padding: "6px 12px",
+                                height: "auto",
+                                fontSize: 12,
+                                fontWeight: 500,
+                                borderRadius: 6,
+                                background:
+                                  "linear-gradient(135deg, #52c41a 0%, #73d13d 100%)",
+                                border: "none",
+                                boxShadow: "0 2px 4px rgba(82,196,26,0.3)",
+                              }}
+                            >
+                              Tải xuống
+                            </Button>
+                          </Space>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
+            {/* Legal Document */}
+            {technicianDetail.legalDocument && (
+              <div className="mb-5">
+                <div className="text-sm mb-3 font-bold flex items-center gap-1.5">
+                  Giấy tờ pháp lý (CCCD/CMND)
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center gap-3 px-4 py-3 border border-purple-100 rounded-lg bg-purple-50 transition-all duration-300 ease-in-out shadow-sm hover:bg-purple-100 hover:border-purple-500 hover:shadow-md hover:-translate-y-px">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-purple-400 flex items-center justify-center text-base shadow-md shadow-purple-500/30">
+                      🆔
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-800 font-medium mb-0.5">
+                        {technicianDetail.legalDocument.fileName}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        Giấy tờ tùy thân
+                      </div>
+                    </div>
+
+                    <Space size={8}>
+                      <Button
+                        size="small"
+                        type="text"
+                        onClick={() => {
+                          // Gọi API Preview
+                          const previewUrl = adminApi.previewFile(
+                            technicianDetail.legalDocument.filePath
+                          );
+                          window.open(previewUrl, "_blank");
+                        }}
+                        style={{
+                          padding: "6px 12px",
+                          height: "auto",
+                          color: "#722ed1",
+                          fontWeight: 500,
+                          borderRadius: 6,
+                          border: "1px solid #d9d9d9",
+                        }}
+                      >
+                        Xem
+                      </Button>
+                      <Button
+                        size="small"
+                        type="primary"
+                        onClick={async () => {
+                          try {
+                            const result = await adminApi.downloadFile(
+                              technicianDetail.legalDocument.filePath
+                            );
+                            if (result.success) {
+                              toast.success("Tải xuống thành công!");
+                            } else {
+                              toast.error(
+                                result.message || "Tải xuống thất bại!"
+                              );
+                            }
+                          } catch (error) {
+                            toast.error("Có lỗi xảy ra khi tải xuống!");
+                          }
+                        }}
+                        style={{
+                          padding: "6px 12px",
+                          height: "auto",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          borderRadius: 6,
+                          background:
+                            "linear-gradient(135deg, #b37feb 0%, #722ed1 100%)", 
+                          border: "none",
+                          boxShadow: "0 2px 4px rgba(114, 46, 209, 0.3)",
+                        }}
+                      >
+                        Tải xuống
+                      </Button>
+                    </Space>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="mb-4">
               <strong>Trạng thái: </strong>
               <Tag
@@ -584,13 +663,14 @@ export default function OperatorTechniciansPage() {
             style={{ color: "#faad14", fontSize: 22 }}
           />
           <span>Bạn có chắc chắn muốn từ chối kỹ thuật viên này?</span>
-        </div><br></br>
+        </div>
+        <br></br>
         <Input.TextArea
-            rows={4}
-            placeholder="Nhập lý do từ chối"
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-          />
+          rows={4}
+          placeholder="Nhập lý do từ chối"
+          value={rejectionReason}
+          onChange={(e) => setRejectionReason(e.target.value)}
+        />
       </Modal>
     </div>
   );
