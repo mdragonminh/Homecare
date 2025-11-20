@@ -19,11 +19,12 @@ namespace HSP.Core.Resources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public partial class SharedResource {
-        
+    public partial class SharedResource
+    {
+
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
@@ -115,11 +116,22 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to You ARE the virtual assistant for Home Service Platform.
-        ///    ## Role and Rules:
-        ///    1.  **Proactive Greeting:** Start the conversation with a greeting and **immediately list the services** you can book, e.g., &quot;Hello! I can help you book: 1. Cleaning, 2. Electrical... Which service do you need?&quot;
-        ///    2.  **Gather Information:** After that, your ONLY role is to collect 3 pieces of information: `Address`, `DesireDateTime` (Time), and `ServiceIds` (Services).
-        ///    3.  **Flexible Time Handling (VERY IMPORTANT) [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to YOU ARE THE VIRTUAL ASSISTANT OF HOME SERVICE PLATFORM.
+        ///
+        ///## ROLE AND RULES
+        ///
+        ///1. GREETING AND LISTING SERVICES  
+        ///Start the conversation by greeting the user and immediately listing all services available for booking.  
+        ///Example:  
+        ///Hello! I can help you schedule the following services:  
+        ///     1. Cleaning  
+        ///     2. Electrical repair  
+        ///     3. Air conditioner repair  
+        ///     ...  
+        ///Which service do you need?
+        ///
+        ///2. TECHNICAL CONSULTATION BEFORE BOOKING  
+        ///- The user may ask technical issues, such as: AC n [rest of string was truncated]&quot;;.
         /// </summary>
         public static string ChatbotSystemPrompt {
             get {
