@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Eye,
@@ -36,11 +35,9 @@ export default function RegisterPage({
     agreeToTerms: false,
   });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState(""); 
+  const [validationErrors, setValidationErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
-
-  
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   // eslint-disable-next-line no-useless-escape
   const phoneRegex = /^[+]?[\s\d\-\(\)]*$/;
@@ -82,70 +79,82 @@ export default function RegisterPage({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    if (validationErrors[name] || validationErrors.form) {
+      setValidationErrors((prev) => ({ ...prev, [name]: "", form: "" }));
+    }
+    if (successMessage) {
+        setSuccessMessage("");
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
-
+    setValidationErrors({});
+    setSuccessMessage(""); 
+    let errors = {};
+    let formIsValid = true;
+    
     if (!formData.fullName) {
-      setMessage(t("validation.full_name_required"));
-      setMessageType("error");
-      return;
+      errors.fullName = t("validation.full_name_required");
+      formIsValid = false;
     }
     if (!formData.email) {
-      setMessage(t("validation.email_required"));
-      setMessageType("error");
-      return;
-    }
-    if (!emailRegex.test(formData.email)) {
-      setMessage(t("validation.email_invalid_format"));
-      setMessageType("error");
-      return;
+      errors.email = t("validation.email_required");
+      formIsValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      errors.email = t("validation.email_invalid_format");
+      formIsValid = false;
     }
     if (!formData.phoneNumber) {
-      setMessage(t("validation.phone_required"));
-      setMessageType("error");
-      return;
+      errors.phoneNumber = t("validation.phone_required");
+      formIsValid = false;
+    } else {
+      const cleanedPhone = formData.phoneNumber.replace(/\D/g, "");
+      const requiredLength = 10;
+
+      if (!phoneRegex.test(formData.phoneNumber)) {
+        errors.phoneNumber = t("validation.phone_invalid_format");
+        formIsValid = false;
+      } 
+      else if (cleanedPhone.length < requiredLength) {
+        errors.phoneNumber = t("validation.phone_too_short");
+        formIsValid = false;
+      } else if (cleanedPhone.length > requiredLength) {
+        errors.phoneNumber = t("validation.phone_too_long");
+        formIsValid = false;
+      }
     }
-    if (
-      !phoneRegex.test(formData.phoneNumber) ||
-      formData.phoneNumber.length < 8 ||
-      formData.phoneNumber.length > 20
-    ) {
-      setMessage(t("validation.phone_invalid_format"));
-      setMessageType("error");
-      return;
-    }
+
     if (!formData.password) {
-      setMessage(t("validation.password_required"));
-      setMessageType("error");
-      return;
+      errors.password = t("validation.password_required");
+      formIsValid = false;
     }
     if (!formData.confirmPassword) {
-      setMessage(t("validation.confirm_password_required"));
-      setMessageType("error");
-      return;
+      errors.confirmPassword = t("validation.confirm_password_required");
+      formIsValid = false;
     }
 
     const passwordError = validatePassword(formData.password);
     if (passwordError) {
-      setMessage(passwordError);
-      setMessageType("error");
-      return;
+      errors.password = passwordError;
+      formIsValid = false;
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      setMessage(t("validation.password_mismatch"));
-      setMessageType("error");
-      return;
+    if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = t("validation.password_mismatch");
+      formIsValid = false;
     }
 
     if (!formData.agreeToTerms) {
-      setMessage(t("validation.terms_required"));
-      setMessageType("error");
-      return;
+      errors.agreeToTerms = t("validation.terms_required");
+      formIsValid = false;
     }
+
+    if (!formIsValid) {
+        setValidationErrors(errors);
+        return;
+    }
+    // === END VALIDATION ===
 
     setLoading(true);
 
@@ -154,9 +163,8 @@ export default function RegisterPage({
       console.log("Register response:", res);
 
       if (res.success) {
-        setMessage(t("success.registration"));
-        setMessageType("success");
-
+        setSuccessMessage(t("success.registration")); 
+        
         setFormData({
           fullName: "",
           email: "",
@@ -166,13 +174,13 @@ export default function RegisterPage({
           userType: "",
           agreeToTerms: false,
         });
-
         setTimeout(() => {
           onSwitchToLogin();
         }, 2500);
       } else {
         const errorMessage = res.message?.toLowerCase() || "";
-        console.log("Error message from res:", errorMessage);
+        let errorKey = "fullName";
+
         if (
           errorMessage.includes("email") &&
           (errorMessage.includes("exist") ||
@@ -181,63 +189,68 @@ export default function RegisterPage({
             errorMessage.includes("đã tồn tại") ||
             errorMessage.includes("already exists"))
         ) {
-          setMessage(t("error.email_in_use"));
-          setMessageType("error");
+          errorKey = "email";
+          errors.email = t("error.email_in_use");
         } else if (
           errorMessage.includes("username") &&
           (errorMessage.includes("exist") ||
             errorMessage.includes("tồn tại") ||
             errorMessage.includes("đã tồn tại"))
         ) {
-          setMessage(t("error.username_in_use"));
-          setMessageType("error");
+          errorKey = "fullName"; 
+          errors.fullName = t("error.username_in_use");
         } else if (errorMessage.includes("user creation failed")) {
-          setMessage(t("error.user_creation_failed"));
-          setMessageType("error");
+          errors[errorKey] = t("error.user_creation_failed");
         } else {
-          setMessage(res.message || t("error.try_again"));
-          setMessageType("error");
+          // Lỗi chung (không rõ), hiển thị dưới FullName
+          errors[errorKey] = res.message || t("error.try_again");
         }
+        setValidationErrors(errors);
       }
     } catch (err) {
       console.error("Register error:", err);
       console.log("Error response status:", err.response?.status);
 
+      let serverErrorKey = "fullName";
+      let serverErrorMessage = t("error.network_connect_failed");
+
       if (err.response?.data?.message) {
-        const serverMessage = err.response.data.message.toLowerCase();
-        console.log("Server error message:", serverMessage);
+        const message = err.response.data.message.toLowerCase();
 
         if (
-          serverMessage.includes("email") &&
-          (serverMessage.includes("exist") ||
-            serverMessage.includes("already exist"))
+          message.includes("email") &&
+          (message.includes("exist") ||
+            message.includes("already exist"))
         ) {
-          setMessage(t("error.email_in_use"));
+          serverErrorKey = "email";
+          serverErrorMessage = t("error.email_in_use");
         } else if (
-          serverMessage.includes("username") &&
-          (serverMessage.includes("exist") ||
-            serverMessage.includes("tồn tại") ||
-            serverMessage.includes("đã tồn tại"))
+          message.includes("username") &&
+          (message.includes("exist") ||
+            message.includes("tồn tại") ||
+            message.includes("đã tồn tại"))
         ) {
-          setMessage(t("error.username_in_use"));
-        } else if (serverMessage.includes("user creation failed")) {
-          setMessage(t("error.user_creation_failed"));
+          serverErrorKey = "fullName"; 
+          serverErrorMessage = t("error.username_in_use");
+        } else if (message.includes("user creation failed")) {
+          serverErrorMessage = t("error.user_creation_failed");
         } else {
-          setMessage(err.response.data.message || t("error.try_again"));
+          serverErrorMessage = err.response.data.message || t("error.try_again");
         }
       } else if (err.response?.status === 400) {
-        setMessage(t("error.invalid_registration_info"));
+        serverErrorMessage = t("error.invalid_registration_info");
       } else if (err.response?.status === 500) {
-        setMessage(t("error.server_internal"));
+        serverErrorMessage = t("error.server_internal");
       } else {
-        setMessage(t("error.network_connect_failed"));
+        serverErrorMessage = t("error.network_connect_failed");
       }
-
-      setMessageType("error");
+      
+      setValidationErrors({ [serverErrorKey]: serverErrorMessage });
     } finally {
       setLoading(false);
     }
   };
+
 
   if (loggedInUser) {
     return (
@@ -261,6 +274,7 @@ export default function RegisterPage({
       </div>
 
       <div className="relative z-10 min-h-screen flex">
+        {/* Left Panel (Giữ nguyên) */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative z-10 flex flex-col justify-center px-12 py-16">
@@ -349,29 +363,13 @@ export default function RegisterPage({
               </div>
 
               <div className="px-8 pb-6 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100">
-                {message && (
-                  <div
-                    className={`mb-6 p-4 rounded-xl text-sm font-medium sticky top-0 z-10
-                      ${
-                        messageType === "success"
-                          ? "bg-green-50 text-green-700 border border-green-200"
-                          : ""
-                      }
-                      ${
-                        messageType === "warning"
-                          ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
-                          : ""
-                      }
-                      ${
-                        messageType === "error"
-                          ? "bg-red-50 text-red-700 border border-red-200"
-                          : ""
-                      }`}
-                  >
-                    {message}
+                {successMessage && (
+                  <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                      <p className="text-green-700 text-sm font-medium">{successMessage}</p>
                   </div>
                 )}
                 <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                  {/* FullName */}
                   <div className="space-y-1">
                     <label
                       htmlFor="fullName"
@@ -388,11 +386,19 @@ export default function RegisterPage({
                         placeholder={t("form.placeholder.fullname")}
                         value={formData.fullName}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className={`w-full pl-12 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
+                            validationErrors.fullName ? 'border-red-500 ring-red-200' : 'border-gray-200'
+                        }`}
                       />
                     </div>
+                    {validationErrors.fullName && (
+                        <p className="text-sm text-red-600 mt-1">
+                            {validationErrors.fullName}
+                        </p>
+                    )}
                   </div>
 
+                  {/* Email */}
                   <div className="space-y-1">
                     <label
                       htmlFor="email"
@@ -409,11 +415,19 @@ export default function RegisterPage({
                         placeholder={t("form.placeholder.email")}
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className={`w-full pl-12 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
+                            validationErrors.email ? 'border-red-500 ring-red-200' : 'border-gray-200'
+                        }`}
                       />
                     </div>
+                    {validationErrors.email && (
+                        <p className="text-sm text-red-600 mt-1">
+                            {validationErrors.email}
+                        </p>
+                    )}
                   </div>
 
+                  {/* Phone Number */}
                   <div className="space-y-1">
                     <label
                       htmlFor="phoneNumber"
@@ -430,11 +444,19 @@ export default function RegisterPage({
                         placeholder={t("form.placeholder.phone")}
                         value={formData.phoneNumber}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className={`w-full pl-12 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
+                            validationErrors.phoneNumber ? 'border-red-500 ring-red-200' : 'border-gray-200'
+                        }`}
                       />
                     </div>
+                    {validationErrors.phoneNumber && (
+                        <p className="text-sm text-red-600 mt-1">
+                            {validationErrors.phoneNumber}
+                        </p>
+                    )}
                   </div>
 
+                  {/* Password */}
                   <div className="space-y-1">
                     <label
                       htmlFor="password"
@@ -451,7 +473,9 @@ export default function RegisterPage({
                         placeholder={t("form.placeholder.password")}
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className={`w-full pl-12 pr-12 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
+                            validationErrors.password ? 'border-red-500 ring-red-200' : 'border-gray-200'
+                        }`}
                       />
                       <button
                         type="button"
@@ -465,11 +489,18 @@ export default function RegisterPage({
                         )}
                       </button>
                     </div>
-                    <p className="text-xs text-gray-500">
-                      {t("error.password_strength_hint")}
-                    </p>
+                    {validationErrors.password ? (
+                        <p className="text-sm text-red-600 mt-1">
+                            {validationErrors.password}
+                        </p>
+                    ) : (
+                        <p className="text-xs text-gray-500">
+                            {t("error.password_strength_hint")}
+                        </p>
+                    )}
                   </div>
 
+                  {/* Confirm Password */}
                   <div className="space-y-1">
                     <label
                       htmlFor="confirmPassword"
@@ -486,7 +517,9 @@ export default function RegisterPage({
                         placeholder={t("form.placeholder.confirm_password")}
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className={`w-full pl-12 pr-12 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
+                            validationErrors.confirmPassword ? 'border-red-500 ring-red-200' : 'border-gray-200'
+                        }`}
                       />
                       <button
                         type="button"
@@ -502,30 +535,45 @@ export default function RegisterPage({
                         )}
                       </button>
                     </div>
+                    {validationErrors.confirmPassword && (
+                        <p className="text-sm text-red-600 mt-1">
+                            {validationErrors.confirmPassword}
+                        </p>
+                    )}
                   </div>
 
-                  <div className="flex items-start space-x-3">
-                    <input
-                      id="agreeToTerms"
-                      name="agreeToTerms"
-                      type="checkbox"
-                      checked={formData.agreeToTerms}
-                      onChange={handleInputChange}
-                      className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    />
-                    <label
-                      htmlFor="agreeToTerms"
-                      className="text-sm font-medium text-gray-600 cursor-pointer"
-                    >
-                      {t("ui.i_agree_to")}{" "}
-                      <a href="#" className="text-blue-600 hover:underline">
-                        {t("ui.terms_of_service")}
-                      </a>{" "}
-                      {t("ui.and")}{" "}
-                      <a href="#" className="text-blue-600 hover:underline">
-                        {t("ui.privacy_policy")}
-                      </a>
-                    </label>
+                  {/* Terms and Conditions */}
+                  <div className="space-y-1">
+                      <div className="flex items-start space-x-3">
+                        <input
+                          id="agreeToTerms"
+                          name="agreeToTerms"
+                          type="checkbox"
+                          checked={formData.agreeToTerms}
+                          onChange={handleInputChange}
+                          className={`w-5 h-5 text-blue-600 border-2 rounded focus:ring-2 focus:ring-blue-500 ${
+                              validationErrors.agreeToTerms ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        <label
+                          htmlFor="agreeToTerms"
+                          className="text-sm font-medium text-gray-600 cursor-pointer"
+                        >
+                          {t("ui.i_agree_to")}{" "}
+                          <a href="#" className="text-blue-600 hover:underline">
+                            {t("ui.terms_of_service")}
+                          </a>{" "}
+                          {t("ui.and")}{" "}
+                          <a href="#" className="text-blue-600 hover:underline">
+                            {t("ui.privacy_policy")}
+                          </a>
+                        </label>
+                      </div>
+                      {validationErrors.agreeToTerms && (
+                          <p className="text-sm text-red-600 mt-1 pl-8">
+                              {validationErrors.agreeToTerms}
+                          </p>
+                      )}
                   </div>
 
                   <button

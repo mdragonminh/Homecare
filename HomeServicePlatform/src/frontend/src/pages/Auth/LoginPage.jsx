@@ -31,9 +31,10 @@ export function LoginPage({
     rememberMe: false,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState({});
   const navigate = useNavigate();
   const { t } = useTranslation();
+
   useEffect(() => {
     if (loggedInUser) {
       navigate("/");
@@ -46,43 +47,46 @@ export function LoginPage({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    if (validationErrors[name]) {
+      setValidationErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-  setError("");
+  setValidationErrors({}); 
   setLoading(true);
+  let errors = {};
+  let formIsValid = true;
 
-  // === VALIDATION FRONTEND ===
   if (!formData.emailOrPhone.trim()) {
-    setError(t("validation.email_or_phone_required"));
-    setLoading(false);
-    return;
-  }
+    errors.emailOrPhone = t("validation.email_or_phone_required");
+    formIsValid = false;
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[+]?[\s\d\-\(\)]*$/; 
+    const isValidEmail = emailRegex.test(formData.emailOrPhone);
+    const isValidPhone = phoneRegex.test(formData.emailOrPhone) && formData.emailOrPhone.replace(/\D/g, "").length >= 8;
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^[+]?[\s\d\-\(\)]*$/;
-  const isValidEmail = emailRegex.test(formData.emailOrPhone);
-  const isValidPhone = phoneRegex.test(formData.emailOrPhone) && formData.emailOrPhone.replace(/\D/g, "").length >= 8;
-
-  if (!isValidEmail && !isValidPhone) {
-    setError(t("validation.email_or_phone_invalid_format"));
-    setLoading(false);
-    return;
+    if (!isValidEmail && !isValidPhone) {
+      errors.emailOrPhone = t("validation.email_or_phone_invalid_format");
+      formIsValid = false;
+    }
   }
 
   if (!formData.password) {
-    setError(t("validation.password_required"));
+    errors.password = t("validation.password_required");
+    formIsValid = false;
+  }
+  if (!formIsValid) {
+    setValidationErrors(errors);
     setLoading(false);
     return;
   }
-  // === END VALIDATION ===
-
   try {
     const res = await authApi.login(formData);
 
     if (res.success) {
-      // ... login thành công (giữ nguyên)
       const { jwtToken } = res.data;
       const decoded = jwtDecode(jwtToken);
       const userId = decoded.sub || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
@@ -100,29 +104,33 @@ const handleSubmit = async (e) => {
         mustChangePasswordOnLogin: res.data.mustChangePasswordOnLogin,
       });
     } else {
+      let errorMessage = t("error.invalid_email_or_password"); 
       switch (res.errorType) {
         case "INVALID_EMAIL_FORMAT":
-          setError(t("error.invalid_email_format"));
+          errorMessage = t("error.invalid_email_format");
+         
+          setValidationErrors({ emailOrPhone: errorMessage });
           break;
         case "INVALID_PASSWORD":
-          setError(t("error.invalid_password"));
+          errorMessage = t("error.invalid_password");
+          setValidationErrors({ password: errorMessage });
           break;
-        case "EMAIL_NOT_CONFIRMED":
-          setError(t("error.account_not_activated"));
+       case "EMAIL_NOT_CONFIRMED":
+          errorMessage = t("error.email_not_confirmed"); // Cần thêm key này vào file i18n
+          setValidationErrors({ emailOrPhone: errorMessage });
           break;
         case "INVALID_CREDENTIALS":
         default:
-          setError(t("error.invalid_email_or_password"));
+          setValidationErrors({ emailOrPhone: errorMessage }); 
       }
     }
   } catch (err) {
     console.error("Login error:", err);
-    setError(t("error.network"));
+    setValidationErrors({ emailOrPhone: t("error.network") }); 
   } finally {
     setLoading(false);
   }
 };
-
   const handleGoogleLogin = () => {
     authApi.googleLogin();
   };
@@ -142,15 +150,13 @@ const handleSubmit = async (e) => {
       </div>
     );
   }
-
-  // --- JSX chỉ render khi chưa đăng nhập ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 relative">
       <div className="absolute top-4 right-4 z-20">
         <LanguageSwitcher />
       </div>
       <div className="relative z-10 min-h-screen flex">
-        {/* Left Panel */}
+        {/* Left Panel (Giữ nguyên) */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="relative z-10 flex flex-col justify-center px-12 py-16">
@@ -243,11 +249,6 @@ const handleSubmit = async (e) => {
               </div>
 
               <div className="px-8 pb-8">
-                {error && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                    <p className="text-red-600 text-sm font-medium">{error}</p>
-                  </div>
-                )}
                 <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                   {/* Email or Phone */}
                   <div className="space-y-2">
@@ -262,9 +263,17 @@ const handleSubmit = async (e) => {
                         value={formData.emailOrPhone}
                         onChange={handleInputChange}
                         placeholder={t("form.placeholder.email_or_phone")}
-                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-xl focus:ring focus:ring-blue-200"
+                        
+                        className={`w-full pl-12 pr-4 py-4 bg-gray-50 border rounded-xl focus:ring focus:ring-blue-200 ${
+                            validationErrors.emailOrPhone ? 'border-red-500 ring-red-200' : ''
+                        }`}
                       />
                     </div>
+                    {validationErrors.emailOrPhone && (
+                        <p className="text-sm text-red-600 mt-1">
+                            {validationErrors.emailOrPhone}
+                        </p>
+                    )}
                   </div>
 
                   {/* Password */}
@@ -280,7 +289,9 @@ const handleSubmit = async (e) => {
                         value={formData.password}
                         onChange={handleInputChange}
                         placeholder={t("form.placeholder.password")}
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border rounded-xl focus:ring focus:ring-blue-200"
+                        className={`w-full pl-12 pr-12 py-4 bg-gray-50 border rounded-xl focus:ring focus:ring-blue-200 ${
+                            validationErrors.password ? 'border-red-500 ring-red-200' : ''
+                        }`}
                       />
                       <button
                         type="button"
@@ -294,6 +305,11 @@ const handleSubmit = async (e) => {
                         )}
                       </button>
                     </div>
+                    {validationErrors.password && (
+                        <p className="text-sm text-red-600 mt-1">
+                            {validationErrors.password}
+                        </p>
+                    )}
                   </div>
 
                   {/* Remember & Forgot */}

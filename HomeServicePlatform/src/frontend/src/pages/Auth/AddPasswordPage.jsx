@@ -8,20 +8,18 @@ import { toast } from "sonner";
 export function AddPasswordPage({ onPasswordSetSuccess }) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
-
-  // Bảo vệ route
   useEffect(() => {
     const jwtToken = localStorage.getItem("jwtToken");
-    const requirePasswordSetup = localStorage.getItem("requirePasswordSetup") === "true";
-
-    console.log("AddPasswordPage - requirePasswordSetup:", requirePasswordSetup); 
-
+    const requirePasswordSetup =
+      localStorage.getItem("requirePasswordSetup") === "true";
     if (!jwtToken) {
       toast.error(t("error.please_login") || "Vui lòng đăng nhập trước");
       navigate("/login", { replace: true });
@@ -38,21 +36,34 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
     setError("");
     setSuccess(false);
     if (!newPassword.trim()) {
-      setError(t("validation.new_password_required") || "Mật khẩu mới không được để trống.");
+      setError(
+        t("validation.new_password_required") ||
+          "Mật khẩu mới không được để trống."
+      );
       return;
     }
     if (!confirmPassword.trim()) {
-      setError(t("validation.confirm_password_required") || "Xác nhận mật khẩu không được để trống.");
+      setError(
+        t("validation.confirm_password_required") ||
+          "Xác nhận mật khẩu không được để trống."
+      );
       return;
     }
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
     if (!passwordRegex.test(newPassword)) {
-      setError(t("validation.password_format") || "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ cái viết hoa và ký tự đặc biệt.");
+      setError(
+        t("validation.password_format") ||
+          "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ cái viết hoa và ký tự đặc biệt."
+      );
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError(t("validation.password_mismatch") || "Mật khẩu và xác nhận mật khẩu không khớp.");
+      setError(
+        t("validation.password_mismatch") ||
+          "Mật khẩu và xác nhận mật khẩu không khớp."
+      );
       return;
     }
 
@@ -63,7 +74,7 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
 
       if (res.success) {
         setSuccess(true);
-        localStorage.setItem("requirePasswordSetup", "false"); 
+        localStorage.setItem("requirePasswordSetup", "false");
         onPasswordSetSuccess && onPasswordSetSuccess();
         setTimeout(() => {
           navigate("/", { replace: true });
@@ -71,11 +82,17 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
       } else {
         const errors = res.validationErrors || {};
         const firstError = Object.values(errors)[0] || res.message;
-        setError(firstError || t("error.add_password_failed") || "Thêm mật khẩu thất bại.");
+        setError(
+          firstError ||
+            t("error.add_password_failed") ||
+            "Thêm mật khẩu thất bại."
+        );
       }
     } catch (err) {
       console.error("Lỗi thêm mật khẩu:", err);
-      setError(t("error.unexpected") || "Đã xảy ra lỗi bất ngờ. Vui lòng thử lại.");
+      setError(
+        t("error.unexpected") || "Đã xảy ra lỗi bất ngờ. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
     }
@@ -85,12 +102,32 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-green-50">
         <div className="p-8 bg-white rounded-3xl shadow-2xl text-center max-w-sm">
-          <svg className="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <svg
+            className="w-16 h-16 text-green-500 mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
           </svg>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("ui.password_set_success_title") || "Thiết lập mật khẩu thành công!"}</h2>
-          <p className="text-gray-600">{t("ui.password_set_success_message") || "Bạn đã có thể sử dụng mật khẩu này để đăng nhập."}</p>
-          <button onClick={() => navigate("/")} className="mt-4 text-blue-600 hover:underline">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            {t("ui.password_set_success_title") ||
+              "Thiết lập mật khẩu thành công!"}
+          </h2>
+          <p className="text-gray-600">
+            {t("ui.password_set_success_message") ||
+              "Bạn đã có thể sử dụng mật khẩu này để đăng nhập."}
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="mt-4 text-blue-600 hover:underline"
+          >
             {t("ui.go_to_home") || "Về trang chủ"}
           </button>
         </div>
@@ -105,8 +142,13 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
           <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg mb-6">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">{t("ui.set_password_title") || "Thiết lập Mật khẩu"}</h2>
-          <p className="text-gray-500 mb-8">{t("ui.set_password_subtitle") || "Vui lòng thêm mật khẩu để hoàn tất tạo tài khoản."}</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            {t("ui.set_password_title") || "Thiết lập Mật khẩu"}
+          </h2>
+          <p className="text-gray-500 mb-8">
+            {t("ui.set_password_subtitle") ||
+              "Vui lòng thêm mật khẩu để hoàn tất tạo tài khoản."}
+          </p>
         </div>
 
         <div className="px-8 pb-6 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100">
@@ -118,39 +160,63 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
 
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">{t("form.label.new_password") || "Mật khẩu mới"}</label>
+              <label className="block text-sm font-semibold text-gray-700">
+                {t("form.label.new_password") || "Mật khẩu mới"}
+              </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showNewPassword ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={t("form.placeholder.new_password") || "Nhập mật khẩu mới (ít nhất 8 ký tự)"}
+                  placeholder={
+                    t("form.placeholder.new_password") ||
+                    "Nhập mật khẩu mới (ít nhất 8 ký tự)"
+                  }
                   className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   required
                 />
                 <button
                   type="button"
                   className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowNewPassword(!showNewPassword)}
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showNewPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
-
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">{t("form.label.confirm_password") || "Xác nhận Mật khẩu"}</label>
+              <label className="block text-sm font-semibold text-gray-700">
+                {t("form.label.confirm_password") || "Xác nhận Mật khẩu"}
+              </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder={t("form.placeholder.confirm_password") || "Xác nhận lại mật khẩu"}
+                  placeholder={
+                    t("form.placeholder.confirm_password") ||
+                    "Xác nhận lại mật khẩu"
+                  }
                   className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   required
                 />
+                <button
+                  type="button"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -159,7 +225,9 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
               disabled={loading}
               className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-3 focus:ring-blue-500/20 transform hover:scale-[1.02] transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {loading ? (t("ui.setting_password") || "Đang thiết lập...") : (t("ui.set_password_button") || "Hoàn tất & Đăng nhập")}
+              {loading
+                ? t("ui.setting_password") || "Đang thiết lập..."
+                : t("ui.set_password_button") || "Hoàn tất & Đăng nhập"}
             </button>
           </form>
         </div>

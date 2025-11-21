@@ -23,8 +23,7 @@ import useTechnicianRegister, {
 import React from "react";
 const ErrorMessage = ({ error }) => {
   return error ? (
-    <p className="mt-1 text-sm text-red-600 flex items-center">
-      <X className="w-4 h-4 mr-1 flex-shrink-0" />
+    <p className="mt-1 text-sm text-red-600"> 
       {error}
     </p>
   ) : null;

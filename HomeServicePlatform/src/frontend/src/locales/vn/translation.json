@@ -337,7 +337,7 @@
     "password_min": "Tối thiểu 8 ký tự",
     "phone_required": "Vui lòng nhập số điện thoại",
     "phone_invalid": "Số điện thoại không hợp lệ. Vui lòng nhập 10-11 số",
-    "phone_invalid_format": "Định dạng số điện thoại không hợp lệ. Phải từ 8-20 ký tự và chỉ chứa số, +, -, (), khoảng trắng",
+    "phone_invalid_format": "Định dạng số điện thoại không hợp lệ. Vui lòng chỉ nhập chữ số",
     "phone_format": "Số điện thoại phải bắt đầu bằng 0 và có 10-11 chữ số",
     "full_name_length": "Họ và tên phải từ 1-100 ký tự",
     "phone_length": "Số điện thoại phải từ 10-11 chữ số",
@@ -345,7 +345,9 @@
     "new_password_required": "Vui lòng nhập mật khẩu mới",
     "address_required": "Vui lòng nhập địa chỉ",
     "missing_booking_info_datetime": "Vui lòng nhập địa chỉ, chọn dịch vụ, bán kính, ngày và giờ.",
-    "password_format": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
+    "password_format": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
+    "phone_too_long": "Số điện thoại tối đa 10 chữ số",
+    "phone_too_short": "Số điện thoại tối thiểu 10 chữ số"
   },
   "success": {
     "registration": "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để xác minh và đăng nhập.",
@@ -375,7 +377,7 @@
     "network_connect_failed": "Lỗi kết nối mạng, vui lòng thử lại.",
     "api_fallback": "Đã xảy ra lỗi từ API, vui lòng thử lại sau.",
     "invalid_request": "Yêu cầu không hợp lệ, vui lòng kiểm tra thông tin.",
-    "invalid_email_or_password": "Email hoặc mật khẩu không đúng.",
+    "invalid_email_or_password": "Email hoặc số điện thoại không đúng.",
     "account_not_activated": "Tài khoản của bạn chưa được kích hoạt.",
     "server_internal": "Lỗi máy chủ nội bộ (500), vui lòng thử lại sau.",
     "unknown": "Lỗi không xác định: {{status}}",
@@ -392,7 +394,8 @@
     "missing_home_id": "Thiếu ID địa chỉ để xem vật phẩm.",
     "add_item_unknown": "Lỗi không xác định khi thêm vật phẩm.",
     "invalid_email_format": "Email hoặc số điện thoại không đúng định dạng.",
-    "invalid_password": "Mật khẩu không đúng. Vui lòng thử lại."
+    "invalid_password": "Mật khẩu không đúng. Vui lòng thử lại.",
+    "email_not_confirmed": "Email chưa xác nhận. Bạn vui lòng xác nhận để đăng nhập."
   },
   "feature": {
     "professional_worker": {
@@ -669,7 +672,10 @@
       "password_strength_error": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.",
       "citizen_id_required": "Vui lòng nhập số CMND/CCCD.",
       "citizen_id_invalid": "Số CMND/CCCD phải có đúng 12 chữ số.",
-      "legal_document_required": "Vui lòng tải lên giấy tờ pháp lý."
+      "legal_document_required": "Vui lòng tải lên giấy tờ pháp lý.",
+      "phone_length_error": "Số điện thoại phải đủ 10 số.",
+      "phone_required_error": "Vui lòng nhập số điện thoại.",
+      "phone_must_be_digits": "Số điện thoại chỉ được chứa chữ số."
     },
     "citizen_id": {
       "title": "Giấy tờ tùy thân",

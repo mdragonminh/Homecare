@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { authApi } from "../../services/authApi";
@@ -17,19 +16,24 @@ export default function ResetPasswordPage() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState(""); 
+  const [messageType, setMessageType] = useState("");
   const [validationError, setValidationError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
- 
+
   const userId = searchParams.get("userId");
   const token = searchParams.get("token");
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
   useEffect(() => {
+    const existingToken = localStorage.getItem("jwtToken");
+    if (existingToken) {
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("refreshToken"); 
+    }
+    
     if (!userId || !token) {
-      console.log("Missing userId or token. Redirecting to /forgot-password");
       navigate("/forgot-password", { replace: true });
       return;
     }
@@ -111,6 +115,9 @@ export default function ResetPasswordPage() {
       if (res.success) {
         setMessage(res.message);
         setMessageType("success");
+        localStorage.removeItem("jwtToken"); 
+        localStorage.removeItem("refreshToken"); 
+
         setTimeout(() => {
           navigate("/login", { replace: true });
         }, 3000);

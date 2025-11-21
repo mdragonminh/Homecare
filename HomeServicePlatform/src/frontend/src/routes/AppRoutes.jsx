@@ -167,9 +167,7 @@ export default function AppRoutes({
       />
       <Route
         path="/reset-password"
-        element={
-          loggedInUser ? <Navigate to="/" replace /> : <ResetPasswordPage />
-        }
+       element={<ResetPasswordPage />}
       />
       <Route
         path="/google-callback"

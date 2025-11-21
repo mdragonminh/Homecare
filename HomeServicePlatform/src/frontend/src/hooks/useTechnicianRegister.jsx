@@ -534,8 +534,16 @@ export default function useTechnicianRegister(loggedInUser) {
     if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = t("technician_register.validation.email_invalid_error");
     }
-    if (!formData.phone.trim() || !/^\d{10,11}$/.test(formData.phone)) {
-      errors.phone = t("technician_register.validation.phone_invalid_error");
+    const phone = formData.phone.trim();
+    const phoneLength = phone.length;
+    if (!phone) {
+      errors.phone = t("technician_register.validation.phone_required_error");
+    } 
+    else if (!/^\d+$/.test(phone)) {
+      errors.phone = t("technician_register.validation.phone_must_be_digits");
+    } 
+    else if (phoneLength !== 10 && phoneLength !== 11) {
+      errors.phone = t("technician_register.validation.phone_length_error");
     }
     if (!formData.address) {
       errors.address = t(
@@ -585,15 +593,6 @@ export default function useTechnicianRegister(loggedInUser) {
     } else if (!citizenIdRegex.test(formData.citizenId.trim())) {
       errors.citizenId = t("technician_register.validation.citizen_id_invalid");
     }
-    const missingCertificates = formData.specializations.filter(
-      (serviceId) =>
-        !formData.serviceCertificates[serviceId] ||
-        formData.serviceCertificates[serviceId].length === 0
-    );
-    if (missingCertificates.length > 0) {
-      errors.certificate = missingCertificates;
-    }
-
     if (!formData.agreeToTerms) {
       errors.agreeToTerms = t(
         "technician_register.validation.agree_terms_required_error"
@@ -613,19 +612,6 @@ export default function useTechnicianRegister(loggedInUser) {
 
     if (!validateForm()) {
       toast.error(t("technician_register.validation.fill_required_fields"));
-      return;
-    }
-
-    if (
-      validationErrors.certificate &&
-      validationErrors.certificate.length > 0
-    ) {
-      const missingServices = validationErrors.certificate
-        .map((id) => services.find((s) => s.id === id)?.name || `Service ${id}`)
-        .join(", ");
-      toast.error(
-        `Vui lòng chọn ít nhất một chứng chỉ cho các dịch vụ: ${missingServices}`
-      );
       return;
     }
 

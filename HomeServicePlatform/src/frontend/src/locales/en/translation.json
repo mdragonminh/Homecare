@@ -334,7 +334,7 @@
     "password_min": "Minimum 8 characters",
     "phone_required": "Please enter phone number",
     "phone_invalid": "Invalid phone number. Please enter 10-11 digits",
-    "phone_invalid_format": "Invalid phone number format. Must be 8-20 characters and contain only numbers, +, -, (), spaces",
+    "phone_invalid_format": "Invalid phone number format. Please enter digits only",
     "phone_format": "Phone number must start with 0 and have 10-11 digits",
     "full_name_length": "Full name must be 1-100 characters",
     "phone_length": "Phone number must be 10-11 digits",
@@ -342,7 +342,9 @@
     "new_password_required": "Please enter new password",
     "address_required": "Please enter address",
     "missing_booking_info_datetime": "Please enter address, select service, radius, date and time.",
-    "password_format": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character"
+    "password_format": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character",
+    "phone_too_long": "Phone number must be at most 10 digits",
+    "phone_too_short": "Phone number must be at least 10 digits"
   },
   "success": {
     "registration": "You have registered successfully. Please check your email to verify and log in.",
@@ -372,7 +374,7 @@
     "network_connect_failed": "Server connection error, please check your network and try again.",
     "api_fallback": "An error occurred from the API, please try again later.",
     "invalid_request": "Invalid request, please check the information.",
-    "invalid_email_or_password": "Invalid email or password.",
+    "invalid_email_or_password": "Invalid email or phone number.",
     "account_not_activated": "Your account has not been activated.",
     "server_internal": "Internal server error (500), please try again later.",
     "unknown": "Unknown error: {{status}}",
@@ -389,7 +391,8 @@
     "missing_home_id": "Missing home ID to view items.",
     "add_item_unknown": "Unknown error while adding item.",
     "invalid_email_format": "Invalid email and phone number format.",
-    "invalid_password": "Invalid password. Please try again."
+    "invalid_password": "Invalid password. Please try again.",
+    "email_not_confirmed": "Email not confirmed. Please confirm to log in."
   },
   "feature": {
     "professional_worker": {
@@ -683,7 +686,10 @@
        "citizen_id_required": "Please enter your Citizen ID number",
       "citizen_id_invalid": "Citizen ID must be exactly 12 digits",
       "citizen_id_photo_required": "Please upload your Citizen ID photo",
-      "legal_document_required": "Please upload your legal document"
+      "legal_document_required": "Please upload your legal document",
+       "phone_length_error": "Phone number must be exactly 10 digits.",
+      "phone_required_error": "Please enter your phone number.",
+      "phone_must_be_digits": "Phone number must contain only digits."
     },
     "citizen_id": {
       "title": "Identification Documents",
