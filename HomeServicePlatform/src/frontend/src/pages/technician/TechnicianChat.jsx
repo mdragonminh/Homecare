@@ -100,7 +100,7 @@ export default function TechnicianChat() {
   const getOtherUserName = (c) =>
     c.technicianId?.toLowerCase() === currentUserId
       ? c.customerName
-      : c.technicianName;
+      : "unknown";
 
   return (
     <div className="flex h-screen bg-gray-100">

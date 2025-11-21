@@ -99,7 +99,7 @@ export default function CustomerChat() {
   const getChatName = (c) =>
     c.customerId?.toLowerCase() === currentUserId
       ? c.technicianName
-      : c.customerName;
+      : "unknown";
 
   return (
     <div className="flex h-screen bg-gray-100">

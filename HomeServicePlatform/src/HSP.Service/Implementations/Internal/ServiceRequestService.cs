@@ -83,7 +83,7 @@ namespace HSP.Service.Implementations.Internal
                     .Include(t => t.Bookings)
                     .Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
                     .Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
-                    .WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
+                    .Where(t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
                     .Where(t => !t.Bookings.Any(b =>
                     b.Status == BookingStatus.InProgress
                     || b.Status == BookingStatus.Pending
@@ -223,7 +223,7 @@ namespace HSP.Service.Implementations.Internal
                 .Include(x => x.User)
                 .Include(x => x.Bookings)
                 .Where(x => x.ApprovalStatus == TechnicianApprovalStatus.Approved)
-                .WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), x => x.Services.Any(s => input.ServiceIds.Contains(s.Id)))
+                .WhereIf(input.ServiceIds!= null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
                 .Where(x => !x.Bookings.Any(b =>
                     b.Status == BookingStatus.InProgress
                     || b.Status == BookingStatus.Pending

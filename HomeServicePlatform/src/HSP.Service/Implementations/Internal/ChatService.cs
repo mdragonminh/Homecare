@@ -83,7 +83,7 @@ namespace HSP.Service.Implementations.Internal
                     Id = c.Id,
                     CustomerId = c.CustomerId,
                     CustomerName = c.Customer.FullName,
-                    TechnicianId = c.TechnicianId,
+                    TechnicianId = c.Technician.UserId,
                     TechnicianName = c.Technician.User.FullName,
                     BookingId = c.BookingId,
                     BookingDescription = c.Booking?.ProblemDescription ?? "Không có mô tả",
