@@ -1,11 +1,13 @@
 ﻿using HSP.Core.Constants;
 using HSP.Core.Dtos.OcrDto;
+using HSP.Core.Interfaces.External;
 using HSP.Service.Interfaces;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Tesseract;
 
@@ -13,9 +15,11 @@ namespace HSP.Service.Implementations.External
 {
 	public class OcrService : IOcrService
 	{
-        public OcrService()
+        private readonly IChatbotService _chatbotService;
+        public OcrService(IChatbotService chatbotService)
 		{
-		}
+            _chatbotService = chatbotService;
+        }
         public async Task<CccdDataDto> ScanCccdAsync(byte[] imageData)
         {
             using var image = Image.Load<Rgba32>(imageData);
@@ -140,6 +144,60 @@ namespace HSP.Service.Implementations.External
             }
 
             return sb.ToString().Normalize(NormalizationForm.FormC);
+        }
+
+        public async Task<HomeItemDataDto> ScanHomeItemAsync(List<byte[]> filesBytes)
+        {
+            if (filesBytes == null || !filesBytes.Any())
+            {
+                return new HomeItemDataDto(); 
+            }
+            var ocrTasks = filesBytes.Select(file => ExtractTextAsync(file));
+            string[] ocrResults = await Task.WhenAll(ocrTasks);
+            string combinedOcrText = string.Join("\n --- HẾT ẢNH, SANG ẢNH KHÁC --- \n", ocrResults);
+            var dto = await AskGptForHomeItemDataAsync(combinedOcrText);
+            return dto;
+        }
+
+        private async Task<HomeItemDataDto> AskGptForHomeItemDataAsync(string ocrText)
+        {
+            if (string.IsNullOrWhiteSpace(ocrText))
+            {
+                return new HomeItemDataDto();
+            }
+            var prompt = $@"Nhiệm vụ của bạn là tổng hợp thông tin từ CÁC ĐOẠN VĂN BẢN OCR (từ nhiều ảnh khác nhau) dưới đây để điền vào JSON.
+                ### CẤU TRÚC JSON MỤC TIÊU:
+                {{
+                    ""Name"": ""Tên sản phẩm"",
+                    ""Brand"": ""Thương hiệu"",
+                    ""Type"": ""Loại sản phẩm"",
+                    ""ModelNumber"": ""Mã model (Tìm kỹ ở mọi đoạn văn bản)"",
+                    ""SerialNumber"": ""Số sê-ri (Thường nằm ở đoạn văn bản chứa tem kỹ thuật/mặt sau)""
+                }}
+                ### QUY TẮC QUAN TRỌNG:
+                1. Dữ liệu được ghép từ nhiều ảnh (phân cách bởi '--- HẾT ẢNH...'). Hãy tìm kiếm thông tin rải rác ở tất cả các phần.
+                2. Nếu ảnh 1 có Brand, ảnh 2 có Serial, hãy gộp chúng lại vào cùng 1 JSON kết quả.
+                3. Ưu tiên độ chính xác tuyệt đối cho Serial Number.
+                ### DỮ LIỆU OCR ĐẦU VÀO:
+                {ocrText}";
+            try
+            {
+                var response = await _chatbotService.GetChatResponseAsync(prompt);
+                response = response.Replace("```json", "").Replace("```", "").Trim();
+                var result = JsonSerializer.Deserialize<HomeItemDataDto>(response,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        ReadCommentHandling = JsonCommentHandling.Skip, 
+                        AllowTrailingCommas = true
+                    });
+
+                return result ?? new HomeItemDataDto();
+            }
+            catch
+            {
+                return new HomeItemDataDto();
+            }
         }
     }
 }
