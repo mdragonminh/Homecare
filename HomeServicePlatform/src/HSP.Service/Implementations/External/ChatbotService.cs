@@ -381,5 +381,16 @@ namespace HSP.Service.Implementations.External
 
             return false;
         }
+        public async Task<string> GetChatResponseAsync(string prompt)
+        {
+            var messages = new OpenAI.Chat.ChatMessage[]
+                {
+                        new SystemChatMessage("Bạn là AI chuyên xử lý ngôn ngữ tiếng Việt."),
+                        new UserChatMessage(prompt)
+                };
+
+            var completion = await _client.CompleteChatAsync(messages);
+            return completion.Value.Content[0].Text;
+        }
     }
 }

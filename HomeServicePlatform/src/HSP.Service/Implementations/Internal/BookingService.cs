@@ -308,7 +308,7 @@ namespace HSP.Service.Implementations.Internal
                 CustomerId = customer.Id,
                 TechnicianId = technician.Id,
                 DesiredDate = desiredDate,
-                DateCreated = DateTime.UtcNow,
+                DateCreated = DateTime.UtcNow, 
                 Status = BookingStatus.Confirmed
             };
             var bookingItems = services.Select(s => new BookingItem
