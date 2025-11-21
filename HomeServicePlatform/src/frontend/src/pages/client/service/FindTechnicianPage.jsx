@@ -164,7 +164,6 @@ export function FindTechnicianPage({ loggedInUser }) {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
-        {/* Left Column: Form - Giữ 1/2 và loại bỏ mx-auto */}
         <div className="lg:w-1/2 flex flex-col"> 
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4 flex-1">
             {/* Section Title */}
@@ -442,11 +441,7 @@ export function FindTechnicianPage({ loggedInUser }) {
                 />
               </div>
             )}
-
-            {/* Status Message */}
             {renderStatusMessage(statusMessage)}
-
-            {/* Action Buttons */}
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleFindTechnician}
@@ -490,12 +485,9 @@ export function FindTechnicianPage({ loggedInUser }) {
             </div>
           </div>
         </div>
-
-        {/* Right Column: Map - Giữ 1/2 và loại bỏ mx-auto */}
         <div className="lg:w-1/2 flex relative min-h-[450px]">
           <div className="w-full h-full rounded-xl shadow-lg">
             {" "}
-            {/* Đã xóa bg-gray-900 và p-[2px] */}
             <div className="w-full h-full rounded-[10px] overflow-hidden relative">
               <MapDisplay
                 lat={coords.latitude}

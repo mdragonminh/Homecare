@@ -252,7 +252,7 @@
     "manual_address_label": "Địa Chỉ Thủ Công/Vị trí Bản Đồ",
     "searching_technicians": "Đang tìm kiếm Technician xung quanh {{address}} trong bán kính {{radius}}km...",
     "technicians_list_title": "Danh sách Technician Gần Bạn ({{count}} người)",
-    "no_technicians_found": "Rất tiếc, không tìm thấy Technician nào phù hợp trong phạm vi {{radius}}km",
+    "no_technicians_found": "Rất tiếc, không tìm thấy Technician nào phù hợp trong phạm vi.",
     "select_technician": "Chọn Technician",
     "technicians.distance_label": "Cách bạn: {{distance}} km",
     "searching": "Đang tìm kiếm...",

@@ -64,27 +64,36 @@ export function useFindTechnician(loggedInUser) {
   }, []);
 
   const handleCreateAndMatchBooking = useCallback(async () => {
-    if (
-      !addressInput ||
-      selectedServiceIds.length === 0 ||
-      !loggedInUser?.userId ||
-      !preferredDate ||
-      !preferredTime
-    ) {
+    if (!addressInput || selectedServiceIds.length === 0 || !loggedInUser?.userId) {
       setStatusMessage({
-        text: t("validation.missing_booking_info_datetime", {
-          defaultValue: "Vui lòng nhập địa chỉ, chọn dịch vụ, NGÀY VÀ GIỜ.",
+        text: t("validation.missing_address_service_or_login", {
+          defaultValue: "Vui lòng đảm bảo bạn đã đăng nhập, đã chọn địa chỉ và chọn ít nhất một dịch vụ.",
         }),
         type: "error",
       });
       return;
     }
-
-    //const preferredDateTime = `${preferredDate}T${preferredTime}:00Z`;
+    if (!preferredDate) {
+      setStatusMessage({
+        text: t("validation.preferred_date_required", {
+          defaultValue: "Vui lòng chọn Ngày mong muốn để tạo yêu cầu.",
+        }),
+        type: "error",
+      });
+      return;
+    }
+    if (!preferredTime) {
+      setStatusMessage({
+        text: t("validation.preferred_time_required", {
+          defaultValue: "Vui lòng chọn Giờ mong muốn để tạo yêu cầu.",
+        }),
+        type: "error",
+      });
+      return;
+    }
     const localDateTime = new Date(`${preferredDate}T${preferredTime}:00`);
     const preferredDateTime = localDateTime.toISOString();
     setIsMatching(true);
-    // setTechnicians(null);
     setStatusMessage({
       text: t("ui.matching_technician_process", {
         defaultValue: "Đang tạo yêu cầu và tìm kiếm kỹ thuật viên phù hợp...",
@@ -93,7 +102,7 @@ export function useFindTechnician(loggedInUser) {
     });
 
     const radius = parseFloat(searchRadius);
-const matchResult = await serviceApi.createAndMatchBooking(
+    const matchResult = await serviceApi.createAndMatchBooking(
       addressInput,
       selectedServiceIds,
       loggedInUser.userId,
@@ -312,7 +321,6 @@ const matchResult = await serviceApi.createAndMatchBooking(
       });
     }
   };
-
   const handleFindTechnician = useCallback(async () => {
     if (!coords.latitude || !coords.longitude) {
       setStatusMessage({
@@ -321,37 +329,42 @@ const matchResult = await serviceApi.createAndMatchBooking(
       });
       return;
     }
-
-    const radius = parseFloat(searchRadius);
-    if (isNaN(radius) || radius <= 0) {
+    if (selectedServiceIds.length === 0) {
       setStatusMessage({
-        text: t("validation.required_fields_missing"),
+        text: t("validation.service_required", {
+           defaultValue: "Vui lòng chọn ít nhất một dịch vụ để tìm kiếm.",
+        }),
         type: "error",
       });
       return;
     }
-
+    const radius = parseFloat(searchRadius);
+    if (isNaN(radius) || radius <= 0) {
+      setStatusMessage({
+        text: t("validation.search_radius_invalid", { 
+           defaultValue: "Vui lòng nhập bán kính tìm kiếm hợp lệ (phải lớn hơn 0).",
+        }), 
+        type: "error",
+      });
+      return;
+    }
     setIsSearching(true);
     setTechnicians([]);
     setStatusMessage({
       text: t("ui.searching_technicians", { address: addressInput, radius }),
       type: "searching",
     });
-
-    const serviceIdsQuery =
-      selectedServiceIds.length > 0 ? selectedServiceIds.join(",") : null;
     const searchResult = await serviceApi.getNearbyTechnicians(
       addressInput,
       radius,
-      serviceIdsQuery
+      selectedServiceIds.map(String) 
     );
-
     setIsSearching(false);
 
     if (searchResult.success) {
       const filteredTechnicians = searchResult.data
         .map((tech) => {
-          const { id, name, latitude, longitude, rating } = tech;
+          const { latitude, longitude } = tech;
           const calculatedDistance = calculateDistance(
             coords.latitude,
             coords.longitude,
@@ -360,27 +373,36 @@ const matchResult = await serviceApi.createAndMatchBooking(
           );
 
           return {
-            id,
-            name,
-            rating,
-            latitude,
-            longitude,
-            lat: latitude,
-            lng: longitude,
+            ...tech, 
             distance: calculatedDistance,
+            lat: latitude, 
+            lng: longitude, 
           };
         })
         .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance))
-        .filter((tech) => parseFloat(tech.distance) <= radius);
+        .filter((tech) => parseFloat(tech.distance) <= radius); 
 
       setTechnicians(filteredTechnicians);
-      setStatusMessage({
-        text: t("success.technician_found", {
-          count: filteredTechnicians.length,
-          radius,
-        }),
-        type: "success",
-      });
+      
+      const count = filteredTechnicians.length;
+
+      if (count === 0) {
+         setStatusMessage({
+          text: t("ui.no_technicians_found", {
+            defaultValue: "Không tìm thấy kỹ thuật viên phù hợp trong bán kính.",
+          }),
+          type: "warning",
+        });
+      } else {
+         setStatusMessage({
+          text: t("success.technician_found", {
+            count: count,
+            radius,
+            defaultValue: `Đã tìm thấy ${count} kỹ thuật viên trong bán kính ${radius} km.`,
+          }),
+          type: "success",
+        });
+      }
     } else {
       setTechnicians([]);
       setStatusMessage({
@@ -393,7 +415,7 @@ const matchResult = await serviceApi.createAndMatchBooking(
     coords.latitude,
     coords.longitude,
     searchRadius,
-    selectedServiceIds,
+    selectedServiceIds, 
     t,
   ]);
 
