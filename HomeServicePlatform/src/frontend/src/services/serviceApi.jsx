@@ -25,7 +25,7 @@ export const serviceApi = {
     }
   },
 
-  getNearbyTechnicians: async (address, maxDistanceKm) => {
+  getNearbyTechnicians: async (address, maxDistanceKm, serviceIds = []) => {
     try {
       if (!address || address.trim() === "") throw new Error("Thiếu địa chỉ!");
 
@@ -33,7 +33,11 @@ export const serviceApi = {
         Address: address,
         MaxDistanceKm: maxDistanceKm || 10,
       });
-
+      if (serviceIds && Array.isArray(serviceIds) && serviceIds.length > 0) {
+        serviceIds.forEach(id => {
+            params.append('ServiceIds', id);
+        });
+      }
       const url = `/ServiceRequest/nearby-technicians?${params.toString()}`;
       const res = await axiosClient.get(url);
 
