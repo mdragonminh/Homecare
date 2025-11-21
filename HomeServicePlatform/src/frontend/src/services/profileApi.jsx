@@ -202,16 +202,26 @@ export const profileApi = {
   uploadAvatar: async (avatarFile) => {
     try {
       const jwtToken = localStorage.getItem("jwtToken");
+      const userId = localStorage.getItem("userId");
+      
       if (!jwtToken) {
         throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
       }
+      
+      if (!userId) {
+        throw new Error("Không tìm thấy userId. Vui lòng đăng nhập lại.");
+      }
 
-      // Tạo FormData để upload file
+      // Tạo FormData để upload file theo FileUploadDto
       const formData = new FormData();
-      formData.append("file", avatarFile); // Controller expects "file" parameter
+      formData.append("File", avatarFile); // IFormFile parameter
+      formData.append("UserId", userId); // Guid UserId
+      formData.append("ObjectId", userId); // Guid ObjectId (userId)
+      formData.append("ObjectTypeName", "customer"); // ObjectTypeName = "customer" (theo RoleNames.Customer)
+      formData.append("RelationType", "avatar"); // RelationType = "avatar"
 
       const response = await axiosClient.post(
-        `/CustomerProfile/upload-avatar`,
+        `/File/upload`,
         formData,
         {
           headers: {
@@ -225,7 +235,7 @@ export const profileApi = {
       return {
         success: true,
         data: response.data,
-        message: response.data.message || "Tải lên avatar thành công",
+        message: "Tải lên avatar thành công",
       };
     } catch (error) {
       if (ENABLE_DEBUG) console.error("Upload avatar error:", error);
@@ -244,12 +254,20 @@ export const profileApi = {
   deleteAvatar: async () => {
     try {
       const jwtToken = localStorage.getItem("jwtToken");
+      const userId = localStorage.getItem("userId");
+      
       if (!jwtToken) {
         throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
       }
+      
+      if (!userId) {
+        throw new Error("Không tìm thấy userId. Vui lòng đăng nhập lại.");
+      }
 
-      const response = await axiosClient.delete(
-        `/CustomerProfile/delete-avatar`,
+      // Lấy danh sách files của user với ObjectTypeName="customer"
+      // Endpoint: GET /File/{objectTypeName}/{objectId}
+      const filesResponse = await axiosClient.get(
+        `/File/customer/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${jwtToken}`,
@@ -257,10 +275,41 @@ export const profileApi = {
         }
       );
 
-      if (ENABLE_DEBUG) console.log("Delete avatar success:", response.data);
+      if (ENABLE_DEBUG) console.log("Get files for delete avatar:", filesResponse.data);
+      
+      // Lấy danh sách files (có thể có nhiều loại, chỉ lấy avatar)
+      const allFiles = Array.isArray(filesResponse.data) 
+        ? filesResponse.data 
+        : [];
+      
+      // Lọc các file có RelationType = "avatar" (nếu backend trả về RelationType)
+      // Hoặc xóa tất cả files của user (vì thường chỉ có 1 avatar)
+      // Note: Backend có thể không trả về RelationType trong FileDto, 
+      // nên ta sẽ xóa tất cả files của user (thường chỉ có 1 avatar)
+      const avatarFiles = allFiles;
+      
+      if (avatarFiles.length === 0) {
+        return {
+          success: false,
+          message: "Không tìm thấy avatar để xóa",
+        };
+      }
+
+      // Xóa tất cả avatar files
+      const deletePromises = avatarFiles.map(file => 
+        axiosClient.delete(`/File/${file.id}`, {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        })
+      );
+
+      await Promise.all(deletePromises);
+
+      if (ENABLE_DEBUG) console.log("Delete avatar success");
       return {
         success: true,
-        message: response.data.message || "Xóa avatar thành công",
+        message: "Xóa avatar thành công",
       };
     } catch (error) {
       if (ENABLE_DEBUG) console.error("Delete avatar error:", error);

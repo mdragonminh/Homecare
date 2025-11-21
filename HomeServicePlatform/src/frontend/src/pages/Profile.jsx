@@ -196,6 +196,8 @@ if ((domainParts.match(/\./g) || []).length < 1) {
     try {
       const result = await profileApi.getMyProfile();
       if (result.success) {
+        console.log("Profile data:", result.data);
+        console.log("Avatar URL:", result.data.avatarUrl);
         setProfile(result.data);
       } else {
         setError(result.message);
@@ -368,6 +370,16 @@ if ((domainParts.match(/\./g) || []).length < 1) {
 
     setUploadingAvatar(true);
     try {
+      // Xóa avatar cũ trước khi upload mới (nếu có)
+      if (profile?.avatarUrl) {
+        const deleteResult = await profileApi.deleteAvatar();
+        if (!deleteResult.success && !deleteResult.message.includes("Không tìm thấy")) {
+          // Chỉ báo lỗi nếu không phải lỗi "không tìm thấy"
+          console.warn("Không thể xóa avatar cũ:", deleteResult.message);
+        }
+      }
+
+      // Upload avatar mới
       const result = await profileApi.uploadAvatar(file);
       if (result.success) {
         toast.success(result.message);
@@ -459,11 +471,11 @@ if ((domainParts.match(/\./g) || []).length < 1) {
       return avatarUrl;
     }
 
-    // Nếu là đường dẫn tương đối từ API thì tạo full URL
+    // Sử dụng endpoint /File/preview để hiển thị avatar
     const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-    // Remove '/api' from API_URL nếu có vì avatar path không có api prefix
-    const baseUrl = API_URL.replace("/api", "");
-    return `${baseUrl}${avatarUrl}`;
+    // Đảm bảo có /api prefix
+    const baseUrl = API_URL.endsWith("/api") ? API_URL : API_URL.replace(/\/api$/, "") + "/api";
+    return `${baseUrl}/File/preview?filePath=${encodeURIComponent(avatarUrl)}`;
   };
 
   const LoadingContent = () => (
@@ -572,7 +584,7 @@ if ((domainParts.match(/\./g) || []).length < 1) {
                             accept="image/jpeg,image/jpg,image/png,image/gif"
                             onChange={handleAvatarFileChange}
                             className="hidden"
-                            disabled
+                            disabled={uploadingAvatar}
                           />
                           <Camera className="w-5 h-5 text-white hover:text-blue-300 transition-colors duration-200" />
                         </label>

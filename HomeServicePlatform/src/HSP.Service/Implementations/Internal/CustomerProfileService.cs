@@ -1,4 +1,5 @@
-﻿using HSP.Core.Dtos.AppUserDto;
+﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.AppUserDto;
 using HSP.Core.Dtos.FileDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
@@ -444,9 +445,9 @@ namespace HSP.Service.Implementations.Internal
 
         private async Task<string?> GetUserAvatarUrlAsync(Guid userId)
         {
-            // Lấy ObjectType cho User
+            // Lấy ObjectType cho Customer
             var userObjectType = await _objectTypeRepository.GetAll()
-                .Where(x => x.Name == "User")
+                .Where(x => x.Name == RoleNames.Customer)
                 .FirstOrDefaultAsync();
 
             if (userObjectType == null) return null;

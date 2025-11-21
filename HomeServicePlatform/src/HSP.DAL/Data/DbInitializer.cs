@@ -74,11 +74,32 @@ namespace HSP.DAL.Data
 						Id = Guid.NewGuid(),
 						Name = RoleNames.Customer,
 						Description = "Avatar khách hàng"
+					},
+					new ObjectType
+					{
+						Id = Guid.NewGuid(),
+						Name = "User",
+						Description = "Avatar người dùng"
 					}
 				};
 
 				await _context.ObjectTypes.AddRangeAsync(objectTypes);
 				await _context.SaveChangesAsync();
+			}
+			else
+			{
+				// Đảm bảo ObjectType "User" tồn tại (cho trường hợp database đã có dữ liệu)
+				var userObjectType = await _context.ObjectTypes.FirstOrDefaultAsync(x => x.Name == "User");
+				if (userObjectType == null)
+				{
+					await _context.ObjectTypes.AddAsync(new ObjectType
+					{
+						Id = Guid.NewGuid(),
+						Name = "User",
+						Description = "Avatar người dùng"
+					});
+					await _context.SaveChangesAsync();
+				}
 			}
 		}
 	}
