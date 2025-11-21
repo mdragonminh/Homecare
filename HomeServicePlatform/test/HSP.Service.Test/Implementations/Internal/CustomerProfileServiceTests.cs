@@ -1,23 +1,24 @@
-﻿using HSP.Core.Dtos.AppUserDto;
+﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.AppUserDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
 using HSP.Service.Dtos.EmailDto;
+using HSP.Service.Implementations.Internal;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using MockQueryable;
-using Moq;
 using MockQueryable.Moq;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
-using HSP.Service.Implementations.Internal;
 
 
 
@@ -673,51 +674,6 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Equal(0, result.Items.First(u => u.Id == user2.Id).TotalHomes);
         }
 
-        //[Fact]
-        //public async Task GetCustomersAsync_ShouldFilterBySearchTerm()
-        //{
-        //    // Arrange
-        //    var customerRole = new AppRole { Name = "Customer" };
-        //    _roleManagerMock.Setup(r => r.FindByNameAsync("Customer")).ReturnsAsync(customerRole);
-
-        //    var user1 = new AppUser
-        //    {
-        //        Id = Guid.NewGuid(),
-        //        FullName = "Nguyen Van A",
-        //        Email = "a@example.com",
-        //        PhoneNumber = "0123456789",
-        //        IsActive = true,
-        //        Homes = new List<Home>()
-        //    };
-        //    var user2 = new AppUser
-        //    {
-        //        Id = Guid.NewGuid(),
-        //        FullName = "Le Thi B",
-        //        Email = "b@example.com",
-        //        PhoneNumber = "0987654321",
-        //        IsActive = true,
-        //        Homes = new List<Home>()
-        //    };
-
-        //    var allUsers = new List<AppUser> { user1, user2 };
-
-        //    // Build IQueryable mock hỗ trợ EF Core async
-        //    var usersMock = allUsers.BuildMock(); // BuildMock() của MockQueryable.Moq
-
-        //    _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(usersMock);
-
-        //    _userRepoMock.Setup(r => r.GetUsersInRoleAsync("Customer")).ReturnsAsync(allUsers);
-
-        //    // Act
-        //    var result = await _service.GetCustomersAsync(searchTerm: "Nguyen");
-
-        //    // Assert
-        //    Assert.Single(result.Items);
-        //    Assert.Equal("Nguyen Van A", result.Items[0].FullName);
-        //}
-
-
-
 
         [Fact]
         public async Task GetDebugInfoAsync_ShouldReturnError_WhenCustomerRoleNotFound()
@@ -814,6 +770,146 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Empty(customers);
         }
 
+        [Fact]
+        public async Task GetCustomerByIdAsync_ShouldReturnUser_WhenUserExists()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Nguyen Van C",
+                Email = "c@example.com",
+                PhoneNumber = "0912345678",
+                IsActive = true,
+                DateCreated = DateTime.UtcNow.AddDays(-10),
+                DateModified = DateTime.UtcNow.AddDays(-5),
+                Homes = new List<Home>
+        {
+            new Home { Id = Guid.NewGuid(), IsDeleted = false },
+            new Home { Id = Guid.NewGuid(), IsDeleted = true } // Should be ignored
+        }
+            };
+
+            var mockUsers = new List<AppUser> { user }.BuildMock();
+            _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
+
+            // Mock avatar service (FileRelation / ObjectType)
+            var objectTypes = new List<ObjectType> { new ObjectType { Id = Guid.NewGuid(), Name = "User" } }.BuildMock();
+            _objTypeRepoMock.Setup(r => r.GetAll()).Returns(objectTypes);
+
+            var fileRelations = new List<FileRelation>().BuildMock(); // no avatar
+            _fileRelRepoMock.Setup(r => r.GetAll()).Returns(fileRelations);
+
+            // Act
+            var result = await _service.GetCustomerByIdAsync(userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(userId, result.Id);
+            Assert.Equal("Nguyen Van C", result.FullName);
+            Assert.Equal("c@example.com", result.Email);
+            Assert.Equal("0912345678", result.PhoneNumber);
+            Assert.True(result.IsActive);
+            Assert.Equal(1, result.TotalHomes); // only IsDeleted = false counted
+        }
+
+        [Fact]
+        public async Task GetCustomerByIdAsync_ShouldThrow_WhenUserNotFound()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var mockUsers = new List<AppUser>().BuildMock();
+            _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _service.GetCustomerByIdAsync(userId));
+        }
+
+        [Fact]
+        public async Task GetCustomerByIdAsync_ShouldThrow_WhenUserInactive()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Inactive User",
+                IsActive = false,
+                Homes = new List<Home>()
+            };
+
+            var mockUsers = new List<AppUser> { user }.BuildMock();
+            _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _service.GetCustomerByIdAsync(userId));
+        }
+
+        [Fact]
+        public async Task GetUserAvatarUrlAsync_ShouldReturnLatestAvatar_WhenExists()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var objectTypeId = Guid.NewGuid();
+
+            // Mock ObjectType repository
+            var objectTypes = new List<ObjectType>
+    {
+        new ObjectType { Id = objectTypeId, Name = RoleNames.Customer }
+    };
+            var objectTypesMock = objectTypes.BuildMock();
+            _objTypeRepoMock.Setup(r => r.GetAll()).Returns(objectTypesMock);
+
+            // Mock FileRelation repository
+            var file1 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "old.jpg", IsDeleted = false };
+            var file2 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "latest.jpg", IsDeleted = false };
+            var file3 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "deleted.jpg", IsDeleted = true };
+
+            var relations = new List<FileRelation>
+    {
+        new FileRelation { ObjectId = userId, ObjectTypeId = objectTypeId, RelationType = "avatar", File = file1, DateCreated = DateTime.UtcNow.AddDays(-2) },
+        new FileRelation { ObjectId = userId, ObjectTypeId = objectTypeId, RelationType = "avatar", File = file2, DateCreated = DateTime.UtcNow },
+        new FileRelation { ObjectId = userId, ObjectTypeId = objectTypeId, RelationType = "avatar", File = file3, DateCreated = DateTime.UtcNow.AddDays(-1) }
+    };
+            var relationsMock = relations.BuildMock();
+            _fileRelRepoMock.Setup(r => r.GetAll()).Returns(relationsMock);
+
+            // Use reflection to call private method
+            var method = typeof(CustomerProfileService)
+                .GetMethod("GetUserAvatarUrlAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            // Act
+            var result = await (Task<string?>)method!.Invoke(_service, new object[] { userId })!;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("latest.jpg", result);
+        }
+
+        [Fact]
+        public async Task GetUserAvatarUrlAsync_ShouldReturnNull_WhenNoAvatarFound()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+
+            var objectTypesMock = new List<ObjectType>().BuildMock();
+            _objTypeRepoMock.Setup(r => r.GetAll()).Returns(objectTypesMock);
+
+            var relationsMock = new List<FileRelation>().BuildMock();
+            _fileRelRepoMock.Setup(r => r.GetAll()).Returns(relationsMock);
+
+            var method = typeof(CustomerProfileService)
+                .GetMethod("GetUserAvatarUrlAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            // Act
+            var result = await (Task<string?>)method!.Invoke(_service, new object[] { userId })!;
+
+            // Assert
+            Assert.Null(result);
+        }
 
     }
 }

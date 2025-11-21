@@ -103,12 +103,13 @@ namespace HSP.Service.Implementations.Internal
                 PhoneNumber = user.PhoneNumber ?? string.Empty,
                 DateCreated = user.DateCreated,
                 DateModified = user.DateModified,
-                TotalHomes = user.Homes.Count,
+                TotalHomes = user.Homes.Count(h => !h.IsDeleted), // Chỉ đếm home chưa xóa
                 IsActive = user.IsActive,
                 LastLoginAt = user.LastLoginAt,
                 AvatarUrl = avatarUrl
             };
         }
+
 
         public async Task<AppUserDto> UpdateCustomerAsync(string userId, UpdateAppUserDto updateDto)
         {
