@@ -264,7 +264,9 @@
     "preferred_time_label": "Giờ Yêu Cầu",
     "preferred_date_label": "Ngày Yêu Cầu",
     "match_technician_button": "Yêu cầu & Ghép nối Ngay",
-    "setting_password": "Đang thiết lập mật khẩu..."
+    "setting_password": "Đang thiết lập mật khẩu...",
+    "files_count": "{{count}} file",
+    "scanning":"Đang quét"
   },
   "form": {
     "label": {
@@ -277,15 +279,17 @@
       "agree_to_terms": "Tôi đồng ý với",
       "terms_link": "Điều khoản dịch vụ",
       "register_as": "Đăng ký với vai trò",
-      "item_name": "Tên Vật Phẩm *",
-      "item_type": "Loại Vật Phẩm *",
+      "item_name": "Tên Vật Phẩm ",
+      "item_type": "Loại Vật Phẩm ",
       "brand": "Thương hiệu",
       "model_number": "Model",
       "serial_number": "Serial Number",
       "notes": "Ghi chú",
       "username": "Tên đăng nhập",
       "new_password": "Mật khẩu mới",
-      "confirm_new_password": "Xác nhận mật khẩu mới"
+      "confirm_new_password": "Xác nhận mật khẩu mới",
+      "item_image_scan": "Hình ảnh Vật Phẩm",
+      "image_hint": "Quét tự động điền form."
     },
     "placeholder": {
       "fullname": "Nhập họ tên đầy đủ của bạn",
@@ -366,7 +370,8 @@
     "technician_found": "Tìm thấy {{count}} Technician gần bạn trong {{radius}}km.",
     "home_loaded": "Đã tải {{count}} địa chỉ. Địa chỉ mặc định: {{name}}",
     "my_location_set": "Vị trí hiện tại của bạn đã được thiết lập. Nhấn Tìm kiếm để tiếp tục.",
-    "match_booking_success": "Yêu cầu đặt lịch thành công! Một kỹ thuật viên sẽ liên hệ với bạn sớm."
+    "match_booking_success": "Yêu cầu đặt lịch thành công! Một kỹ thuật viên sẽ liên hệ với bạn sớm.",
+    "item_scanned_filled": "Quét thành công! Thông tin vật phẩm đã được tự động điền."
   },
   "error": {
     "email_in_use": "Email đã được sử dụng, vui lòng dùng email khác.",

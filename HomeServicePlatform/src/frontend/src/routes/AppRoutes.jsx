@@ -1,4 +1,10 @@
-import { Routes, Route, useNavigate, Navigate, useLocation } from "react-router-dom"; 
+import {
+  Routes,
+  Route,
+  useNavigate,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { LoginPage } from "../pages/Auth/LoginPage";
 import RegisterPage from "../pages/Auth/RegisterPage";
 import ClientRoutes from "./ClientRoutes";
@@ -38,11 +44,11 @@ function ProtectedRoleLayout({ loggedInUser, allowedRoles, children }) {
   }
 
   if (!allowedRoles.includes(loggedInUser.role)) {
-    return <Navigate to="/" replace />; 
+    return <Navigate to="/" replace />;
   }
 
   return children;
-};
+}
 
 export default function AppRoutes({
   loggedInUser,
@@ -111,24 +117,35 @@ export default function AppRoutes({
 
       {/* Customer Chat Route */}
       <Route
-        path="/chat"
         element={
-          <ProtectedRoleLayout 
-            loggedInUser={loggedInUser} 
-            allowedRoles={["customer"]}
-          >
-            <div className="min-h-screen">
-              <CustomerChat />
-            </div>
-          </ProtectedRoleLayout>
+          <Layout
+            loggedInUser={loggedInUser}
+            onLogout={handleLogoutAndNavigate}
+            onShowLogin={handleShowLogin}
+            onShowRegister={handleShowRegister}
+          />
         }
-      />
+      >
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoleLayout
+              loggedInUser={loggedInUser}
+              allowedRoles={["customer"]}
+            >
+              <div className="min-h-screen">
+                <CustomerChat />
+              </div>
+            </ProtectedRoleLayout>
+          }
+        />
+      </Route>
 
       {/* ---- Auth routes ---- */}
       <Route
         path="/login"
         element={
-          loggedInUser ? ( 
+          loggedInUser ? (
             <Navigate to="/" replace />
           ) : (
             <LoginPage
@@ -165,10 +182,7 @@ export default function AppRoutes({
           )
         }
       />
-      <Route
-        path="/reset-password"
-       element={<ResetPasswordPage />}
-      />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route
         path="/google-callback"
         element={<GoogleCallbackPage onLoginSuccess={onLoginSuccess} />}
@@ -195,7 +209,10 @@ export default function AppRoutes({
           </ProtectedRoleLayout>
         }
       >
-        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route
+          path="/admin"
+          element={<Navigate to="/admin/dashboard" replace />}
+        />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/accounts" element={<AccountsPage />} />
         <Route path="/admin/home-services" element={<HomeServicePage />} />
@@ -214,11 +231,20 @@ export default function AppRoutes({
           </ProtectedRoleLayout>
         }
       >
-        <Route path="/operator" element={<Navigate to="/operator/customers" replace />} />
+        <Route
+          path="/operator"
+          element={<Navigate to="/operator/customers" replace />}
+        />
         <Route path="/operator/customers" element={<OperatorCustomersPage />} />
         <Route path="/operator/bookings" element={<OperatorBookingsPage />} />
-        <Route path="/operator/bookings/:id" element={<OperatorBookingDetailPage />} />
-        <Route path="/operator/technicians" element={<OperatorTechniciansPage />} />
+        <Route
+          path="/operator/bookings/:id"
+          element={<OperatorBookingDetailPage />}
+        />
+        <Route
+          path="/operator/technicians"
+          element={<OperatorTechniciansPage />}
+        />
         <Route path="/operator/settings" element={<OperatorSettingsPage />} />
       </Route>
 
@@ -234,7 +260,10 @@ export default function AppRoutes({
         }
       >
         <Route path="/warehouse" element={<EquipmentManagerWarehousePage />} />
-        <Route path="/warehouse/equipments" element={<EquipmentManagerEquipmentPage />} />
+        <Route
+          path="/warehouse/equipments"
+          element={<EquipmentManagerEquipmentPage />}
+        />
       </Route>
 
       {/* ---- Technician ---- */}
@@ -248,12 +277,20 @@ export default function AppRoutes({
           </ProtectedRoleLayout>
         }
       >
-        <Route path="/technician" element={<Navigate to="/technician/bookings" replace />} />
-        <Route path="/technician/bookings" element={<TechnicianBookingsPage />} />
-        <Route path="/technician/bookings/:id" element={<BookingDetailPage />} />
+        <Route
+          path="/technician"
+          element={<Navigate to="/technician/bookings" replace />}
+        />
+        <Route
+          path="/technician/bookings"
+          element={<TechnicianBookingsPage />}
+        />
+        <Route
+          path="/technician/bookings/:id"
+          element={<BookingDetailPage />}
+        />
         <Route path="/technician/chat" element={<TechnicianChat />} />
       </Route>
-
     </Routes>
   );
 }

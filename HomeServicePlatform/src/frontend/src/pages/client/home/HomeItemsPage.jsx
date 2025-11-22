@@ -11,17 +11,14 @@ import {
   Eye,
   Pencil,
   Trash2,
-  Filter,
   Loader2,
   AlertTriangle,
   Package,
   Monitor,
   Sofa,
   Wrench,
-  AlertCircle,
   Tag,
   Hash,
-  Calendar,
 } from "lucide-react";
 
 import AddHomeItemModal from "./AddHomeItemModal";
@@ -48,35 +45,40 @@ export default function HomeItemsInterface() {
 
   const pageSize = 6;
 
-const fetchHomeItems = useCallback(
-  async (page, search) => {
-    if (!homeId) {
-      setError("error.missing_home_id"); 
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await homeApi.listHomeItems(homeId, page, pageSize, search || "");
-      if (res.success) {
-        setItems(res.data.items || []);
-        setCurrentPage(res.data.currentPage || 1);
-        setTotalPages(res.data.totalPages || 1);
-        setTotalCount(res.data.totalCount ?? 0);
-        setError(null);
-      } else {
-        setError(res.message || "error.fetch_items_failed"); 
+  const fetchHomeItems = useCallback(
+    async (page, search) => {
+      if (!homeId) {
+        setError("error.missing_home_id");
+        setLoading(false);
+        return;
       }
-    } catch (err) {
-      console.error("Error fetching home items:", err);
-      setError("error.fetch_items_failed"); 
-    } finally {
-      setLoading(false);
-    }
-  },
-  [homeId, pageSize] 
-);
+
+      setLoading(true);
+      try {
+        const res = await homeApi.listHomeItems(
+          homeId,
+          page,
+          pageSize,
+          search || ""
+        );
+        if (res.success) {
+          setItems(res.data.items || []);
+          setCurrentPage(res.data.currentPage || 1);
+          setTotalPages(res.data.totalPages || 1);
+          setTotalCount(res.data.totalCount ?? 0);
+          setError(null);
+        } else {
+          setError(res.message || "error.fetch_items_failed");
+        }
+      } catch (err) {
+        console.error("Error fetching home items:", err);
+        setError("error.fetch_items_failed");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [homeId, pageSize]
+  );
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -281,109 +283,49 @@ const fetchHomeItems = useCallback(
     <div className="min-h-screen bg-white">
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-       
-        <div className="mb-8 flex items-center justify-between">
-        
-          <div className="flex items-center gap-4">
-          
-            <button
-              onClick={() => navigate(-1)}
-              className="p-1.5 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-all duration-200 shadow-sm"
-              title={t("ui.go_back") || "Quay lại"}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {t("ui.manage_items")}
-            </h1>
-          </div>
+        <div className="mb-8 flex items-center gap-4">
           <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium shadow-sm"
-            title={t("ui.add_item")}
+            onClick={() => navigate(-1)}
+            className="p-1.5 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-all duration-200 shadow-sm"
+            title={t("ui.go_back") || "Quay lại"}
           >
-            <Plus size={18} />
-            <span className="hidden sm:inline">{t("ui.add_item")}</span>
+            <ChevronLeft size={16} />
           </button>
+          <h1 className="text-xl font-bold text-gray-900">
+            {t("ui.manage_items")}
+          </h1>
         </div>
-        <div className="flex flex-col lg:flex-row gap-4 mb-8">
+        <div className="flex items-stretch gap-4 mb-8">
+          <div className="bg-white px-6 rounded-2xl border border-gray-200 flex items-center justify-center flex-shrink-0">
+            <p className="text-xs text-gray-500 whitespace-nowrap">
+              {t("ui.total_items") || "Hiện thị"}:{" "}
+              <span className="font-bold text-gray-900 ml-1">{totalCount}</span>
+            </p>
+          </div>
           <div className="relative flex-1">
             <Search
               className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
               size={20}
             />
             <input
-              placeholder={t("ui.search_item_placeholder")}
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white text-gray-900"
+              placeholder={
+                t("ui.search_item_placeholder") ||
+                "Tìm kiếm theo tên hoặc địa chỉ..."
+              }
+              className="w-full h-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white text-gray-900"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select className="border border-gray-300 rounded-xl px-4 py-3 bg-white transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900">
-            <option>{t("ui.all_types")}</option>
-            <option>{t("item.type.electronics")}</option>
-            <option>{t("item.type.appliance")}</option>
-            <option>{t("item.type.furniture")}</option>
-            <option>{t("item.type.tool")}</option>
-          </select>
-          <select className="border border-gray-300 rounded-xl px-4 py-3 bg-white transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900">
-            <option>{t("ui.all_brands")}</option>
-          </select>
-          <button className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 bg-white text-blue-600">
-            <Filter size={18} />
-            {t("ui.filter")}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200 font-medium flex-shrink-0 whitespace-nowrap"
+            title={t("ui.add_item")}
+          >
+            <Plus size={20} />
+            <span>{t("ui.add_item") || "Thêm mới"}</span>
           </button>
         </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl border border-gray-200 flex items-center gap-4 hover:shadow-md transition-all duration-200">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-              <Package size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 mb-1">
-                {t("ui.total_items")}
-              </p>
-              <p className="text-2xl font-bold text-gray-900">{totalCount}</p>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl border border-gray-200 flex items-center gap-4 hover:shadow-md transition-all duration-200">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-              <Monitor size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 mb-1">
-                {t("item.type.electronics")}
-              </p>
-              <p className="text-2xl font-bold text-gray-900">...</p>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl border border-gray-200 flex items-center gap-4 hover:shadow-md transition-all duration-200">
-            <div className="w-12 h-12 bg-sky-50 text-sky-600 rounded-xl flex items-center justify-center">
-              <Sofa size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 mb-1">
-                {t("item.type.furniture")}
-              </p>
-              <p className="text-2xl font-bold text-gray-900">...</p>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl border border-gray-200 flex items-center gap-4 hover:shadow-md transition-all duration-200">
-            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
-              <AlertCircle size={24} />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 mb-1">
-                {t("ui.needs_maintenance")}
-              </p>
-              <p className="text-2xl font-bold text-gray-900">...</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Items List */}
         {loading && totalCount === 0 ? (
           renderSkeleton()
         ) : items.length === 0 ? (
@@ -440,16 +382,6 @@ const fetchHomeItems = useCallback(
                           {item.modelNumber}
                         </span>
                       )}
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span className="inline-flex items-center gap-1.5">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        {t("ui.working_well")}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <Calendar size={12} />
-                        {t("ui.purchase_info", { date: "10/01/2023" })}
-                      </span>
                     </div>
                   </div>
                   <div className="flex gap-2">
