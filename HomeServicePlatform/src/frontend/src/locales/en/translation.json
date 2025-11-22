@@ -515,6 +515,8 @@
     "no_technicians": "No technicians yet",
     "no_results_with_filters": "No results found matching the filters",
     "no_registrations": "No technicians have registered yet",
+    "reviews": "reviews",
+    "no_reviews": "No reviews yet",
     "table": {
       "full_name": "Full Name",
       "email": "Email",

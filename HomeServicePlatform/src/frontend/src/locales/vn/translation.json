@@ -523,6 +523,8 @@
     "no_technicians": "Chưa có kỹ thuật viên nào",
     "no_results_with_filters": "Không tìm thấy kết quả phù hợp với bộ lọc",
     "no_registrations": "Chưa có kỹ thuật viên nào đăng ký",
+    "reviews": "đánh giá",
+    "no_reviews": "Chưa có đánh giá",
     "table": {
       "full_name": "Họ tên",
       "email": "Email",
