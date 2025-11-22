@@ -26,7 +26,7 @@ namespace HSP.API.Controllers
             {
                 if (input.RelationType == FileConstants.Avatar)
                 {
-                    await RemoveOldAvatarAsync(input.ObjectId);
+                    await RemoveOldAvatarAsync(input.ObjectId, input.ObjectTypeName, input.RelationType);
                 }
                 var result = await _fileService.UploadAsync(input);
                 return Ok(result);
@@ -44,13 +44,13 @@ namespace HSP.API.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-        private async Task RemoveOldAvatarAsync(Guid objectId)
+        private async Task RemoveOldAvatarAsync(Guid objectId, string objectTypeName, string relationType)
         {
             var oldAvatars = await _fileService.GetFilesAsync(new GetFilesRequestDto
             {
                 objectId = objectId,
-                objectTypeName = RoleNames.Technician,
-                relationType = FileConstants.Avatar
+                objectTypeName = objectTypeName,
+                relationType = relationType
             });
 
             foreach (var file in oldAvatars)

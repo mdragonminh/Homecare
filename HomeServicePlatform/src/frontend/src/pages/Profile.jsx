@@ -355,7 +355,7 @@ if ((domainParts.match(/\./g) || []).length < 1) {
     if (!file) return;
 
     // Kiểm tra loại file (khớp với controller)
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
     if (!allowedTypes.includes(file.type)) {
       toast.error(t("ui.avatar_invalid_format"));
       return;
@@ -370,20 +370,9 @@ if ((domainParts.match(/\./g) || []).length < 1) {
 
     setUploadingAvatar(true);
     try {
-      // Xóa avatar cũ trước khi upload mới (nếu có)
-      if (profile?.avatarUrl) {
-        const deleteResult = await profileApi.deleteAvatar();
-        if (!deleteResult.success && !deleteResult.message.includes("Không tìm thấy")) {
-          // Chỉ báo lỗi nếu không phải lỗi "không tìm thấy"
-          console.warn("Không thể xóa avatar cũ:", deleteResult.message);
-        }
-      }
-
-      // Upload avatar mới
       const result = await profileApi.uploadAvatar(file);
       if (result.success) {
         toast.success(result.message);
-        // Cập nhật profile với avatar mới
         await fetchProfile();
         setAvatarFile(null);
         setAvatarPreview(null);
@@ -429,8 +418,7 @@ if ((domainParts.match(/\./g) || []).length < 1) {
       const allowedTypes = [
         "image/jpeg",
         "image/jpg",
-        "image/png",
-        "image/gif",
+        "image/png"
       ];
       if (!allowedTypes.includes(file.type)) {
         toast.error(t("ui.avatar_invalid_format"));
