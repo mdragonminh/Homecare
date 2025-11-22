@@ -1,5 +1,4 @@
 using HSP.Core.Enums;
-
 namespace HSP.Core.Dtos.TechnicianProfileDto
 {
     public class TechnicianProfileResponseDto
@@ -18,22 +17,14 @@ namespace HSP.Core.Dtos.TechnicianProfileDto
         public DateTime DateCreated { get; set; }
         public DateTime DateModified { get; set; }
         public List<TechnicianServiceDto> Services { get; set; } = new List<TechnicianServiceDto>();
-        public List<TechnicianFileDto> CertificateFiles { get; set; } = new List<TechnicianFileDto>();
-        public TechnicianFileDto? LegalDocument { get; set; }
-        public TechnicianFileDto? Avatar { get; set; }
+        public IEnumerable<Core.Dtos.FileDto.FileDto> CertificateFiles { get; set; } = new List<Core.Dtos.FileDto.FileDto>();
+        public IEnumerable<Core.Dtos.FileDto.FileDto> LegalDocument { get; set; } = new List<Core.Dtos.FileDto.FileDto>();
+        public IEnumerable<Core.Dtos.FileDto.FileDto> Avatar { get; set; } = new List<Core.Dtos.FileDto.FileDto>();
     }
 
     public class TechnicianServiceDto
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
-    }
-
-    public class TechnicianFileDto
-    {
-        public Guid Id { get; set; }
-        public string FileName { get; set; } = string.Empty;
-        public string FilePath { get; set; } = string.Empty; 
-        public string FileType { get; set; } = string.Empty;
     }
 }
