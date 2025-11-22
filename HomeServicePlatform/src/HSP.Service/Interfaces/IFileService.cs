@@ -14,8 +14,9 @@ namespace HSP.Service.Interfaces
 		//bool ValidateFileSize(IFormFile file, long maxSizeInBytes);
 		Task<FileDto> UploadAsync(FileUploadDto input);
 		Task<IEnumerable<FileDto>> UploadManyAsync(IEnumerable<FileUploadDto> inputs);
-		Task<IEnumerable<FileDto>> GetFilesAsync(Guid objectId, string objectTypeName);
-		Task DeleteAsync(Guid fileId);
+		Task<IEnumerable<FileDto>> GetFilesAsync(GetFilesRequestDto input);
+		Task DeleteFileAsync(Guid fileId);
+        Task DeleteAsync(Guid fileId);
         Task<FileDownloadResult> GetFileForDownload(string relativePath);
     }
 }

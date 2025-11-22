@@ -28,7 +28,13 @@ namespace HSP.Core.Dtos.FileDto
 		public string FileType { get; set; }
 		public long FileSize { get; set; }
 	}
+	public class GetFilesRequestDto
+	{
+        public Guid objectId { get; set; } 
+		public string objectTypeName { get; set; }
+        public string relationType { get; set; }
 
+    }
     public class FileDownloadResult
     {
         public string PhysicalPath { get; set; }

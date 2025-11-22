@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Core.Entities
 {
-	public class File : BaseEntity<Guid>, IDateTracking, IHasSoftedDelete
+	public class File : BaseEntity<Guid>, IDateTracking
 	{
 		[Required, MaxLength(255)]
 		public string FileName { get; set; }
@@ -21,8 +21,6 @@ namespace HSP.Core.Entities
 
 		public DateTime DateCreated { get; set; } = DateTime.UtcNow;
 		public DateTime DateModified { get; set; }
-		public bool IsDeleted { get; set; }
-
 		public ICollection<FileRelation> FileRelations { get; set; } = new List<FileRelation>();
 		
 	}

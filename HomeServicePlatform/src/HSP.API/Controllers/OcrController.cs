@@ -1,4 +1,6 @@
-﻿using HSP.Service.Interfaces;
+﻿using HSP.Core.Constans;
+using HSP.Service.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HSP.API.Controllers
@@ -49,6 +51,7 @@ namespace HSP.API.Controllers
 			}
 		}
 		[HttpPost("scan-homeitem")]
+		[Authorize]
 		public async Task<IActionResult> ScanHomeItem(List<IFormFile> files)
 		{
             if (files == null || files.Count == 0)

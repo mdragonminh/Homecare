@@ -523,7 +523,7 @@ export default function OperatorTechniciansPage() {
 
                     <div className="flex-1">
                       <div className="text-sm text-gray-800 font-medium mb-0.5">
-                        {technicianDetail.legalDocument.fileName}
+                        {technicianDetail.legalDocument[0].fileName}
                       </div>
                       <div className="text-xs text-gray-400">
                         Giấy tờ tùy thân
@@ -537,7 +537,7 @@ export default function OperatorTechniciansPage() {
                         onClick={() => {
                           // Gọi API Preview
                           const previewUrl = adminApi.previewFile(
-                            technicianDetail.legalDocument.filePath
+                            technicianDetail.legalDocument[0].filePath
                           );
                           window.open(previewUrl, "_blank");
                         }}
@@ -558,7 +558,7 @@ export default function OperatorTechniciansPage() {
                         onClick={async () => {
                           try {
                             const result = await adminApi.downloadFile(
-                              technicianDetail.legalDocument.filePath
+                              technicianDetail.legalDocument[0].filePath
                             );
                             if (result.success) {
                               toast.success("Tải xuống thành công!");

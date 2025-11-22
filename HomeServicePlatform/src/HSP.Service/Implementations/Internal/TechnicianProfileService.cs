@@ -1,5 +1,6 @@
 using HSP.Core.Constans;
 using HSP.Core.Constants;
+using HSP.Core.Dtos.FileDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Dtos.TechnicianProfileDto;
 using HSP.Core.Entities;
@@ -20,21 +21,17 @@ namespace HSP.Service.Implementations.Internal
 	{
 		private readonly IRepository<TechnicianProfile, Guid> _technicianProfileRepository;
 		private readonly IEmailService _emailService;
-        private readonly IRepository<FileRelation, Guid> _fileRelationRepository;
-        private readonly IRepository<ObjectType, Guid> _objectTypeRepository;
-
+        private readonly IFileService _fileService;
         public TechnicianProfileService(
 				IRepository<TechnicianProfile, Guid> technicianProfileRepository,
 				IEmailService emailService,
-                IRepository<FileRelation, Guid> fileRelationRepository, 
-                IRepository<ObjectType, Guid> objectTypeRepository,
+                IFileService fileService,
                 IUnitOfWork unitOfWork,
 				IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
 		{
 			_technicianProfileRepository = technicianProfileRepository;
 			_emailService = emailService;
-            _fileRelationRepository = fileRelationRepository; 
-            _objectTypeRepository = objectTypeRepository;
+            _fileService = fileService;
         }
 
 		public async Task<PagedList<TechnicianProfileResponseDto>> GetTechniciansAsync(TechnicianProfileFilterParams filterParams)
@@ -89,48 +86,29 @@ namespace HSP.Service.Implementations.Internal
                     .Include(x => x.Services)
                     .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (technician == null)
-                return null;
+			if (technician == null)
+				throw new KeyNotFoundException("Không tìm thấy kĩ thuật viên");
 
-            var objectType = await _objectTypeRepository.GetAll()
-                .FirstOrDefaultAsync(x => x.Name == RoleNames.Technician);
-
-            List<TechnicianFileDto> certificateFiles = new List<TechnicianFileDto>();
-            TechnicianFileDto? legalFile = null;
-            TechnicianFileDto? avatar = null;
-
-            if (objectType != null)
+            var certificates = await _fileService.GetFilesAsync(new GetFilesRequestDto 
+			{ 
+				objectId = technician.Id,
+				objectTypeName = RoleNames.Technician, 
+				relationType = FileConstants.TechnicianCertificate 
+			});
+            var legalDocument = await _fileService.GetFilesAsync(new GetFilesRequestDto
             {
-                var allFiles = await _fileRelationRepository.GetAll()
-                    .Include(fr => fr.File)
-                    .Where(fr => fr.ObjectId == technician.Id &&
-                                 fr.ObjectTypeId == objectType.Id &&
-                                 (fr.RelationType == FileConstants.TechnicianCertificate ||
-                                  fr.RelationType == FileConstants.LegalDocument ||
-                                  fr.RelationType == FileConstants.Avatar))
-                    .Select(fr => new {
-                        Type = fr.RelationType,
-                        Dto = new TechnicianFileDto
-                        {
-                            Id = fr.File.Id,
-                            FileName = fr.File.FileName,
-                            FilePath = fr.File.FilePath,
-                            FileType = fr.File.FileType
-                        }
-                    })
-                    .ToListAsync();
-
-                certificateFiles = allFiles.Where(x => x.Type == FileConstants.TechnicianCertificate)
-                                           .Select(x => x.Dto).ToList();
-
-                legalFile = allFiles.Where(x => x.Type == FileConstants.LegalDocument)
-                                        .Select(x => x.Dto).FirstOrDefault();
-
-                avatar = allFiles.Where(x => x.Type == FileConstants.Avatar)
-                                        .Select(x => x.Dto).FirstOrDefault();
-            }
-
-            return new TechnicianProfileResponseDto
+                objectId = technician.Id,
+                objectTypeName = RoleNames.Technician,
+                relationType = FileConstants.LegalDocument
+            }); ;
+            var avatar = await _fileService.GetFilesAsync(new GetFilesRequestDto
+            {
+                objectId = technician.Id,
+                objectTypeName = RoleNames.Technician,
+                relationType = FileConstants.Avatar
+            }); ;
+            
+			return new TechnicianProfileResponseDto
             {
                 Id = technician.Id,
                 UserId = technician.UserId,
@@ -146,8 +124,8 @@ namespace HSP.Service.Implementations.Internal
                 DateCreated = technician.DateCreated,
                 DateModified = technician.DateModified,
                 Services = technician.Services.Select(s => new TechnicianServiceDto { Id = s.Id, Name = s.Name }).ToList(),
-                CertificateFiles = certificateFiles,
-                LegalDocument = legalFile, 
+                CertificateFiles = certificates,
+                LegalDocument = legalDocument,
                 Avatar = avatar
             };
         }

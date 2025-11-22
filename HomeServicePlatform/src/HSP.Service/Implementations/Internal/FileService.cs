@@ -11,174 +11,188 @@ using Microsoft.Extensions.Localization;
 
 namespace HSP.Service.Implementations.Internal
 {
-	public class FileService : BaseService, IFileService
-	{
-		private readonly IRepository<Core.Entities.File, Guid> _fileRepository;
-		private readonly IRepository<FileRelation, Guid> _fileRelationRepository;
-		private readonly IRepository<ObjectType, Guid> _objectTypeRepository;
-		private readonly IWebHostEnvironment _environment;
+    public class FileService : BaseService, IFileService
+    {
+        private readonly IRepository<Core.Entities.File, Guid> _fileRepository;
+        private readonly IRepository<FileRelation, Guid> _fileRelationRepository;
+        private readonly IRepository<ObjectType, Guid> _objectTypeRepository;
+        private readonly IWebHostEnvironment _environment;
 
-		public FileService(IRepository<Core.Entities.File, Guid> fileRepository,
-			IRepository<FileRelation, Guid> fileRelationRepository,
-			IRepository<ObjectType, Guid> objectTypeRepository,
-			IWebHostEnvironment environment,
-			IUnitOfWork unitOfWork,
-			IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
-		{
-			_fileRepository = fileRepository;
-			_fileRelationRepository = fileRelationRepository;
-			_objectTypeRepository = objectTypeRepository;
-			_environment = environment;
-		}
+        public FileService(IRepository<Core.Entities.File, Guid> fileRepository,
+            IRepository<FileRelation, Guid> fileRelationRepository,
+            IRepository<ObjectType, Guid> objectTypeRepository,
+            IWebHostEnvironment environment,
+            IUnitOfWork unitOfWork,
+            IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
+        {
+            _fileRepository = fileRepository;
+            _fileRelationRepository = fileRelationRepository;
+            _objectTypeRepository = objectTypeRepository;
+            _environment = environment;
+        }
 
-		public async Task<FileDto> UploadAsync(FileUploadDto input)
-		{
-			var file = input.File ?? throw new ArgumentException(_localizer["InvalidFileUpload"]);
-			var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-			if (!FileConstants.AllowedImageExtensions
-				.Concat(FileConstants.AllowedDocumentExtensions)
-				.Contains(extension))
-				throw new InvalidOperationException(_localizer["UnsupportedFileType", extension]);
+        public async Task<FileDto> UploadAsync(FileUploadDto input)
+        {
+            var file = input.File ?? throw new ArgumentException(_localizer["InvalidFileUpload"]);
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!FileConstants.AllowedImageExtensions
+                .Concat(FileConstants.AllowedDocumentExtensions)
+                .Contains(extension))
+                throw new InvalidOperationException(_localizer["UnsupportedFileType", extension]);
 
-			if (file.Length > FileConstants.MaxFileSize)
-				throw new InvalidOperationException(_localizer["FileTooLarge"]);
+            if (file.Length > FileConstants.MaxFileSize)
+                throw new InvalidOperationException(_localizer["FileTooLarge"]);
 
-			var uploadFolder = Path.Combine(_environment.WebRootPath ?? "wwwroot", FileConstants.UploadRoot, input.ObjectTypeName);
-			Directory.CreateDirectory(uploadFolder);
+            var uploadFolder = Path.Combine(_environment.WebRootPath ?? "wwwroot", FileConstants.UploadRoot, input.ObjectTypeName);
+            Directory.CreateDirectory(uploadFolder);
 
-			var fileName = $"{Guid.NewGuid():N}{extension}";
-			var filePath = Path.Combine(uploadFolder, fileName);
-			var relativePath = Path.Combine(FileConstants.UploadRoot, input.ObjectTypeName, fileName)
-											 .Replace("\\", "/");
+            var fileName = $"{Guid.NewGuid():N}{extension}";
+            var filePath = Path.Combine(uploadFolder, fileName);
+            var relativePath = Path.Combine(FileConstants.UploadRoot, input.ObjectTypeName, fileName)
+                                             .Replace("\\", "/");
 
-			using (var stream = new FileStream(filePath, FileMode.Create))
-				await file.CopyToAsync(stream);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+                await file.CopyToAsync(stream);
 
-			var objectType = await _objectTypeRepository.GetAll().FirstOrDefaultAsync(x => x.Name == input.ObjectTypeName)
-					?? throw new Exception(_localizer["ObjectTypeNotFound", input.ObjectTypeName]);
-			var fileEntity = new Core.Entities.File
-			{
-				FileName = file.FileName,
-				FilePath = relativePath,
-				FileType = file.ContentType,
-				FileSize = file.Length,
-				UploadedBy = input.UserId,
-				DateCreated = DateTime.UtcNow
-			};
-			var relation = new FileRelation
-			{
-				File = fileEntity,
-				ObjectTypeId = objectType.Id,
-				ObjectId = input.ObjectId,
-				RelationType = input.RelationType
-			};
+            var objectType = await _objectTypeRepository.GetAll().FirstOrDefaultAsync(x => x.Name == input.ObjectTypeName)
+                    ?? throw new Exception(_localizer["ObjectTypeNotFound", input.ObjectTypeName]);
+            var fileEntity = new Core.Entities.File
+            {
+                FileName = file.FileName,
+                FilePath = relativePath,
+                FileType = file.ContentType,
+                FileSize = file.Length,
+                UploadedBy = input.UserId,
+                DateCreated = DateTime.UtcNow
+            };
+            var relation = new FileRelation
+            {
+                File = fileEntity,
+                ObjectTypeId = objectType.Id,
+                ObjectId = input.ObjectId,
+                RelationType = input.RelationType
+            };
 
-			try
-			{
-				await _fileRepository.AddAsync(fileEntity);
-				await _fileRelationRepository.AddAsync(relation);
-				await _unitOfWork.SaveChangesAsync();
-			}
-			catch
-			{
-				if (System.IO.File.Exists(filePath))
-					System.IO.File.Delete(filePath);
-				throw;
-			}
+            try
+            {
+                await _fileRepository.AddAsync(fileEntity);
+                await _fileRelationRepository.AddAsync(relation);
+                await _unitOfWork.SaveChangesAsync();
+            }
+            catch
+            {
+                if (System.IO.File.Exists(filePath))
+                    System.IO.File.Delete(filePath);
+                throw;
+            }
 
-			return new FileDto
-			{
-				Id = fileEntity.Id,
-				FileName = fileEntity.FileName,
-				FilePath = fileEntity.FilePath,
-				FileType = fileEntity.FileType,
-				FileSize = fileEntity.FileSize
-			};
-		}
+            return new FileDto
+            {
+                Id = fileEntity.Id,
+                FileName = fileEntity.FileName,
+                FilePath = fileEntity.FilePath,
+                FileType = fileEntity.FileType,
+                FileSize = fileEntity.FileSize
+            };
+        }
 
-		public async Task<IEnumerable<FileDto>> UploadManyAsync(IEnumerable<FileUploadDto> inputs)
-		{
-			var results = new List<FileDto>();
-			foreach (var input in inputs)
-				results.Add(await UploadAsync(input));
-			return results;
-		}
+        public async Task<IEnumerable<FileDto>> UploadManyAsync(IEnumerable<FileUploadDto> inputs)
+        {
+            var results = new List<FileDto>();
+            foreach (var input in inputs)
+                results.Add(await UploadAsync(input));
+            return results;
+        }
 
-		public async Task<IEnumerable<FileDto>> GetFilesAsync(Guid objectId, string objectTypeName)
-		{
-			var objectType = await _objectTypeRepository.GetAll().FirstOrDefaultAsync(x => x.Name == objectTypeName)
-					?? throw new Exception(_localizer["ObjectTypeNotFound", objectTypeName]);
+        public async Task<IEnumerable<FileDto>> GetFilesAsync(GetFilesRequestDto input)
+        {
+            var objectType = await _objectTypeRepository.GetAll().FirstOrDefaultAsync(x => x.Name == input.objectTypeName)
+                    ?? throw new Exception(_localizer["ObjectTypeNotFound", input.objectTypeName]);
 
-			return await _fileRelationRepository.GetAll()
-					.Include(fr => fr.File)
-					.Where(fr => fr.ObjectId == objectId && fr.ObjectTypeId == objectType.Id)
-					.Select(fr => new FileDto
-					{
-						Id = fr.File.Id,
-						FileName = fr.File.FileName,
-						FilePath = fr.File.FilePath,
-						FileType = fr.File.FileType,
-						FileSize = fr.File.FileSize
-					})
-					.ToListAsync();
-		}
+            return await _fileRelationRepository.GetAll()
+                    .Include(fr => fr.File)
+                    .Where(fr => fr.ObjectId == input.objectId && fr.ObjectTypeId == objectType.Id && fr.RelationType.Equals(input.relationType))
+                    .Select(fr => new FileDto
+                    {
+                        Id = fr.File.Id,
+                        FileName = fr.File.FileName,
+                        FilePath = fr.File.FilePath,
+                        FileType = fr.File.FileType,
+                        FileSize = fr.File.FileSize
+                    })
+                    .ToListAsync();
+        }
 
-		public async Task DeleteAsync(Guid fileId)
-		{
-			var file = await _fileRepository.GetAll().FirstOrDefaultAsync(f => f.Id == fileId)
-					?? throw new Exception(_localizer["FileNotFound"]);
+        public async Task DeleteAsync(Guid fileId)
+        {
+            var file = await _fileRepository.GetAll().FirstOrDefaultAsync(f => f.Id == fileId)
+                    ?? throw new Exception(_localizer["FileNotFound"]);
 
-			var fullPath = Path.Combine(_environment.WebRootPath, file.FilePath.TrimStart('/'));
-			if (System.IO.File.Exists(fullPath))
-				System.IO.File.Delete(fullPath);
+            var fullPath = Path.Combine(_environment.WebRootPath, file.FilePath.TrimStart('/'));
+            if (System.IO.File.Exists(fullPath))
+                System.IO.File.Delete(fullPath);
 
-			var relations = _fileRelationRepository.GetAll().Where(r => r.FileId == file.Id);
-			await _fileRelationRepository.RemoveRange(relations);
-			_fileRepository.HardDelete(file);
-			await _unitOfWork.SaveChangesAsync();
-		}
+            var relations = _fileRelationRepository.GetAll().Where(r => r.FileId == file.Id);
+            await _fileRelationRepository.RemoveRange(relations);
+            _fileRepository.HardDelete(file);
+            await _unitOfWork.SaveChangesAsync();
+        }
 
-		public Task<FileDownloadResult> GetFileForDownload(string relativePath)
-		{
-			try
-			{
-				var fullPath = GetPhysicalPath(relativePath);
-				if (!System.IO.File.Exists(fullPath))
-				{
-					throw new FileNotFoundException(_localizer["FileNotFound"], fullPath);
-				}
+        public Task<FileDownloadResult> GetFileForDownload(string relativePath)
+        {
+            try
+            {
+                var fullPath = GetPhysicalPath(relativePath);
+                if (!System.IO.File.Exists(fullPath))
+                {
+                    throw new FileNotFoundException(_localizer["FileNotFound"], fullPath);
+                }
 
-				var contentType = GetMimeType(fullPath);
-				var fileName = Path.GetFileName(fullPath);
+                var contentType = GetMimeType(fullPath);
+                var fileName = Path.GetFileName(fullPath);
 
-				var result = new FileDownloadResult
-				{
-					PhysicalPath = fullPath,
-					ContentType = contentType,
-					FileName = fileName
-				};
-				return Task.FromResult(result);
-			}
-			catch (Exception ex)
-			{
-				return Task.FromException<FileDownloadResult>(ex);
-			}
-		}
+                var result = new FileDownloadResult
+                {
+                    PhysicalPath = fullPath,
+                    ContentType = contentType,
+                    FileName = fileName
+                };
+                return Task.FromResult(result);
+            }
+            catch (Exception ex)
+            {
+                return Task.FromException<FileDownloadResult>(ex);
+            }
+        }
 
-		private string GetPhysicalPath(string relativePath)
-		{
-			var cleanPath = relativePath.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-			return Path.Combine(_environment.WebRootPath ?? "wwwroot", cleanPath);
-		}
+        private string GetPhysicalPath(string relativePath)
+        {
+            var cleanPath = relativePath.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return Path.Combine(_environment.WebRootPath ?? "wwwroot", cleanPath);
+        }
 
-		private string GetMimeType(string filePath)
-		{
-			var provider = new FileExtensionContentTypeProvider();
-			if (!provider.TryGetContentType(filePath, out var contentType))
-			{
-				contentType = "application/octet-stream";
-			}
-			return contentType;
-		}
-	}
+        private string GetMimeType(string filePath)
+        {
+            var provider = new FileExtensionContentTypeProvider();
+            if (!provider.TryGetContentType(filePath, out var contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+            return contentType;
+        }
+
+        public async Task DeleteFileAsync(Guid fileId)
+        {
+            var fileEntity = await _fileRepository.GetByIdAsync(fileId)
+            ?? throw new Exception("File not found");
+
+            var filePath = Path.Combine(_environment.WebRootPath, fileEntity.FilePath);
+
+            _fileRepository.HardDelete(fileEntity);
+            await _unitOfWork.SaveChangesAsync();
+
+            if (System.IO.File.Exists(filePath))
+                System.IO.File.Delete(filePath);
+        }
+    }
 }

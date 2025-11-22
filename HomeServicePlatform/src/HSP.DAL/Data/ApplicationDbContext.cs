@@ -257,7 +257,6 @@ namespace HSP.DAL.Data
             builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
             builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);
             builder.Entity<TechnicianProfile>().HasQueryFilter(tp => !tp.IsDeleted);
-            builder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
             builder.Entity<Core.Entities.Service>().HasQueryFilter(s => !s.IsDeleted);
             builder.Entity<Booking>().HasQueryFilter(b => !b.IsDeleted);
             builder.Entity<BookingItem>().HasQueryFilter(b => !b.IsDeleted);
