@@ -30,15 +30,16 @@ import TechnicianDetailModal from "../../../components/client/TechnicianDetailMo
 
 export function FindTechnicianPage({ loggedInUser }) {
   const { t } = useTranslation();
-  const [technicianDetailModalVisible, setTechnicianDetailModalVisible] = useState(false);
+  const [technicianDetailModalVisible, setTechnicianDetailModalVisible] =
+    useState(false);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState(null);
-  
+
   const handleHomeAddedSuccess = () => {
     toast.success(t("success.home_added"));
     reloadHomeData();
     setIsAddHomeModalOpen(false);
   };
-  
+
   const handleViewTechnicianDetails = (technicianId) => {
     setSelectedTechnicianId(technicianId);
     setTechnicianDetailModalVisible(true);
@@ -138,7 +139,7 @@ export function FindTechnicianPage({ loggedInUser }) {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-screen-2xl mx-auto pt-10 min-h-screen bg-gray-50"> 
+    <div className="p-4 md:p-6 max-w-screen-2xl mx-auto pt-10 min-h-screen bg-gray-50">
       {/* Modals */}
       {loggedInUser && isAddHomeModalOpen && (
         <AddHomeModal
@@ -164,7 +165,7 @@ export function FindTechnicianPage({ loggedInUser }) {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
-        <div className="lg:w-1/2 flex flex-col"> 
+        <div className="lg:w-1/2 flex flex-col">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4 flex-1">
             {/* Section Title */}
             <div className="pb-3 border-b border-gray-200">
@@ -573,7 +574,13 @@ export function FindTechnicianPage({ loggedInUser }) {
                           fill="currentColor"
                         />
                         <span className="font-medium">
-                          {tech.rating || t("ui.not_updated")}
+                          {tech.ratingCount > 0 ? (
+                            `${tech.rating}/5 (${tech.ratingCount} đánh giá)`
+                          ) : (
+                            <span className="text-gray-400 italic">
+                              Chưa có đánh giá
+                            </span>
+                          )}
                         </span>
                       </div>
                       <span className="text-blue-600 font-semibold">
@@ -583,7 +590,7 @@ export function FindTechnicianPage({ loggedInUser }) {
                   </div>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
-                  <button 
+                  <button
                     onClick={() => handleViewTechnicianDetails(tech.id)}
                     className="text-sm px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-all shadow-sm flex items-center gap-2"
                   >

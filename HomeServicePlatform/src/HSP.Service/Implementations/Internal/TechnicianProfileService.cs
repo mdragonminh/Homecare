@@ -97,6 +97,7 @@ namespace HSP.Service.Implementations.Internal
 
             List<TechnicianFileDto> certificateFiles = new List<TechnicianFileDto>();
             TechnicianFileDto? legalFile = null;
+            TechnicianFileDto? avatar = null;
 
             if (objectType != null)
             {
@@ -105,7 +106,8 @@ namespace HSP.Service.Implementations.Internal
                     .Where(fr => fr.ObjectId == technician.Id &&
                                  fr.ObjectTypeId == objectType.Id &&
                                  (fr.RelationType == FileConstants.TechnicianCertificate ||
-                                  fr.RelationType == FileConstants.LegalDocument))
+                                  fr.RelationType == FileConstants.LegalDocument ||
+                                  fr.RelationType == FileConstants.Avatar))
                     .Select(fr => new {
                         Type = fr.RelationType,
                         Dto = new TechnicianFileDto
@@ -122,6 +124,9 @@ namespace HSP.Service.Implementations.Internal
                                            .Select(x => x.Dto).ToList();
 
                 legalFile = allFiles.Where(x => x.Type == FileConstants.LegalDocument)
+                                        .Select(x => x.Dto).FirstOrDefault();
+
+                avatar = allFiles.Where(x => x.Type == FileConstants.Avatar)
                                         .Select(x => x.Dto).FirstOrDefault();
             }
 
@@ -142,7 +147,8 @@ namespace HSP.Service.Implementations.Internal
                 DateModified = technician.DateModified,
                 Services = technician.Services.Select(s => new TechnicianServiceDto { Id = s.Id, Name = s.Name }).ToList(),
                 CertificateFiles = certificateFiles,
-                LegalDocument = legalFile 
+                LegalDocument = legalFile, 
+                Avatar = avatar
             };
         }
 

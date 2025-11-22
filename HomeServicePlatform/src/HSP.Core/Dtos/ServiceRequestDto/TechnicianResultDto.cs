@@ -11,5 +11,7 @@ namespace HSP.Core.Dtos.ServiceRequestDto
 		public double Latitude { get; set; }
 		public double Longitude { get; set; }
 		public List<string>? Services { get; set; }
-	}
+        public double Rating { get; set; }
+        public int RatingCount { get; set; }
+    }
 }
