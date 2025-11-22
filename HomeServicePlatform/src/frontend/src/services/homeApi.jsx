@@ -1,5 +1,5 @@
 import axios from "axios";
-import axiosClient from "../config/axiosClient"; 
+import axiosClient from "../config/axiosClient";
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
 
@@ -27,13 +27,17 @@ export const homeApi = {
     }
   },
 
-  
-  createHome: async ({ name, address, latitude, longitude, customerProfileId }) => {
+  createHome: async ({
+    name,
+    address,
+    latitude,
+    longitude,
+    customerProfileId,
+  }) => {
     try {
       let lat = latitude;
       let lng = longitude;
 
-      
       if (!lat || !lng) {
         const geocodeResult = await homeApi.geocodeAddress(address);
         if (!geocodeResult.success) throw new Error(geocodeResult.message);
@@ -41,17 +45,13 @@ export const homeApi = {
         lng = geocodeResult.longitude;
       }
 
-     
-      const res = await axiosClient.post(
-        "/Home/create-home", 
-        {
-          name,
-          address,
-          latitude: lat,
-          longitude: lng,
-          customerProfileId,
-        }
-      );
+      const res = await axiosClient.post("/Home/create-home", {
+        name,
+        address,
+        latitude: lat,
+        longitude: lng,
+        customerProfileId,
+      });
 
       if (ENABLE_DEBUG) console.log("Create home success:", res.data);
       return { success: true, data: res.data };
@@ -68,7 +68,6 @@ export const homeApi = {
     }
   },
 
-
   getHomesOfCurrentUser: async (
     page = 1,
     pageSize = 10,
@@ -76,8 +75,6 @@ export const homeApi = {
     type = "all"
   ) => {
     try {
-      
-
       const queryParams = new URLSearchParams({
         pageNumber: page,
         pageSize: pageSize,
@@ -85,9 +82,8 @@ export const homeApi = {
         ...(type !== "all" && { type }),
       }).toString();
 
-      const url = `/Home/list-home?${queryParams}`; 
+      const url = `/Home/list-home?${queryParams}`;
 
-     
       const res = await axiosClient.get(url);
 
       if (ENABLE_DEBUG) console.log("Get homes success:", res.data);
@@ -97,17 +93,16 @@ export const homeApi = {
       if (ENABLE_DEBUG) console.error("Get homes error:", error);
       return {
         success: false,
-        message: error.response?.data?.message || "Lỗi khi lấy danh sách địa chỉ",
+        message:
+          error.response?.data?.message || "Lỗi khi lấy danh sách địa chỉ",
       };
     }
   },
 
   getHomeById: async (homeId) => {
     try {
-     
-      const url = `/Home/${homeId}`; 
+      const url = `/Home/${homeId}`;
 
-     
       const res = await axiosClient.get(url);
 
       if (ENABLE_DEBUG) console.log(`Get home ${homeId} success:`, res.data);
@@ -122,21 +117,14 @@ export const homeApi = {
     }
   },
 
-  
   updateHome: async (homeId, { name, address, latitude, longitude }) => {
     try {
-      
-      const res = await axiosClient.put(
-        `/Home/${homeId}`, 
-        {
-          name,
-          address,
-          latitude,
-          longitude,
-         
-        }
-      
-      );
+      const res = await axiosClient.put(`/Home/${homeId}`, {
+        name,
+        address,
+        latitude,
+        longitude,
+      });
 
       if (ENABLE_DEBUG) console.log(`Update home ${homeId} success:`, res.data);
       return { success: true, data: res.data };
@@ -152,11 +140,8 @@ export const homeApi = {
       };
     }
   },
-
-  // Hàm xóa Home (DELETE /api/Home/{homeId})
   deleteHome: async (homeId) => {
     try {
-     
       const res = await axiosClient.delete(`/Home/${homeId}`); // Dùng relative path
 
       if (ENABLE_DEBUG) console.log(`Delete home ${homeId} success:`, res.data);
@@ -169,11 +154,6 @@ export const homeApi = {
       };
     }
   },
-
-  // =================================================================================
-  // CÁC API HOME ITEM ĐÃ CÓ
-  // =================================================================================
-
   addHomeItem: async ({
     name,
     brand,
@@ -184,19 +164,15 @@ export const homeApi = {
     homeId,
   }) => {
     try {
-      const res = await axiosClient.post(
-        "/HomeItem/add-home-item", 
-        {
-          name,
-          brand,
-          type,
-          modelNumber,
-          serialNumber,
-          notes,
-          homeId,
-        }
-       
-      );
+      const res = await axiosClient.post("/HomeItem/add-home-item", {
+        name,
+        brand,
+        type,
+        modelNumber,
+        serialNumber,
+        notes,
+        homeId,
+      });
 
       if (ENABLE_DEBUG) console.log("Add home item success:", res.data);
       return { success: true, data: res.data };
@@ -205,16 +181,15 @@ export const homeApi = {
       return {
         success: false,
         message:
-          error.response?.data?.message || error.message || "Thêm vật phẩm thất bại",
+          error.response?.data?.message ||
+          error.message ||
+          "Thêm vật phẩm thất bại",
       };
     }
   },
 
- 
   listHomeItems: async (homeId, page = 1, pageSize = 10, searchTerm = "") => {
     try {
-     
-
       const queryParams = new URLSearchParams({
         homeId: homeId,
         pageNumber: page,
@@ -222,9 +197,8 @@ export const homeApi = {
         ...(searchTerm && { Search: searchTerm }),
       }).toString();
 
-      const url = `/HomeItem/list-home-item?${queryParams}`; 
+      const url = `/HomeItem/list-home-item?${queryParams}`;
 
-      
       const res = await axiosClient.get(url);
 
       if (ENABLE_DEBUG) console.log("List home items success:", res.data);
@@ -234,19 +208,22 @@ export const homeApi = {
       if (ENABLE_DEBUG) console.error("List home items error:", error);
       return {
         success: false,
-        message: error.response?.data?.message || "Lỗi khi lấy danh sách vật phẩm",
+        message:
+          error.response?.data?.message || "Lỗi khi lấy danh sách vật phẩm",
       };
     }
   },
-   getHomeItemById: async (homeItemId) => {
+  getHomeItemById: async (homeItemId) => {
     try {
       const url = `/HomeItem/${homeItemId}`;
       const res = await axiosClient.get(url);
 
-      if (ENABLE_DEBUG) console.log(`Get home item ${homeItemId} success:`, res.data);
+      if (ENABLE_DEBUG)
+        console.log(`Get home item ${homeItemId} success:`, res.data);
       return { success: true, data: res.data };
     } catch (error) {
-      if (ENABLE_DEBUG) console.error(`Get home item ${homeItemId} error:`, error);
+      if (ENABLE_DEBUG)
+        console.error(`Get home item ${homeItemId} error:`, error);
       return {
         success: false,
         message:
@@ -255,18 +232,16 @@ export const homeApi = {
     }
   },
 
- 
-  updateHomeItem: async (homeItemId, data) => { 
+  updateHomeItem: async (homeItemId, data) => {
     try {
-      const res = await axiosClient.put(
-        `/HomeItem/${homeItemId}`,
-        data 
-      );
+      const res = await axiosClient.put(`/HomeItem/${homeItemId}`, data);
 
-      if (ENABLE_DEBUG) console.log(`Update home item ${homeItemId} success:`, res.data);
+      if (ENABLE_DEBUG)
+        console.log(`Update home item ${homeItemId} success:`, res.data);
       return { success: true, data: res.data };
     } catch (error) {
-      if (ENABLE_DEBUG) console.error(`Update home item ${homeItemId} error:`, error);
+      if (ENABLE_DEBUG)
+        console.error(`Update home item ${homeItemId} error:`, error);
       return {
         success: false,
         message:
@@ -278,14 +253,76 @@ export const homeApi = {
     }
   },
 
+  scanHomeItem: async (files) => {
+    try {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append("files", file);
+      });
+
+      const res = await axiosClient.post("/ocr/scan-homeitem", formData, {});
+
+      if (ENABLE_DEBUG) console.log("Scan home item success:", res.data);
+      return { success: true, data: res.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error("Scan home item error:", error);
+
+      let errorMessage = "Quét vật phẩm thất bại";
+
+      if (error.response) {
+        const responseData = error.response.data;
+        const status = error.response.status;
+
+        if (status === 400) {
+          errorMessage =
+            "File không đúng định dạng hoặc không hợp lệ. Vui lòng chọn ảnh JPG, JPEG hoặc PNG.";
+        } else if (status === 413) {
+          errorMessage = "File quá lớn. Vui lòng chọn file nhỏ hơn 5MB.";
+        } else if (status === 415) {
+          errorMessage =
+            "Định dạng file không được hỗ trợ. Chỉ chấp nhận ảnh JPG, JPEG, PNG.";
+        } else if (status >= 500) {
+          errorMessage = "Lỗi server. Vui lòng thử lại sau.";
+        } else {
+          errorMessage =
+            responseData?.message ||
+            responseData?.error ||
+            responseData?.title ||
+            responseData?.Message ||
+            responseData?.Error ||
+            `Lỗi không xác định (${status})`;
+        }
+
+        if (responseData?.errors && typeof responseData.errors === "object") {
+          const errorValues = Object.values(responseData.errors).flat();
+          if (errorValues.length > 0) {
+            errorMessage = errorValues.join(", ");
+          }
+        }
+      } else if (error.request) {
+        errorMessage =
+          "Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.";
+      } else {
+        errorMessage = error.message || "Lỗi không xác định khi quét ảnh";
+      }
+
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  },
+
   deleteHomeItem: async (homeItemId) => {
     try {
       const res = await axiosClient.delete(`/HomeItem/${homeItemId}`);
 
-      if (ENABLE_DEBUG) console.log(`Delete home item ${homeItemId} success:`, res.data);
+      if (ENABLE_DEBUG)
+        console.log(`Delete home item ${homeItemId} success:`, res.data);
       return { success: true, data: res.data };
     } catch (error) {
-      if (ENABLE_DEBUG) console.error(`Delete home item ${homeItemId} error:`, error);
+      if (ENABLE_DEBUG)
+        console.error(`Delete home item ${homeItemId} error:`, error);
       return {
         success: false,
         message: error.response?.data?.message || "Xóa vật phẩm thất bại",
