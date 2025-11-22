@@ -864,9 +864,9 @@ namespace HSP.Service.Test.Implementations.Internal
             _objTypeRepoMock.Setup(r => r.GetAll()).Returns(objectTypesMock);
 
             // Mock FileRelation repository
-            var file1 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "old.jpg", IsDeleted = false };
-            var file2 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "latest.jpg", IsDeleted = false };
-            var file3 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "deleted.jpg", IsDeleted = true };
+            var file1 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "old.jpg"};
+            var file2 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "latest.jpg" };
+            var file3 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "deleted.jpg" };
 
             var relations = new List<FileRelation>
     {
