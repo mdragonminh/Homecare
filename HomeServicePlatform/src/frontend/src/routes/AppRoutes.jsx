@@ -115,7 +115,6 @@ export default function AppRoutes({
         />
       </Route>
 
-      {/* Customer Chat Route */}
       <Route
         element={
           <Layout

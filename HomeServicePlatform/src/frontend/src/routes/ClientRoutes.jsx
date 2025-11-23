@@ -12,7 +12,7 @@ import PaymentPage from "../pages/client/payment/PaymentPage";
 import PaymentInstructionsPage from "../pages/client/payment/PaymentInstructionsPage";
 import PaymentResultPage from "../pages/client/payment/PaymentResultPage";
 import CustomerBookingDetail from "../pages/client/CustomerBookingDetail";
-
+import TechnicianProfile from "../pages/TechnicianProfile";
 import TicketManagementPage from "../pages/supporter/TicketManagementPage";
 
 const ProtectedRoute = ({
@@ -103,11 +103,23 @@ export default function ClientRoutes({
         }
       />
       <Route
-        path="/profile"
-        element={
-          <ProtectedRoute
-            loggedInUser={loggedInUser}
-            element={
+      path="/profile"
+      element={
+        <ProtectedRoute
+          loggedInUser={loggedInUser}
+          element={
+            // KIỂM TRA VAI TRÒ CỦA NGƯỜI DÙNG
+            loggedInUser && loggedInUser.role === "technician" ? (
+              // NẾU LÀ TECHNICIAN, RENDER TechnicianProfile
+              <TechnicianProfile
+                loggedInUser={loggedInUser}
+                onLogout={onLogout}
+                onShowLogin={onShowLogin}
+                onShowRegister={onShowRegister}
+                onProfileUpdate={onProfileUpdate}
+              />
+            ) : (
+              // NẾU LÀ CUSTOMER/ADMIN/VAI TRÒ KHÁC, RENDER Profile CHUNG
               <Profile
                 loggedInUser={loggedInUser}
                 onLogout={onLogout}
@@ -115,10 +127,11 @@ export default function ClientRoutes({
                 onShowRegister={onShowRegister}
                 onProfileUpdate={onProfileUpdate}
               />
-            }
-          />
-        }
-      />
+            )
+          }
+        />
+      }
+    />
 
       <Route
         path="/about"

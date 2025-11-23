@@ -297,7 +297,7 @@ export default function HomeItemsInterface() {
         </div>
         <div className="flex items-stretch gap-4 mb-8">
           <div className="bg-white px-6 rounded-2xl border border-gray-200 flex items-center justify-center flex-shrink-0">
-            <p className="text-xs text-gray-500 whitespace-nowrap">
+            <p className="text-xm text-gray-500 whitespace-nowrap">
               {t("ui.total_items") || "Hiện thị"}:{" "}
               <span className="font-bold text-gray-900 ml-1">{totalCount}</span>
             </p>

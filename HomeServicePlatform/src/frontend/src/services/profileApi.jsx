@@ -324,3 +324,39 @@ export const profileApi = {
     }
   },
 };
+export const technicianApi = {
+  /**
+   * Lấy thông tin chi tiết của Technician theo ID
+   * Endpoint: GET /api/TechnicianManagement/technicians/{id}
+   */
+  getTechnicianDetails: async (technicianId) => {
+    try {
+      const jwtToken = localStorage.getItem("jwtToken");
+      if (!jwtToken) {
+        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
+      }
+      
+      // Gọi API Technician mới: /TechnicianManagement/technicians/{id}
+      const response = await axiosClient.get(`/TechnicianManagement/technicians/${technicianId}`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
+
+      if (ENABLE_DEBUG) console.log("Get technician details success:", response.data);
+      return { success: true, data: response.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error("Get technician details error:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          error.message ||
+          "Lỗi khi lấy thông tin Technician",
+      };
+    }
+  },
+  
+  // TODO: Các hàm khác (như cập nhật thông tin đặc thù, upload chứng chỉ) sẽ được thêm vào đây sau.
+};
