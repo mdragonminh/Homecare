@@ -162,12 +162,6 @@ namespace HSP.DAL.Data
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Ticket>()
-                   .HasOne(t => t.Equipment)
-                   .WithMany()
-                   .HasForeignKey(t => t.EquipmentId)
-                   .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Entity<Ticket>()
                    .HasOne(t => t.Supporter)
                    .WithMany()
                    .HasForeignKey(t => t.SupporterId)

@@ -8,18 +8,14 @@ import {
   Zap,
   XCircle,
   X, 
-  Send, 
-  PlusCircle, 
-  Database, 
+  Send
 } from "lucide-react";
 import { 
   getMyTickets, 
   assignTechnician, 
-  updateTicketStatus,
-  createTicket 
+  updateTicketStatus
 } from "../../services/ticketApi";
 import { technicianApi } from "../../services/technicianApi"; 
-import { equipmentApi } from "../../services/equipmentApi"; 
 import { toast } from "sonner";
 
 const statusMap = {
@@ -50,21 +46,16 @@ const TicketManagementPage = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false); 
   
+  // Status Modal State
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [newStatus, setNewStatus] = useState(0); 
 
+  // Assign Modal State
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [technicianList, setTechnicianList] = useState([]);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState("");
   
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [equipmentList, setEquipmentList] = useState([]); 
-  const [newTicketData, setNewTicketData] = useState({
-    equipmentId: "",
-    issueDescription: ""
-  });
-
   const fetchTickets = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -108,6 +99,7 @@ const TicketManagementPage = () => {
     }
   };
 
+  // MODAL STATU
   const openStatusModal = (ticket) => {
     setSelectedTicket(ticket);
     const currentStatusValue = statusMap[ticket.status] ?? 0;
@@ -140,6 +132,7 @@ const TicketManagementPage = () => {
     setIsSubmitting(false);
   };
 
+  // ASSIGN TECH 
   const openAssignModal = async (ticket) => {
     setSelectedTicket(ticket);
     setIsAssignModalOpen(true);
@@ -180,50 +173,6 @@ const TicketManagementPage = () => {
         await fetchTickets(); 
     } else {
         toast.error(response.message || "Gán thất bại.");
-    }
-    setIsSubmitting(false);
-  };
-
-  const openCreateModal = async () => {
-    setIsSubmitting(true); 
-    const res = await equipmentApi.getEquipmentList({ PageSize: 500, PageNumber: 1 });
-    if (res.success) {
-      setEquipmentList(res.data.items || res.data); 
-    } else {
-      toast.error(res.message || "Lỗi tải danh sách thiết bị.");
-    }
-    setIsSubmitting(false);
-    setIsCreateModalOpen(true);
-  };
-
-  const closeCreateModal = () => {
-    setIsCreateModalOpen(false);
-    setEquipmentList([]);
-    setNewTicketData({ equipmentId: "", issueDescription: "" });
-  };
-
-  const handleCreateFormChange = (e) => {
-    const { name, value } = e.target;
-    setNewTicketData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleCreateSubmit = async (e) => {
-    e.preventDefault();
-    if (!newTicketData.equipmentId) {
-        toast.warning("Vui lòng chọn một thiết bị.");
-        return;
-    }
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
-    const response = await createTicket(newTicketData); 
-
-    if (response.success) {
-        toast.success("Tạo ticket thành công!");
-        closeCreateModal();
-        await fetchTickets(); 
-    } else {
-        toast.error(response.message || "Tạo ticket thất bại.");
     }
     setIsSubmitting(false);
   };
@@ -327,18 +276,9 @@ const TicketManagementPage = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Quản lý Tickets</h1>
           <p className="text-gray-600 mt-2">
-            Danh sách các tickets được gán cho bạn. Tổng cộng: {pagination.totalCount}
+            Danh sách các ticket hỗ trợ. Tổng cộng: {pagination.totalCount}
           </p>
         </div>
-        
-        <button
-          onClick={openCreateModal}
-          disabled={isSubmitting} 
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors disabled:opacity-50"
-        >
-          <PlusCircle className="w-5 h-5 mr-2" />
-          Tạo Ticket Mới
-        </button>
       </div>
 
       {tickets.length === 0 ? (
@@ -357,7 +297,7 @@ const TicketManagementPage = () => {
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-col items-start gap-2 mb-2">
                         {getStatusBadge(ticket.status)}
                         <h3 className="text-lg font-semibold text-gray-900">
                           {ticket.issueDescription || "(Chưa có mô tả)"}
@@ -380,21 +320,28 @@ const TicketManagementPage = () => {
                     </div>
                     <div>
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                        Kỹ thuật viên
+                        Khách hàng
                       </p>
                       <p className="text-sm text-gray-900 font-medium">
-                        {ticket.technicianName}
+                        {ticket.customerName || "N/A"}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                        Thiết bị
+                        Kỹ thuật viên
                       </p>
                       <p className="text-sm text-gray-900">
-                        {ticket.equipmentName}
+                        {ticket.technicianName || "Chưa gán"}
                       </p>
                     </div>
                   </div>
+                  
+                  {ticket.bookingId && (
+                    <div className="mb-6">
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Liên kết Booking</p>
+                        <p className="text-sm text-blue-600 font-mono">{ticket.bookingId}</p>
+                    </div>
+                  )}
 
                   <div className="flex gap-3">
                     <button
@@ -420,13 +367,7 @@ const TicketManagementPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  Hiển thị{" "}
-                  <span className="font-medium">{tickets.length}</span> trên
-                  tổng số{" "}
-                  <span className="font-medium">
-                    {pagination.totalCount}
-                  </span>{" "}
-                  kết quả
+                  Hiển thị <span className="font-medium">{tickets.length}</span> trên tổng số <span className="font-medium">{pagination.totalCount}</span>
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -455,78 +396,33 @@ const TicketManagementPage = () => {
         </>
       )}
 
+      {/* MODAL STATUS */}
       {isStatusModalOpen && selectedTicket && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={closeStatusModal}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-md"
-            onClick={(e) => e.stopPropagation()} 
-          >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={closeStatusModal}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleStatusSubmit}>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Cập nhật trạng thái
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={closeStatusModal}
-                    className="p-1 rounded-full text-gray-400 hover:bg-gray-100"
-                  >
+                  <h3 className="text-lg font-semibold text-gray-900">Cập nhật trạng thái</h3>
+                  <button type="button" onClick={closeStatusModal} className="p-1 rounded-full text-gray-400 hover:bg-gray-100">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  Ticket:{" "}
-                  <span className="font-medium text-gray-800">
-                    {selectedTicket.issueDescription || "(Chưa có mô tả)"}
-                  </span>
-                </p>
-                <p className="text-sm text-gray-600 mb-4">
-                  Trạng thái hiện tại:{" "}
-                  {getStatusBadge(selectedTicket.status)}
-                </p>
-
+                <p className="text-sm text-gray-600 mb-2">Ticket: <span className="font-medium text-gray-800">{selectedTicket.issueDescription || "(Chưa có mô tả)"}</span></p>
+                <p className="text-sm text-gray-600 mb-4">Trạng thái hiện tại: {getStatusBadge(selectedTicket.status)}</p>
                 <div>
-                  <label
-                    htmlFor="statusSelect"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Chọn trạng thái mới
-                  </label>
-                  <select
-                    id="statusSelect"
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
+                  <label htmlFor="statusSelect" className="block text-sm font-medium text-gray-700 mb-1">Chọn trạng thái mới</label>
+                  <select id="statusSelect" value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     {statusOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                 </div>
               </div>
-
-              {/* Footer Modal */}
               <div className="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeStatusModal}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+                <button type="button" onClick={closeStatusModal} className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">Hủy</button>
+                <button type="submit" disabled={isSubmitting} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50">
+                  <Send className="w-4 h-4 mr-2" />{isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
               </div>
             </form>
@@ -534,55 +430,26 @@ const TicketManagementPage = () => {
         </div>
       )}
 
+      {/* MODAL ASSIGN */}
       {isAssignModalOpen && selectedTicket && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={closeAssignModal}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={closeAssignModal}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleAssignSubmit}>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Gán Kỹ thuật viên
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={closeAssignModal}
-                    className="p-1 rounded-full text-gray-400 hover:bg-gray-100"
-                  >
+                  <h3 className="text-lg font-semibold text-gray-900">Gán Kỹ thuật viên</h3>
+                  <button type="button" onClick={closeAssignModal} className="p-1 rounded-full text-gray-400 hover:bg-gray-100">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Ticket:{" "}
-                  <span className="font-medium text-gray-800">
-                    {selectedTicket.issueDescription || "(Chưa có mô tả)"}
-                  </span>
-                </p>
-
+                <p className="text-sm text-gray-600 mb-4">Ticket: <span className="font-medium text-gray-800">{selectedTicket.issueDescription || "(Chưa có mô tả)"}</span></p>
                 <div>
-                  <label
-                    htmlFor="techSelect"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Chọn Kỹ thuật viên
-                  </label>
+                  <label htmlFor="techSelect" className="block text-sm font-medium text-gray-700 mb-1">Chọn Kỹ thuật viên</label>
                   {technicianList.length > 0 ? (
-                    <select
-                      id="techSelect"
-                      value={selectedTechnicianId}
-                      onChange={(e) => setSelectedTechnicianId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    >
+                    <select id="techSelect" value={selectedTechnicianId} onChange={(e) => setSelectedTechnicianId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                       <option value="">-- Chọn một KTV --</option>
                       {technicianList.map((tech) => (
-                        <option key={tech.id} value={tech.id}>
-                          {tech.fullName} (ID: ...{tech.id.substring(tech.id.length - 6)})
-                        </option>
+                        <option key={tech.id} value={tech.id}>{tech.fullName} (ID: ...{tech.id.substring(tech.id.length - 6)})</option>
                       ))}
                     </select>
                   ) : (
@@ -590,122 +457,10 @@ const TicketManagementPage = () => {
                   )}
                 </div>
               </div>
-
-              {/* Footer Modal */}
               <div className="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeAssignModal}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !selectedTechnicianId}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  {isSubmitting ? "Đang gán..." : "Gán Kỹ thuật viên"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {isCreateModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={closeCreateModal}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <form onSubmit={handleCreateSubmit}>
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Tạo Ticket Mới
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={closeCreateModal}
-                    className="p-1 rounded-full text-gray-400 hover:bg-gray-100"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                <div className="mb-4">
-                  <label
-                    htmlFor="equipmentId"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Thiết bị gặp sự cố
-                  </label>
-
-                  {!isSubmitting && equipmentList.length > 0 ? (
-                    <select
-                      id="equipmentId"
-                      name="equipmentId"
-                      value={newTicketData.equipmentId}
-                      onChange={handleCreateFormChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">-- Chọn một thiết bị --</option>
-                      {equipmentList.map((eq) => (
-                        <option key={eq.id} value={eq.id}>
-                          {eq.equipmentCode} ({eq.name})
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm text-gray-500 flex items-center">
-                       <Database className="w-4 h-4 mr-2 animate-spin" />
-                       Đang tải danh sách thiết bị...
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="issueDescription"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Mô tả sự cố (Không bắt buộc)
-                  </label>
-                  <textarea
-                    id="issueDescription"
-                    name="issueDescription"
-                    rows={4}
-                    value={newTicketData.issueDescription}
-                    onChange={handleCreateFormChange}
-                    maxLength={500}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Mô tả chi tiết về sự cố..."
-                  />
-                </div>
-              </div>
-
-              {/* Footer Modal */}
-              <div className="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeCreateModal}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !newTicketData.equipmentId}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors disabled:opacity-50"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  {isSubmitting ? "Đang tạo..." : "Tạo Ticket"}
+                <button type="button" onClick={closeAssignModal} className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">Hủy</button>
+                <button type="submit" disabled={isSubmitting || !selectedTechnicianId} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50">
+                  <Send className="w-4 h-4 mr-2" />{isSubmitting ? "Đang gán..." : "Gán Kỹ thuật viên"}
                 </button>
               </div>
             </form>

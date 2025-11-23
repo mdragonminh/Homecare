@@ -10,7 +10,7 @@ namespace HSP.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = RoleNames.Supporter + "," + RoleNames.Admin)]
+    [Authorize]
     public class TicketController : ControllerBase
     {
         private readonly ITicketService _ticketService;
@@ -28,13 +28,19 @@ namespace HSP.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetMyTickets([FromQuery] PaginationParams paginationParams)
         {
-            var supporterId = GetCurrentSupporterId();
-            if (string.IsNullOrEmpty(supporterId))
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out Guid userId))
             {
                 return Unauthorized("Không tìm thấy thông tin người dùng.");
             }
 
-            var tickets = await _ticketService.GetTicketsBySupporterAsync(supporterId, paginationParams);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+            if (string.IsNullOrEmpty(userRole))
+            {
+                return Unauthorized("Không xác định được quyền hạn.");
+            }
+
+            var tickets = await _ticketService.GetTicketsAsync(userId, userRole, paginationParams);
 
             return Ok(tickets);
         }
@@ -87,7 +93,8 @@ namespace HSP.API.Controllers
             return Ok(new { message = "Cập nhật trạng thái thành công." });
         }
 
-        [HttpPost] 
+        [HttpPost]
+        [Authorize(Roles = RoleNames.Customer)] 
         public async Task<IActionResult> CreateTicket([FromBody] CreateTicketDto createDto)
         {
             if (!ModelState.IsValid)
@@ -95,20 +102,33 @@ namespace HSP.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var supporterId = GetCurrentSupporterId();
-            if (string.IsNullOrEmpty(supporterId))
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized("Không tìm thấy thông tin người dùng.");
             }
 
-            var resultDto = await _ticketService.CreateTicketAsync(createDto, supporterId);
-
-            if (resultDto == null)
+            try
             {
-                return BadRequest(new { message = "Không thể tạo ticket. (Thiết bị có thể không tồn tại)." });
+                var resultDto = await _ticketService.CreateTicketAsync(createDto, userId);
+                return Ok(resultDto);
             }
-
-            return Ok(resultDto);
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex) 
+            {
+                return StatusCode(403, new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex) 
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }
