@@ -1,4 +1,5 @@
-﻿using HSP.Core.Dtos.Shared;
+﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Enums;
 using HSP.Core.Interfaces.DataAccess;
@@ -15,6 +16,7 @@ namespace HSP.Service.Implementations.Internal
     public class TicketService : BaseService, ITicketService
     {
         private readonly IRepository<Ticket, Guid> _ticketRepository;
+        private readonly IRepository<Booking, Guid> _bookingRepository;
         private readonly IEmailService _emailService;
         private readonly IUserRepository _userRepository;
         private readonly IRepository<Equipment, Guid> _equipmentRepository;
@@ -22,6 +24,7 @@ namespace HSP.Service.Implementations.Internal
 
         public TicketService(
             IRepository<Ticket, Guid> ticketRepository,
+            IRepository<Booking, Guid> bookingRepository,
             IEmailService emailService,
             IUserRepository userRepository,
             IRepository<Equipment, Guid> equipmentRepository,
@@ -31,28 +34,35 @@ namespace HSP.Service.Implementations.Internal
             ) : base(unitOfWork, localizer) 
         {
             _ticketRepository = ticketRepository;
+            _bookingRepository = bookingRepository;
             _emailService = emailService;
             _userRepository = userRepository;
             _equipmentRepository = equipmentRepository;
             _technicianProfileRepository = technicianProfileRepository;
         }
 
-        public async Task<PagedList<TicketDto>> GetTicketsBySupporterAsync(string supporterId, PaginationParams paginationParams)
+        public async Task<PagedList<TicketDto>> GetTicketsAsync(Guid userId, string userRole, PaginationParams paginationParams)
         {
-            if (!Guid.TryParse(supporterId, out Guid supporterGuid))
-            {
-                return new PagedList<TicketDto>(new List<TicketDto>(), 0, paginationParams.PageNumber, paginationParams.PageSize);
-            }
-
             var ticketsQuery = _ticketRepository.GetAll()
-                .Where(t => t.SupporterId == supporterGuid && t.IsDeleted == false)
-                .Include(t => t.Equipment)
+                .Where(t => t.IsDeleted == false)
+                .Include(t => t.Customer) 
+                .Include(t => t.Booking)  
                 .Include(t => t.Technician)
-                    .ThenInclude(tech => tech.User);
+                    .ThenInclude(tech => tech.User)
+                .AsQueryable();
+
+            if (userRole == RoleNames.Customer)
+            {
+                ticketsQuery = ticketsQuery.Where(t => t.CustomerId == userId);
+            }
+            else if (userRole == RoleNames.Supporter)
+            {
+                ticketsQuery = ticketsQuery.Where(t => t.SupporterId == userId || t.SupporterId == null);
+            }
 
             if (string.IsNullOrWhiteSpace(paginationParams.OrderBy))
             {
-                paginationParams.OrderBy = "DateCreated descending";
+                ticketsQuery = ticketsQuery.OrderByDescending(t => t.DateCreated);
             }
 
             var pagedTickets = await ticketsQuery.ToPagedListAsync(paginationParams);
@@ -60,7 +70,8 @@ namespace HSP.Service.Implementations.Internal
             var ticketsDto = pagedTickets.Items.Select(t => new TicketDto
             {
                 Id = t.Id,
-                EquipmentId = t.EquipmentId,
+                BookingId = t.BookingId,
+                CustomerId = t.CustomerId,
                 SupporterId = t.SupporterId,
                 TechnicianId = t.TechnicianId,
                 IssueDescription = t.IssueDescription,
@@ -68,8 +79,8 @@ namespace HSP.Service.Implementations.Internal
                 DateCreated = t.DateCreated,
                 StartedAt = t.StartedAt,
                 CompletedAt = t.CompletedAt,
-                TechnicianName = t.Technician?.User?.FullName ?? "Chưa gán",
-                EquipmentName = t.Equipment?.EquipmentCode ?? (t.Equipment?.Name ?? "Không rõ")
+                CustomerName = t.Customer?.FullName ?? "Unknown",
+                TechnicianName = t.Technician?.User?.FullName ?? "Not assigned",
             }).ToList();
 
             return new PagedList<TicketDto>(
@@ -96,9 +107,16 @@ namespace HSP.Service.Implementations.Internal
 
             var ticket = await _ticketRepository.GetByIdAsync(assignDto.TicketId);
 
-            if (ticket == null || ticket.SupporterId != supporterGuid)
+            if (ticket == null) return false;
+
+            if (ticket.SupporterId != null && ticket.SupporterId != supporterGuid)
             {
                 return false;
+            }
+
+            if (ticket.SupporterId == null)
+            {
+                ticket.SupporterId = supporterGuid;
             }
 
             ticket.TechnicianId = technicianGuid;
@@ -131,9 +149,16 @@ namespace HSP.Service.Implementations.Internal
 
             var ticket = await _ticketRepository.GetByIdAsync(updateDto.TicketId);
 
-            if (ticket == null || ticket.SupporterId != supporterGuid)
+            if (ticket == null) return false;
+
+            if (ticket.SupporterId != null && ticket.SupporterId != supporterGuid)
             {
                 return false;
+            }
+
+            if (ticket.SupporterId == null)
+            {
+                ticket.SupporterId = supporterGuid;
             }
 
             var oldStatus = ticket.Status;
@@ -171,26 +196,38 @@ namespace HSP.Service.Implementations.Internal
             return true;
         }
 
-        public async Task<TicketDto> CreateTicketAsync(CreateTicketDto createDto, string supporterId)
+        public async Task<TicketDto> CreateTicketAsync(CreateTicketDto createDto, string userId)
         {
-            if (!Guid.TryParse(supporterId, out Guid supporterGuid))
+            if (!Guid.TryParse(userId, out Guid customerGuid))
             {
-                throw new ArgumentException("Invalid supporterId", nameof(supporterId));
+                throw new UnauthorizedAccessException("User ID không hợp lệ.");
             }
 
-            var equipment = await _equipmentRepository.GetByIdAsync(createDto.EquipmentId);
-            if (equipment == null)
+            var booking = await _bookingRepository.GetByIdAsync(createDto.BookingId);
+            if (booking == null)
             {
-                throw new InvalidOperationException("Equipment not found");
+                throw new KeyNotFoundException("Không tìm thấy Booking.");
+            }
+
+            if (booking.CustomerId != customerGuid)
+            {
+                throw new UnauthorizedAccessException("Bạn chỉ có thể tạo ticket cho booking của chính mình.");
+            }
+
+            var existingTicket = _ticketRepository.GetAll().FirstOrDefault(t => t.BookingId == createDto.BookingId && !t.IsDeleted);
+            if (existingTicket != null)
+            {
+                throw new InvalidOperationException("Booking này đã có ticket đang được xử lý.");
             }
 
             var newTicket = new Ticket
             {
                 Id = Guid.NewGuid(),
-                EquipmentId = createDto.EquipmentId,
-                SupporterId = supporterGuid,
+                BookingId = createDto.BookingId,
+                CustomerId = customerGuid,
                 IssueDescription = createDto.IssueDescription,
                 Status = TicketStatus.NotAccepted, 
+                SupporterId = null, 
                 DateCreated = DateTime.UtcNow,
                 DateModified = DateTime.UtcNow,
                 IsDeleted = false
@@ -199,31 +236,16 @@ namespace HSP.Service.Implementations.Internal
             await _ticketRepository.AddAsync(newTicket);
             await _unitOfWork.SaveChangesAsync();
 
-            var supporterUser = await _userRepository.FindByIdAsync(supporterGuid);
-
-            var ticketDto = new TicketDto
+            return new TicketDto
             {
                 Id = newTicket.Id,
-                EquipmentId = newTicket.EquipmentId,
-                SupporterId = newTicket.SupporterId,
+                BookingId = newTicket.BookingId,
+                CustomerId = newTicket.CustomerId,
                 IssueDescription = newTicket.IssueDescription,
                 Status = newTicket.Status.ToString(),
                 DateCreated = newTicket.DateCreated,
-                EquipmentName = equipment.EquipmentCode ?? equipment.Name
+                CustomerName = booking.Customer?.FullName ?? "N/A" 
             };
-
-            if (supporterUser != null && !string.IsNullOrEmpty(supporterUser.Email))
-            {
-                var emailDto = new Dtos.EmailDto.EmailDto
-                {
-                    ToEmail = supporterUser.Email,
-                    Subject = $"Tạo thành công Ticket #{ticketDto.Id}",
-                    HtmlBody = $"<p>Bạn đã tạo thành công ticket #{ticketDto.Id} cho thiết bị '{ticketDto.EquipmentName}'.</p>"
-                };
-                _ = _emailService.SendEmailAsync(emailDto);
-            }
-
-            return ticketDto;
         }
     }
 }

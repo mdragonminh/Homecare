@@ -11,10 +11,14 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  AlertTriangle, 
+  Send,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import { bookingApi } from "../../services/bookingApi";
 import { paymentApi, getPaymentStatusText, PaymentStatus } from "../../services/paymentApi";
+import { createTicket } from "../../services/ticketApi";
 
 const CustomerBookingsPage = () => {
   const { t } = useTranslation();
@@ -30,8 +34,12 @@ const CustomerBookingsPage = () => {
     totalCount: 0,
   });
 
-  // Load payment status for bookings
   const [bookingPayments, setBookingPayments] = useState({});
+
+  const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [selectedBookingForTicket, setSelectedBookingForTicket] = useState(null);
+  const [issueDescription, setIssueDescription] = useState("");
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
 
   useEffect(() => {
     loadBookings();
@@ -56,7 +64,6 @@ const CustomerBookingsPage = () => {
         totalCount: response.totalCount || 0,
       }));
 
-      // Load payment status for each booking
       if (response.items && response.items.length > 0) {
         loadPaymentStatuses(response.items);
       }
@@ -73,7 +80,6 @@ const CustomerBookingsPage = () => {
       try {
         const result = await paymentApi.getPaymentsByBookingId(booking.id);
         if (result.success && result.data && result.data.length > 0) {
-          // Get the latest payment
           return { bookingId: booking.id, payment: result.data[0] };
         }
       } catch (error) {
@@ -100,6 +106,45 @@ const CustomerBookingsPage = () => {
 
   const handleViewPayment = (paymentId) => {
     navigate(`/payment/result/${paymentId}`);
+  };
+
+  const openTicketModal = (booking) => {
+    setSelectedBookingForTicket(booking);
+    setIssueDescription("");
+    setIsTicketModalOpen(true);
+  };
+
+  const closeTicketModal = () => {
+    setIsTicketModalOpen(false);
+    setSelectedBookingForTicket(null);
+    setIssueDescription("");
+  };
+
+  const handleSubmitTicket = async (e) => {
+    e.preventDefault();
+    if (!issueDescription.trim()) {
+      toast.warning("Vui lòng nhập mô tả sự cố.");
+      return;
+    }
+
+    setIsSubmittingTicket(true);
+    try {
+      const response = await createTicket({
+        bookingId: selectedBookingForTicket.id,
+        issueDescription: issueDescription
+      });
+
+      if (response.success) {
+        toast.success("Đã gửi yêu cầu hỗ trợ thành công!");
+        closeTicketModal();
+      } else {
+        toast.error(response.message || "Gửi yêu cầu thất bại.");
+      }
+    } catch (error) {
+      toast.error("Lỗi hệ thống khi tạo ticket.");
+    } finally {
+      setIsSubmittingTicket(false);
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -138,8 +183,7 @@ const CustomerBookingsPage = () => {
   };
 
   const canPayForBooking = (booking, payment) => {
-    // Can pay if booking is confirmed and no completed payment exists
-    const isConfirmed = booking.status === 1; // Confirmed status
+    const isConfirmed = booking.status === 1; 
     const hasNoCompletedPayment = !payment || payment.status !== PaymentStatus.Completed;
     return isConfirmed && hasNoCompletedPayment;
   };
@@ -147,7 +191,6 @@ const CustomerBookingsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <ClipboardList className="h-8 w-8 mr-3 text-blue-600" />
@@ -158,7 +201,6 @@ const CustomerBookingsPage = () => {
           </p>
         </div>
 
-        {/* Filters */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
@@ -189,7 +231,6 @@ const CustomerBookingsPage = () => {
           </div>
         </div>
 
-        {/* Bookings List */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
@@ -217,7 +258,6 @@ const CustomerBookingsPage = () => {
                   className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    {/* Booking Info */}
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
                         <div>
@@ -246,7 +286,6 @@ const CustomerBookingsPage = () => {
                         )}
                       </div>
 
-                      {/* Payment Status */}
                       {payment && (
                         <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                           <p className="text-sm text-gray-600">
@@ -272,8 +311,16 @@ const CustomerBookingsPage = () => {
                       )}
                     </div>
 
-                    {/* Actions */}
+                    {/* Actions Column */}
                     <div className="flex flex-col gap-2 lg:w-48">
+                      <button
+                        onClick={() => openTicketModal(booking)}
+                        className="flex items-center justify-center px-4 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
+                      >
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        Báo cáo sự cố
+                      </button>
+
                       <button
                         onClick={() => handleViewDetails(booking.id)}
                         className="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
@@ -307,7 +354,6 @@ const CustomerBookingsPage = () => {
           </div>
         )}
 
-        {/* Pagination */}
         {!loading && bookings.length > 0 && pagination.totalPages > 1 && (
           <div className="mt-6 flex justify-center">
             <nav className="flex items-center gap-2">
@@ -323,11 +369,9 @@ const CustomerBookingsPage = () => {
               >
                 Trước
               </button>
-
               <span className="px-4 py-2 text-gray-700">
                 Trang {pagination.currentPage} / {pagination.totalPages}
               </span>
-
               <button
                 onClick={() =>
                   setPagination((prev) => ({
@@ -344,6 +388,75 @@ const CustomerBookingsPage = () => {
           </div>
         )}
       </div>
+
+      {/* MODAL TICKET */}
+      {isTicketModalOpen && selectedBookingForTicket && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={closeTicketModal}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <form onSubmit={handleSubmitTicket}>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-orange-500" />
+                    Báo cáo sự cố / Khiếu nại
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={closeTicketModal}
+                    className="p-1 rounded-full text-gray-400 hover:bg-gray-100"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                   <p><strong>Mã Booking:</strong> {selectedBookingForTicket.id}</p>
+                   <p><strong>Ngày đặt:</strong> {formatDate(selectedBookingForTicket.desiredDate)}</p>
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="issue" className="block text-sm font-medium text-gray-700 mb-1">
+                    Mô tả vấn đề <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="issue"
+                    rows={4}
+                    value={issueDescription}
+                    onChange={(e) => setIssueDescription(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Vui lòng mô tả chi tiết vấn đề bạn gặp phải với booking này..."
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeTicketModal}
+                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingTicket}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {isSubmittingTicket ? "Đang gửi..." : "Gửi yêu cầu"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

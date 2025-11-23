@@ -8,8 +8,7 @@ namespace HSP.Service.Interfaces
 {
     public interface ITicketService
     {
-        Task<PagedList<TicketDto>> GetTicketsBySupporterAsync(string supporterId, PaginationParams paginationParams);
-
+        Task<PagedList<TicketDto>> GetTicketsAsync(Guid userId, string userRole, PaginationParams paginationParams);
         Task<bool> AssignTechnicianAsync(AssignTechnicianDto assignDto, string supporterId);
 
         Task<bool> UpdateTicketStatusAsync(UpdateTicketStatusDto updateDto, string supporterId);
