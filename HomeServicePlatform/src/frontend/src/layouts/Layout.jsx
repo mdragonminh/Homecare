@@ -27,7 +27,7 @@ export default function Layout({ loggedInUser, onLogout, onShowLogin, onShowRegi
       </main>
       <Footer />
 
-      {loggedInUser && (
+      {loggedInUser?.role === "customer" && (
         <>
           {!isChatOpen && (
             <button

@@ -575,10 +575,12 @@ export function FindTechnicianPage({ loggedInUser }) {
                         />
                         <span className="font-medium">
                           {tech.ratingCount > 0 ? (
-                            `${tech.rating}/5 (${tech.ratingCount} đánh giá)`
+                            `${tech.rating}/5 (${tech.ratingCount} ${t(
+                              "technicians.reviews"
+                            )})`
                           ) : (
                             <span className="text-gray-400 italic">
-                              Chưa có đánh giá
+                              {t("technicians.no_reviews")}
                             </span>
                           )}
                         </span>

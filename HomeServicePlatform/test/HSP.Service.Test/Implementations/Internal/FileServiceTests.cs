@@ -364,6 +364,7 @@ namespace HSP.Service.Test.Implementations.Internal
                 FileId = file.Id,
                 ObjectId = objectId,
                 ObjectTypeId = objectType.Id,
+                RelationType = "avatar",
                 File = file
             };
 
@@ -372,8 +373,14 @@ namespace HSP.Service.Test.Implementations.Internal
 
             _mockFileRelationRepo.Setup(r => r.GetAll())
                     .Returns(new List<FileRelation> { relation }.BuildMockDbSet().Object);
+            var input = new GetFilesRequestDto
+            {
+                objectId = objectId,
+                objectTypeName = "technician",
+                relationType = "avatar"
+            };
 
-            var result = await _service.GetFilesAsync(objectId, "technician");
+            var result = await _service.GetFilesAsync(input);
 
             Assert.Single(result);
             Assert.Equal("file1.jpg", result.First().FileName);
@@ -384,9 +391,14 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockObjectTypeRepo.Setup(r => r.GetAll())
                 .Returns(new List<ObjectType>().BuildMock());
 
-            await Assert.ThrowsAsync<Exception>(
-                () => _service.GetFilesAsync(Guid.NewGuid(), "UnknownType")
-            );
+            var input = new GetFilesRequestDto
+            {
+                objectId = Guid.NewGuid(),
+                objectTypeName = "UnknownType",
+                relationType = "avatar"
+            };
+
+            await Assert.ThrowsAsync<Exception>(() => _service.GetFilesAsync(input));
         }
         [Fact]
         public async Task GetFilesAsync_NoRelations_ShouldReturnEmptyList()
@@ -398,7 +410,14 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockFileRelationRepo.Setup(r => r.GetAll())
                 .Returns(new List<FileRelation>().BuildMock());
 
-            var result = await _service.GetFilesAsync(Guid.NewGuid(), "tech");
+            var input = new GetFilesRequestDto
+            {
+                objectId = Guid.NewGuid(),
+                objectTypeName = "tech",
+                relationType = "avatar"
+            };
+
+            var result = await _service.GetFilesAsync(input);
 
             Assert.Empty(result);
         }
