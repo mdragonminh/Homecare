@@ -311,7 +311,7 @@ namespace HSP.Service.Implementations.Internal
                         TechnicianId = technician.Id,
                         DesiredDate = desiredDate,
                         DateCreated = DateTime.UtcNow,
-                        Status = BookingStatus.Confirmed
+                        Status = BookingStatus.Pending
                     };
                     var bookingItems = services.Select(s => new BookingItem
                     {
