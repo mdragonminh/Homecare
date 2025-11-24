@@ -1,3 +1,4 @@
+using HSP.API.Extensions;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Dtos.TechnicianProfileDto;
@@ -49,6 +50,19 @@ namespace HSP.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Đã có lỗi xảy ra khi lấy thông tin technician", error = ex.Message });
+            }
+        }
+        [HttpPut]
+        [Authorize(Roles = RoleNames.Technician)]
+        public async Task<IActionResult> UpdateTechnician(UpdateTechnicianProfileDto input)
+        {
+            try {
+                var userId = User.GetUserId();
+                var result = await _technicianProfileService.UpdateTechnicianProfileAsync(userId, input);
+                return NoContent();
+            } catch(Exception ex)
+            {
+                return StatusCode(500, new {message = "Đã có lỗi xảy ra", error = ex.Message });
             }
         }
 
