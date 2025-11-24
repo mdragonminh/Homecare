@@ -19,7 +19,6 @@ namespace HSP.Service.Test.Implementations.Internal
     {
         private readonly Mock<IRepository<Equipment, Guid>> _equipmentRepo;
         private readonly Mock<IRepository<Warehouse, Guid>> _warehouseRepo;
-        private readonly Mock<IRepository<Supplier, Guid>> _supplierRepo;
         private readonly Mock<IUnitOfWork> _uow;
         private readonly EquipmentService _service;
 
@@ -27,15 +26,8 @@ namespace HSP.Service.Test.Implementations.Internal
         {
             _equipmentRepo = new Mock<IRepository<Equipment, Guid>>();
             _warehouseRepo = new Mock<IRepository<Warehouse, Guid>>();
-            _supplierRepo = new Mock<IRepository<Supplier, Guid>>();
             _uow = new Mock<IUnitOfWork>();
 
-            _service = new EquipmentService(
-                _equipmentRepo.Object,
-                _warehouseRepo.Object,
-                _supplierRepo.Object,
-                _uow.Object
-            );
         }
 
         // --------------------------
@@ -65,7 +57,6 @@ namespace HSP.Service.Test.Implementations.Internal
                     Id = id,
                     Name = "Laptop",
                     Warehouse = new Warehouse { Name = "Main WH" },
-                    Supplier = new Supplier { Name = "ASUS" }
                 }
             }.BuildMock();
 
@@ -99,13 +90,9 @@ namespace HSP.Service.Test.Implementations.Internal
             _warehouseRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Warehouse, bool>>>()))
                 .ReturnsAsync(true);
 
-            _supplierRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Supplier, bool>>>()))
-                .ReturnsAsync(false);
-
             var dto = new CreateEquipmentDto
             {
                 WarehouseId = Guid.NewGuid(),
-                SupplierId = Guid.NewGuid()
             };
 
             await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -116,8 +103,6 @@ namespace HSP.Service.Test.Implementations.Internal
         public async Task CreateEquipmentAsync_ShouldThrow_WhenEquipmentCodeExists()
         {
             _warehouseRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Warehouse, bool>>>()))
-                .ReturnsAsync(true);
-            _supplierRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Supplier, bool>>>()))
                 .ReturnsAsync(true);
 
             var equipments = new List<Equipment>
@@ -141,8 +126,6 @@ namespace HSP.Service.Test.Implementations.Internal
         public async Task CreateEquipmentAsync_ShouldCreateSuccessfully()
         {
             _warehouseRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Warehouse, bool>>>()))
-                .ReturnsAsync(true);
-            _supplierRepo.Setup(r => r.AnyAsync(It.IsAny<Expression<Func<Supplier, bool>>>()))
                 .ReturnsAsync(true);
 
             var equipments = new List<Equipment>().BuildMock();

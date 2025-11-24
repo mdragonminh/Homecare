@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { warehouseApi } from "../../services/warehouseApi";
-import { supplierApi } from "../../services/supplierApi"; 
 import { toast } from "sonner";
 import {
   PlusIcon,
@@ -11,10 +10,8 @@ import {
   BuildingStorefrontIcon,
   MagnifyingGlassIcon,
   AdjustmentsHorizontalIcon,
-  TruckIcon, 
-  TagIcon, 
-  CurrencyDollarIcon, 
-  CheckCircleIcon, 
+  CurrencyDollarIcon,
+  CheckCircleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
 
@@ -22,7 +19,6 @@ const EquipmentPage = () => {
   const { t } = useTranslation();
   const [equipments, setEquipments] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
-  const [suppliers, setSuppliers] = useState([]); 
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showQuantityModal, setShowQuantityModal] = useState(false);
@@ -49,7 +45,6 @@ const EquipmentPage = () => {
     unitPrice: 0,
     costPrice: 0,
     warrantyDurationMonths: 0,
-    supplierId: "",
     isActive: true,
   };
 
@@ -57,13 +52,12 @@ const EquipmentPage = () => {
 
   const [quantityData, setQuantityData] = useState({
     quantity: 0,
-    notes: "", 
+    notes: "",
   });
 
   useEffect(() => {
     fetchEquipments();
     fetchWarehouses();
-    fetchSuppliers(); 
   }, [pagination.currentPage, searchTerm, filterWarehouse]);
 
   const fetchEquipments = async () => {
@@ -98,23 +92,6 @@ const EquipmentPage = () => {
     }
   };
 
-  const fetchSuppliers = async () => {
-    try {
-      const params = { pageNumber: 1, pageSize: 100, orderBy: "Name" };
-      
-      const response = await supplierApi.getAllSuppliers(params);
-
-      if (response.success && response.data) {
-        setSuppliers(response.data.items || []);
-      } else {
-        console.error("Failed to fetch suppliers:", response.message);
-        toast.error(response.message || "Failed to load suppliers");
-      }
-    } catch (error) {
-      console.error("Error fetching suppliers:", error);
-    }
-  };
-
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -129,10 +106,9 @@ const EquipmentPage = () => {
     setPagination((prev) => ({ ...prev, currentPage: newPage }));
   };
 
-
   const openCreateModal = () => {
     setEditingEquipment(null);
-    setFormData(initialFormData); 
+    setFormData(initialFormData);
     setShowModal(true);
   };
 
@@ -150,12 +126,11 @@ const EquipmentPage = () => {
       unitPrice: equipment.unitPrice || 0,
       costPrice: equipment.costPrice || 0,
       warrantyDurationMonths: equipment.warrantyDurationMonths || 0,
-      supplierId: equipment.supplierId || "",
       isActive: equipment.isActive,
     });
     setShowModal(true);
   };
-  
+
   const openQuantityModal = (equipment) => {
     setQuantityEquipment(equipment);
     setQuantityData({ quantity: equipment.quantity, notes: "" });
@@ -165,7 +140,7 @@ const EquipmentPage = () => {
   const closeModal = () => {
     setShowModal(false);
     setEditingEquipment(null);
-    setFormData(initialFormData); 
+    setFormData(initialFormData);
   };
 
   const closeQuantityModal = () => {
@@ -186,7 +161,7 @@ const EquipmentPage = () => {
       }
 
       closeModal();
-      fetchEquipments(); 
+      fetchEquipments();
     } catch (error) {
       console.error("Error saving equipment:", error);
       toast.error(error.response?.data?.message || "Failed to save equipment");
@@ -196,10 +171,9 @@ const EquipmentPage = () => {
   const handleQuantityUpdate = async (e) => {
     e.preventDefault();
     try {
-      await warehouseApi.updateEquipmentQuantity(
-        quantityEquipment.id,
-        { quantity: quantityData.quantity } 
-      );
+      await warehouseApi.updateEquipmentQuantity(quantityEquipment.id, {
+        quantity: quantityData.quantity,
+      });
       toast.success("Equipment quantity updated successfully");
       closeQuantityModal();
       fetchEquipments();
@@ -291,12 +265,12 @@ const EquipmentPage = () => {
                 {t("equipment.brand", "Brand / Model")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t("equipment.location", "Location / Supplier")}
+                {t("equipment.location", "Location")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {t("equipment.stock", "Stock / Price")}
+                {t("equipment.stock", "Stock")}
               </th>
-               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {t("common.status", "Status")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -324,48 +298,40 @@ const EquipmentPage = () => {
                     <div className="text-sm font-medium text-gray-900">
                       {equipment.name}
                     </div>
-                    <div className="text-sm text-gray-500">{equipment.equipmentCode}</div>
-                  </td>
-                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{equipment.brand || "N/A"}</div>
-                    <div className="text-sm text-gray-500">{equipment.modelNumber || "N/A"}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900 mb-1">
+                    <div className="text-sm text-gray-900">
+                      {equipment.brand || "N/A"}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center text-sm text-gray-900">
                       <BuildingStorefrontIcon className="w-4 h-4 mr-2 text-gray-400" />
                       {equipment.warehouseName}
-                    </div>
-                     <div className="flex items-center text-sm text-gray-500">
-                      <TruckIcon className="w-4 h-4 mr-2 text-gray-400" />
-                      {equipment.supplierName || "N/A"}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mb-1 ${
+                      className={`inline-flex px-5 py-2 text-xs font-semibold rounded-full mb-2 ${
                         equipment.quantity > 0
                           ? equipment.quantity > 10
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
+                            ? "bg-green-200 text-green-800"
+                            : "bg-yellow-200 text-yellow-800"
+                          : "bg-red-200 text-red-800"
                       }`}
                     >
                       {equipment.quantity}
                     </span>
-                    <div className="flex items-center text-sm text-gray-500 mt-1">
-                      <CurrencyDollarIcon className="w-4 h-4 mr-1 text-gray-400" />
-                      {equipment.unitPrice.toLocaleString()} 
-                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {equipment.isActive ? (
-                       <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700">
-                         <CheckCircleIcon className="w-4 h-4"/> Active
-                       </span>
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700">
+                        <CheckCircleIcon className="w-4 h-4" /> Active
+                      </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700">
-                         <XCircleIcon className="w-4 h-4"/> Inactive
-                       </span>
+                        <XCircleIcon className="w-4 h-4" /> Inactive
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -397,7 +363,7 @@ const EquipmentPage = () => {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-         <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
             <div className="flex items-center justify-between">
               <div className="flex-1 flex justify-between sm:hidden">
                 <button
@@ -458,7 +424,7 @@ const EquipmentPage = () => {
           style={{ background: "rgba(1,1,1, 0.5)" }}
           className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
         >
-          <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white"> 
+          <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 {editingEquipment
@@ -467,7 +433,6 @@ const EquipmentPage = () => {
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Cột 1 */}
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -483,7 +448,7 @@ const EquipmentPage = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-                     <div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {t("equipment.equipmentCode", "Equipment Code")} *
                       </label>
@@ -492,7 +457,10 @@ const EquipmentPage = () => {
                         required
                         value={formData.equipmentCode}
                         onChange={(e) =>
-                          setFormData({ ...formData, equipmentCode: e.target.value })
+                          setFormData({
+                            ...formData,
+                            equipmentCode: e.target.value,
+                          })
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
@@ -518,7 +486,10 @@ const EquipmentPage = () => {
                         type="text"
                         value={formData.modelNumber}
                         onChange={(e) =>
-                          setFormData({ ...formData, modelNumber: e.target.value })
+                          setFormData({
+                            ...formData,
+                            modelNumber: e.target.value,
+                          })
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
@@ -531,17 +502,18 @@ const EquipmentPage = () => {
                         rows={3}
                         value={formData.description}
                         onChange={(e) =>
-                          setFormData({ ...formData, description: e.target.value })
+                          setFormData({
+                            ...formData,
+                            description: e.target.value,
+                          })
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-
                   </div>
 
-                  {/* Cột 2 */}
                   <div className="space-y-4">
-                     <div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {t("equipment.warehouse", "Warehouse")} *
                       </label>
@@ -549,7 +521,10 @@ const EquipmentPage = () => {
                         required
                         value={formData.warehouseId}
                         onChange={(e) =>
-                          setFormData({ ...formData, warehouseId: e.target.value })
+                          setFormData({
+                            ...formData,
+                            warehouseId: e.target.value,
+                          })
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       >
@@ -563,27 +538,7 @@ const EquipmentPage = () => {
                         ))}
                       </select>
                     </div>
-                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t("equipment.supplier", "Supplier")}
-                      </label>
-                      <select
-                        value={formData.supplierId}
-                        onChange={(e) =>
-                          setFormData({ ...formData, supplierId: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="">
-                          {t("equipment.selectSupplier", "Select Supplier (Optional)")}
-                        </option>
-                        {suppliers.map((supplier) => (
-                          <option key={supplier.id} value={supplier.id}>
-                            {supplier.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -594,12 +549,15 @@ const EquipmentPage = () => {
                           required
                           value={formData.unitOfMeasure}
                           onChange={(e) =>
-                            setFormData({ ...formData, unitOfMeasure: e.target.value })
+                            setFormData({
+                              ...formData,
+                              unitOfMeasure: e.target.value,
+                            })
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
-                       <div>
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           {t("equipment.quantity", "Quantity")} *
                         </label>
@@ -618,8 +576,8 @@ const EquipmentPage = () => {
                         />
                       </div>
                     </div>
-                     <div className="grid grid-cols-2 gap-4">
-                       <div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           {t("equipment.unitPrice", "Unit Price")} *
                         </label>
@@ -627,7 +585,7 @@ const EquipmentPage = () => {
                           type="number"
                           required
                           min="0"
-                          step="1000" 
+                          step="1000"
                           value={formData.unitPrice}
                           onChange={(e) =>
                             setFormData({
@@ -638,7 +596,7 @@ const EquipmentPage = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
-                       <div>
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           {t("equipment.costPrice", "Cost Price")} *
                         </label>
@@ -660,7 +618,11 @@ const EquipmentPage = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t("equipment.warrantyDurationMonths", "Warranty (Months)")} *
+                        {t(
+                          "equipment.warrantyDurationMonths",
+                          "Warranty (Months)"
+                        )}{" "}
+                        *
                       </label>
                       <input
                         type="number"
@@ -670,7 +632,8 @@ const EquipmentPage = () => {
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            warrantyDurationMonths: parseInt(e.target.value) || 0,
+                            warrantyDurationMonths:
+                              parseInt(e.target.value) || 0,
                           })
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -682,7 +645,10 @@ const EquipmentPage = () => {
                           type="checkbox"
                           checked={formData.isActive}
                           onChange={(e) =>
-                            setFormData({ ...formData, isActive: e.target.checked })
+                            setFormData({
+                              ...formData,
+                              isActive: e.target.checked,
+                            })
                           }
                           className="rounded text-blue-600 focus:ring-blue-500"
                         />

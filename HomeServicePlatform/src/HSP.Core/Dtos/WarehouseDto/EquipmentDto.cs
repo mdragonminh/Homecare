@@ -19,8 +19,6 @@ namespace HSP.Core.Dtos.WarehouseDto
         public decimal UnitPrice { get; set; }
         public decimal CostPrice { get; set; }
         public int WarrantyDurationMonths { get; set; }
-        public Guid? SupplierId { get; set; }
-        public string SupplierName { get; set; } = string.Empty; 
         public bool IsActive { get; set; }
     }
 
@@ -61,8 +59,6 @@ namespace HSP.Core.Dtos.WarehouseDto
 
         [Range(0, int.MaxValue, ErrorMessage = "Warranty must be positive")]
         public int WarrantyDurationMonths { get; set; } = 0;
-
-        public Guid? SupplierId { get; set; }
 
         public bool IsActive { get; set; } = true;
     }
@@ -105,8 +101,6 @@ namespace HSP.Core.Dtos.WarehouseDto
         [Range(0, int.MaxValue, ErrorMessage = "Warranty must be positive")]
         public int WarrantyDurationMonths { get; set; } = 0;
 
-        public Guid? SupplierId { get; set; }
-
         public bool IsActive { get; set; } = true;
     }
 
@@ -121,7 +115,6 @@ namespace HSP.Core.Dtos.WarehouseDto
         public string? Brand { get; set; }
         public string? ModelNumber { get; set; }
         public decimal UnitPrice { get; set; }
-        public string SupplierName { get; set; } = string.Empty;
         public bool IsActive { get; set; }
     }
 
@@ -129,10 +122,5 @@ namespace HSP.Core.Dtos.WarehouseDto
     {
         [Range(0, int.MaxValue, ErrorMessage = "Quantity must be a positive number")]
         public int Quantity { get; set; }
-    }
-    public class SupplierListDto
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
     }
 }

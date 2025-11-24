@@ -953,8 +953,8 @@
   "unitPrice": "Unit Price",
   "costPrice": "Cost Price",
   "warrantyDurationMonths": "Warranty (Months)",
-  "location": "Location / Supplier",
-  "stock": "Stock / Price"
+  "location": "Location",
+  "stock": "Stock"
   },
   "common": {
     "search": "Search...",
