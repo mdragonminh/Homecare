@@ -182,7 +182,9 @@ namespace HSP.Service.Implementations.Internal
 		public async Task<bool> ApproveTechnicianWithNotificationAsync(Guid technicianProfileId, string approvedBy)
 		{
 			// Get technician details before approval
-			var technicianDetail = await GetTechnicianByIdAsync(technicianProfileId);
+			var technicianDetail = await _technicianProfileRepository.GetAll()
+				.Include(x=>x.User)
+				.FirstOrDefaultAsync(x=>x.Id == technicianProfileId); /*GetTechnicianByIdAsync(technicianProfileId)*/;
 			if (technicianDetail == null)
 			{
 				return false;
@@ -197,9 +199,9 @@ namespace HSP.Service.Implementations.Internal
 				{
 					var emailDto = new EmailDto
 					{
-						ToEmail = technicianDetail.Email,
+						ToEmail = technicianDetail.User.Email,
 						Subject = "🎉 Hồ sơ kỹ thuật viên đã được duyệt - HomeService Platform",
-						HtmlBody = GenerateApprovalEmailTemplate(technicianDetail.FullName)
+						HtmlBody = GenerateApprovalEmailTemplate(technicianDetail.User.FullName)
 					};
 
 					await _emailService.SendEmailAsync(emailDto);
@@ -207,7 +209,7 @@ namespace HSP.Service.Implementations.Internal
 				catch (Exception ex)
 				{
 					// Log email sending error but don't fail the approval
-					Console.WriteLine($"Failed to send approval email to {technicianDetail.Email}: {ex.Message}");
+					Console.WriteLine($"Failed to send approval email to {technicianDetail.User.Email}: {ex.Message}");
 				}
 			}
 			return result;
@@ -382,7 +384,27 @@ namespace HSP.Service.Implementations.Internal
 			{
 				throw new KeyNotFoundException("Không tìm thấy kĩ thuật viên");
 			}
-			if(input.Email != technicianProfile.)
+			var flag = false;
+			if(input.CitizenId != technicianProfile.CitizenId)
+			{
+				technicianProfile.CitizenId = input.CitizenId;
+				flag = true;
+			}
+			if(input.Address != technicianProfile.Address)
+			{
+				technicianProfile.Address = input.Address;
+				flag = true;
+			}
+			if(input.ExperienceYears != technicianProfile.ExperienceYears)
+			{
+				technicianProfile.ExperienceYears = input.ExperienceYears;
+				flag = true;
+			}
+			if(flag == true)
+			{
+				input.DateModified = DateTime.UtcNow;
+				await _unitOfWork.SaveChangesAsync();
+			}
 			return true;
         }
     }
