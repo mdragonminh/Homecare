@@ -23,7 +23,54 @@ import { Footer } from "../components/Footer";
 import { profileApi, technicianApi } from "../services/profileApi";
 import TechnicianDetails from "../components/TechnicianDetails";
 import { jwtDecode } from "jwt-decode";
-const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister, onProfileUpdate }) => {
+
+const formatDate = (dateString) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("vi-VN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+// Hàm mới: Render trạng thái duyệt dựa trên mã số
+const renderApprovalStatus = (status) => {
+    let text = "Không xác định"; // Đã thay t("ui.status_unknown")
+    let classes = "bg-gray-100 text-gray-800 border-gray-300";
+
+    switch (status) {
+        case 0:
+            text = "Đang Chờ Duyệt"; // Đã thay t("ui.status_pending")
+            classes = "bg-yellow-100 text-yellow-800 border-yellow-300";
+            break;
+        case 1:
+            text = "Đã Duyệt"; // Đã thay t("ui.status_approved")
+            classes = "bg-green-100 text-green-800 border-green-300";
+            break;
+        case 2:
+            text = "Đã Từ Chối"; // Đã thay t("ui.status_rejected")
+            classes = "bg-red-100 text-red-800 border-red-300";
+            break;
+        default:
+            break;
+    }
+
+    return (
+        <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border ${classes}`}>
+            {text}
+        </span>
+    );
+};
+const Profile = ({
+  loggedInUser,
+  onLogout,
+  onShowLogin,
+  onShowRegister,
+  onProfileUpdate,
+}) => {
   const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -465,11 +512,7 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister, onProfil
     const file = event.target.files[0];
     if (file) {
       // Kiểm tra validation trước khi set file
-      const allowedTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png"
-      ];
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
       if (!allowedTypes.includes(file.type)) {
         toast.error(t("ui.avatar_invalid_format"));
         event.target.value = ""; // Reset input
@@ -918,6 +961,20 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister, onProfil
                         )}
                       </div>
                     </div>
+                    <div className="space-y-6 mt-6 pt-6 border-t border-gray-200">
+                    <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5 text-gray-600" />
+                        Trạng thái Hồ sơ {/* Đã thay t("ui.approval_status_title") */}
+                    </h3>
+                    
+                    <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                            Trạng thái Duyệt {/* Đã thay t("ui.approval_status") */}
+                        </label>
+                        {/* Đã bỏ t trong hàm gọi */}
+                        {renderApprovalStatus(profile.approvalStatus)} 
+                    </div>
+                </div>
                     {/* === CHÈN THÔNG TIN TECHNICIAN (Bổ sung) === */}
                     <div className="px-6 pb-6 pt-0">
                       <TechnicianDetails
