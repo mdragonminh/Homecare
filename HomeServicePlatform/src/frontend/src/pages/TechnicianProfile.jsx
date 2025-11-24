@@ -20,10 +20,57 @@ import { toast } from "sonner";
 import ChangePasswordModal from "../components/ChangePasswordModal";
 import DeleteAvatarModal from "../components/DeleteAvatarModal";
 import { Footer } from "../components/Footer";
-import { profileApi ,technicianApi} from "../services/profileApi";
+import { profileApi, technicianApi } from "../services/profileApi";
 import TechnicianDetails from "../components/TechnicianDetails";
 import { jwtDecode } from "jwt-decode";
-const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister, onProfileUpdate }) => {
+
+const formatDate = (dateString) => {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("vi-VN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+// Hàm mới: Render trạng thái duyệt dựa trên mã số
+const renderApprovalStatus = (status) => {
+    let text = "Không xác định"; // Đã thay t("ui.status_unknown")
+    let classes = "bg-gray-100 text-gray-800 border-gray-300";
+
+    switch (status) {
+        case 0:
+            text = "Đang Chờ Duyệt"; // Đã thay t("ui.status_pending")
+            classes = "bg-yellow-100 text-yellow-800 border-yellow-300";
+            break;
+        case 1:
+            text = "Đã Duyệt"; // Đã thay t("ui.status_approved")
+            classes = "bg-green-100 text-green-800 border-green-300";
+            break;
+        case 2:
+            text = "Đã Từ Chối"; // Đã thay t("ui.status_rejected")
+            classes = "bg-red-100 text-red-800 border-red-300";
+            break;
+        default:
+            break;
+    }
+
+    return (
+        <span className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border ${classes}`}>
+            {text}
+        </span>
+    );
+};
+const Profile = ({
+  loggedInUser,
+  onLogout,
+  onShowLogin,
+  onShowRegister,
+  onProfileUpdate,
+}) => {
   const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -71,42 +118,43 @@ const Profile = ({ loggedInUser, onLogout, onShowLogin, onShowRegister, onProfil
     [t]
   );
 
-// Hàm validate Email
-const validateEmail = useCallback(
-  (value) => {
-    if (!value || value.trim() === "") {
-      return t("ui.validation.email.required");
-    }
+  // Hàm validate Email
+  const validateEmail = useCallback(
+    (value) => {
+      if (!value || value.trim() === "") {
+        return t("ui.validation.email.required");
+      }
 
-    // Kiểm tra có bất kỳ khoảng trắng nào trong toàn bộ chuỗi (kể cả đầu, giữa, cuối)
-    if (/\s/.test(value)) {
-      return t("ui.validation.email.no_spaces");
-    }
+      // Kiểm tra có bất kỳ khoảng trắng nào trong toàn bộ chuỗi (kể cả đầu, giữa, cuối)
+      if (/\s/.test(value)) {
+        return t("ui.validation.email.no_spaces");
+      }
 
-    // Kiểm tra định dạng email với regex chặt chẽ
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+      // Kiểm tra định dạng email với regex chặt chẽ
+      const emailRegex =
+        /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
 
-    if (!emailRegex.test(value)) {
-      return t("ui.validation.email.invalid_format");
-    }
+      if (!emailRegex.test(value)) {
+        return t("ui.validation.email.invalid_format");
+      }
 
-if ((value.match(/@/g) || []).length !== 1) {
-  return t("ui.validation.email.single_at_required");
-}
+      if ((value.match(/@/g) || []).length !== 1) {
+        return t("ui.validation.email.single_at_required");
+      }
 
-const domainParts = value.split('@')[1];
-if ((domainParts.match(/\./g) || []).length < 1) {
-  return t("ui.validation.email.dot_required");
-}
+      const domainParts = value.split("@")[1];
+      if ((domainParts.match(/\./g) || []).length < 1) {
+        return t("ui.validation.email.dot_required");
+      }
 
-    if (value.length > 100) {
-      return t("ui.validation.email.max_length");
-    }
+      if (value.length > 100) {
+        return t("ui.validation.email.max_length");
+      }
 
-    return "";
-  },
-  [t]
-);
+      return "";
+    },
+    [t]
+  );
 
   // Hàm validate Phone Number
   const validatePhoneNumber = useCallback(
@@ -190,75 +238,93 @@ if ((domainParts.match(/\./g) || []).length < 1) {
     validatePhoneNumber,
   ]);
 
- // File: src/pages/TechnicianProfile.jsx
+  // File: src/pages/TechnicianProfile.jsx
 
-// File: src/pages/TechnicianProfile.jsx
+  // File: src/pages/TechnicianProfile.jsx
 
-// ... (các imports, bao gồm jwtDecode)
+  // ... (các imports, bao gồm jwtDecode)
 
-const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async () => {
     setLoading(true);
     setError("");
 
-    const technicianIdFromStorage = localStorage.getItem("userId"); 
+    const technicianIdFromStorage = localStorage.getItem("userId");
     const jwtToken = localStorage.getItem("jwtToken");
 
     if (!technicianIdFromStorage || !jwtToken) {
-        setError(t("ui.login_required") || "Không tìm thấy token. Vui lòng đăng nhập lại.");
-        setLoading(false);
-        return;
+      setError(
+        t("ui.login_required") ||
+          "Không tìm thấy token. Vui lòng đăng nhập lại."
+      );
+      setLoading(false);
+      return;
     }
-    
+
     try {
-        // =========================================================
-        // SỬ DỤNG TÊN CLAIM CHÍNH XÁC TỪ JWT TOKEN
-        // =========================================================
-        const decodedToken = jwtDecode(jwtToken);
-        
-        // Tên Claim cho Role và User ID
-        const ROLE_CLAIM_NAME = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
-        const ID_CLAIM_NAME = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'; 
+      // =========================================================
+      // SỬ DỤNG TÊN CLAIM CHÍNH XÁC TỪ JWT TOKEN
+      // =========================================================
+      const decodedToken = jwtDecode(jwtToken);
 
-        // Lấy giá trị từ các tên Claim chính xác
-        const roleFromToken = decodedToken[ROLE_CLAIM_NAME] ? String(decodedToken[ROLE_CLAIM_NAME]).toLowerCase() : 'N/A';
-        const userIdFromToken = decodedToken[ID_CLAIM_NAME]; // Lấy giá trị ID
+      // Tên Claim cho Role và User ID
+      const ROLE_CLAIM_NAME =
+        "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+      const ID_CLAIM_NAME =
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
 
-        console.log("=========================================================");
-        console.log("🛠 DEBUG 403: ĐÃ SỬA TÊN CLAIM");
-        console.log("=========================================================");
-        console.log("1. Vai trò (Role) trong Token:", roleFromToken); // Bây giờ sẽ là 'technician'
-        console.log("2. ID trong Token (Claim ID):", userIdFromToken); // Bây giờ sẽ là ID chính xác
-        console.log("3. ID trong LocalStorage (Dùng trong URL):", technicianIdFromStorage); // Phải khớp 2.
-        
-        if (roleFromToken !== 'technician') {
-             console.error("⚠️ LỖI PHÂN QUYỀN: Token này không phải của Technician.");
-        }
-        
-        if (technicianIdFromStorage !== userIdFromToken) {
-             // Lỗi này ít xảy ra vì ID thường được lấy từ Token, nhưng vẫn nên kiểm tra
-             console.error("❌ LỖI ID MISMATCH: ID trong LocalStorage và Token không khớp!");
-        }
-        console.log("---------------------------------------------------------");
-        // =========================================================
+      // Lấy giá trị từ các tên Claim chính xác
+      const roleFromToken = decodedToken[ROLE_CLAIM_NAME]
+        ? String(decodedToken[ROLE_CLAIM_NAME]).toLowerCase()
+        : "N/A";
+      const userIdFromToken = decodedToken[ID_CLAIM_NAME]; // Lấy giá trị ID
 
-        // 4. GỌI API TECHNICIAN MỚI (Sử dụng ID từ Storage, đã được xác nhận khớp)
-        const result = await technicianApi.getTechnicianDetails(technicianIdFromStorage); 
-        
-        if (result.success) {
-            console.log("✅ API Technician Profile Success.");
-            setProfile(result.data); 
-        } else {
-            // Nếu vẫn là lỗi 403 ở đây, tức là Backend đang có logic từ chối dù Token đã đúng.
-            console.error("❌ API Call Failed:", result.message);
-            setError(result.message);
-        }
+      console.log("=========================================================");
+      console.log("🛠 DEBUG 403: ĐÃ SỬA TÊN CLAIM");
+      console.log("=========================================================");
+      console.log("1. Vai trò (Role) trong Token:", roleFromToken); // Bây giờ sẽ là 'technician'
+      console.log("2. ID trong Token (Claim ID):", userIdFromToken); // Bây giờ sẽ là ID chính xác
+      console.log(
+        "3. ID trong LocalStorage (Dùng trong URL):",
+        technicianIdFromStorage
+      ); // Phải khớp 2.
+
+      if (roleFromToken !== "technician") {
+        console.error(
+          "⚠️ LỖI PHÂN QUYỀN: Token này không phải của Technician."
+        );
+      }
+
+      if (technicianIdFromStorage !== userIdFromToken) {
+        // Lỗi này ít xảy ra vì ID thường được lấy từ Token, nhưng vẫn nên kiểm tra
+        console.error(
+          "❌ LỖI ID MISMATCH: ID trong LocalStorage và Token không khớp!"
+        );
+      }
+      console.log("---------------------------------------------------------");
+      // =========================================================
+
+      // 4. GỌI API TECHNICIAN MỚI (Sử dụng ID từ Storage, đã được xác nhận khớp)
+      const result = await technicianApi.getTechnicianDetails(
+        technicianIdFromStorage
+      );
+
+      if (result.success) {
+        console.log("✅ API Technician Profile Success.");
+        setProfile(result.data);
+      } else {
+        // Nếu vẫn là lỗi 403 ở đây, tức là Backend đang có logic từ chối dù Token đã đúng.
+        console.error("❌ API Call Failed:", result.message);
+        setError(result.message);
+      }
     } catch (err) {
-        console.error("🔥 Lỗi không xác định khi fetch profile:", err);
-        setError(t("ui.error_loading_profile") + (err.message ? `: ${err.message}` : ''));
+      console.error("🔥 Lỗi không xác định khi fetch profile:", err);
+      setError(
+        t("ui.error_loading_profile") + (err.message ? `: ${err.message}` : "")
+      );
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-}, [t]);
+  }, [t]);
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("vi-VN", {
@@ -365,20 +431,20 @@ const fetchProfile = useCallback(async () => {
           throw new Error(updateResult.message);
         }
 
-      const updatedProfileData = {
+        const updatedProfileData = {
           ...profile,
           fullName: editForm.fullName,
           phoneNumber: editForm.phoneNumber,
         };
-        
+
         setProfile(updatedProfileData);
 
         if (onProfileUpdate) {
-          onProfileUpdate(updatedProfileData); 
+          onProfileUpdate(updatedProfileData);
         }
 
-      setEditingField(null);
-      toast.success(t("success.profile_updated"));
+        setEditingField(null);
+        toast.success(t("success.profile_updated"));
       } else if (fieldToUpdate === "email") {
         if (editForm.email !== profile.email) {
           const emailResult = await profileApi.requestEmailChange(
@@ -465,11 +531,7 @@ const fetchProfile = useCallback(async () => {
     const file = event.target.files[0];
     if (file) {
       // Kiểm tra validation trước khi set file
-      const allowedTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png"
-      ];
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
       if (!allowedTypes.includes(file.type)) {
         toast.error(t("ui.avatar_invalid_format"));
         event.target.value = ""; // Reset input
@@ -512,7 +574,9 @@ const fetchProfile = useCallback(async () => {
     // Sử dụng endpoint /File/preview để hiển thị avatar
     const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
     // Đảm bảo có /api prefix
-    const baseUrl = API_URL.endsWith("/api") ? API_URL : API_URL.replace(/\/api$/, "") + "/api";
+    const baseUrl = API_URL.endsWith("/api")
+      ? API_URL
+      : API_URL.replace(/\/api$/, "") + "/api";
     return `${baseUrl}/File/preview?filePath=${encodeURIComponent(avatarUrl)}`;
   };
 
@@ -924,16 +988,30 @@ const fetchProfile = useCallback(async () => {
                         )}
                       </div>
                     </div>
+                    <div className="space-y-6 mt-6 pt-6 border-t border-gray-200">
+                    <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <AlertCircle className="w-5 h-5 text-gray-600" />
+                        Trạng thái Hồ sơ {/* Đã thay t("ui.approval_status_title") */}
+                    </h3>
+                    
+                    <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                            Trạng thái Duyệt {/* Đã thay t("ui.approval_status") */}
+                        </label>
+                        {/* Đã bỏ t trong hàm gọi */}
+                        {renderApprovalStatus(profile.approvalStatus)} 
+                    </div>
+                </div>
                     {/* === CHÈN THÔNG TIN TECHNICIAN (Bổ sung) === */}
-                  <div className="px-6 pb-6 pt-0"> 
-                    <TechnicianDetails 
-                        profile={profile} 
-                        t={t} 
+                    
+                      <TechnicianDetails
+                        profile={profile}
+                        t={t}
                         // Truyền hàm getAvatarUrl để tạo URL đầy đủ cho file chứng chỉ
-                        getFileUrl={getAvatarUrl} 
-                    />
-                  </div>
-                  {/* ========================================= */}
+                        getFileUrl={getAvatarUrl}
+                      />
+                    
+                    {/* ========================================= */}
                     {/* Action Buttons */}
                     {editingField && (
                       <div className="flex gap-3 mt-6">
