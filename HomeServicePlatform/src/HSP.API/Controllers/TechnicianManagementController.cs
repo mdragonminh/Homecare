@@ -10,7 +10,6 @@ namespace HSP.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
     public class TechnicianManagementController : ControllerBase
     {
         private readonly ITechnicianProfileService _technicianProfileService;
@@ -19,7 +18,7 @@ namespace HSP.API.Controllers
         {
             _technicianProfileService = technicianProfileService;
         }
-
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
         [HttpGet("technicians")]
         public async Task<ActionResult<PagedList<TechnicianProfileResponseDto>>> GetTechnicians([FromQuery] TechnicianProfileFilterParams filterParams)
         {
@@ -33,13 +32,14 @@ namespace HSP.API.Controllers
                 return StatusCode(500, new { message = "Đã có lỗi xảy ra khi lấy danh sách technician", error = ex.Message });
             }
         }
-
+       
         [HttpGet("technicians/{id}")]
-        public async Task<ActionResult<TechnicianProfileResponseDto>> GetTechnicianById(Guid id)
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter},{RoleNames.Technician}")]
+        public async Task<ActionResult<TechnicianProfileResponseDto>> GetTechnicianById(string id)
         {
             try
             {
-                var result = await _technicianProfileService.GetTechnicianByIdAsync(id);
+                var result = await _technicianProfileService.GetTechnicianByIdAsync(Guid.Parse(id));
                 if (result == null)
                 {
                     return NotFound(new { message = "Không tìm thấy technician" });
@@ -53,6 +53,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpPost("technicians/{id}/approve")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
         public async Task<IActionResult> ApproveTechnician(Guid id)
         {
             try
@@ -74,6 +75,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpPost("technicians/{id}/reject")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
         public async Task<IActionResult> RejectTechnician(Guid id, [FromBody] TechnicianRejectDto dto)
         {
             if (!ModelState.IsValid)
@@ -101,6 +103,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpPost("technicians/batch-approve")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
         public async Task<IActionResult> BatchApproveTechnicians([FromBody] List<Guid> technicianIds)
         {
             try
@@ -128,6 +131,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpPost("technicians/batch-reject")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
         public async Task<IActionResult> BatchRejectTechnicians([FromBody] List<Guid> technicianIds)
         {
             try

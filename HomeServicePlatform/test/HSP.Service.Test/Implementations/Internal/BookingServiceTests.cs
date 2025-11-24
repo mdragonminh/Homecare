@@ -5,6 +5,7 @@ using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
 using HSP.Service.Implementations.Internal;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Localization;
 using MockQueryable;
 using MockQueryable.Moq;
@@ -452,68 +453,88 @@ namespace HSP.Service.Test.Implementations.Internal
             var token = "token123";
             var desiredDate = DateTime.UtcNow.AddDays(1);
 
-            _mockRedisService.Setup(r => r.GetAsync<string>($"waiting_{token}")).ReturnsAsync("exists");
-            _mockRedisService.Setup(r => r.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(technicianId);
+            _mockRedisService.Setup(r => r.GetAsync<string>($"waiting_{token}"))
+                .ReturnsAsync("exists");
+
+            _mockRedisService.Setup(r => r.GetAsync<Guid>($"accept_{token}"))
+                .ReturnsAsync(technicianId);
 
             var technician = new TechnicianProfile
             {
                 Id = technicianId,
                 UserId = technicianUserId,
-                CitizenId = "123456789012",
-                Latitude = 10.0,
-                Longitude = 106.0,
-                ExperienceYears = 5,
-                ApprovalStatus = TechnicianApprovalStatus.Approved,
-                DateCreated = DateTime.UtcNow,
-                DateModified = DateTime.UtcNow,
                 User = new AppUser
                 {
                     Id = technicianUserId,
-                    Email = "t@example.com",
-                    UserName = "Technician",
-                    FullName = "Tech Full Name",
-                    IsActive = true
+                    FullName = "Tech Full Name"
                 }
             };
-            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
-            _mockTechnicianRepo.Setup(r => r.GetAll()).Returns(technicians);
+
+            _mockTechnicianRepo.Setup(r => r.GetAll())
+                .Returns(new List<TechnicianProfile> { technician }
+                    .BuildMockDbSet().Object);
 
             var customer = new AppUser
             {
                 Id = customerId,
-                Email = "c@example.com",
-                UserName = "Customer",
-                FullName = "Customer Name",
-                IsActive = true
+                FullName = "Customer Name"
             };
-            _mockUserRepo.Setup(r => r.FindByIdAsync(customerId)).ReturnsAsync(customer);
+
+            _mockUserRepo.Setup(r => r.FindByIdAsync(customerId))
+                .ReturnsAsync(customer);
 
             var service = new Core.Entities.Service
             {
                 Id = serviceId,
                 Name = "Test Service",
-                Price = 100,
-                DateCreated = DateTime.UtcNow,
-                DateModified = DateTime.UtcNow,
-                IsDeleted = false
+                Price = 100
             };
-            var services = new List<Core.Entities.Service> { service }.BuildMock();
-            _mockServiceRepo.Setup(r => r.GetAll()).Returns(services);
 
-            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+            _mockServiceRepo.Setup(r => r.GetAll())
+                .Returns(new List<Core.Entities.Service> { service }
+                    .BuildMockDbSet().Object);
+
+            _mockBookingRepo.Setup(r => r.AddAsync(It.IsAny<Booking>()))
+                .ReturnsAsync((Booking b) => b);
+
+            _mockBookingItemRepo.Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<BookingItem>>()))
+                .Returns(Task.CompletedTask);
+
+            _mockConversationRepo.Setup(r => r.AddAsync(It.IsAny<ChatConversation>()))
+                .ReturnsAsync((ChatConversation c) => c);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync())
+                .ReturnsAsync(1);
+            var mockTransaction = new Mock<IDbContextTransaction>();
+            mockTransaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            mockTransaction.Setup(t => t.RollbackAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _mockUnitOfWork.Setup(u => u.BeginTransactionAsync())
+                .ReturnsAsync(mockTransaction.Object);
 
             var bookingService = CreateService();
+
             var result = await bookingService.AcceptBookingEmailAsync(
-                customerId, technicianId, new List<Guid> { serviceId }, token, desiredDate);
+                customerId,
+                technicianId,
+                new List<Guid> { serviceId },
+                token,
+                desiredDate
+            );
 
             Assert.True(result.IsSuccess);
             Assert.Equal("Xác nhận thành công!", result.Message);
+
             _mockBookingRepo.Verify(r => r.AddAsync(It.IsAny<Booking>()), Times.Once);
-            _mockBookingItemRepo.Verify(r => r.AddRangeAsync(It.IsAny<List<BookingItem>>()), Times.Once);
+            _mockBookingItemRepo.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<BookingItem>>()), Times.Once);
             _mockConversationRepo.Verify(r => r.AddAsync(It.IsAny<ChatConversation>()), Times.Once);
+
             _mockRedisService.Verify(r => r.RemoveAsync($"waiting_{token}"), Times.Once);
             _mockRedisService.Verify(r => r.SetAsync($"accepted_{token}", technician.Id, TimeSpan.FromSeconds(60)), Times.Once);
         }
+
 
         [Fact]
         public async Task AcceptBookingEmailAsync_ShouldReturnFailure_WhenTokenExpired()

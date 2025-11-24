@@ -1,11 +1,8 @@
 using HSP.Core.Dtos.ChatDto;
-using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
-using HSP.DAL.Extensions;
 using HSP.Service.Interfaces;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
@@ -60,101 +57,106 @@ namespace HSP.Service.Implementations.Internal
         public async Task<List<ConversationListDto>> GetUserConversationsAsync(Guid userId)
         {
             var conversations = await _conversationRepository.GetAll()
-                .Include(c => c.Messages)
-                .Include(c => c.Customer)
-                .Include(c => c.Technician)
-                .ThenInclude(t => t.User)
-                .Include(c => c.Booking)
-                .Where(c => c.CustomerId == userId || c.Technician.UserId == userId)
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
-
-            var result = conversations.Select(c =>
+            .Where(c => c.CustomerId == userId || c.Technician.UserId == userId)
+            .OrderByDescending(c => c.CreatedAt)
+            .Select(c => new ConversationListDto
             {
-                var lastMessage = c.Messages
+                Id = c.Id,
+                CustomerId = c.CustomerId,
+                CustomerName = c.Customer.FullName,
+                TechnicianId = c.Technician.UserId,
+                TechnicianName = c.Technician.User.FullName,
+                BookingId = c.BookingId,
+                BookingDescription = c.Booking.ProblemDescription ?? "Không có mô tả",
+                CreatedAt = c.CreatedAt,
+
+                LastMessage = c.Messages
                     .OrderByDescending(m => m.SentAt)
-                    .FirstOrDefault();
-
-                var unreadCount = c.Messages
-                    .Count(m => !m.IsRead && m.SenderId != userId);
-
-                return new ConversationListDto
-                {
-                    Id = c.Id,
-                    CustomerId = c.CustomerId,
-                    CustomerName = c.Customer.FullName,
-                    TechnicianId = c.Technician.UserId,
-                    TechnicianName = c.Technician.User.FullName,
-                    BookingId = c.BookingId,
-                    BookingDescription = c.Booking?.ProblemDescription ?? "Không có mô tả",
-                    CreatedAt = DateTime.UtcNow,
-                    LastMessage = lastMessage == null ? null : new MessageResponseDto
+                    .Select(m => new MessageResponseDto
                     {
-                        Id = lastMessage.Id,
-                        Content = lastMessage.Content,
-                        SenderId = lastMessage.SenderId,
-                        SentAt = lastMessage.SentAt
-                    },
-                    UnreadCount = unreadCount
-                };
-            })
-            .ToList();
+                        Id = m.Id,
+                        Content = m.Content,
+                        SenderId = m.SenderId,
+                        SentAt = m.SentAt
+                    })
+                    .FirstOrDefault(),
 
-            return result;
+                UnreadCount = c.Messages
+                    .Count(m => !m.IsRead && m.SenderId != userId)
+            })
+            .ToListAsync();
+
+            return conversations;
         }
 
         public async Task<MessageResponseDto> SendMessageAsync(Guid userId, SendMessageRequestDto input)
         {
             var conversation = await _conversationRepository.GetAll()
-                    .Include(c => c.Technician)
-                    .ThenInclude(t => t.User)
-                    .FirstOrDefaultAsync(c => c.Id == input.ConversationId)
-                    ?? throw new ValidationException("Conversation không tồn tại");
+                     .Include(c => c.Technician)
+                     .ThenInclude(t => t.User)
+                     .FirstOrDefaultAsync(c => c.Id == input.ConversationId)
+                     ?? throw new ValidationException("Conversation không tồn tại");
+
             if (conversation.CustomerId != userId &&
                 conversation.Technician.UserId != userId)
                 throw new UnauthorizedAccessException();
-            var message = new ChatMessage
+            ChatMessage message;
+            using (var transaction = await _unitOfWork.BeginTransactionAsync())
             {
-                Id = Guid.NewGuid(),
-                ConversationId = input.ConversationId,
-                SenderId = userId,
-                Content = input.Content,
-                SentAt = DateTime.UtcNow,
-                IsRead = false
-            };
-            await _messageRepository.AddAsync(message);
-            if (input.Attachments != null && input.Attachments.Any())
-            {
-                foreach (var file in input.Attachments)
+                try
                 {
-                    var attachment = new ChatAttachment
+                    message = new ChatMessage
                     {
                         Id = Guid.NewGuid(),
-                        MessageId = message.Id,
-                        FileName = file.FileName,
-                        FileUrl = file.FileUrl,
-                        FileSize = file.FileSize,
-                        FileType = file.FileType
+                        ConversationId = input.ConversationId,
+                        SenderId = userId,
+                        Content = input.Content,
+                        SentAt = DateTime.UtcNow,
+                        IsRead = false
                     };
+                    await _messageRepository.AddAsync(message);
 
-                    await _attachmentRepository.AddAsync(attachment);
+                    if (input.Attachments?.Any() == true)
+                    {
+                        foreach (var file in input.Attachments)
+                        {
+                            await _attachmentRepository.AddAsync(new ChatAttachment
+                            {
+                                Id = Guid.NewGuid(),
+                                MessageId = message.Id,
+                                FileName = file.FileName,
+                                FileUrl = file.FileUrl,
+                                FileSize = file.FileSize,
+                                FileType = file.FileType
+                            });
+                        }
+                    }
+                    conversation.LastMessageId = message.Id;
+                    await _unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
                 }
             }
-            conversation.LastMessageId = message.Id;
-            await _unitOfWork.SaveChangesAsync();
-
+            var attachments = await _attachmentRepository.GetAll()
+                .Where(a => a.MessageId == message.Id)
+                .Select(a => new AttachmentCreateDto
+                {
+                    FileUrl = a.FileUrl,
+                    FileName = a.FileName,
+                    FileSize = a.FileSize
+                })
+                .ToListAsync();
             return new MessageResponseDto
             {
                 Id = message.Id,
                 Content = message.Content,
                 SenderId = message.SenderId,
                 SentAt = message.SentAt,
-                Attachments = message.Attachments.Select(a => new AttachmentCreateDto
-                {
-                    FileUrl = a.FileUrl,
-                    FileName = a.FileName,
-                    FileSize = a.FileSize
-                }).ToList()
+                Attachments = attachments
             };
         }
 
@@ -189,14 +191,12 @@ namespace HSP.Service.Implementations.Internal
             })
             .ToListAsync();
 
-            var unreadMessages = await _messageRepository.GetAll()
+            await _messageRepository.GetAll()
                 .Where(x => x.ConversationId == input.ConversationId &&
                             x.SenderId != input.UserId &&
                             !x.IsRead)
-                .ToListAsync();
+                .ExecuteUpdateAsync(set => set.SetProperty(m => m.IsRead, true));
 
-            foreach (var m in unreadMessages)
-                m.IsRead = true;
 
             await _unitOfWork.SaveChangesAsync();
 

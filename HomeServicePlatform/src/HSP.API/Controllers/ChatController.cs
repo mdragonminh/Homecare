@@ -1,26 +1,24 @@
 ﻿using HSP.API.Extensions;
 using HSP.API.Hubs;
 using HSP.Core.Dtos.ChatDto;
-using HSP.Core.Dtos.Shared;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using System.Security.Claims;
 
 namespace HSP.API.Controllers
 {
-	[Route("api/[controller]")]
-	[ApiController]
-	[Authorize]
-	public class ChatController : ControllerBase
-	{
-		private readonly IChatService _chatService;
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
+    public class ChatController : ControllerBase
+    {
+        private readonly IChatService _chatService;
         private readonly IHubContext<ChatHub> _chatHub;
 
         public ChatController(IChatService chatService, IHubContext<ChatHub> chatHub)
-		{
-			_chatService = chatService;
+        {
+            _chatService = chatService;
             _chatHub = chatHub;
         }
         [HttpPost("conversation")]

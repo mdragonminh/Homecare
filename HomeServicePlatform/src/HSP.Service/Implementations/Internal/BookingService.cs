@@ -276,61 +276,70 @@ namespace HSP.Service.Implementations.Internal
             return true;
         }
 
-        public async Task<BookingAcceptResultDto> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, List<Guid> ServiceIds, string token, DateTime desiredDate)
+        public async Task<BookingAcceptResultDto> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, List<Guid> ServiceIds,
+            string token, DateTime desiredDate)
         {
             var waiting = await _redisCacheService.GetAsync<string>($"waiting_{token}");
             if (string.IsNullOrEmpty(waiting))
                 return new BookingAcceptResultDto { IsSuccess = false, Message = "Link đã hết hạn hoặc đã được sử dụng." };
-
             var technician = await _technicianRepository.GetAll()
                 .Include(t => t.User)
                 .FirstOrDefaultAsync(t => t.Id == technicianId);
             if (technician?.User == null)
                 return new BookingAcceptResultDto { IsSuccess = false, Message = "Không tìm thấy kỹ thuật viên." };
-
             var storedTechId = await _redisCacheService.GetAsync<Guid>($"accept_{token}");
             if (storedTechId == Guid.Empty || storedTechId != technicianId)
                 return new BookingAcceptResultDto { IsSuccess = false, Message = "Token không hợp lệ hoặc kỹ thuật viên không khớp." };
-
-            await _redisCacheService.RemoveAsync($"waiting_{token}");
-            await _redisCacheService.SetAsync($"accepted_{token}", technician.Id, TimeSpan.FromSeconds(60));
-
-            var customer = await _userRepository.FindByIdAsync(customerId);
-            if (customer == null)
-                return new BookingAcceptResultDto { IsSuccess = false, Message = "Dữ liệu khách hàng không hợp lệ." };
-            var services = await _serviceRepository.GetAll()
-                .Where(x => ServiceIds.Contains(x.Id))
-                .ToListAsync();
-            if (services == null || !services.Any())
-                return new BookingAcceptResultDto { IsSuccess = false, Message = "Không tìm thấy dịch vụ hợp lệ." };
-            var newBooking = new Booking
+            using (var transaction = await _unitOfWork.BeginTransactionAsync())
             {
-                CustomerId = customer.Id,
-                TechnicianId = technician.Id,
-                DesiredDate = desiredDate,
-                DateCreated = DateTime.UtcNow, 
-                Status = BookingStatus.Confirmed
-            };
-            var bookingItems = services.Select(s => new BookingItem
-            {
-                Booking = newBooking,
-                ServiceId = s.Id,
-                Price = s.Price,
-            }).ToList();
-            await _bookingRepository.AddAsync(newBooking);
-            await _bookingItemRepository.AddRangeAsync(bookingItems);
-            await _unitOfWork.SaveChangesAsync();
-            var conversation = new ChatConversation
-            {
-                BookingId = newBooking.Id,
-                CustomerId = customer.Id,
-                TechnicianId = technician.Id,
-                CreatedAt = DateTime.UtcNow
-            };
+                try
+                {
+                    await _redisCacheService.RemoveAsync($"waiting_{token}");
+                    await _redisCacheService.SetAsync($"accepted_{token}", technician.Id, TimeSpan.FromSeconds(60));
 
-            await _conversationRepository.AddAsync(conversation);
-            await _unitOfWork.SaveChangesAsync();
-            return new BookingAcceptResultDto { IsSuccess = true, Message = "Xác nhận thành công!" };
+                    var customer = await _userRepository.FindByIdAsync(customerId);
+                    if (customer == null)
+                        return new BookingAcceptResultDto { IsSuccess = false, Message = "Dữ liệu khách hàng không hợp lệ." };
+                    var services = await _serviceRepository.GetAll()
+                        .Where(x => ServiceIds.Contains(x.Id))
+                        .ToListAsync();
+                    if (services == null || !services.Any())
+                        return new BookingAcceptResultDto { IsSuccess = false, Message = "Không tìm thấy dịch vụ hợp lệ." };
+                    var newBooking = new Booking
+                    {
+                        CustomerId = customer.Id,
+                        TechnicianId = technician.Id,
+                        DesiredDate = desiredDate,
+                        DateCreated = DateTime.UtcNow,
+                        Status = BookingStatus.Confirmed
+                    };
+                    var bookingItems = services.Select(s => new BookingItem
+                    {
+                        Booking = newBooking,
+                        ServiceId = s.Id,
+                        Price = s.Price,
+                    }).ToList();
+                    await _bookingRepository.AddAsync(newBooking);
+                    await _bookingItemRepository.AddRangeAsync(bookingItems);
+                    await _unitOfWork.SaveChangesAsync();
+                    var conversation = new ChatConversation
+                    {
+                        BookingId = newBooking.Id,
+                        CustomerId = customer.Id,
+                        TechnicianId = technician.Id,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _conversationRepository.AddAsync(conversation);
+                    await _unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return new BookingAcceptResultDto { IsSuccess = true, Message = "Xác nhận thành công!" };
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
         }
     }
 }
