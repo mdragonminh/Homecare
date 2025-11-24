@@ -217,7 +217,7 @@ export const profileApi = {
       formData.append("File", avatarFile); // IFormFile parameter
       formData.append("UserId", userId); // Guid UserId
       formData.append("ObjectId", userId); // Guid ObjectId (userId)
-      formData.append("ObjectTypeName", "customer"); // ObjectTypeName = "customer" (theo RoleNames.Customer)
+      formData.append("ObjectTypeName", "technician"); // ObjectTypeName = "customer" (theo RoleNames.Customer)
       formData.append("RelationType", "avatar"); // RelationType = "avatar"
 
       const response = await axiosClient.post(
