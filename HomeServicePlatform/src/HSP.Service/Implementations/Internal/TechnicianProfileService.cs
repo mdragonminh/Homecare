@@ -372,17 +372,17 @@ namespace HSP.Service.Implementations.Internal
 		}
         public async Task<bool> UpdateTechnicianProfileAsync(Guid userId, UpdateTechnicianProfileDto input)
         {
-			if(input == null)
-			{
-				throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
-			}
-			var technicianProfile = await _technicianProfileRepository.GetAll()
-				.FirstOrDefaultAsync(x=>x.UserId == userId);
-			if(technicianProfile == null)
-			{
-				throw new KeyNotFoundException("Không tìm thấy kĩ thuật viên");
-			}
-			if(input.Email != technicianProfile.)
+			//if(input == null)
+			//{
+			//	throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
+			//}
+			//var technicianProfile = await _technicianProfileRepository.GetAll()
+			//	.FirstOrDefaultAsync(x=>x.UserId == userId);
+			//if(technicianProfile == null)
+			//{
+			//	throw new KeyNotFoundException("Không tìm thấy kĩ thuật viên");
+			//}
+			//if(input.Email != technicianProfile.)
 			return true;
         }
     }
