@@ -29,7 +29,6 @@ namespace HSP.DAL.Data
         public DbSet<BookingCancellation> BookingCancellations { get; set; }
         public DbSet<Warehouse> Warehouses { get; set; }
         public DbSet<Equipment> Equipments { get; set; }
-        public DbSet<Supplier> Suppliers { get; set; }
         public DbSet<Ticket> Tickets { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }

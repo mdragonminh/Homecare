@@ -944,8 +944,8 @@
   "unitPrice": "Giá bán",
   "costPrice": "Giá nhập",
   "warrantyDurationMonths": "Bảo hành (tháng)",
-  "location": "Vị trí / NCC",
-  "stock": "Tồn kho / Giá"
+  "location": "Vị trí",
+  "stock": "Tồn kho"
   },
   "common": {
     "search": "Tìm kiếm...",

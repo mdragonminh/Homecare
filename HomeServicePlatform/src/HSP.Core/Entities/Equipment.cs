@@ -13,7 +13,7 @@ namespace HSP.Core.Entities
         [Required, MaxLength(100)]
         public string? EquipmentCode { get; set; }
 
-        public int Quantity { get; set; } = 0; 
+        public int Quantity { get; set; } = 0;
 
         [Required]
         public Guid WarehouseId { get; set; }
@@ -25,28 +25,23 @@ namespace HSP.Core.Entities
         public string? Description { get; set; }
 
         [MaxLength(100)]
-        public string? Brand { get; set; } 
+        public string? Brand { get; set; }
 
         [MaxLength(100)]
-        public string? ModelNumber { get; set; } 
+        public string? ModelNumber { get; set; }
 
         [Required, MaxLength(50)]
-        public string UnitOfMeasure { get; set; } = "Cái"; 
+        public string UnitOfMeasure { get; set; } = "Cái";
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal UnitPrice { get; set; } = 0; 
+        public decimal UnitPrice { get; set; } = 0;
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal CostPrice { get; set; } = 0; 
+        public decimal CostPrice { get; set; } = 0;
 
-        public int WarrantyDurationMonths { get; set; } = 0; 
+        public int WarrantyDurationMonths { get; set; } = 0;
 
-        public Guid? SupplierId { get; set; }
-
-        [ForeignKey("SupplierId")] 
-        public virtual Supplier? Supplier { get; set; }
-
-        public bool IsActive { get; set; } = true; 
+        public bool IsActive { get; set; } = true;
 
         public DateTime DateCreated { get; set; }
 
