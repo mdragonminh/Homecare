@@ -23,6 +23,7 @@ namespace HSP.Service.Implementations.External
         private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
         private readonly IRepository<ChatMessageHistory, Guid> _historyRepository;
         private readonly OpenAISettingsDto _settings;
+        private readonly string _myBookingsUrl;
 
         public ChatbotService(
                 IConfiguration configuration,
@@ -38,6 +39,8 @@ namespace HSP.Service.Implementations.External
             _historyRepository = historyRepository;
             _settings = options.Value;
             _client = new ChatClient(_settings.Model, _settings.ApiKey);
+            string? configuredMyBookingsUrl = configuration["UrlSettings:FrontendMyBookings"];
+            _myBookingsUrl = string.IsNullOrWhiteSpace(configuredMyBookingsUrl) ? "/my-bookings" : configuredMyBookingsUrl!;
         }
 
         public async Task<ChatResponseDto> ProcessMessageAsync(ChatInputDto input, Guid customerId)
@@ -141,7 +144,7 @@ namespace HSP.Service.Implementations.External
                 functionParameters: BinaryData.FromBytes(schemaBytes)
             );
 
-            string systemPromptStr = _localizer["ChatbotSystemPrompt", servicesJsonForPrompt];
+            string systemPromptStr = _localizer["ChatbotSystemPrompt", servicesJsonForPrompt, _myBookingsUrl];
 
             TimeZoneInfo vietnamZone;
             try { vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"); }
@@ -263,7 +266,14 @@ namespace HSP.Service.Implementations.External
                     object toolResultSummary;
                     if (matchResult.IsMatched)
                     {
-                        toolResultSummary = new { status = "success", message = matchResult.Message ?? "Đã tìm thấy kỹ thuật viên.", technicianName = matchResult.TechnicianInfo?.Name, distanceKm = matchResult.TechnicianInfo?.DistanceKm };
+                        toolResultSummary = new
+                        {
+                            status = "success",
+                            message = matchResult.Message ?? "Đã tìm thấy kỹ thuật viên.",
+                            technicianName = matchResult.TechnicianInfo?.Name,
+                            distanceKm = matchResult.TechnicianInfo?.DistanceKm,
+                            myBookingsUrl = _myBookingsUrl
+                        };
                     }
                     else
                     {

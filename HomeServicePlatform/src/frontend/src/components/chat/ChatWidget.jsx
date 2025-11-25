@@ -8,6 +8,45 @@ import { useTranslation } from "react-i18next"
 
 const ChatMessage = ({ message }) => {
   const isUser = message.sender === "user"
+
+  const renderMessageContent = (text) => {
+    const urlRegex = /(https?:\/\/[^\s]+|\/my-bookings[^\s]*)/gi
+    const content = []
+    let lastIndex = 0
+    let match
+
+    while ((match = urlRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        content.push(text.slice(lastIndex, match.index))
+      }
+
+      const rawUrl = match[0]
+      const isAbsolute = rawUrl.startsWith("http")
+      const origin = typeof window !== "undefined" ? window.location.origin : ""
+      const href = isAbsolute ? rawUrl : `${origin}${rawUrl}`
+
+      content.push(
+        <a
+          key={`link-${match.index}-${rawUrl}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 underline break-words"
+        >
+          {rawUrl}
+        </a>
+      )
+
+      lastIndex = match.index + rawUrl.length
+    }
+
+    if (lastIndex < text.length) {
+      content.push(text.slice(lastIndex))
+    }
+
+    return content
+  }
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}>
       <div
@@ -15,7 +54,11 @@ const ChatMessage = ({ message }) => {
           isUser ? "bg-blue-600 text-white rounded-br-none" : "bg-gray-100 text-gray-900 rounded-bl-none"
         }`}
       >
-        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.text}</p>
+        <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">
+          {renderMessageContent(message.text).map((node, idx) =>
+            typeof node === "string" ? <span key={`text-${idx}`}>{node}</span> : node
+          )}
+        </p>
       </div>
     </div>
   )
