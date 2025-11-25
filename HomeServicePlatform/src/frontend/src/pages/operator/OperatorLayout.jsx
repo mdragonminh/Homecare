@@ -8,6 +8,7 @@ import {
   HomeOutlined,
   ToolOutlined,
   CalendarOutlined,
+  CreditCardOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
@@ -28,6 +29,8 @@ export default function OperatorLayout({ loggedInUser }) {
       return ["bookings"];
     if (location.pathname.startsWith("/operator/technicians"))
       return ["technicians"];
+    if (location.pathname.startsWith("/operator/payments"))
+      return ["payments"];
     if (location.pathname.startsWith("/operator/settings")) return ["settings"];
     return ["customers"];
   }, [location.pathname]);
@@ -97,6 +100,7 @@ export default function OperatorLayout({ loggedInUser }) {
             if (key === "customers") navigate("/operator/customers");
             if (key === "bookings") navigate("/operator/bookings");
             if (key === "technicians") navigate("/operator/technicians");
+            if (key === "payments") navigate("/operator/payments");
             if (key === "settings") navigate("/operator/settings");
           }}
           items={[
@@ -116,6 +120,12 @@ export default function OperatorLayout({ loggedInUser }) {
               key: "technicians",
               icon: <ToolOutlined />,
               label: t("operator.menu.tech", "Tech"),
+              style: { marginBottom: 4 },
+            },
+            {
+              key: "payments",
+              icon: <CreditCardOutlined />,
+              label: t("operator.menu.payments", "Payments"),
               style: { marginBottom: 4 },
             },
             {

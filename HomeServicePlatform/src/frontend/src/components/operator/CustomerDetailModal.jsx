@@ -46,10 +46,10 @@ export default function CustomerDetailModal({ visible, customer, onClose }) {
 
     try {
       setLoadingPayments(true);
-      console.log("Loading payments for customer ID:", customer.id);
+      console.log("Loading payments for customer ID:", customer.fullId || customer.id);
       
       const result = await paymentApi.getAllPayments({
-        customerId: customer.id, // Use customerId filter
+        customerId: customer.fullId || customer.id,
         pageNumber: paymentPagination.current,
         pageSize: paymentPagination.pageSize,
       });
