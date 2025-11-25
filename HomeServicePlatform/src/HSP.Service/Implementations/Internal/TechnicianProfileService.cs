@@ -11,6 +11,7 @@ using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
@@ -20,18 +21,21 @@ namespace HSP.Service.Implementations.Internal
     public class TechnicianProfileService : BaseService, ITechnicianProfileService
     {
         private readonly IRepository<TechnicianProfile, Guid> _technicianProfileRepository;
+        private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
         private readonly IEmailService _emailService;
         private readonly IFileService _fileService;
         public TechnicianProfileService(
                 IRepository<TechnicianProfile, Guid> technicianProfileRepository,
                 IEmailService emailService,
                 IFileService fileService,
+                IRepository<Core.Entities.Service, Guid> serviceRepository,
                 IUnitOfWork unitOfWork,
                 IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
         {
             _technicianProfileRepository = technicianProfileRepository;
             _emailService = emailService;
             _fileService = fileService;
+            _serviceRepository = serviceRepository;
         }
 
         public async Task<PagedList<TechnicianProfileResponseDto>> GetTechniciansAsync(TechnicianProfileFilterParams filterParams)
@@ -221,7 +225,9 @@ namespace HSP.Service.Implementations.Internal
         public async Task<bool> RejectTechnicianWithNotificationAsync(Guid technicianProfileId, string rejectedBy, string rejectionReason)
         {
             // Get technician details before rejection
-            var technicianDetail = await GetTechnicianByIdAsync(technicianProfileId);
+            var technicianDetail = await _technicianProfileRepository.GetAll()
+                .Include(x => x.User)
+                .FirstOrDefaultAsync(x => x.Id == technicianProfileId);
             if (technicianDetail == null)
             {
                 return false;
@@ -236,9 +242,9 @@ namespace HSP.Service.Implementations.Internal
                 {
                     var emailDto = new EmailDto
                     {
-                        ToEmail = technicianDetail.Email,
+                        ToEmail = technicianDetail.User.Email,
                         Subject = "❌ Hồ sơ kỹ thuật viên chưa được duyệt - HomeService Platform",
-                        HtmlBody = GenerateRejectionEmailTemplate(technicianDetail.FullName)
+                        HtmlBody = GenerateRejectionEmailTemplate(technicianDetail.User.FullName)
                     };
 
                     await _emailService.SendEmailAsync(emailDto);
@@ -246,7 +252,7 @@ namespace HSP.Service.Implementations.Internal
                 catch (Exception ex)
                 {
                     // Log email sending error but don't fail the rejection
-                    Console.WriteLine($"Failed to send rejection email to {technicianDetail.Email}: {ex.Message}");
+                    Console.WriteLine($"Failed to send rejection email to {technicianDetail.User.Email}: {ex.Message}");
                 }
             }
             return result;
@@ -382,6 +388,8 @@ namespace HSP.Service.Implementations.Internal
                 throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
             }
             var technicianProfile = await _technicianProfileRepository.GetAll()
+                .Include(x=>x.Services)
+
                 .FirstOrDefaultAsync(x => x.UserId == userId);
             if (technicianProfile == null)
             {
@@ -403,30 +411,18 @@ namespace HSP.Service.Implementations.Internal
                 technicianProfile.ExperienceYears = input.ExperienceYears;
                 flag = true;
             }
-            //if (input.Avatar != null)
-            //{
-            //    await _fileService.RemoveOldAvatarAsync(technicianProfile.Id, RoleNames.Technician);
-            //    await _fileService.UploadAsync(new FileUploadDto
-            //    {
-            //        File = input.Avatar,
-            //        ObjectId = technicianProfile.Id,
-            //        ObjectTypeName = RoleNames.Technician,
-            //        RelationType = FileConstants.Avatar
-            //    });
-            //    flag = true;
-            //}
-
-            //if (input.LegalDocument != null)
-            //{
-            //    await _fileService.RemoveOldLegalDocAsync();
-            //    flag = true;
-            //}
-
-            //if (input.Certificates?.Any() == true)
-            //{
-            //    await _fileService.UploadManyAsync(...);
-            //    flag = true;
-            //}
+            if(await UpdateTechnicianServicesAsync(technicianProfile, input.Services))
+            {
+                flag = true;
+            }
+            if (await UpdateLegalDocumentAsync(technicianProfile.Id, userId, input.LegalDocument))
+            {
+                flag = true;
+            }
+            if (await UpdateCertificatesAsync(technicianProfile.Id, userId, input.Certificates))
+            {
+                flag = true;
+            }
             if (flag == true)
             {
                 technicianProfile.DateModified = DateTime.UtcNow;
@@ -434,6 +430,133 @@ namespace HSP.Service.Implementations.Internal
             }
             return true;
         }
+        private async Task<bool> UpdateTechnicianServicesAsync(
+            TechnicianProfile technician,
+            List<TechnicianServiceDto>? newServices)
+        {
+            if (newServices == null || !newServices.Any())
+                return false;
+            var oldServices = technician.Services.ToList();
+            var newServiceIds = newServices.Select(s => s.Id).ToList();
+            bool needUpdate = false;
+            if (oldServices.Count != newServiceIds.Count)
+            {
+                needUpdate = true;
+            }
+            else
+            {
+                foreach (var s in oldServices)
+                {
+                    if (!newServiceIds.Contains(s.Id))
+                    {
+                        needUpdate = true;
+                        break;
+                    }
+                }
+            }
+            if (!needUpdate)
+                return false;
+
+            foreach (var svc in oldServices.Where(s => !newServiceIds.Contains(s.Id)))
+            {
+                technician.Services.Remove(svc);
+            }
+            var addedIds = newServiceIds.Where(id => !oldServices.Any(s => s.Id == id)).ToList();
+            if (addedIds.Count > 0)
+            {
+                var addedServices = await _serviceRepository.GetAll()
+                    .Where(s => addedIds.Contains(s.Id))
+                    .ToListAsync();
+                foreach (var s in addedServices)
+                    technician.Services.Add(s);
+            }
+            return true;
+        }
+
+        private async Task<bool> UpdateLegalDocumentAsync(Guid technicianId, Guid userId, IFormFile? newFile)
+        {
+            if (newFile == null)
+                return false;  
+
+            var oldFiles = await _fileService.GetFilesAsync(new GetFilesRequestDto
+            {
+                objectId = technicianId,
+                objectTypeName = RoleNames.Technician,
+                relationType = FileConstants.LegalDocument
+            });
+
+            var oldFile = oldFiles.FirstOrDefault();
+
+            if (oldFile != null && IsSameFile(newFile, oldFile))
+                return false;
+
+            if (oldFile != null)
+                await _fileService.DeleteAsync(oldFile.Id);
+
+            await _fileService.UploadAsync(new FileUploadDto
+            {
+                File = newFile,
+                ObjectId = technicianId,
+                ObjectTypeName = RoleNames.Technician,
+                RelationType = FileConstants.LegalDocument,
+                UserId = userId
+            });
+
+            return true;
+        }
+
+        private async Task<bool> UpdateCertificatesAsync(Guid technicianId, Guid userId, IEnumerable<IFormFile>? newFiles)
+        {
+            if (newFiles == null || !newFiles.Any())
+                return false;
+            var oldFiles = (await _fileService.GetFilesAsync(new GetFilesRequestDto
+            {
+                objectId = technicianId,
+                objectTypeName = RoleNames.Technician,
+                relationType = FileConstants.TechnicianCertificate
+            })).ToList();
+            bool needUpdate = false;
+            if (oldFiles.Count != newFiles.Count())
+                needUpdate = true;
+            else
+            {
+                foreach (var file in newFiles)
+                {
+                    bool exists = oldFiles.Any(o => IsSameFile(file, o));
+                    if (!exists)
+                    {
+                        needUpdate = true;
+                        break;
+                    }
+                }
+            }
+            if (!needUpdate)
+                return false;
+
+            foreach (var old in oldFiles)
+                await _fileService.DeleteAsync(old.Id);
+
+            var uploadDtos = newFiles.Select(f => new FileUploadDto
+            {
+                File = f,
+                ObjectId = technicianId,
+                ObjectTypeName = RoleNames.Technician,
+                RelationType = FileConstants.TechnicianCertificate,
+                UserId = userId
+            });
+            await _fileService.UploadManyAsync(uploadDtos);
+            return true;
+        }
+
+        private bool IsSameFile(IFormFile newFile, FileDto oldFile)
+        {
+            if (newFile == null || oldFile == null)
+                return false;
+
+            return newFile.FileName == oldFile.FileName
+                   && newFile.Length == oldFile.FileSize;
+        }
+
         public async Task<Guid> GetTechnicianIdByUserId(Guid userId)
         {
             var technician = await _technicianProfileRepository.GetAll()

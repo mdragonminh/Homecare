@@ -10,14 +10,8 @@ using HSP.Service.Implementations.Internal;
 using HSP.Service.Interfaces;
 using Microsoft.Extensions.Localization;
 using MockQueryable;
-using MockQueryable.Moq;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace HSP.Service.Test.Implementations.Internal
 {
@@ -26,6 +20,7 @@ namespace HSP.Service.Test.Implementations.Internal
         private readonly Mock<IRepository<TechnicianProfile, Guid>> _mockRepo;
         private readonly Mock<IFileService> _mockFileService;
         private readonly Mock<IEmailService> _mockEmailService;
+        private readonly Mock<IRepository<Core.Entities.Service, Guid>> _mockServiceRepository;
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<IStringLocalizer<SharedResource>> _mockLocalizer;
         private readonly TechnicianProfileService _service;
@@ -35,6 +30,7 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockRepo = new Mock<IRepository<TechnicianProfile, Guid>>();
             _mockFileService = new Mock<IFileService>();
             _mockEmailService = new Mock<IEmailService>();
+            _mockServiceRepository = new Mock<IRepository<Core.Entities.Service, Guid>>();
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockLocalizer = new Mock<IStringLocalizer<SharedResource>>();
 
@@ -42,6 +38,7 @@ namespace HSP.Service.Test.Implementations.Internal
                 _mockRepo.Object,
                 _mockEmailService.Object,
                 _mockFileService.Object,
+                _mockServiceRepository.Object,
                 _mockUnitOfWork.Object,
                 _mockLocalizer.Object
             );
@@ -76,7 +73,7 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Equal("Tech One", result.FullName);
         }
 
-        
+
 
 
         // ==================== ApproveTechnicianAsync Tests ====================
@@ -135,7 +132,7 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
         }
 
-       
+
         [Fact]
         public async Task UpdateTechnicianProfileAsync_ShouldUpdateFields()
         {
@@ -169,7 +166,7 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
         }
 
-        
+
         // ==================== ApproveTechnicianWithNotificationAsync Tests ====================
 
         [Fact]
