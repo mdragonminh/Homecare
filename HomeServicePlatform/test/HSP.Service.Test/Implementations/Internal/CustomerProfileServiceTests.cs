@@ -83,7 +83,6 @@ namespace HSP.Service.Test.Implementations.Internal
 
 
         [Fact]
-        //  Kiểm tra khi truyền vào userId không hợp lệ (không phải Guid)
         public async Task GetCustomerByUserIdAsync_ShouldThrow_WhenInvalidGuid()
         {
             string invalidUserId = "abc123";
@@ -92,20 +91,15 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
-        //  Kiểm tra khi userId hợp lệ nhưng không tìm thấy user trong hệ thống
         public async Task GetCustomerByUserIdAsync_ShouldThrow_WhenUserNotFound()
         {
-            // Arrange
             string validId = Guid.NewGuid().ToString();
 
-            // ✅ Cách đúng: Gọi BuildMock() trực tiếp từ List<AppUser>
             var emptyListMock = new List<AppUser>().BuildMock();
 
-            // Trả về IQueryable<AppUser> từ mock
             _userRepoMock.Setup(x => x.GetUsersAsQueryable())
                          .Returns(emptyListMock);
 
-            // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _service.GetCustomerByUserIdAsync(validId));
         }
@@ -128,13 +122,11 @@ namespace HSP.Service.Test.Implementations.Internal
                 Homes = new List<Home> { new Home { Id = Guid.NewGuid(), IsDeleted = false } }
             };
 
-            // ✅ Tạo mock IQueryable từ List - BuildMock() phải gọi trực tiếp từ List
             var usersList = new List<AppUser> { user };
             var mockUsers = usersList.BuildMock();
 
             _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
 
-            // Mock GetUserAvatarUrlAsync - ObjectType repository
             var objectTypes = new List<ObjectType>
             {
                 new ObjectType { Id = Guid.NewGuid(), Name = "User" }
@@ -143,16 +135,13 @@ namespace HSP.Service.Test.Implementations.Internal
             _objTypeRepoMock.Setup(r => r.GetAll())
                            .Returns(objectTypesMock);
 
-            // Mock GetUserAvatarUrlAsync - FileRelation repository (không có avatar)
             var fileRelations = new List<FileRelation>();
             var fileRelationsMock = fileRelations.BuildMock();
             _fileRelRepoMock.Setup(r => r.GetAll())
                            .Returns(fileRelationsMock);
 
-            // Act
             var result = await _service.GetCustomerByUserIdAsync(userId.ToString());
 
-            // Assert
             Assert.NotNull(result);
             Assert.Equal(userId, result.Id);
             Assert.Equal("Nguyen Van A", result.FullName);
@@ -161,14 +150,12 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.True(result.IsActive);
             Assert.Equal(1, result.TotalHomes);
 
-            // Verify method đã được gọi
             _userRepoMock.Verify(r => r.GetUsersAsQueryable(), Times.Once);
         }
 
 
 
         [Fact]
-        //  Kiểm tra khi userId không hợp lệ (RequestEmailChangeAsync)
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenInvalidUserId()
         {
             var result = await _service.RequestEmailChangeAsync("not-guid", "long@gmail.com");
@@ -177,7 +164,6 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
-        //  Kiểm tra khi không tìm thấy user theo userId (RequestEmailChangeAsync)
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenUserNotFound()
         {
             string userId = Guid.NewGuid().ToString();
@@ -190,7 +176,6 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
-        //  Kiểm tra khi yêu cầu đổi email hợp lệ → trả về thành công
         public async Task RequestEmailChangeAsync_ShouldReturnSuccess_WhenValid()
         {
             var user = new AppUser { Id = Guid.NewGuid(), Email = "thanhlongnguyen@gmail.com", FullName = "Nguyen Thanh Long" };
@@ -215,7 +200,6 @@ namespace HSP.Service.Test.Implementations.Internal
 
 
         [Fact]
-        // Kiểm tra khi token xác nhận email không hợp lệ (ConfirmEmailChangeAsync)
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenInvalidToken()
         {
             var result = await _service.ConfirmEmailChangeAsync(Guid.NewGuid().ToString(), "INVALID_BASE64");
@@ -225,10 +209,8 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
-        // Kiểm tra khi email mới trùng với email hiện tại
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenNewEmailSameAsOld()
         {
-            // Arrange
             var user = new AppUser
             {
                 Id = Guid.NewGuid(),
@@ -245,10 +227,8 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
-        // Kiểm tra khi email mới đã được sử dụng bởi tài khoản khác
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenNewEmailAlreadyExists()
         {
-            // Arrange
             var user = new AppUser
             {
 
@@ -266,20 +246,16 @@ namespace HSP.Service.Test.Implementations.Internal
             _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
             _userRepoMock.Setup(x => x.FindByEmailAsync("thanhlong@gmail.com")).ReturnsAsync(existingUser);
 
-            // Act
             var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "thanhlong@gmail.com");
 
-            // Assert
             Assert.False(result.Success);
             Assert.Contains("Email này đã được sử dụng bởi tài khoản khác", result.Message);
         }
 
 
         [Fact]
-        // Kiểm tra khi token xác nhận email hợp lệ và đổi email thành công
         public async Task ConfirmEmailChangeAsync_ShouldReturnSuccess_WhenTokenValid()
         {
-            // Arrange
             var user = new AppUser
             {
                 Id = Guid.NewGuid(),
@@ -291,7 +267,6 @@ namespace HSP.Service.Test.Implementations.Internal
             string newEmail = "new@example.com";
             string fakeToken = "VALID_TOKEN";
 
-            // Token = userId:newEmail:token
             string tokenString = $"{user.Id}:{newEmail}:{fakeToken}";
             string base64Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(tokenString));
 
@@ -304,7 +279,6 @@ namespace HSP.Service.Test.Implementations.Internal
             _userRepoMock.Setup(x => x.ChangeEmailAsync(user, newEmail, fakeToken))
                          .ReturnsAsync(IdentityResult.Success);
 
-            // ✅ Vì UpdateAccount trả về Task<IdentityResult>
             _userRepoMock.Setup(x => x.UpdateAccount(It.IsAny<AppUser>()))
                          .ReturnsAsync(IdentityResult.Success);
 
@@ -318,10 +292,8 @@ namespace HSP.Service.Test.Implementations.Internal
 
 
         [Fact]
-        // Kiểm tra khi đổi email thất bại do token không hợp lệ
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenChangeEmailFails()
         {
-            // Arrange
             var user = new AppUser
             {
                 Id = Guid.NewGuid(),
@@ -340,19 +312,15 @@ namespace HSP.Service.Test.Implementations.Internal
             _userRepoMock.Setup(x => x.ChangeEmailAsync(user, newEmail, fakeToken))
                          .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Invalid token" }));
 
-            // Act
             var result = await _service.ConfirmEmailChangeAsync(user.Id.ToString(), base64Token);
 
-            // Assert
             Assert.False(result.Success);
             Assert.Contains("Không thể thay đổi email", result.Message);
         }
 
         [Fact]
-        // Kiểm tra khi user tồn tại nhưng trạng thái không hoạt động (IsActive = false)
         public async Task GetCustomerByUserIdAsync_ShouldThrow_WhenUserInactive()
         {
-            // Arrange
             var userId = Guid.NewGuid();
             var user = new AppUser
             {
@@ -365,17 +333,14 @@ namespace HSP.Service.Test.Implementations.Internal
             var mockUsers = new List<AppUser> { user }.BuildMock();
             _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
 
-            // Act + Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _service.GetCustomerByUserIdAsync(userId.ToString()));
         }
 
 
         [Fact]
-        // Kiểm tra khi gửi email xác thực đổi email thất bại
         public async Task RequestEmailChangeAsync_ShouldReturnError_WhenSendEmailFails()
         {
-            // Arrange
             var user = new AppUser { Id = Guid.NewGuid(), Email = "thanhlongnguyen@gmail.com", FullName = "Nguyen Thanh Long" };
             _userRepoMock.Setup(x => x.FindByIdAsync(user.Id)).ReturnsAsync(user);
             _userRepoMock.Setup(x => x.FindByEmailAsync("long@gmail.com")).ReturnsAsync((AppUser?)null);
@@ -385,10 +350,8 @@ namespace HSP.Service.Test.Implementations.Internal
             _emailServiceMock.Setup(x => x.SendEmailAsync(It.IsAny<EmailDto>()))
                              .ThrowsAsync(new Exception("SMTP error"));
 
-            // Act
             var result = await _service.RequestEmailChangeAsync(user.Id.ToString(), "thanhlong@gmail.com");
 
-            // Assert
             Assert.False(result.Success);
             Assert.Contains("Lỗi khi gửi email xác thực", result.Message);
 
@@ -396,7 +359,6 @@ namespace HSP.Service.Test.Implementations.Internal
 
 
         [Fact]
-        // Kiểm tra khi không tìm thấy user theo userId (ConfirmEmailChangeAsync)
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenUserNotFound()
         {
             var userId = Guid.NewGuid();
@@ -413,7 +375,6 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
-        // Kiểm tra khi email mới đã được sử dụng bởi tài khoản khác (ConfirmEmailChangeAsync)
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenEmailAlreadyInUse()
         {
             var user = new AppUser { Id = Guid.NewGuid(), Email = "old@example.com" };
@@ -433,14 +394,11 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenTokenPartsNotThree()
         {
-            // Arrange
             var userId = Guid.NewGuid().ToString();
             string invalidToken = Convert.ToBase64String(Encoding.UTF8.GetBytes("only_two_parts"));
 
-            // Act
             var result = await _service.ConfirmEmailChangeAsync(userId, invalidToken);
 
-            // Assert
             Assert.False(result.Success);
             Assert.Contains("Token không hợp lệ", result.Message);
         }
@@ -448,16 +406,13 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenTokenUserIdDoesNotMatch()
         {
-            // Arrange
             var userId = Guid.NewGuid().ToString();
             var wrongUserIdInToken = Guid.NewGuid().ToString();
             string tokenString = $"{wrongUserIdInToken}:newemail@example.com:FAKE_TOKEN";
             string base64Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(tokenString));
 
-            // Act
             var result = await _service.ConfirmEmailChangeAsync(userId, base64Token);
 
-            // Assert
             Assert.False(result.Success);
             Assert.Contains("Token không khớp với người dùng", result.Message);
         }
@@ -465,27 +420,19 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task ConfirmEmailChangeAsync_ShouldReturnError_WhenUserIdInvalidGuid()
         {
-            // Arrange
             string invalidUserId = "not-a-guid";
             string tokenString = $"{invalidUserId}:newemail@example.com:FAKE_TOKEN";
             string base64Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(tokenString));
 
-            // Act
             var result = await _service.ConfirmEmailChangeAsync(invalidUserId, base64Token);
 
-            // Assert
             Assert.False(result.Success);
             Assert.Contains("User ID không hợp lệ", result.Message);
         }
 
 
 
-
-
-
-
         [Fact]
-        // Kiểm tra khi userId không hợp lệ (UpdateCustomerAsync)
         public async Task UpdateCustomerAsync_ShouldThrow_WhenInvalidUserId()
         {
             string invalidUserId = "not-a-guid";
@@ -496,7 +443,6 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
-        // Kiểm tra khi không tìm thấy người dùng theo userId
         public async Task UpdateCustomerAsync_ShouldThrow_WhenUserNotFound()
         {
             string validUserId = Guid.NewGuid().ToString();
@@ -510,20 +456,19 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
-        // Kiểm tra khi cập nhật thông tin người dùng thất bại
         public async Task UpdateCustomerAsync_ShouldThrow_WhenUpdateFails()
         {
             var user = new AppUser
             {
                 Id = Guid.NewGuid(),
-                FullName = "Nguyen Thanh Long", // old name
-                PhoneNumber = "0979735203",   // old phone
+                FullName = "Nguyen Thanh Long", 
+                PhoneNumber = "0979735203",  
             };
 
             var updateDto = new UpdateAppUserDto
             {
-                FullName = "Thanh Long Nguyen", // new name
-                PhoneNumber = "0973775247" // new phone
+                FullName = "Thanh Long Nguyen",
+                PhoneNumber = "0973775247" 
             };
 
             _userRepoMock.Setup(r => r.FindByIdAsync(user.Id)).ReturnsAsync(user);
@@ -537,15 +482,14 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
-        // Kiểm tra khi cập nhật thông tin người dùng thành công → trả về user đã cập nhật
         public async Task UpdateCustomerAsync_ShouldReturnUpdatedUser_WhenSuccess()
         {
             var userId = Guid.NewGuid();
             var user = new AppUser
             {
                 Id = userId,
-                FullName = "Nguyen Thanh Long", // old name
-                PhoneNumber = "0979735203",   // old phone
+                FullName = "Nguyen Thanh Long",
+                PhoneNumber = "0979735203", 
                 Email = "thanhlongnguyenn198@gmail.com",
                 IsActive = true,
                 DateCreated = DateTime.UtcNow.AddDays(-10),
@@ -557,8 +501,8 @@ namespace HSP.Service.Test.Implementations.Internal
             };
             var updateDto = new UpdateAppUserDto
             {
-                FullName = "Thanh Long Nguyen", // new name
-                PhoneNumber = "0973775247" // new phone
+                FullName = "Thanh Long Nguyen",
+                PhoneNumber = "0973775247" 
             };
 
             _userRepoMock.Setup(r => r.FindByIdAsync(userId))
@@ -587,16 +531,14 @@ namespace HSP.Service.Test.Implementations.Internal
 
             var result = await _service.UpdateCustomerAsync(userId.ToString(), updateDto);
 
-            // Assert
             Assert.NotNull(result);
             Assert.Equal(userId, result.Id);
-            Assert.Equal("Thanh Long Nguyen", result.FullName); // Đã được cập nhật
-            Assert.Equal("0973775247", result.PhoneNumber); // Đã được cập nhật
+            Assert.Equal("Thanh Long Nguyen", result.FullName);
+            Assert.Equal("0973775247", result.PhoneNumber); 
             Assert.Equal("thanhlongnguyenn198@gmail.com", result.Email);
             Assert.True(result.IsActive);
             Assert.Equal(1, result.TotalHomes);
 
-            // Verify các method đã được gọi
             _userRepoMock.Verify(r => r.FindByIdAsync(userId), Times.Once);
             _userRepoMock.Verify(r => r.UpdateAccount(It.Is<AppUser>(u =>
                 u.Id == userId &&
@@ -606,17 +548,15 @@ namespace HSP.Service.Test.Implementations.Internal
 
         }
 
+
         [Fact]
         public async Task GetCustomersAsync_ShouldReturnEmpty_WhenCustomerRoleNotFound()
         {
-            // Arrange
             _roleManagerMock.Setup(r => r.FindByNameAsync("Customer"))
                             .ReturnsAsync((AppRole?)null);
 
-            // Act
             var result = await _service.GetCustomersAsync();
 
-            // Assert
             Assert.NotNull(result);
             Assert.Empty(result.Items);
             Assert.Equal(0, result.TotalCount);
@@ -625,7 +565,6 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task GetCustomersAsync_ShouldReturnPagedCustomers_WhenRoleExists()
         {
-            // Arrange
             var customerRole = new AppRole { Name = "Customer" };
             _roleManagerMock.Setup(r => r.FindByNameAsync("Customer"))
                             .ReturnsAsync(customerRole);
@@ -658,14 +597,11 @@ namespace HSP.Service.Test.Implementations.Internal
             _userRepoMock.Setup(r => r.GetUsersInRoleAsync("Customer"))
                          .ReturnsAsync(users);
 
-            // Mock GetUserAvatarUrlAsync
             _fileRelRepoMock.Setup(r => r.GetAll()).Returns(new List<FileRelation>().BuildMock());
             _objTypeRepoMock.Setup(r => r.GetAll()).Returns(new List<ObjectType>().BuildMock());
 
-            // Act
             var result = await _service.GetCustomersAsync(pageNumber: 1, pageSize: 10);
 
-            // Assert
             Assert.NotNull(result);
             Assert.Equal(2, result.TotalCount);
             Assert.Contains(result.Items, u => u.FullName == "Nguyen Van A");
@@ -678,17 +614,13 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task GetDebugInfoAsync_ShouldReturnError_WhenCustomerRoleNotFound()
         {
-            // Arrange
             _roleManagerMock.Setup(r => r.FindByNameAsync("Customer"))
                             .ReturnsAsync((AppRole?)null);
 
-            // Act
             var result = await _service.GetDebugInfoAsync();
 
-            // Assert
             Assert.NotNull(result);
 
-            // Dùng reflection lấy giá trị các property
             var resultType = result.GetType();
             var error = resultType.GetProperty("Error")!.GetValue(result);
             var totalCustomers = resultType.GetProperty("TotalCustomers")!.GetValue(result);
@@ -704,7 +636,6 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task GetDebugInfoAsync_ShouldReturnActiveCustomers_WhenRoleExists()
         {
-            // Arrange
             var customerRole = new AppRole { Name = "Customer" };
             _roleManagerMock.Setup(r => r.FindByNameAsync("Customer")).ReturnsAsync(customerRole);
 
@@ -728,10 +659,8 @@ namespace HSP.Service.Test.Implementations.Internal
             var allUsers = new List<AppUser> { activeUser, inactiveUser };
             _userRepoMock.Setup(r => r.GetUsersInRoleAsync("Customer")).ReturnsAsync(allUsers);
 
-            // Act
             var result = await _service.GetDebugInfoAsync();
 
-            // Assert using reflection
             var resultType = result.GetType();
             var totalCustomers = (int)resultType.GetProperty("TotalCustomers")!.GetValue(result)!;
             var customers = (IEnumerable<object>)resultType.GetProperty("Customers")!.GetValue(result)!;
@@ -751,15 +680,12 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task GetDebugInfoAsync_ShouldReturnError_WhenExceptionThrown()
         {
-            // Arrange
             var exceptionMessage = "Test exception";
             _roleManagerMock.Setup(r => r.FindByNameAsync("Customer"))
                             .ThrowsAsync(new Exception(exceptionMessage));
 
-            // Act
             var result = await _service.GetDebugInfoAsync();
 
-            // Assert using reflection
             var resultType = result.GetType();
             var error = (string)resultType.GetProperty("Error")!.GetValue(result)!;
             var totalCustomers = (int)resultType.GetProperty("TotalCustomers")!.GetValue(result)!;
@@ -773,7 +699,6 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task GetCustomerByIdAsync_ShouldReturnUser_WhenUserExists()
         {
-            // Arrange
             var userId = Guid.NewGuid();
             var user = new AppUser
             {
@@ -787,42 +712,37 @@ namespace HSP.Service.Test.Implementations.Internal
                 Homes = new List<Home>
         {
             new Home { Id = Guid.NewGuid(), IsDeleted = false },
-            new Home { Id = Guid.NewGuid(), IsDeleted = true } // Should be ignored
+            new Home { Id = Guid.NewGuid(), IsDeleted = true }
         }
             };
 
             var mockUsers = new List<AppUser> { user }.BuildMock();
             _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
 
-            // Mock avatar service (FileRelation / ObjectType)
             var objectTypes = new List<ObjectType> { new ObjectType { Id = Guid.NewGuid(), Name = "User" } }.BuildMock();
             _objTypeRepoMock.Setup(r => r.GetAll()).Returns(objectTypes);
 
-            var fileRelations = new List<FileRelation>().BuildMock(); // no avatar
+            var fileRelations = new List<FileRelation>().BuildMock(); 
             _fileRelRepoMock.Setup(r => r.GetAll()).Returns(fileRelations);
 
-            // Act
             var result = await _service.GetCustomerByIdAsync(userId);
 
-            // Assert
             Assert.NotNull(result);
             Assert.Equal(userId, result.Id);
             Assert.Equal("Nguyen Van C", result.FullName);
             Assert.Equal("c@example.com", result.Email);
             Assert.Equal("0912345678", result.PhoneNumber);
             Assert.True(result.IsActive);
-            Assert.Equal(1, result.TotalHomes); // only IsDeleted = false counted
+            Assert.Equal(1, result.TotalHomes); 
         }
 
         [Fact]
         public async Task GetCustomerByIdAsync_ShouldThrow_WhenUserNotFound()
         {
-            // Arrange
             var userId = Guid.NewGuid();
             var mockUsers = new List<AppUser>().BuildMock();
             _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
 
-            // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _service.GetCustomerByIdAsync(userId));
         }
@@ -830,7 +750,6 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task GetCustomerByIdAsync_ShouldThrow_WhenUserInactive()
         {
-            // Arrange
             var userId = Guid.NewGuid();
             var user = new AppUser
             {
@@ -843,7 +762,6 @@ namespace HSP.Service.Test.Implementations.Internal
             var mockUsers = new List<AppUser> { user }.BuildMock();
             _userRepoMock.Setup(r => r.GetUsersAsQueryable()).Returns(mockUsers);
 
-            // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _service.GetCustomerByIdAsync(userId));
         }
@@ -851,11 +769,9 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task GetUserAvatarUrlAsync_ShouldReturnLatestAvatar_WhenExists()
         {
-            // Arrange
             var userId = Guid.NewGuid();
             var objectTypeId = Guid.NewGuid();
 
-            // Mock ObjectType repository
             var objectTypes = new List<ObjectType>
     {
         new ObjectType { Id = objectTypeId, Name = RoleNames.Customer }
@@ -863,7 +779,6 @@ namespace HSP.Service.Test.Implementations.Internal
             var objectTypesMock = objectTypes.BuildMock();
             _objTypeRepoMock.Setup(r => r.GetAll()).Returns(objectTypesMock);
 
-            // Mock FileRelation repository
             var file1 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "old.jpg"};
             var file2 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "latest.jpg" };
             var file3 = new Core.Entities.File { Id = Guid.NewGuid(), FilePath = "deleted.jpg" };
@@ -877,14 +792,11 @@ namespace HSP.Service.Test.Implementations.Internal
             var relationsMock = relations.BuildMock();
             _fileRelRepoMock.Setup(r => r.GetAll()).Returns(relationsMock);
 
-            // Use reflection to call private method
             var method = typeof(CustomerProfileService)
                 .GetMethod("GetUserAvatarUrlAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-            // Act
             var result = await (Task<string?>)method!.Invoke(_service, new object[] { userId })!;
 
-            // Assert
             Assert.NotNull(result);
             Assert.Equal("latest.jpg", result);
         }
@@ -892,7 +804,6 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task GetUserAvatarUrlAsync_ShouldReturnNull_WhenNoAvatarFound()
         {
-            // Arrange
             var userId = Guid.NewGuid();
 
             var objectTypesMock = new List<ObjectType>().BuildMock();
@@ -904,10 +815,8 @@ namespace HSP.Service.Test.Implementations.Internal
             var method = typeof(CustomerProfileService)
                 .GetMethod("GetUserAvatarUrlAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-            // Act
             var result = await (Task<string?>)method!.Invoke(_service, new object[] { userId })!;
 
-            // Assert
             Assert.Null(result);
         }
 

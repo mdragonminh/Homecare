@@ -36,7 +36,6 @@ namespace HSP.Service.Test.Implementations.Internal
                 _localizerMock.Object
             );
 
-            // Setup localizer để trả về key nếu cần
             _localizerMock.Setup(x => x[It.IsAny<string>()])
                           .Returns((string key) => new LocalizedString(key, key));
         }
