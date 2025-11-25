@@ -264,7 +264,40 @@ const TechnicianProfileUI = ({
                   </div>
                 </div>
               </div>
-
+                   {/* Quick Actions */}
+                                <div className="bg-white rounded-xl shadow-lg p-6 transform transition-all duration-300 hover:shadow-xl">
+                                  <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
+                                    {t("ui.quick_actions") || "Tác vụ nhanh"}
+                                  </h3>
+                                  <div className="space-y-3">
+                                    <button
+                                      onClick={() => (window.location.href = "/list-home")}
+                                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-blue-100 bg-blue-50 text-blue-700 transition-all duration-200 group hover:bg-blue-100"
+                                    >
+                                      <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors duration-200">
+                                        <MapPin className="w-5 h-5 text-blue-600" />
+                                      </div>
+                                      <div className="flex flex-col">
+                                        <span className="font-semibold">
+                                          {t("ui.manage_addresses")}
+                                        </span>
+                                      </div>
+                                    </button>
+                                    <button
+                                      onClick={handleChangePassword}
+                                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-rose-100 bg-rose-50 text-rose-700 transition-all duration-200 group hover:bg-rose-100"
+                                    >
+                                      <div className="p-2 bg-rose-100 rounded-lg group-hover:bg-rose-200 transition-colors duration-200">
+                                        <Key className="w-5 h-5 text-rose-600" />
+                                      </div>
+                                      <div className="flex flex-col">
+                                        <span className="font-semibold">
+                                          {t("ui.change_password")}
+                                        </span>
+                                      </div>
+                                    </button>
+                                  </div>
+                                </div>
               <RejectionReasonCard profile={profile} t={t} />
             </div>
 
