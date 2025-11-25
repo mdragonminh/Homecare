@@ -126,7 +126,10 @@ namespace HSP.Service.Implementations.Internal
                 Services = technician.Services.Select(s => new TechnicianServiceDto { Id = s.Id, Name = s.Name }).ToList(),
                 CertificateFiles = certificates,
                 LegalDocument = legalDocument,
-                Avatar = avatar
+                Avatar = avatar,
+				CitizenId = technician.CitizenId,
+				RejectionReason = technician.RejectionReason,
+				Address = technician.Address
             };
         }
 
@@ -406,6 +409,16 @@ namespace HSP.Service.Implementations.Internal
 				await _unitOfWork.SaveChangesAsync();
 			}
 			return true;
+        }
+        public async Task<Guid> GetTechnicianIdByUserId(Guid userId)
+        {
+            var technician = await _technicianProfileRepository.GetAll()
+                .FirstOrDefaultAsync(x => x.UserId == userId);
+            if (technician == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy kĩ thuật viên");
+            }
+            return technician.Id;
         }
     }
 }

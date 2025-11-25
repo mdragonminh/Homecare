@@ -1,3 +1,4 @@
+using HSP.API.Extensions;
 using HSP.Core.Constans;
 using HSP.Core.Constants;
 using HSP.Core.Dtos.FileDto;
@@ -11,10 +12,12 @@ namespace HSP.API.Controllers
     public class FileController : ControllerBase
     {
         private readonly IFileService _fileService;
-
-        public FileController(IFileService fileService)
+        private readonly ITechnicianProfileService _technicianProfileService;
+        public FileController(IFileService fileService , ITechnicianProfileService technicianProfileService)
         {
             _fileService = fileService;
+            _technicianProfileService
+                = technicianProfileService;
         }
         [HttpPost("upload")]
         public async Task<IActionResult> Upload(FileUploadDto input)
@@ -24,6 +27,15 @@ namespace HSP.API.Controllers
 
             try
             {
+                var UserId = User.GetUserId();
+                input.UserId = UserId;
+                if(User.GetUserRole() == RoleNames.Technician)
+                {
+                    input.ObjectId = await _technicianProfileService.GetTechnicianIdByUserId(UserId);
+                }
+                else {                     input.ObjectId = UserId;
+                }
+
                 if (input.RelationType == FileConstants.Avatar)
                 {
                     await RemoveOldAvatarAsync(input.ObjectId, input.ObjectTypeName, input.RelationType);

@@ -1,4 +1,5 @@
 using HSP.Core.Enums;
+using System.ComponentModel.DataAnnotations;
 namespace HSP.Core.Dtos.TechnicianProfileDto
 {
     public class TechnicianProfileResponseDto
@@ -20,6 +21,10 @@ namespace HSP.Core.Dtos.TechnicianProfileDto
         public IEnumerable<Core.Dtos.FileDto.FileDto> CertificateFiles { get; set; } = new List<Core.Dtos.FileDto.FileDto>();
         public IEnumerable<Core.Dtos.FileDto.FileDto> LegalDocument { get; set; } = new List<Core.Dtos.FileDto.FileDto>();
         public IEnumerable<Core.Dtos.FileDto.FileDto> Avatar { get; set; } = new List<Core.Dtos.FileDto.FileDto>();
+
+        public string CitizenId { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string? RejectionReason { get; set; }
     }
 
     public class TechnicianServiceDto

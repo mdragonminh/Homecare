@@ -1,7 +1,51 @@
 import axiosClient from "../config/axiosClient";
 
 const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
+const uploadAvatarHelper = async (avatarFile, objectTypeName) => {
+  try {
+    const jwtToken = localStorage.getItem("jwtToken");
+    const userId = localStorage.getItem("userId");
 
+    if (!jwtToken || !userId) {
+      throw new Error(
+        "Không tìm thấy token hoặc userId. Vui lòng đăng nhập lại."
+      );
+    }
+    const formData = new FormData();
+    formData.append("File", avatarFile);
+    formData.append("ObjectTypeName", objectTypeName);
+    formData.append("RelationType", "avatar");
+
+    const response = await axiosClient.post(`/File/upload`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${jwtToken}`,
+      },
+    });
+
+    if (ENABLE_DEBUG)
+      console.log(
+        `Upload avatar for ${objectTypeName} success:`,
+        response.data
+      );
+    return {
+      success: true,
+      data: response.data,
+      message: "Tải lên avatar thành công",
+    };
+  } catch (error) {
+    if (ENABLE_DEBUG)
+      console.error(`Upload avatar for ${objectTypeName} error:`, error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        error.response?.data ||
+        error.message ||
+        "Lỗi khi tải lên avatar",
+    };
+  }
+};
 export const profileApi = {
   // Lấy thông tin profile của user hiện tại
   getMyProfile: async () => {
@@ -199,95 +243,44 @@ export const profileApi = {
   },
 
   // Upload avatar
-  uploadAvatar: async (avatarFile) => {
-    try {
-      const jwtToken = localStorage.getItem("jwtToken");
-      const userId = localStorage.getItem("userId");
-      
-      if (!jwtToken) {
-        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
-      }
-      
-      if (!userId) {
-        throw new Error("Không tìm thấy userId. Vui lòng đăng nhập lại.");
-      }
-
-      // Tạo FormData để upload file theo FileUploadDto
-      const formData = new FormData();
-      formData.append("File", avatarFile); // IFormFile parameter
-      formData.append("UserId", userId); // Guid UserId
-      formData.append("ObjectId", userId); // Guid ObjectId (userId)
-      formData.append("ObjectTypeName", "customer"); // ObjectTypeName = "customer" (theo RoleNames.Customer)
-      formData.append("RelationType", "avatar"); // RelationType = "avatar"
-
-      const response = await axiosClient.post(
-        `/File/upload`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        }
-      );
-
-      if (ENABLE_DEBUG) console.log("Upload avatar success:", response.data);
-      return {
-        success: true,
-        data: response.data,
-        message: "Tải lên avatar thành công",
-      };
-    } catch (error) {
-      if (ENABLE_DEBUG) console.error("Upload avatar error:", error);
-      return {
-        success: false,
-        message:
-          error.response?.data?.message ||
-          error.response?.data ||
-          error.message ||
-          "Lỗi khi tải lên avatar",
-      };
-    }
-  },
-
+  uploadAvatar: async (avatarFile) =>
+    uploadAvatarHelper(avatarFile, "customer"),
   // Delete avatar
   deleteAvatar: async () => {
     try {
       const jwtToken = localStorage.getItem("jwtToken");
       const userId = localStorage.getItem("userId");
-      
+
       if (!jwtToken) {
         throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
       }
-      
+
       if (!userId) {
         throw new Error("Không tìm thấy userId. Vui lòng đăng nhập lại.");
       }
 
       // Lấy danh sách files của user với ObjectTypeName="customer"
       // Endpoint: GET /File/{objectTypeName}/{objectId}
-      const filesResponse = await axiosClient.get(
-        `/File/customer/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        }
-      );
+      const filesResponse = await axiosClient.get(`/File/customer/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
 
-      if (ENABLE_DEBUG) console.log("Get files for delete avatar:", filesResponse.data);
-      
+      if (ENABLE_DEBUG)
+        console.log("Get files for delete avatar:", filesResponse.data);
+
       // Lấy danh sách files (có thể có nhiều loại, chỉ lấy avatar)
-      const allFiles = Array.isArray(filesResponse.data) 
-        ? filesResponse.data 
+      const allFiles = Array.isArray(filesResponse.data)
+        ? filesResponse.data
         : [];
-      
+
       // Lọc các file có RelationType = "avatar" (nếu backend trả về RelationType)
       // Hoặc xóa tất cả files của user (vì thường chỉ có 1 avatar)
-      // Note: Backend có thể không trả về RelationType trong FileDto, 
+      // Note: Backend có thể không trả về RelationType trong FileDto,
       // nên ta sẽ xóa tất cả files của user (thường chỉ có 1 avatar)
       const avatarFiles = allFiles;
-      
+
       if (avatarFiles.length === 0) {
         return {
           success: false,
@@ -296,7 +289,7 @@ export const profileApi = {
       }
 
       // Xóa tất cả avatar files
-      const deletePromises = avatarFiles.map(file => 
+      const deletePromises = avatarFiles.map((file) =>
         axiosClient.delete(`/File/${file.id}`, {
           headers: {
             Authorization: `Bearer ${jwtToken}`,
@@ -325,25 +318,24 @@ export const profileApi = {
   },
 };
 export const technicianApi = {
-  /**
-   * Lấy thông tin chi tiết của Technician theo ID
-   * Endpoint: GET /api/TechnicianManagement/technicians/{id}
-   */
   getTechnicianDetails: async (technicianId) => {
     try {
       const jwtToken = localStorage.getItem("jwtToken");
       if (!jwtToken) {
         throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
       }
-      
-      // Gọi API Technician mới: /TechnicianManagement/technicians/{id}
-      const response = await axiosClient.get(`/TechnicianManagement/technicians/${technicianId}`, {
-        headers: {
-          Authorization: `Bearer ${jwtToken}`,
-        },
-      });
 
-      if (ENABLE_DEBUG) console.log("Get technician details success:", response.data);
+      const response = await axiosClient.get(
+        `/TechnicianManagement/technicians/${technicianId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        }
+      );
+
+      if (ENABLE_DEBUG)
+        console.log("Get technician details success:", response.data);
       return { success: true, data: response.data };
     } catch (error) {
       if (ENABLE_DEBUG) console.error("Get technician details error:", error);
@@ -357,6 +349,6 @@ export const technicianApi = {
       };
     }
   },
-  
-  // TODO: Các hàm khác (như cập nhật thông tin đặc thù, upload chứng chỉ) sẽ được thêm vào đây sau.
+  uploadAvatar: async (avatarFile) =>
+    uploadAvatarHelper(avatarFile, "technician"),
 };
