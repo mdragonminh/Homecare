@@ -91,19 +91,19 @@ namespace HSP.Service.Implementations.Internal
 
             var certificates = await _fileService.GetFilesAsync(new GetFilesRequestDto
             {
-                objectId = technician.UserId,
+                objectId = technician.Id,
                 objectTypeName = RoleNames.Technician,
                 relationType = FileConstants.TechnicianCertificate
             });
             var legalDocument = await _fileService.GetFilesAsync(new GetFilesRequestDto
             {
-                objectId = technician.UserId,
+                objectId = technician.Id,
                 objectTypeName = RoleNames.Technician,
                 relationType = FileConstants.LegalDocument
             }); ;
             var avatar = await _fileService.GetFilesAsync(new GetFilesRequestDto
             {
-                objectId = technician.UserId,
+                objectId = technician.Id,
                 objectTypeName = RoleNames.Technician,
                 relationType = FileConstants.Avatar
             }); ;

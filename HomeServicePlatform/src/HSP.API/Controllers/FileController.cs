@@ -13,7 +13,7 @@ namespace HSP.API.Controllers
     {
         private readonly IFileService _fileService;
         private readonly ITechnicianProfileService _technicianProfileService;
-        public FileController(IFileService fileService , ITechnicianProfileService technicianProfileService)
+        public FileController(IFileService fileService, ITechnicianProfileService technicianProfileService)
         {
             _fileService = fileService;
             _technicianProfileService
@@ -29,11 +29,13 @@ namespace HSP.API.Controllers
             {
                 var UserId = User.GetUserId();
                 input.UserId = UserId;
-                if(User.GetUserRole() == RoleNames.Technician)
+                if (User.GetUserRole() == RoleNames.Technician)
                 {
                     input.ObjectId = await _technicianProfileService.GetTechnicianIdByUserId(UserId);
                 }
-                else {                     input.ObjectId = UserId;
+                else
+                {
+                    input.ObjectId = UserId;
                 }
 
                 if (input.RelationType == FileConstants.Avatar)
