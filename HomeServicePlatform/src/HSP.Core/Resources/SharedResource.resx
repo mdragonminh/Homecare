@@ -198,6 +198,9 @@
   <data name="EmailNotConfirmed" xml:space="preserve">
     <value>Email not confirmed</value>
   </data>
+  <data name="AccountInactive" xml:space="preserve">
+    <value>Your account has been deactivated. Please contact support for assistance.</value>
+  </data>
   <data name="Pleasecheckyouremailforpasswordresetinstructions" xml:space="preserve">
     <value>Please check your email for password reset instructions</value>
   </data>

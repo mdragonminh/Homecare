@@ -384,6 +384,7 @@
     "invalid_request": "Yêu cầu không hợp lệ, vui lòng kiểm tra thông tin.",
     "invalid_email_or_password": "Email hoặc số điện thoại không đúng.",
     "account_not_activated": "Tài khoản của bạn chưa được kích hoạt.",
+    "account_inactive": "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ bộ phận hỗ trợ để được hỗ trợ.",
     "server_internal": "Lỗi máy chủ nội bộ (500), vui lòng thử lại sau.",
     "unknown": "Lỗi không xác định: {{status}}",
     "network": "Không thể kết nối với máy chủ, vui lòng kiểm tra mạng.",

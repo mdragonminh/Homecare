@@ -116,7 +116,11 @@ const handleSubmit = async (e) => {
           setValidationErrors({ password: errorMessage });
           break;
        case "EMAIL_NOT_CONFIRMED":
-          errorMessage = t("error.email_not_confirmed"); // Cần thêm key này vào file i18n
+          errorMessage = t("error.email_not_confirmed");
+          setValidationErrors({ emailOrPhone: errorMessage });
+          break;
+        case "ACCOUNT_INACTIVE":
+          errorMessage = t("error.account_inactive");
           setValidationErrors({ emailOrPhone: errorMessage });
           break;
         case "INVALID_CREDENTIALS":
