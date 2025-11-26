@@ -1,39 +1,40 @@
 ﻿using HSP.Core.Abstractions.Entity;
+using HSP.Core.Enums;
 using HSP.Core.Interfaces.Entity;
 using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Core.Entities
 {
-	public class AuditLog : BaseEntity<Guid>, IDateTracking
+	public class AuditLog : BaseEntity<Guid>, IDateTracking, IHasSoftedDelete
 	{
 		[Required]
 		public Guid UserId { get; set; }
 
-		[MaxLength(255)]
+		[Required, MaxLength(256)]
 		public string UserName { get; set; } = null!;
 
 		[Required, MaxLength(50)]
-		public string Action { get; set; } = null!; 
+		public string UserRole { get; set; } = null!;
+
+		[Required]
+		public AuditAction Action { get; set; }
 
 		[Required, MaxLength(100)]
-		public string EntityType { get; set; } = null!;
+		public string EntityName { get; set; } = null!;
 
-		public Guid? EntityId { get; set; } 
+		public Guid? EntityId { get; set; }
 
-		[MaxLength(200)]
-		public string? EntityName { get; set; } 
-
-		public string? OldValue { get; set; } 
+		public string? OldValue { get; set; }
 
 		public string? NewValue { get; set; }
 
-		[MaxLength(50)]
-		public string? IpAddress { get; set; }
+		[MaxLength(1000)]
+		public string? Description { get; set; }
 
-		[MaxLength(500)]
-		public string? UserAgent { get; set; }
 		public DateTime DateCreated { get; set; }
 		public DateTime DateModified { get; set; }
+		public bool IsDeleted { get; set; }
+
 		public AppUser? User { get; set; }
 	}
 }

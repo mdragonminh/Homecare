@@ -180,13 +180,16 @@ export const getTechnicianColumns = (
   },
   {
     title: "Trạng thái tài khoản",
-    dataIndex: ["user", "isActive"],
+    dataIndex: "isActive",
     key: "isActive",
-    render: (isActive) => (
-      <Tag color={isActive ? "success" : "error"}>
-        {isActive ? "Hoạt động" : "Vô hiệu hóa"}
-      </Tag>
-    ),
+    render: (isActive, record) => {
+      const active = isActive ?? record.user?.isActive ?? true;
+      return (
+        <Tag color={active ? "success" : "error"}>
+          {active ? "Hoạt động" : "Vô hiệu hóa"}
+        </Tag>
+      );
+    },
   },
   {
     title: "Hành động",
@@ -232,17 +235,17 @@ export const getTechnicianColumns = (
         {(record.approvalStatus === "Approved" || record.approvalStatus === 1) && (
           <Popconfirm
             title={`${
-              record.user?.isActive ? "Vô hiệu hóa" : "Kích hoạt"
+              (record.isActive ?? record.user?.isActive ?? true) ? "Vô hiệu hóa" : "Kích hoạt"
             } tài khoản này?`}
             onConfirm={() => handleToggleStatus(record)}
             okText="Xác nhận"
             cancelText="Hủy"
           >
-            <Tooltip title={record.user?.isActive ? "Vô hiệu hóa" : "Kích hoạt"}>
+            <Tooltip title={(record.isActive ?? record.user?.isActive ?? true) ? "Vô hiệu hóa" : "Kích hoạt"}>
               <Button
                 type="text"
                 icon={
-                  record.user?.isActive ? (
+                  (record.isActive ?? record.user?.isActive ?? true) ? (
                     <StopOutlined />
                   ) : (
                     <CheckCircleOutlined />

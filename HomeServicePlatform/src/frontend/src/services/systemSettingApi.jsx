@@ -33,16 +33,6 @@ export const systemSettingApi = {
     }
   },
 
-  createSetting: async (data) => {
-    try {
-      const res = await axiosClient.post(`${BASE_URL}`, data);
-      return { success: true, data: res.data };
-    } catch (err) {
-      console.error("Create setting failed:", err);
-      return { success: false, message: err.response?.data?.message || "Tạo cài đặt thất bại" };
-    }
-  },
-
   updateSettingByKey: async (key, data) => {
     try {
       const res = await axiosClient.put(`${BASE_URL}/key/${key}`, data);

@@ -1,5 +1,7 @@
+using HSP.API.Filters;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.WarehouseDto;
+using HSP.Core.Enums;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -64,6 +66,7 @@ namespace HSP.API.Controllers
 
         [HttpPost]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
+        [AuditLog(AuditAction.Create, "Equipment")]
         public async Task<IActionResult> CreateEquipment([FromBody] CreateEquipmentDto input)
         {
             if (!ModelState.IsValid)
@@ -94,6 +97,7 @@ namespace HSP.API.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
+        [AuditLog(AuditAction.Update, "Equipment")]
         public async Task<IActionResult> UpdateEquipment(Guid id, [FromBody] UpdateEquipmentDto input)
         {
             if (!ModelState.IsValid)
@@ -124,6 +128,7 @@ namespace HSP.API.Controllers
 
         [HttpDelete("{id}")]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
+        [AuditLog(AuditAction.Delete, "Equipment")]
         public async Task<IActionResult> DeleteEquipment(Guid id)
         {
             try

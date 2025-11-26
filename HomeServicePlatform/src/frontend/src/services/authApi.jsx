@@ -236,6 +236,9 @@ prepareRegisterTechnicianData: ({
       if (status === 401 && message === "Email chưa được xác thực") {
         return { success: false, errorType: "EMAIL_NOT_CONFIRMED" };
       }
+      if (status === 401 && message.includes("Tài khoản của bạn đã bị vô hiệu hóa")) {
+        return { success: false, errorType: "ACCOUNT_INACTIVE" };
+      }
       return { success: false, errorType: "INVALID_CREDENTIALS" };
     }
   },

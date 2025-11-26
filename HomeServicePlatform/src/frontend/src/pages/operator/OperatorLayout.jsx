@@ -4,10 +4,10 @@ import { Layout, Menu, Button, Typography, Space } from "antd";
 import {
   UserOutlined,
   TeamOutlined,
-  SettingOutlined,
   HomeOutlined,
   ToolOutlined,
   CalendarOutlined,
+  CreditCardOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
@@ -28,7 +28,8 @@ export default function OperatorLayout({ loggedInUser }) {
       return ["bookings"];
     if (location.pathname.startsWith("/operator/technicians"))
       return ["technicians"];
-    if (location.pathname.startsWith("/operator/settings")) return ["settings"];
+    if (location.pathname.startsWith("/operator/payments"))
+      return ["payments"];
     return ["customers"];
   }, [location.pathname]);
 
@@ -97,7 +98,7 @@ export default function OperatorLayout({ loggedInUser }) {
             if (key === "customers") navigate("/operator/customers");
             if (key === "bookings") navigate("/operator/bookings");
             if (key === "technicians") navigate("/operator/technicians");
-            if (key === "settings") navigate("/operator/settings");
+            if (key === "payments") navigate("/operator/payments");
           }}
           items={[
             {
@@ -119,9 +120,9 @@ export default function OperatorLayout({ loggedInUser }) {
               style: { marginBottom: 4 },
             },
             {
-              key: "settings",
-              icon: <SettingOutlined />,
-              label: t("operator.menu.settings", "Operator Settings"),
+              key: "payments",
+              icon: <CreditCardOutlined />,
+              label: t("operator.menu.payments", "Payments"),
               style: { marginBottom: 4 },
             },
           ]}

@@ -182,13 +182,13 @@ namespace HSP.DAL.Data
             builder.Entity<AuditLog>()
                    .HasIndex(a => a.UserId);
             builder.Entity<AuditLog>()
-                   .HasIndex(a => a.EntityType);
+                   .HasIndex(a => a.EntityName);
             builder.Entity<AuditLog>()
                    .HasIndex(a => a.Action);
             builder.Entity<AuditLog>()
                    .HasIndex(a => a.DateCreated);
             builder.Entity<AuditLog>()
-                   .HasIndex(a => new { a.EntityType, a.EntityId });
+                   .HasIndex(a => new { a.EntityName, a.EntityId });
 
             builder.Entity<AuditLog>()
                    .HasOne(a => a.User)

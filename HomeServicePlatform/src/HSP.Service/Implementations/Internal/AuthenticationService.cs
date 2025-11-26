@@ -119,6 +119,10 @@ namespace HSP.Service.Implementations.Internal
             {
                 throw new UnauthorizedAccessException(_localizer["EmailNotConfirmed"]);
             }
+            if (!user.IsActive)
+            {
+                throw new UnauthorizedAccessException(_localizer["AccountInactive"]);
+            }
             bool passwordValid = await _userRepository.CheckPasswordAsync(user, input.Password);
             if (!passwordValid)
             {
@@ -155,6 +159,10 @@ namespace HSP.Service.Implementations.Internal
             if (user == null)
             {
                 throw new Exception(_localizer["CannotFindOrCreateUser"]);
+            }
+            if (!user.IsActive)
+            {
+                throw new UnauthorizedAccessException(_localizer["AccountInactive"]);
             }
 
             // Update LastLoginAt

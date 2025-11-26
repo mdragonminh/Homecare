@@ -44,6 +44,7 @@ namespace HSP.Service.Extensions
 			services.AddScoped<IPaymentService, PaymentService>();
 			services.AddScoped<IFeedbackService, FeedbackService>();
 			services.AddScoped<ISystemSettingService, SystemSettingService>();
+			services.AddScoped<IAuditLogService, AuditLogService>();
 			services.AddHttpClient("SePay");
 			services.AddScoped<IOcrService, OcrService>();
 			return services;

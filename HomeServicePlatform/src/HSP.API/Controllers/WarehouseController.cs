@@ -1,5 +1,7 @@
+using HSP.API.Filters;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.WarehouseDto;
+using HSP.Core.Enums;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -94,6 +96,7 @@ namespace HSP.API.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
+        [AuditLog(AuditAction.Update, "Warehouse")]
         public async Task<IActionResult> UpdateWarehouse(Guid id, [FromBody] UpdateWarehouseDto input)
         {
             if (!ModelState.IsValid)
@@ -124,6 +127,7 @@ namespace HSP.API.Controllers
 
         [HttpDelete("{id}")]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager}")]
+        [AuditLog(AuditAction.Delete, "Warehouse")]
         public async Task<IActionResult> DeleteWarehouse(Guid id)
         {
             try

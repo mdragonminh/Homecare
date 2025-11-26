@@ -72,35 +72,6 @@ namespace HSP.Service.Implementations.Internal
 			};
 		}
 
-	public async Task<Guid> CreateSettingAsync(Guid userId, CreateSystemSettingDto input)
-	{
-		if (input == null)
-			throw new ArgumentNullException(_localizer["InputCannotBeNull"]);
-
-		// Check if key already exists
-		var existingSetting = await _systemSettingRepository.GetAll()
-			.FirstOrDefaultAsync(s => s.Key == input.Key);
-
-		if (existingSetting != null)
-			throw new InvalidOperationException($"Setting with key '{input.Key}' already exists");
-
-		var newSetting = new SystemSetting
-		{
-			Key = input.Key,
-			Value = input.Value,
-			Description = input.Description,
-			Group = input.Group,
-			IsSensitive = input.IsSensitive,
-			DateCreated = DateTime.UtcNow,
-			CreatedBy = userId
-		};
-
-		await _systemSettingRepository.AddAsync(newSetting);
-		await _unitOfWork.SaveChangesAsync();
-
-		return newSetting.Id;
-	}
-
 	public async Task<bool> UpdateSettingAsync(Guid userId, string key, UpdateSystemSettingDto input)
 	{
 		if (input == null)

@@ -1,8 +1,8 @@
 import React from "react";
 import PaymentManagement from "../../components/shared/PaymentManagement";
 
-const PaymentManagementPage = () => {
+const OperatorPaymentManagementPage = () => {
   return <PaymentManagement />;
 };
 
-export default PaymentManagementPage;
+export default OperatorPaymentManagementPage;

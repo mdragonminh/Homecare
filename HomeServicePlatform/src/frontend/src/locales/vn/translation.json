@@ -384,6 +384,7 @@
     "invalid_request": "Yêu cầu không hợp lệ, vui lòng kiểm tra thông tin.",
     "invalid_email_or_password": "Email hoặc số điện thoại không đúng.",
     "account_not_activated": "Tài khoản của bạn chưa được kích hoạt.",
+    "account_inactive": "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ bộ phận hỗ trợ để được hỗ trợ.",
     "server_internal": "Lỗi máy chủ nội bộ (500), vui lòng thử lại sau.",
     "unknown": "Lỗi không xác định: {{status}}",
     "network": "Không thể kết nối với máy chủ, vui lòng kiểm tra mạng.",
@@ -956,6 +957,29 @@
     "update": "Cập nhật",
     "delete": "Xóa",
     "previous": "Trước",
-    "next": "Tiếp"
+    "next": "Tiếp",
+    "filter": "Lọc",
+    "clearFilters": "Xóa bộ lọc",
+    "view": "Xem",
+    "close": "Đóng",
+    "total": "Tổng",
+    "items": "mục"
+  },
+  "auditLog": {
+    "title": "Nhật ký hoạt động",
+    "fetchError": "Không thể tải nhật ký hoạt động",
+    "searchPlaceholder": "Tìm theo người dùng hoặc đối tượng",
+    "selectRole": "Chọn vai trò",
+    "selectAction": "Chọn hành động",
+    "userName": "Tên người dùng",
+    "userRole": "Vai trò",
+    "action": "Hành động",
+    "entityName": "Đối tượng",
+    "entityId": "ID đối tượng",
+    "description": "Mô tả",
+    "dateCreated": "Ngày tạo",
+    "detailTitle": "Chi tiết nhật ký hoạt động",
+    "oldValue": "Giá trị cũ",
+    "newValue": "Giá trị mới"
   }
 }

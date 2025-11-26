@@ -1,6 +1,8 @@
+using HSP.API.Filters;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.BookingDto;
 using HSP.Core.Entities;
+using HSP.Core.Enums;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Service.Implementations;
 using HSP.Service.Interfaces;
@@ -152,6 +154,7 @@ namespace HSP.API.Controllers
 		/// Hoàn thành booking
 		/// </summary>
 		[HttpPost("{id}/complete")]
+		[AuditLog(AuditAction.Update, "Booking")]
 		public async Task<IActionResult> CompleteBooking(Guid id)
 		{
 			try
@@ -182,6 +185,7 @@ namespace HSP.API.Controllers
 		/// Từ chối/hủy booking
 		/// </summary>
 		[HttpPost("{id}/cancel")]
+		[AuditLog(AuditAction.Update, "Booking")]
 		public async Task<IActionResult> CancelBooking(Guid id, [FromBody] RejectBookingDto input)
 		{
 			try
@@ -212,6 +216,7 @@ namespace HSP.API.Controllers
 		/// Cập nhật trạng thái booking
 		/// </summary>
 		[HttpPut("{id}/status")]
+		[AuditLog(AuditAction.Update, "Booking")]
 		public async Task<IActionResult> UpdateBookingStatus(Guid id, [FromBody] UpdateBookingStatusDto input)
 		{
 			try

@@ -94,16 +94,17 @@ export const paymentApi = {
     try {
       const params = new URLSearchParams();
 
-      if (filters.pageNumber) params.append("pageNumber", filters.pageNumber);
-      if (filters.pageSize) params.append("pageSize", filters.pageSize);
-      if (filters.bookingId) params.append("bookingId", filters.bookingId);
+      if (filters.pageNumber) params.append("PageNumber", filters.pageNumber);
+      if (filters.pageSize) params.append("PageSize", filters.pageSize);
+      if (filters.bookingId) params.append("BookingId", filters.bookingId);
+      if (filters.customerId) params.append("CustomerId", filters.customerId);
       if (filters.status !== undefined && filters.status !== null)
-        params.append("status", filters.status);
+        params.append("Status", filters.status);
       if (filters.paymentMethod !== undefined && filters.paymentMethod !== null)
-        params.append("paymentMethod", filters.paymentMethod);
-      if (filters.fromDate) params.append("fromDate", filters.fromDate);
-      if (filters.toDate) params.append("toDate", filters.toDate);
-      if (filters.searchTerm) params.append("searchTerm", filters.searchTerm);
+        params.append("PaymentMethod", filters.paymentMethod);
+      if (filters.fromDate) params.append("FromDate", filters.fromDate);
+      if (filters.toDate) params.append("ToDate", filters.toDate);
+      if (filters.searchTerm) params.append("SearchTerm", filters.searchTerm);
 
       const response = await axiosClient.get(`/payment?${params}`);
 

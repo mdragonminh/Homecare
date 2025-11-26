@@ -376,6 +376,7 @@
     "invalid_request": "Invalid request, please check the information.",
     "invalid_email_or_password": "Invalid email or phone number.",
     "account_not_activated": "Your account has not been activated.",
+    "account_inactive": "Your account has been deactivated. Please contact support for assistance.",
     "server_internal": "Internal server error (500), please try again later.",
     "unknown": "Unknown error: {{status}}",
     "network": "Unable to connect to the server, please check your network.",
@@ -965,6 +966,29 @@
     "update": "Update",
     "delete": "Delete",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "filter": "Filter",
+    "clearFilters": "Clear Filters",
+    "view": "View",
+    "close": "Close",
+    "total": "Total",
+    "items": "items"
+  },
+  "auditLog": {
+    "title": "Activity Logs",
+    "fetchError": "Failed to fetch audit logs",
+    "searchPlaceholder": "Search by user or entity",
+    "selectRole": "Select Role",
+    "selectAction": "Select Action",
+    "userName": "User Name",
+    "userRole": "Role",
+    "action": "Action",
+    "entityName": "Entity",
+    "entityId": "Entity ID",
+    "description": "Description",
+    "dateCreated": "Date Created",
+    "detailTitle": "Audit Log Details",
+    "oldValue": "Old Value",
+    "newValue": "New Value"
   }
 }
