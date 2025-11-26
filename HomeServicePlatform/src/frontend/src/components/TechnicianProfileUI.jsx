@@ -496,6 +496,7 @@ const TechnicianProfileUI = ({
                       profile={profile}
                       t={t}
                       getFileUrl={getAvatarUrl}
+                      onUpdateSuccess={fetchProfile}
                     />
 
                     {/* Action Buttons */}
