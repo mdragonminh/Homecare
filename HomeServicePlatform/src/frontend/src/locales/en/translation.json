@@ -966,6 +966,29 @@
     "update": "Update",
     "delete": "Delete",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "filter": "Filter",
+    "clearFilters": "Clear Filters",
+    "view": "View",
+    "close": "Close",
+    "total": "Total",
+    "items": "items"
+  },
+  "auditLog": {
+    "title": "Activity Logs",
+    "fetchError": "Failed to fetch audit logs",
+    "searchPlaceholder": "Search by user or entity",
+    "selectRole": "Select Role",
+    "selectAction": "Select Action",
+    "userName": "User Name",
+    "userRole": "Role",
+    "action": "Action",
+    "entityName": "Entity",
+    "entityId": "Entity ID",
+    "description": "Description",
+    "dateCreated": "Date Created",
+    "detailTitle": "Audit Log Details",
+    "oldValue": "Old Value",
+    "newValue": "New Value"
   }
 }

@@ -957,6 +957,29 @@
     "update": "Cập nhật",
     "delete": "Xóa",
     "previous": "Trước",
-    "next": "Tiếp"
+    "next": "Tiếp",
+    "filter": "Lọc",
+    "clearFilters": "Xóa bộ lọc",
+    "view": "Xem",
+    "close": "Đóng",
+    "total": "Tổng",
+    "items": "mục"
+  },
+  "auditLog": {
+    "title": "Nhật ký hoạt động",
+    "fetchError": "Không thể tải nhật ký hoạt động",
+    "searchPlaceholder": "Tìm theo người dùng hoặc đối tượng",
+    "selectRole": "Chọn vai trò",
+    "selectAction": "Chọn hành động",
+    "userName": "Tên người dùng",
+    "userRole": "Vai trò",
+    "action": "Hành động",
+    "entityName": "Đối tượng",
+    "entityId": "ID đối tượng",
+    "description": "Mô tả",
+    "dateCreated": "Ngày tạo",
+    "detailTitle": "Chi tiết nhật ký hoạt động",
+    "oldValue": "Giá trị cũ",
+    "newValue": "Giá trị mới"
   }
 }

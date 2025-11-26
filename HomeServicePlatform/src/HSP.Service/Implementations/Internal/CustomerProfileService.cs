@@ -150,9 +150,11 @@ namespace HSP.Service.Implementations.Internal
                 return new PagedList<AppUserDto>(new List<AppUserDto>(), 0, pageNumber, pageSize);
             }
 
-            var query = _userRepository.GetUsersAsQueryable()
-                .Include(x => x.Homes.Where(h => !h.IsDeleted))
-                .Where(x => x.IsActive);
+            var baseQuery = _userRepository.GetUsersAsQueryable()
+                .IgnoreQueryFilters()
+                .Include(x => x.Homes.Where(h => !h.IsDeleted));
+
+            IQueryable<AppUser> query = baseQuery;
 
             // Apply search filter if provided
             if (!string.IsNullOrEmpty(searchTerm))

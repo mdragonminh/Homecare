@@ -1,12 +1,18 @@
 ﻿using HSP.API.Extensions;
+using HSP.API.Filters;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.AuthenticationDto;
+using HSP.Core.Dtos.AuditLogDto;
+using HSP.Core.Enums;
 using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Entities;
 using HSP.Core.Interfaces.External;
 using HSP.Service.Dtos.AuthenticationDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Razor.Templating.Core;
 using System.ComponentModel.DataAnnotations;
@@ -112,6 +118,7 @@ namespace HSP.API.Controllers
 
 		[Authorize]
 		[HttpPost("logout")]
+		[AuditLog(AuditAction.Logout, "Authentication")]
 		public async Task<IActionResult> Logout()
 		{
 			try
@@ -137,6 +144,48 @@ namespace HSP.API.Controllers
 			try
 			{
 				var result = await _authenticationService.Login(input);
+				
+				// Manually log the login action since user is now authenticated
+				try
+				{
+					var auditLogService = HttpContext.RequestServices.GetService<IAuditLogService>();
+					var userManager = HttpContext.RequestServices.GetService<UserManager<AppUser>>();
+					
+					if (auditLogService != null && userManager != null)
+					{
+						// Find the user who just logged in
+						AppUser? user = null;
+						if (input.EmailOrPhone.Contains("@"))
+						{
+							user = await userManager.FindByEmailAsync(input.EmailOrPhone);
+						}
+						else
+						{
+							user = await userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == input.EmailOrPhone);
+						}
+						
+						if (user != null)
+						{
+							var roles = await userManager.GetRolesAsync(user);
+							var userRole = roles.FirstOrDefault() ?? "Unknown";
+							
+							var auditLog = new CreateAuditLogDto
+							{
+								UserId = user.Id,
+								UserName = user.UserName ?? "Unknown",
+								UserRole = userRole,
+								Action = AuditAction.Login,
+								EntityName = "Authentication",
+								Description = "User logged in"
+							};
+							await auditLogService.CreateAuditLogAsync(auditLog);
+						}
+					}
+				}
+				catch
+				{
+				}
+				
 				return Ok(result);
 			}
 			catch (ValidationException ex)

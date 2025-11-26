@@ -1,5 +1,7 @@
-﻿using HSP.Core.Constans;
+﻿using HSP.API.Filters;
+using HSP.Core.Constans;
 using HSP.Core.Dtos.AccountDto;
+using HSP.Core.Enums;
 using HSP.Core.Interfaces.External;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
@@ -67,6 +69,7 @@ namespace HSP.API.Controllers
         /// Create a new management account (Operator, Equipment Manager, Supporter)
         /// </summary>
         [HttpPost]
+        [AuditLog(AuditAction.Create, "User")]
         public async Task<IActionResult> CreateAccount([FromBody] CreateAccountRequestDto input)
         {
             if (!ModelState.IsValid)
@@ -199,6 +202,9 @@ namespace HSP.API.Controllers
         /// Disable an account
         /// </summary>
         [HttpPatch("{accountId}/disable")]
+        [AllowAnonymous]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [AuditLog(AuditAction.Update, "User")]
         public async Task<IActionResult> DisableAccount(string accountId, [FromBody] DisableAccountRequestDto input)
         {
             if (!ModelState.IsValid)
@@ -236,6 +242,9 @@ namespace HSP.API.Controllers
         /// Enable an account
         /// </summary>
         [HttpPatch("{accountId}/enable")]
+        [AllowAnonymous]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator}")]
+        [AuditLog(AuditAction.Update, "User")]
         public async Task<IActionResult> EnableAccount(string accountId)
         {
             try
@@ -264,6 +273,7 @@ namespace HSP.API.Controllers
         /// Delete an account (soft delete)
         /// </summary>
         [HttpDelete("{accountId}")]
+        [AuditLog(AuditAction.Delete, "User")]
         public async Task<IActionResult> DeleteAccount(string accountId)
         {
             try

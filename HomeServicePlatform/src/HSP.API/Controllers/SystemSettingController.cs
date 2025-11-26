@@ -1,6 +1,8 @@
 using HSP.API.Extensions;
+using HSP.API.Filters;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.SystemSettingDto;
+using HSP.Core.Enums;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -64,29 +66,8 @@ namespace HSP.API.Controllers
 			}
 		}
 
-		[HttpPost]
-		public async Task<IActionResult> CreateSetting([FromBody] CreateSystemSettingDto input)
-		{
-			if (!ModelState.IsValid)
-				return BadRequest(ModelState);
-
-			try
-			{
-				var userId = User.GetUserId();
-				var settingId = await _systemSettingService.CreateSettingAsync(userId, input);
-				return Ok(new { id = settingId });
-			}
-			catch (InvalidOperationException ex)
-			{
-				return Conflict(ex.Message);
-			}
-			catch (Exception ex)
-			{
-				return StatusCode(500, ex.Message);
-			}
-		}
-
 		[HttpPut("key/{key}")]
+		[AuditLog(AuditAction.Update, "SystemSetting")]
 		public async Task<IActionResult> UpdateSettingByKey([FromRoute] string key, [FromBody] UpdateSystemSettingDto input)
 		{
 			if (!ModelState.IsValid)
@@ -109,6 +90,7 @@ namespace HSP.API.Controllers
 		}
 
 		[HttpPut("{id}")]
+		[AuditLog(AuditAction.Update, "SystemSetting")]
 		public async Task<IActionResult> UpdateSettingById([FromRoute] Guid id, [FromBody] UpdateSystemSettingDto input)
 		{
 			if (!ModelState.IsValid)
@@ -131,6 +113,7 @@ namespace HSP.API.Controllers
 		}
 
 		[HttpDelete("{id}")]
+		[AuditLog(AuditAction.Delete, "SystemSetting")]
 		public async Task<IActionResult> DeleteSetting([FromRoute] Guid id)
 		{
 			try

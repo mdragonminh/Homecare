@@ -1,7 +1,9 @@
 using HSP.API.Extensions;
+using HSP.API.Filters;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Dtos.TechnicianProfileDto;
+using HSP.Core.Enums;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -70,6 +72,7 @@ namespace HSP.API.Controllers
 
         [HttpPost("technicians/{id}/approve")]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
+        [AuditLog(AuditAction.Update, "Technician")]
         public async Task<IActionResult> ApproveTechnician(Guid id)
         {
             try
@@ -92,6 +95,7 @@ namespace HSP.API.Controllers
 
         [HttpPost("technicians/{id}/reject")]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
+        [AuditLog(AuditAction.Update, "Technician")]
         public async Task<IActionResult> RejectTechnician(Guid id, [FromBody] TechnicianRejectDto dto)
         {
             if (!ModelState.IsValid)

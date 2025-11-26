@@ -151,7 +151,8 @@ export default function OperatorCustomersPage() {
       okType: "danger",
       onOk: async () => {
         try {
-          const result = await accountApi.disableAccount(record.fullId, {
+          const accountId = record.id || record.fullId;
+          const result = await accountApi.disableAccount(accountId, {
             reason: "Vô hiệu hóa bởi operator",
           });
           if (result.success) {
@@ -170,7 +171,8 @@ export default function OperatorCustomersPage() {
 
   const handleEnableAccount = async (record) => {
     try {
-      const result = await accountApi.enableAccount(record.fullId);
+      const accountId = record.id || record.fullId;
+      const result = await accountApi.enableAccount(accountId);
       if (result.success) {
         message.success("Kích hoạt tài khoản thành công");
         loadCustomers();

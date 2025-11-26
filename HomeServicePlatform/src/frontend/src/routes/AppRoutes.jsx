@@ -22,7 +22,6 @@ import OperatorBookingsPage from "../pages/operator/OperatorBookingsPage";
 import OperatorBookingDetailPage from "../pages/operator/OperatorBookingDetailPage";
 import OperatorTechniciansPage from "../pages/operator/OperatorTechniciansPage";
 import OperatorPaymentManagementPage from "../pages/operator/OperatorPaymentManagementPage";
-import OperatorSettingsPage from "../pages/operator/OperatorSettingsPage";
 import Layout from "../layouts/Layout";
 import { AddPasswordPage } from "../pages/Auth/AddPasswordPage";
 import ResetPasswordPage from "../pages/Auth/ResetPasswordPage";
@@ -249,7 +248,6 @@ export default function AppRoutes({
           path="/operator/payments"
           element={<OperatorPaymentManagementPage />}
         />
-        <Route path="/operator/settings" element={<OperatorSettingsPage />} />
       </Route>
 
       {/* ---- Warehouse (Equipment Manager) ---- */}

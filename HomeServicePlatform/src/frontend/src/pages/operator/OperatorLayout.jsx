@@ -4,7 +4,6 @@ import { Layout, Menu, Button, Typography, Space } from "antd";
 import {
   UserOutlined,
   TeamOutlined,
-  SettingOutlined,
   HomeOutlined,
   ToolOutlined,
   CalendarOutlined,
@@ -31,7 +30,6 @@ export default function OperatorLayout({ loggedInUser }) {
       return ["technicians"];
     if (location.pathname.startsWith("/operator/payments"))
       return ["payments"];
-    if (location.pathname.startsWith("/operator/settings")) return ["settings"];
     return ["customers"];
   }, [location.pathname]);
 
@@ -101,7 +99,6 @@ export default function OperatorLayout({ loggedInUser }) {
             if (key === "bookings") navigate("/operator/bookings");
             if (key === "technicians") navigate("/operator/technicians");
             if (key === "payments") navigate("/operator/payments");
-            if (key === "settings") navigate("/operator/settings");
           }}
           items={[
             {
@@ -126,12 +123,6 @@ export default function OperatorLayout({ loggedInUser }) {
               key: "payments",
               icon: <CreditCardOutlined />,
               label: t("operator.menu.payments", "Payments"),
-              style: { marginBottom: 4 },
-            },
-            {
-              key: "settings",
-              icon: <SettingOutlined />,
-              label: t("operator.menu.settings", "Operator Settings"),
               style: { marginBottom: 4 },
             },
           ]}

@@ -1,6 +1,8 @@
 ﻿using HSP.API.Extensions;
+using HSP.API.Filters;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.ServiceDto;
+using HSP.Core.Enums;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,9 +18,10 @@ namespace HSP.API.Controllers
 		{
 			_homeServiceService = homeServiceService;
 		}
-		[HttpPost]
-		[Authorize(Roles = RoleNames.Admin)]
-		public async Task<IActionResult> CreateHomeService([FromBody] CreateHomeServiceDto input)
+	[HttpPost]
+	[Authorize(Roles = RoleNames.Admin)]
+	[AuditLog(AuditAction.Create, "HomeService")]
+	public async Task<IActionResult> CreateHomeService([FromBody] CreateHomeServiceDto input)
 		{
 			if (!ModelState.IsValid)
 			{
@@ -53,9 +56,10 @@ namespace HSP.API.Controllers
 				return StatusCode(500, ex.Message);
 			}
 		}
-		[HttpPut("{id}")]
-		[Authorize(Roles = RoleNames.Admin)]
-		public async Task<IActionResult> UpdateHomeService([FromRoute] Guid id, [FromBody] UpdateHomeServiceDto input)
+	[HttpPut("{id}")]
+	[Authorize(Roles = RoleNames.Admin)]
+	[AuditLog(AuditAction.Update, "HomeService")]
+	public async Task<IActionResult> UpdateHomeService([FromRoute] Guid id, [FromBody] UpdateHomeServiceDto input)
 		{
 			if (!ModelState.IsValid)
 			{
@@ -78,9 +82,10 @@ namespace HSP.API.Controllers
 				return StatusCode(500, ex.Message);
 			}
 		}
-		[HttpDelete("{id}")]
-		[Authorize(Roles = RoleNames.Admin)]
-		public async Task<IActionResult> DeleteHomeService([FromRoute] Guid id)
+	[HttpDelete("{id}")]
+	[Authorize(Roles = RoleNames.Admin)]
+	[AuditLog(AuditAction.Delete, "HomeService")]
+	public async Task<IActionResult> DeleteHomeService([FromRoute] Guid id)
 		{
 			try
 			{
