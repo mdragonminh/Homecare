@@ -351,4 +351,75 @@ export const technicianApi = {
   },
   uploadAvatar: async (avatarFile) =>
     uploadAvatarHelper(avatarFile, "technician"),
+
+  updateTechnicianProfile: async ({
+    citizenId,
+    address,
+    experienceYears,
+    services = [],          
+    legalDocumentFile,       
+    certificateFiles = [],   
+  }) => {
+    try {
+     
+      const jwtToken = localStorage.getItem("jwtToken"); 
+
+      if (!jwtToken) {
+        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
+      }
+      
+      
+      const formData = new FormData();
+      
+     
+      if (!legalDocumentFile) {
+          throw new Error("Vui lòng tải lên Tài liệu pháp lý.");
+      }
+      formData.append("LegalDocument", legalDocumentFile);
+      
+      // Thêm file Optional: Certificates
+      certificateFiles.forEach((file) => {
+          formData.append("Certificates", file);
+      });
+
+      
+      if (services.length > 0) {
+          services.forEach((serviceId) => {
+             
+              formData.append("Services", serviceId); 
+          });
+      }
+      
+     
+      const queryParams = new URLSearchParams({
+          CitizenId: citizenId,
+          Address: address,
+          ExperienceYears: experienceYears.toString(), 
+      }).toString();
+      
+      const url = `/TechnicianManagement?${queryParams}`; // Endpoint PUT với Query String
+      const response = await axiosClient.put(url, formData);
+
+      if (ENABLE_DEBUG)
+        console.log("Update technician profile success:", response.data);
+        
+      return { 
+        success: true, 
+        data: response.data,
+        message: "Cập nhật thông tin kỹ thuật viên thành công", 
+      };
+    } catch (error) {
+      if (ENABLE_DEBUG)
+        console.error("Update technician profile error:", error);
+        
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          error.message ||
+          "Lỗi khi cập nhật thông tin kỹ thuật viên",
+      };
+    }
+  },
 };
