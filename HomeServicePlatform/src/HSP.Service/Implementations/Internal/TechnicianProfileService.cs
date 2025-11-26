@@ -83,12 +83,12 @@ namespace HSP.Service.Implementations.Internal
             return pagedTechnicians;
         }
 
-        public async Task<TechnicianProfileResponseDto?> GetTechnicianByIdAsync(Guid id)
+        public async Task<TechnicianProfileResponseDto?> GetTechnicianByIdAsync(Guid technicianId)
         {
             var technician = await _technicianProfileRepository.GetAll()
                     .Include(x => x.User)
                     .Include(x => x.Services)
-                    .FirstOrDefaultAsync(x => x.UserId == id);
+                    .FirstOrDefaultAsync(x => x.Id == technicianId);
 
             if (technician == null)
                 throw new KeyNotFoundException("Không tìm thấy kĩ thuật viên");

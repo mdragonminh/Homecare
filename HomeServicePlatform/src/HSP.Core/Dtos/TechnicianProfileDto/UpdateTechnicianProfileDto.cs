@@ -17,10 +17,8 @@ namespace HSP.Core.Dtos.TechnicianProfileDto
         [Range(0, 50, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ExperienceYearsRange")]
         public int ExperienceYears { get; set; }
         public List<TechnicianServiceDto>? Services { get; set; }
-        public IFormFile? Avatar { get; set; }
         [Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "LegalDocumentIsRequired")]
         public IFormFile? LegalDocument { get; set; }
         public List<IFormFile>? Certificates { get; set; }
-        public DateTime DateModified { get; set; }
     }
 }

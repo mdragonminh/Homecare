@@ -29,12 +29,12 @@ namespace HSP.API.Controllers
 			return Ok(result);
 		}
 
-		[HttpGet("technician-profile/{id}")]
-		public async Task<IActionResult> GetTechnicianProfile(Guid id)
+		[HttpGet("technician-profile/{technicianId}")]
+		public async Task<IActionResult> GetTechnicianProfile(Guid technicianId)
 		{
 			try
 			{
-				var result = await _technicianProfileService.GetTechnicianByIdAsync(id);
+				var result = await _technicianProfileService.GetTechnicianByIdAsync(technicianId);
 				if (result == null)
 				{
 					return NotFound(new { message = "Không tìm thấy technician" });

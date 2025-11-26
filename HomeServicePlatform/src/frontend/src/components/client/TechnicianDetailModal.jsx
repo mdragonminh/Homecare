@@ -143,14 +143,14 @@ export default function TechnicianDetailModal({
               <Avatar
                 size={80}
                 src={
-                  technicianDetail.avatar
-                    ? adminApi.previewFile(technicianDetail.avatar.filePath)
+                  technicianDetail.avatar?.[0]
+                    ? adminApi.previewFile(technicianDetail.avatar?.[0].filePath)
                     : null
                 }
-                icon={!technicianDetail.avatar && <ToolOutlined />}
+                icon={!technicianDetail.avatar?.length && <ToolOutlined />}
                 style={{ backgroundColor: "#1890ff" }}
               >
-                {!technicianDetail.avatar &&
+                {!technicianDetail.avatar?.length &&
                   technicianDetail.fullName?.charAt(0)}
               </Avatar>
               <div style={{ flex: 1 }}>
@@ -295,11 +295,10 @@ export default function TechnicianDetailModal({
                             >
                               <div
                                 style={{
-                                  width: `${
-                                    feedbacks.length > 0
+                                  width: `${feedbacks.length > 0
                                       ? (count / feedbacks.length) * 100
                                       : 0
-                                  }%`,
+                                    }%`,
                                   height: "100%",
                                   background: "#faad14",
                                 }}
@@ -351,8 +350,8 @@ export default function TechnicianDetailModal({
                           <div style={{ fontSize: 12, color: "#8c8c8c" }}>
                             {feedback.createdAt
                               ? dayjs(feedback.createdAt).format(
-                                  "DD/MM/YYYY HH:mm"
-                                )
+                                "DD/MM/YYYY HH:mm"
+                              )
                               : ""}
                           </div>
                         </div>
@@ -494,7 +493,7 @@ export default function TechnicianDetailModal({
 
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 500, color: "#262626" }}>
-                    {technicianDetail.legalDocument.fileName}
+                    {technicianDetail.legalDocument?.[0]?.fileName}
                   </div>
                   <div style={{ fontSize: 12, color: "#8c8c8c" }}>
                     {t("ui.identity_document", {
@@ -507,7 +506,7 @@ export default function TechnicianDetailModal({
                   size="small"
                   type="text"
                   onClick={() =>
-                    handlePreviewFile(technicianDetail.legalDocument.filePath)
+                    handlePreviewFile(technicianDetail.legalDocument?.[0]?.filePath)
                   }
                   style={{
                     padding: "4px 12px",
