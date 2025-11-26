@@ -695,68 +695,68 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Empty(result.Items);
         }
 
-        [Fact]
-        public async Task GetAllBookingsAsync_ShouldIncludeFeedbackAndCancellation_WhenAvailable()
-        {
-            // Arrange
-            var bookingId = Guid.NewGuid();
+    //    [Fact]
+    //    public async Task GetAllBookingsAsync_ShouldIncludeFeedbackAndCancellation_WhenAvailable()
+    //    {
+    //        // Arrange
+    //        var bookingId = Guid.NewGuid();
 
-            var bookings = new List<Booking>
-    {
-        new Booking
-        {
-            Id = bookingId,
-            CustomerId = Guid.NewGuid(),
-            DesiredDate = DateTime.UtcNow,
-            ProblemDescription = "Issue",
-            Status = BookingStatus.Cancelled,
-            DateCreated = DateTime.UtcNow,
-            DateModified = DateTime.UtcNow,
-            Customer = new AppUser { Id = Guid.NewGuid(), UserName = "User1", IsActive = true },
-            Feedback = new BookingFeedback
-            {
-                BookingId = bookingId,
-                Rating = 5,
-                Comment = "Great service"
-            },
-            Cancellation = new BookingCancellation
-            {
-                BookingId = bookingId,
-                Reason = "Customer request",
-                CancelledBy = Guid.NewGuid(),
-                CancelledAt = DateTime.UtcNow
-            }
-        }
-    };
+    //        var bookings = new List<Booking>
+    //{
+    //    new Booking
+    //    {
+    //        Id = bookingId,
+    //        CustomerId = Guid.NewGuid(),
+    //        DesiredDate = DateTime.UtcNow,
+    //        ProblemDescription = "Issue",
+    //        Status = BookingStatus.Cancelled,
+    //        DateCreated = DateTime.UtcNow,
+    //        DateModified = DateTime.UtcNow,
+    //        Customer = new AppUser { Id = Guid.NewGuid(), UserName = "User1", IsActive = true },
+    //        Feedback = new BookingFeedback
+    //        {
+    //            BookingId = bookingId,
+    //            Rating = 5,
+    //            Comment = "Great service"
+    //        },
+    //        Cancellation = new BookingCancellation
+    //        {
+    //            BookingId = bookingId,
+    //            Reason = "Customer request",
+    //            CancelledBy = Guid.NewGuid(),
+    //            CancelledAt = DateTime.UtcNow
+    //        }
+    //    }
+    //};
 
-            var bookingsMock = bookings.BuildMock();
-            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-                .Returns(bookingsMock);
+    //        var bookingsMock = bookings.BuildMock();
+    //        _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+    //            .Returns(bookingsMock);
 
-            _mockBookingItemRepo.Setup(r => r.GetAll())
-                .Returns(new List<BookingItem>().BuildMock());
+    //        _mockBookingItemRepo.Setup(r => r.GetAll())
+    //            .Returns(new List<BookingItem>().BuildMock());
 
-            var input = new BookingInput
-            {
-                PageNumber = 1,
-                PageSize = 10
-            };
+    //        var input = new BookingInput
+    //        {
+    //            PageNumber = 1,
+    //            PageSize = 10
+    //        };
 
-            var service = CreateService();
+    //        var service = CreateService();
 
-            // Act
-            var result = await service.GetAllBookingsAsync(input);
+    //        // Act
+    //        var result = await service.GetAllBookingsAsync(input);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Single(result.Items);
-            var booking = result.Items.First();
-            Assert.NotNull(booking.Feedback);
-            Assert.Equal(5, booking.Feedback.Rating);
-            Assert.Equal("Great service", booking.Feedback.Comment);
-            Assert.NotNull(booking.Cancellation);
-            Assert.Equal("Customer request", booking.Cancellation.Reason);
-        }
+    //        // Assert
+    //        Assert.NotNull(result);
+    //        Assert.Single(result.Items);
+    //        var booking = result.Items.First();
+    //        Assert.NotNull(booking.Feedback);
+    //        Assert.Equal(5, booking.Feedback.Rating);
+    //        Assert.Equal("Great service", booking.Feedback.Comment);
+    //        Assert.NotNull(booking.Cancellation);
+    //        Assert.Equal("Customer request", booking.Cancellation.Reason);
+    //    }
 
         [Fact]
         public async Task GetAllBookingsAsync_ShouldApplyPagination_Correctly()

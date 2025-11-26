@@ -222,7 +222,7 @@ namespace HSP.Service.Implementations.Internal
             var allTechnicians = await _technicianRepository.GetAll()
                 .Include(x => x.User)
                 .Include(x => x.Bookings)
-                    .ThenInclude(b => b.Feedback) 
+                    .ThenInclude(b => b.Feedbacks) 
                 .Where(x => x.ApprovalStatus == TechnicianApprovalStatus.Approved)
                 .WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
                 .Where(x => !x.Bookings.Any(b =>
@@ -240,19 +240,24 @@ namespace HSP.Service.Implementations.Internal
                              })
                              .Where(x => x.Distance <= input.MaxDistanceKm)
                              .OrderBy(x => x.Distance)
-                             .Select(x => new TechnicianResultDto
-                             {
-                                 Id = x.Technician.Id,
-                                 Name = x.Technician.User.FullName,
-                                 Rating = x.Technician.Bookings.Any(b => b.Feedback != null)
-                                     ? Math.Round(x.Technician.Bookings
-                                         .Where(b => b.Feedback != null)
-                                         .Average(b => b.Feedback.Rating), 1)
-                                     : 0,
-                                 RatingCount = x.Technician.Bookings.Count(b => b.Feedback != null),
-                                 DistanceKm = Math.Round(x.Distance, 2),
-                                 Latitude = x.Technician.Latitude,
-                                 Longitude = x.Technician.Longitude
+                             .Select(x => {
+                                 var customerFeedbacks = x.Technician.Bookings
+                                     .SelectMany(b => b.Feedbacks)
+                                     .Where(f => f.Source == FeedbackSource.Customer) 
+                                     .ToList();
+
+                                 return new TechnicianResultDto
+                                 {
+                                     Id = x.Technician.Id,
+                                     Name = x.Technician.User.FullName,
+                                     Rating = customerFeedbacks.Any()
+                                         ? Math.Round(customerFeedbacks.Average(f => f.Rating), 1)
+                                         : 0,
+                                     RatingCount = customerFeedbacks.Count, 
+                                     DistanceKm = Math.Round(x.Distance, 2),
+                                     Latitude = x.Technician.Latitude,
+                                     Longitude = x.Technician.Longitude
+                                 };
                              })
                              .ToList();
 

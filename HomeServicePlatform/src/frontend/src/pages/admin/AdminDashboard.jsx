@@ -145,15 +145,18 @@ export default function AdminDashboard() {
           : 0;
         setCompletionRate(completionPercentage);
 
-        const bookingsWithFeedback = bookings.filter(b => b.feedback && b.feedback.rating);
-        if (bookingsWithFeedback.length > 0) {
-          const totalRating = bookingsWithFeedback.reduce((sum, b) => sum + b.feedback.rating, 0);
-          const avgRating = totalRating / bookingsWithFeedback.length;
-          const satisfactionPercentage = Math.round((avgRating / 5) * 100);
-          setCustomerSatisfaction(satisfactionPercentage);
-        } else {
-          setCustomerSatisfaction(0);
-        }
+        const bookingsWithCustomerFeedback = bookings
+            .map(b => b.feedbacks?.find(f => f.source === FeedbackSource.Customer))
+            .filter(f => f !== undefined && f !== null);
+
+        if (bookingsWithCustomerFeedback.length > 0) {
+            const totalRating = bookingsWithCustomerFeedback.reduce((sum, f) => sum + f.rating, 0);
+            const avgRating = totalRating / bookingsWithCustomerFeedback.length;
+              const satisfactionPercentage = Math.round((avgRating / 5) * 100);
+              setCustomerSatisfaction(satisfactionPercentage);
+            } else {
+              setCustomerSatisfaction(0);
+            }
 
         setBookingStatusData([
           { name: 'Hoàn thành', value: completedCount, color: '#52c41a' },

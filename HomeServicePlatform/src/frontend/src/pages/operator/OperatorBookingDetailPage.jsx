@@ -14,7 +14,6 @@ import {
   Rate,
   Typography,
   Avatar,
-  Badge,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -26,6 +25,7 @@ import {
   EnvironmentOutlined,
   PhoneOutlined,
   MailOutlined,
+  MessageOutlined
 } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -43,6 +43,12 @@ const BookingStatus = {
   InProgress: 3,
   Completed: 4,
   Cancelled: 5,
+};
+
+// Feedback Source Enum
+const FeedbackSource = {
+  Customer: 1,
+  Technician: 2,
 };
 
 const getBookingStatusText = (status) => {
@@ -127,9 +133,13 @@ export default function OperatorBookingDetailPage() {
 
   const handleViewTechnician = () => {
     if (booking?.technicianId) {
-      // Navigate to technician management if exists
       navigate(`/admin/accounts`);
     }
+  };
+
+  // Helper function to extract feedbacks
+  const getFeedbackBySource = (source) => {
+    return booking?.feedbacks?.find(f => f.source === source);
   };
 
   if (loading) {
@@ -147,6 +157,9 @@ export default function OperatorBookingDetailPage() {
       </Card>
     );
   }
+
+  const customerFeedback = getFeedbackBySource(FeedbackSource.Customer);
+  const technicianFeedback = getFeedbackBySource(FeedbackSource.Technician);
 
   return (
     <div>
@@ -363,16 +376,6 @@ export default function OperatorBookingDetailPage() {
                     {dayjs(payment.paidAt).format("DD/MM/YYYY HH:mm")}
                   </Descriptions.Item>
                 )}
-                {payment.transactionId && (
-                  <Descriptions.Item label="Mã giao dịch">
-                    <Text code>{payment.transactionId}</Text>
-                  </Descriptions.Item>
-                )}
-                {payment.description && (
-                  <Descriptions.Item label="Mô tả">
-                    {payment.description}
-                  </Descriptions.Item>
-                )}
               </Descriptions>
             ) : (
               <Empty description="Chưa có thông tin thanh toán" image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -385,24 +388,24 @@ export default function OperatorBookingDetailPage() {
               title={
                 <Space>
                   <StarOutlined />
-                  <span>Đánh giá dịch vụ</span>
+                  <span>Đánh giá & Phản hồi</span>
                 </Space>
               }
             >
-              {booking.feedback ? (
-                <Space direction="vertical" style={{ width: "100%" }} size="middle">
-                  <div>
-                    <Text type="secondary">Đánh giá:</Text>
-                    <div style={{ marginTop: 8 }}>
-                      <Rate disabled value={booking.feedback.rating} style={{ fontSize: 24 }} />
-                      <Text strong style={{ marginLeft: 8, fontSize: 18 }}>
-                        {booking.feedback.rating}/5
+              {/* Feedback từ Khách hàng */}
+              <div>
+                <Text strong style={{ display: "block", marginBottom: 8 }}>
+                  <UserOutlined /> Khách hàng đánh giá:
+                </Text>
+                {customerFeedback ? (
+                  <Space direction="vertical" style={{ width: "100%" }} size="small">
+                    <div>
+                      <Rate disabled value={customerFeedback.rating} />
+                      <Text strong style={{ marginLeft: 8 }}>
+                        {customerFeedback.rating}/5
                       </Text>
                     </div>
-                  </div>
-                  {booking.feedback.comment && (
-                    <div>
-                      <Text type="secondary">Nhận xét:</Text>
+                    {customerFeedback.comment && (
                       <Paragraph
                         style={{
                           marginTop: 8,
@@ -411,19 +414,48 @@ export default function OperatorBookingDetailPage() {
                           borderRadius: 8,
                         }}
                       >
-                        {booking.feedback.comment}
+                        {customerFeedback.comment}
                       </Paragraph>
+                    )}
+                  </Space>
+                ) : (
+                  <Text type="secondary" italic>Khách hàng chưa đánh giá</Text>
+                )}
+              </div>
+
+              <Divider />
+
+              {/* Feedback từ Kỹ thuật viên */}
+              <div>
+                <Text strong style={{ display: "block", marginBottom: 8 }}>
+                  <ToolOutlined /> Kỹ thuật viên đánh giá:
+                </Text>
+                {technicianFeedback ? (
+                  <Space direction="vertical" style={{ width: "100%" }} size="small">
+                    <div>
+                      <Rate disabled value={technicianFeedback.rating} />
+                      <Text strong style={{ marginLeft: 8 }}>
+                        {technicianFeedback.rating}/5
+                      </Text>
                     </div>
-                  )}
-                  <div>
-                    <Text type="secondary">
-                      Ngày đánh giá: {dayjs(booking.feedback.dateCreated).format("DD/MM/YYYY HH:mm")}
-                    </Text>
-                  </div>
-                </Space>
-              ) : (
-                <Empty description="Khách hàng chưa đánh giá" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-              )}
+                    {technicianFeedback.comment && (
+                      <Paragraph
+                        style={{
+                          marginTop: 8,
+                          padding: 12,
+                          backgroundColor: "#f0f5ff",
+                          borderRadius: 8,
+                          border: "1px solid #adc6ff"
+                        }}
+                      >
+                        {technicianFeedback.comment}
+                      </Paragraph>
+                    )}
+                  </Space>
+                ) : (
+                  <Text type="secondary" italic>Kỹ thuật viên chưa đánh giá</Text>
+                )}
+              </div>
             </Card>
           )}
 

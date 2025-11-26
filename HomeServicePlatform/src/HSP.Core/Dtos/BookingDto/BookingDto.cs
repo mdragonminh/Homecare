@@ -23,8 +23,8 @@ namespace HSP.Core.Dtos.BookingDto
         public HSP.Core.Dtos.CustomerProfileDto.CustomerProfileDto? Customer { get; set; }
         public TechnicianProfileResponseDto? Technician { get; set; }
         public HomeServiceDto? Service { get; set; }
-        public BookingFeedbackResponseDto? Feedback { get; set; }
         public BookingCancellationResponseDto? Cancellation { get; set; }
+        public ICollection<BookingFeedbackResponseDto> Feedbacks { get; set; } = new List<BookingFeedbackResponseDto>();
     }
 
     public class BookingFeedbackResponseDto
@@ -32,6 +32,7 @@ namespace HSP.Core.Dtos.BookingDto
         public Guid BookingId { get; set; }
         public int Rating { get; set; }
         public string? Comment { get; set; }
+        public FeedbackSource Source { get; set; }
     }
 
     public class BookingCancellationResponseDto
@@ -47,11 +48,14 @@ namespace HSP.Core.Dtos.BookingDto
         public string? CustomerName { get; set; }
         public string? CustomerEmail { get; set; }
         public string? CustomerPhone { get; set; }
+        public string? CustomerAddress { get; set; }
         public string? TechnicianName { get; set; }
         public string? TechnicianEmail { get; set; }
         public string? TechnicianPhone { get; set; }
         public string? ServiceName { get; set; }
         public decimal? ServiceBasePrice { get; set; }
+        public double? CustomerAverageRating { get; set; }
+        public int? CustomerRatingCount { get; set; }
         public List<BookingItemDto>? Items { get; set; }
         public decimal TotalPrice { get; set; }
         public ICollection<PaymentDto.PaymentDto> Payments { get; set; } = new List<PaymentDto.PaymentDto>();

@@ -48,6 +48,7 @@ namespace HSP.DAL.Extensions
             services.AddScoped<IRepository<Booking, Guid>, Repository<Booking, Guid>>();
             services.AddScoped<IRepository<ChatMessageHistory, Guid>, Repository<ChatMessageHistory, Guid>>();
             services.AddScoped<IRepository<BookingItem, Guid>, Repository<BookingItem, Guid>>();
+            services.AddScoped<IRepository<BookingFeedback, Guid>, Repository<BookingFeedback, Guid>>();
             services.AddScoped<IRepository<Ticket, Guid>, Repository<Ticket, Guid>>();
             services.AddScoped<IRepository<ChatConversation, Guid>, Repository<ChatConversation, Guid>>();
             services.AddScoped<IRepository<ChatMessage, Guid>, Repository<ChatMessage, Guid>>();

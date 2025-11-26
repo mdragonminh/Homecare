@@ -119,11 +119,11 @@ namespace HSP.DAL.Data
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<BookingFeedback>()
-                   .HasKey(f => f.BookingId);
+                   .HasKey(f => f.Id);
             builder.Entity<BookingFeedback>()
                    .HasOne(f => f.Booking)
-                   .WithOne(b => b.Feedback)
-                   .HasForeignKey<BookingFeedback>(f => f.BookingId)
+                   .WithMany(b => b.Feedbacks)
+                   .HasForeignKey(f => f.BookingId)
                    .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<BookingCancellation>()
