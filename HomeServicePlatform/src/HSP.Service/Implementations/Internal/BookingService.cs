@@ -113,12 +113,13 @@ namespace HSP.Service.Implementations.Internal
                     Email = b.Technician.User != null ? b.Technician.User.Email : null,
                     PhoneNumber = b.Technician.User != null ? b.Technician.User.PhoneNumber : null
                 } : null,
-                Feedback = b.Feedback != null ? new BookingFeedbackResponseDto
+                Feedbacks = b.Feedbacks.Select(f => new BookingFeedbackResponseDto
                 {
-                    BookingId = b.Feedback.BookingId,
-                    Rating = b.Feedback.Rating,
-                    Comment = b.Feedback.Comment
-                } : null,
+                    BookingId = f.BookingId,
+                    Rating = f.Rating,
+                    Comment = f.Comment,
+                    Source = f.Source 
+                }).ToList(),
                 Cancellation = b.Cancellation != null ? new BookingCancellationResponseDto
                 {
                     BookingId = b.Cancellation.BookingId,
@@ -140,7 +141,8 @@ namespace HSP.Service.Implementations.Internal
         {
             var booking = await _bookingRepository.GetAll(
                     b => b.Customer,
-                    b => b.Payments
+                    b => b.Payments,
+                    b => b.Feedbacks
             ).FirstOrDefaultAsync(b => b.Id == bookingId);
 
             if (booking == null)
@@ -162,6 +164,19 @@ namespace HSP.Service.Implementations.Internal
             // Calculate total price from items
             var totalPrice = bookingItems.Sum(i => i.Price);
 
+            var customerRatings = await _bookingRepository.GetAll()
+                .Where(b => b.CustomerId == booking.CustomerId && b.Id != bookingId) 
+                .SelectMany(b => b.Feedbacks)
+                .Where(f => f.Source == FeedbackSource.Technician) 
+                .Select(f => f.Rating)
+                .ToListAsync();
+
+            double? avgRating = null;
+            if (customerRatings.Any())
+            {
+                avgRating = Math.Round(customerRatings.Average(), 1); 
+            }
+
             return new BookingDetailDto
             {
                 Id = booking.Id,
@@ -173,12 +188,14 @@ namespace HSP.Service.Implementations.Internal
                 DateCompleted = booking.DateCompleted,
                 DateCreated = booking.DateCreated,
                 DateModified = booking.DateModified,
-                CustomerName = booking.Customer?.UserName,
+                CustomerName = booking.Customer?.FullName ?? booking.Customer?.UserName,
                 CustomerEmail = booking.Customer?.Email,
                 CustomerPhone = booking.Customer?.PhoneNumber,
                 TechnicianName = technician?.User?.UserName,
                 TechnicianEmail = technician?.User?.Email,
                 TechnicianPhone = technician?.User?.PhoneNumber,
+                CustomerAverageRating = avgRating,
+                CustomerRatingCount = customerRatings.Count,
                 Items = bookingItems.Select(i => new BookingItemDto
                 {
                     Id = i.Id,
@@ -187,12 +204,13 @@ namespace HSP.Service.Implementations.Internal
                     Price = i.Price
                 }).ToList(),
                 TotalPrice = totalPrice,
-                Feedback = booking.Feedback != null ? new BookingFeedbackResponseDto
+                Feedbacks = booking.Feedbacks.Select(f => new BookingFeedbackResponseDto
                 {
-                    BookingId = booking.Feedback.BookingId,
-                    Rating = booking.Feedback.Rating,
-                    Comment = booking.Feedback.Comment
-                } : null,
+                    BookingId = f.BookingId,
+                    Rating = f.Rating,
+                    Comment = f.Comment,
+                    Source = f.Source 
+                }).ToList(),
                 Cancellation = booking.Cancellation != null ? new BookingCancellationResponseDto
                 {
                     BookingId = booking.Cancellation.BookingId,

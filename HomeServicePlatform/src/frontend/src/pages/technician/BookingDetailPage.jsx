@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { bookingApi } from "../../services/bookingApi";
+import { FeedbackModal } from "../../components/feedback/FeedbackModal";
 import {
   BookingStatus,
   BookingStatusLabels,
-  BookingStatusColors,
 } from "../../constants/enums";
 import { toast } from "sonner";
 import {
@@ -21,7 +21,15 @@ import {
   DocumentTextIcon,
   CurrencyDollarIcon,
   StarIcon,
+  ChatBubbleLeftRightIcon
 } from "@heroicons/react/24/outline";
+import { StarIcon as StarSolid } from "@heroicons/react/24/solid";
+
+// Define Feedback Source
+const FeedbackSource = {
+  Customer: 1,
+  Technician: 2,
+};
 
 const BookingDetailPage = () => {
   const { t } = useTranslation();
@@ -32,6 +40,8 @@ const BookingDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+
   const [rejectReason, setRejectReason] = useState("");
   const [newStatus, setNewStatus] = useState("");
   const [statusNotes, setStatusNotes] = useState("");
@@ -119,6 +129,18 @@ const BookingDetailPage = () => {
     }
   };
 
+  const handleFeedbackSubmit = async (rating, comment) => {
+    try {
+      await bookingApi.createFeedback(booking.id, rating, comment);
+      toast.success("Đã gửi đánh giá thành công!");
+      setIsFeedbackModalOpen(false);
+      fetchBookingDetail();
+    } catch (error) {
+      const message = error.response?.data?.message || "Lỗi khi gửi đánh giá";
+      toast.error(message);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       [BookingStatus.Pending]: { bg: "bg-orange-100", text: "text-orange-800" },
@@ -170,15 +192,8 @@ const BookingDetailPage = () => {
     );
   };
 
-  const canUpdateStatus = (status) => {
-    return (
-      status !== BookingStatus.Completed && status !== BookingStatus.Cancelled
-    );
-  };
-
   const getAvailableStatuses = (currentStatus) => {
     const statuses = [];
-
     switch (currentStatus) {
       case BookingStatus.Pending:
         statuses.push(BookingStatus.Confirmed);
@@ -196,7 +211,6 @@ const BookingDetailPage = () => {
         statuses.push(BookingStatus.Completed);
         break;
     }
-
     return statuses;
   };
 
@@ -209,8 +223,6 @@ const BookingDetailPage = () => {
             <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
             <div className="space-y-3">
               <div className="h-4 bg-gray-200 rounded w-full"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
             </div>
           </div>
         </div>
@@ -234,6 +246,13 @@ const BookingDetailPage = () => {
     );
   }
 
+  // Get Feedbacks
+  const customerFeedback = booking.feedbacks?.find(f => f.source === FeedbackSource.Customer);
+  const myFeedback = booking.feedbacks?.find(f => f.source === FeedbackSource.Technician);
+
+  // Allow rating if completed and I haven't rated yet
+  const canRateCustomer = booking.status === BookingStatus.Completed && !myFeedback;
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -246,7 +265,7 @@ const BookingDetailPage = () => {
           Quay lại danh sách
         </button>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Chi tiết Booking
@@ -256,6 +275,16 @@ const BookingDetailPage = () => {
 
           <div className="flex items-center space-x-3">
             {getStatusBadge(booking.status)}
+
+            {canRateCustomer && (
+              <button
+                onClick={() => setIsFeedbackModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 shadow-sm"
+              >
+                <StarIcon className="h-4 w-4 mr-2" />
+                Đánh giá Khách
+              </button>
+            )}
 
             {canCompleteBooking(booking.status) && (
               <button
@@ -293,25 +322,19 @@ const BookingDetailPage = () => {
                 <DocumentTextIcon className="h-5 w-5 text-gray-400 mr-3" />
                 <div>
                   <span className="font-medium">
-                    {booking.service?.name || "Dịch vụ không xác định"}
+                    {booking.items && booking.items.length > 0 
+                      ? booking.items.map(i => i.serviceName).join(", ") 
+                      : (booking.service?.name || "Dịch vụ")}
                   </span>
-                  {booking.service?.description && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      {booking.service.description}
-                    </p>
-                  )}
                 </div>
               </div>
 
-              {booking.service?.basePrice && (
-                <div className="flex items-center">
-                  <CurrencyDollarIcon className="h-5 w-5 text-gray-400 mr-3" />
-                  <span>
-                    Giá cơ bản:{" "}
-                    {booking.service.basePrice.toLocaleString("vi-VN")} VNĐ
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center">
+                <CurrencyDollarIcon className="h-5 w-5 text-gray-400 mr-3" />
+                <span>
+                  Tổng tiền: {booking.totalPrice?.toLocaleString("vi-VN")} VNĐ
+                </span>
+              </div>
 
               <div className="flex items-center">
                 <CalendarIcon className="h-5 w-5 text-gray-400 mr-3" />
@@ -332,66 +355,129 @@ const BookingDetailPage = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Thông tin khách hàng
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* 1. Tên */}
               <div className="flex items-center">
                 <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
-                <span>{booking.customer?.fullName || "Không có tên"}</span>
+                <span className="font-medium text-gray-900">
+                  {booking.customerName || "Không có tên"}
+                </span>
               </div>
 
-              {booking.customer?.email && (
-                <div className="flex items-center">
-                  <EnvelopeIcon className="h-5 w-5 text-gray-400 mr-3" />
-                  <span>{booking.customer.email}</span>
-                </div>
-              )}
-
-              {booking.customer?.phoneNumber && (
+              {/* 2. SĐT */}
+              {booking.customerPhone && (
                 <div className="flex items-center">
                   <PhoneIcon className="h-5 w-5 text-gray-400 mr-3" />
-                  <span>{booking.customer.phoneNumber}</span>
+                  <span className="text-gray-700">{booking.customerPhone}</span>
                 </div>
               )}
 
-              {booking.customer?.address && (
-                <div className="flex items-start">
-                  <MapPinIcon className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
-                  <span>{booking.customer.address}</span>
+              {/* 4. ĐIỂM UY TÍN KHÁCH HÀNG (Average Rating) */}
+              <div className="flex items-center border-t border-gray-100 pt-4 mt-2">
+                <StarIcon className="h-5 w-5 text-purple-500 mr-3" /> {/* Dùng màu khác để phân biệt */}
+                <div>
+                  <span className="text-xs text-gray-500 block font-medium uppercase tracking-wide">
+                    Uy tín khách hàng
+                  </span>
+                  
+                  {booking.customerAverageRating ? (
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-900 text-lg">
+                        {booking.customerAverageRating}
+                      </span>
+                      <div className="flex">
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <StarSolid
+                            key={i}
+                            className={`h-4 w-4 ${
+                              i < Math.round(booking.customerAverageRating)
+                                ? "text-yellow-400"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-500 ml-1">
+                        ({booking.customerRatingCount} lượt đánh giá)
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 italic text-sm">
+                      Khách hàng mới (Chưa có đánh giá)
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
-          {/* Feedback */}
-          {booking.feedback && (
+          {/* Feedback Section (Dual Way) */}
+          {(customerFeedback || myFeedback) && (
             <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Đánh giá
+              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
+                Đánh giá & Phản hồi
               </h3>
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <div className="flex items-center">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <StarIcon
-                        key={i}
-                        className={`h-5 w-5 ${
-                          i < booking.feedback.rating
-                            ? "text-yellow-400 fill-current"
-                            : "text-gray-300"
-                        }`}
-                      />
-                    ))}
+              
+              {/* Khách hàng đánh giá */}
+              {customerFeedback && (
+                <div className="mb-6">
+                  <p className="text-sm font-semibold text-gray-500 mb-2">KHÁCH HÀNG ĐÁNH GIÁ BẠN:</p>
+                  <div className="flex items-center mb-2">
+                    <div className="flex items-center">
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <StarSolid
+                          key={i}
+                          className={`h-5 w-5 ${
+                            i < customerFeedback.rating
+                              ? "text-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="ml-2 text-sm text-gray-600 font-medium">
+                      ({customerFeedback.rating}/5)
+                    </span>
                   </div>
-                  <span className="ml-2 text-sm text-gray-600">
-                    ({booking.feedback.rating}/5)
-                  </span>
+                  {customerFeedback.comment && (
+                    <div className="p-3 bg-gray-50 rounded-md border border-gray-100">
+                      <p className="text-gray-700 italic">"{customerFeedback.comment}"</p>
+                    </div>
+                  )}
                 </div>
+              )}
 
-                {booking.feedback.comment && (
-                  <div className="p-4 bg-gray-50 rounded-md">
-                    <p className="text-gray-700">{booking.feedback.comment}</p>
+              {customerFeedback && myFeedback && <hr className="my-4 border-gray-200" />}
+
+              {/* Technician đánh giá (Mình) */}
+              {myFeedback && (
+                <div>
+                  <p className="text-sm font-semibold text-blue-600 mb-2">BẠN ĐÃ ĐÁNH GIÁ KHÁCH:</p>
+                  <div className="flex items-center mb-2">
+                    <div className="flex items-center">
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <StarSolid
+                          key={i}
+                          className={`h-5 w-5 ${
+                            i < myFeedback.rating
+                              ? "text-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="ml-2 text-sm text-gray-600 font-medium">
+                      ({myFeedback.rating}/5)
+                    </span>
                   </div>
-                )}
-              </div>
+                  {myFeedback.comment && (
+                    <div className="p-3 bg-blue-50 rounded-md border border-blue-100">
+                      <p className="text-blue-800 italic">"{myFeedback.comment}"</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -448,35 +534,6 @@ const BookingDetailPage = () => {
               )}
             </div>
           </div>
-
-          {/* Technician Info */}
-          {booking.technician && (
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Thông tin kỹ thuật viên
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
-                  <span>{booking.technician.fullName}</span>
-                </div>
-
-                {booking.technician.email && (
-                  <div className="flex items-center">
-                    <EnvelopeIcon className="h-5 w-5 text-gray-400 mr-3" />
-                    <span>{booking.technician.email}</span>
-                  </div>
-                )}
-
-                {booking.technician.phoneNumber && (
-                  <div className="flex items-center">
-                    <PhoneIcon className="h-5 w-5 text-gray-400 mr-3" />
-                    <span>{booking.technician.phoneNumber}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -583,6 +640,13 @@ const BookingDetailPage = () => {
           </div>
         </div>
       )}
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        onSubmit={handleFeedbackSubmit}
+      />
     </div>
   );
 };

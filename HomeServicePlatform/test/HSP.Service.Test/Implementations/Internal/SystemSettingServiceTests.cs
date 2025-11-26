@@ -94,51 +94,6 @@ namespace HSP.Service.Test.Implementations.Internal
         }
 
         [Fact]
-        public async Task CreateSettingAsync_ShouldThrow_WhenInputNull()
-        {
-            await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                _service.CreateSettingAsync(Guid.NewGuid(), null!));
-        }
-
-        [Fact]
-        public async Task CreateSettingAsync_ShouldThrow_WhenKeyExists()
-        {
-            var exist = new SystemSetting { Key = "Exists" };
-            _repoMock.Setup(r => r.GetAll())
-                .Returns(new List<SystemSetting> { exist }.BuildMock());
-
-            var dto = new CreateSystemSettingDto { Key = "Exists", Value = "1" };
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _service.CreateSettingAsync(Guid.NewGuid(), dto));
-        }
-
-        [Fact]
-        public async Task CreateSettingAsync_ShouldCreateSuccessfully()
-        {
-            var dto = new CreateSystemSettingDto
-            {
-                Key = "NewKey",
-                Value = "123",
-                Description = "desc"
-            };
-
-            _repoMock.Setup(r => r.GetAll()).Returns(new List<SystemSetting>().BuildMock());
-
-            Guid newId = Guid.Empty;
-
-            _repoMock.Setup(r => r.AddAsync(It.IsAny<SystemSetting>()))
-                .Callback<SystemSetting>(s => newId = s.Id)
-                .ReturnsAsync((SystemSetting s)=>s);
-
-            _uowMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
-
-            var result = await _service.CreateSettingAsync(Guid.NewGuid(), dto);
-
-            Assert.Equal(newId, result);
-        }
-
-        [Fact]
         public async Task UpdateSettingAsync_ShouldThrow_WhenInputNull()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(() =>

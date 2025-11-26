@@ -69,18 +69,24 @@ export default function TechnicianDetailModal({
       );
       if (response.success && response.data?.items) {
         const feedbackList = response.data.items
-          .filter((booking) => booking.feedback && booking.feedback.rating)
-          .map((booking) => ({
-            id: booking.feedback.id,
-            rating: booking.feedback.rating,
-            comment: booking.feedback.comment,
-            bookingId: booking.id,
-            customerName:
-              booking.customer?.fullName ||
-              booking.customer?.email ||
-              "Anonymous",
-            createdAt: booking.feedback.createdAt || booking.completedAt,
-          }));
+          .map((booking) => {
+            const cFeedback = booking.feedbacks?.find(
+              (f) => f.source === FeedbackSource.Customer
+            );
+
+            if (!cFeedback) return null; 
+
+            return {
+              id: cFeedback.id || booking.id, 
+              rating: cFeedback.rating,
+              comment: cFeedback.comment,
+              bookingId: booking.id,
+              customerName: booking.customer?.fullName || "Anonymous",
+              createdAt: booking.dateCompleted, 
+            };
+          })
+          .filter((item) => item !== null); 
+
         setFeedbacks(feedbackList);
       }
     } catch (error) {
@@ -144,7 +150,9 @@ export default function TechnicianDetailModal({
                 size={80}
                 src={
                   technicianDetail.avatar?.[0]
-                    ? adminApi.previewFile(technicianDetail.avatar?.[0].filePath)
+                    ? adminApi.previewFile(
+                        technicianDetail.avatar?.[0].filePath
+                      )
                     : null
                 }
                 icon={!technicianDetail.avatar?.length && <ToolOutlined />}
@@ -295,10 +303,11 @@ export default function TechnicianDetailModal({
                             >
                               <div
                                 style={{
-                                  width: `${feedbacks.length > 0
+                                  width: `${
+                                    feedbacks.length > 0
                                       ? (count / feedbacks.length) * 100
                                       : 0
-                                    }%`,
+                                  }%`,
                                   height: "100%",
                                   background: "#faad14",
                                 }}
@@ -350,8 +359,8 @@ export default function TechnicianDetailModal({
                           <div style={{ fontSize: 12, color: "#8c8c8c" }}>
                             {feedback.createdAt
                               ? dayjs(feedback.createdAt).format(
-                                "DD/MM/YYYY HH:mm"
-                              )
+                                  "DD/MM/YYYY HH:mm"
+                                )
                               : ""}
                           </div>
                         </div>
@@ -506,7 +515,9 @@ export default function TechnicianDetailModal({
                   size="small"
                   type="text"
                   onClick={() =>
-                    handlePreviewFile(technicianDetail.legalDocument?.[0]?.filePath)
+                    handlePreviewFile(
+                      technicianDetail.legalDocument?.[0]?.filePath
+                    )
                   }
                   style={{
                     padding: "4px 12px",

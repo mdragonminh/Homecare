@@ -48,3 +48,8 @@ export const BookingStatusColors = {
   [BookingStatus.Completed]: "green",
   [BookingStatus.Cancelled]: "red"
 };
+
+export const FeedbackSource = {
+  Customer: 1,
+  Technician: 2,
+};
