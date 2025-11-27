@@ -15,6 +15,7 @@ import {
   Camera,
   Upload,
   Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import ChangePasswordModal from "./ChangePasswordModal";
 import DeleteAvatarModal from "./DeleteAvatarModal";
@@ -42,28 +43,34 @@ const RejectionReasonCard = ({ profile, t }) => {
   if (profile?.approvalStatus !== 2 || !profile?.rejectionReason) return null;
 
   return (
-    <div className="bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-      <div className="flex items-start gap-4">
-        <div className="flex-shrink-0">
-          <div className="bg-red-100 p-3 rounded-full">
-            <AlertTriangle className="w-7 h-7 text-red-600" />
-          </div>
-        </div>
-        <div className="flex-1">
-          <h3 className="text-xl font-bold text-red-800 mb-3">
-            Hồ sơ của bạn đã bị từ chối
-          </h3>
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-red-100">
-            <p className="text-red-700 font-medium leading-relaxed whitespace-pre-wrap">
-              {profile.rejectionReason}
-            </p>
-          </div>
-          <p className="text-sm text-red-600 mt-4 font-medium italic">
-            Vui lòng chỉnh sửa thông tin, tải lại chứng chỉ hợp lệ và gửi lại hồ
-            sơ để được duyệt.
-          </p>
+    // Bỏ bố cục flex để toàn bộ nội dung có thể căn giữa
+   <div className="mt-6 bg-white rounded-2xl p-6 shadow-xl">
+      
+      {/* 1. Icon cảnh báo - Căn giữa, làm nổi bật */}
+      <div className="flex justify-center mb-5">
+        <div className="bg-red-200 p-4 rounded-full border-4 border-red-300 shadow-lg">
+          <AlertTriangle className="w-6 h-6 text-red-700" />
         </div>
       </div>
+
+      {/* 2. Tiêu đề - Căn giữa, lớn và rõ ràng */}
+      <h3 className="text-xl font-extrabold text-red-800 text-center mb-6 tracking-tight">
+        Hồ sơ của bạn đã bị từ chối
+      </h3>
+
+      {/* 3. Khối lý do từ chối - Đẹp, Cân đối, Căn giữa */}
+      <div className="bg-white rounded-xl px-6 py-5 border border-red-300 shadow-inner max-w-lg mx-auto">
+        <p className="text-red-700 text-base font-bold text-center whitespace-pre-wrap">
+          {profile.rejectionReason}
+        </p>
+      </div>
+
+      {/* 4. Thông báo hướng dẫn - Cân đối, rõ ràng */}
+      <p className="text-sm text-red-700 mt-6 font-semibold text-center pt-4 border-t border-red-200">
+        Vui lòng chỉnh sửa thông tin, tải lại chứng chỉ hợp lệ và gửi
+        lại hồ sơ để được duyệt.
+      </p>
+
     </div>
   );
 };
@@ -264,40 +271,27 @@ const TechnicianProfileUI = ({
                   </div>
                 </div>
               </div>
-                   {/* Quick Actions */}
-                                <div className="bg-white rounded-xl shadow-lg p-6 transform transition-all duration-300 hover:shadow-xl">
-                                  <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
-                                    {t("ui.quick_actions") || "Tác vụ nhanh"}
-                                  </h3>
-                                  <div className="space-y-3">
-                                    <button
-                                      onClick={() => (window.location.href = "/list-home")}
-                                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-blue-100 bg-blue-50 text-blue-700 transition-all duration-200 group hover:bg-blue-100"
-                                    >
-                                      <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors duration-200">
-                                        <MapPin className="w-5 h-5 text-blue-600" />
-                                      </div>
-                                      <div className="flex flex-col">
-                                        <span className="font-semibold">
-                                          {t("ui.manage_addresses")}
-                                        </span>
-                                      </div>
-                                    </button>
-                                    <button
-                                      onClick={handleChangePassword}
-                                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-rose-100 bg-rose-50 text-rose-700 transition-all duration-200 group hover:bg-rose-100"
-                                    >
-                                      <div className="p-2 bg-rose-100 rounded-lg group-hover:bg-rose-200 transition-colors duration-200">
-                                        <Key className="w-5 h-5 text-rose-600" />
-                                      </div>
-                                      <div className="flex flex-col">
-                                        <span className="font-semibold">
-                                          {t("ui.change_password")}
-                                        </span>
-                                      </div>
-                                    </button>
-                                  </div>
-                                </div>
+              {/* Quick Actions */}
+              <div className="bg-white rounded-xl shadow-lg p-6 transform transition-all duration-300 hover:shadow-xl">
+                <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
+                  {t("ui.quick_actions") || "Tác vụ nhanh"}
+                </h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={handleChangePassword}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-rose-100 bg-rose-50 text-rose-700 transition-all duration-200 group hover:bg-rose-100"
+                  >
+                    <div className="p-2 bg-rose-100 rounded-lg group-hover:bg-rose-200 transition-colors duration-200">
+                      <Key className="w-5 h-5 text-rose-600" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-semibold">
+                        {t("ui.change_password")}
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </div>
               <RejectionReasonCard profile={profile} t={t} />
             </div>
 
@@ -476,7 +470,7 @@ const TechnicianProfileUI = ({
                         )}
                       </div>
                     </div>
-                    <div className="space-y-6 mt-6 pt-6 border-t border-gray-200 pb-4 mb-4">
+                    <div className="space-y-6 mt-6 pt-6 border-t border-gray-200 pb-1 mb-1">
                       <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                         <AlertCircle className="w-5 h-5 text-gray-600" />
                         Trạng thái Hồ sơ

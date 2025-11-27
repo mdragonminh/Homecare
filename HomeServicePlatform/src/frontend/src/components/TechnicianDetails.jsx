@@ -202,19 +202,24 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
   }
 
   try {
-    // Tạo query params cho các field bắt buộc (trừ file)
-    const queryParams = new URLSearchParams();
-    queryParams.append("CitizenId", form.citizenId);
-    queryParams.append("Address", form.address);
-    queryParams.append("ExperienceYears", form.experienceYears.toString());
-
-    // Quan trọng: Services phải ở query, và dùng [] để .NET bind được mảng
-    form.selectedServiceIds.forEach(id => {
-      queryParams.append("Services", id);  // hoặc "Services[]" đều được, nhưng thường "Services" là đủ
+    const formData = new FormData();
+    
+    formData.append("CitizenId", form.citizenId);
+    formData.append("Address", form.address);
+    formData.append("ExperienceYears", form.experienceYears.toString());
+    
+    // ✅ DEBUG: Kiểm tra Services trước khi gửi
+    console.log("Selected Service IDs:", form.selectedServiceIds);
+    form.selectedServiceIds.forEach((id) => {
+      console.log("Appending service:", id);
+      formData.append("Services", id);
     });
 
-    // Tạo FormData chỉ chứa file
-    const formData = new FormData();
+    // ✅ DEBUG: Xem toàn bộ FormData
+    console.log("=== FormData Contents ===");
+    for (let [key, value] of formData.entries()) {
+      console.log(key, ":", value);
+    }
 
     // LegalDocument
     if (form.legalDocumentFile) {
@@ -236,11 +241,9 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
       formData.append("Certificates", certFile);
     }
 
-    // Gửi request: query params + form body
-    await axiosClient.put(`/TechnicianManagement?${queryParams.toString()}`, formData, {
+    await axiosClient.put(`/TechnicianManagement`, formData, {
       headers: {
         Authorization: `Bearer ${jwtToken}`,
-        // Không set Content-Type → browser tự thêm boundary
       },
     });
 
@@ -248,11 +251,11 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
     setIsEditing(false);
     onUpdateSuccess?.();
   } catch (err) {
-    console.error(err.response?.data);
-    toast.error(err.response?.data?.errors?.LegalDocument?.[0] || "Cập nhật thất bại");
+    console.error("Full error:", err);
+    console.error("Response data:", err.response?.data);
+    toast.error(err.response?.data?.message || "Cập nhật thất bại");
   }
-};
-  const handlePreview = (file) => {
+};  const handlePreview = (file) => {
     const url = file.filePath ? getFileUrl(file.filePath) : URL.createObjectURL(file);
     setPreviewFile({ url, name: file.fileName || file.name });
   };
