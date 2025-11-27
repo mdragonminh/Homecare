@@ -15,6 +15,7 @@ import CustomerBookingDetail from "../pages/client/CustomerBookingDetail";
 import TechnicianProfile from "../pages/TechnicianProfile";
 import TicketManagementPage from "../pages/supporter/TicketManagementPage";
 
+// Component này chỉ dùng để bảo vệ các trang BẮT BUỘC ĐĂNG NHẬP
 const ProtectedRoute = ({
   element: Element,
   loggedInUser,
@@ -27,7 +28,7 @@ const ProtectedRoute = ({
     disallowedRoles.length > 0 &&
     disallowedRoles.includes(loggedInUser.role)
   ) {
-    return <Navigate to="/" replace />; // Chuyển hướng về trang chủ
+    return <Navigate to="/" replace />; 
   }
   return Element;
 };
@@ -44,6 +45,7 @@ const SupporterRoute = ({ element: Element, loggedInUser }) => {
   return Element;
 };
 
+// Component cho Trang chủ (Không đổi)
 const ProtectedHomePage = ({ element: Element, loggedInUser }) => {
   if (loggedInUser) {
     try {
@@ -83,12 +85,13 @@ export default function ClientRoutes({
         }
       />
 
+      {/* CÁC ROUTE BẢO VỆ BẮT BUỘC ĐĂNG NHẬP */}
       <Route
         path="/list-home"
         element={
           <ProtectedRoute
             loggedInUser={loggedInUser}
-            disallowedRoles={["technician"]}
+            disallowedRoles={["technician"]} // cấm technician
             element={<HomeManagementPage loggedInUser={loggedInUser} />}
           />
         }
@@ -103,35 +106,33 @@ export default function ClientRoutes({
         }
       />
       <Route
-      path="/profile"
-      element={
-        <ProtectedRoute
-          loggedInUser={loggedInUser}
-          element={
-            // KIỂM TRA VAI TRÒ CỦA NGƯỜI DÙNG
-            loggedInUser && loggedInUser.role === "technician" ? (
-              // NẾU LÀ TECHNICIAN, RENDER TechnicianProfile
-              <TechnicianProfile
-                loggedInUser={loggedInUser}
-                onLogout={onLogout}
-                onShowLogin={onShowLogin}
-                onShowRegister={onShowRegister}
-                onProfileUpdate={onProfileUpdate}
-              />
-            ) : (
-              // NẾU LÀ CUSTOMER/ADMIN/VAI TRÒ KHÁC, RENDER Profile CHUNG
-              <Profile
-                loggedInUser={loggedInUser}
-                onLogout={onLogout}
-                onShowLogin={onShowLogin}
-                onShowRegister={onShowRegister}
-                onProfileUpdate={onProfileUpdate}
-              />
-            )
-          }
-        />
-      }
-    />
+        path="/profile"
+        element={
+          <ProtectedRoute
+            loggedInUser={loggedInUser}
+            element={
+              loggedInUser && loggedInUser.role === "technician" ? (
+                <TechnicianProfile
+                  loggedInUser={loggedInUser}
+                  onLogout={onLogout}
+                  onShowLogin={onShowLogin}
+                  onShowRegister={onShowRegister}
+                  onProfileUpdate={onProfileUpdate}
+                />
+              ) : (
+                // NẾU LÀ CUSTOMER/ADMIN/VAI TRÒ KHÁC, RENDER Profile CHUNG
+                <Profile
+                  loggedInUser={loggedInUser}
+                  onLogout={onLogout}
+                  onShowLogin={onShowLogin}
+                  onShowRegister={onShowRegister}
+                  onProfileUpdate={onProfileUpdate}
+                />
+              )
+            }
+          />
+        }
+      />
 
       <Route
         path="/about"
@@ -148,19 +149,18 @@ export default function ClientRoutes({
         path="/contact"
         element={<ContactPage loggedInUser={loggedInUser} />}
       />
-
       <Route
         path="/services"
         element={
-          <ProtectedRoute
-            loggedInUser={loggedInUser}
-            disallowedRoles={["technician"]}
-            element={<FindTechnicianPage loggedInUser={loggedInUser} />}
-          />
+          loggedInUser && loggedInUser.role === "technician" ? (
+            <Navigate to="/" replace />
+          ) : (
+            <FindTechnicianPage loggedInUser={loggedInUser} />
+          )
         }
       />
 
-      {/* Customer Bookings */}
+      {/* Customer Bookings (Bảo vệ) */}
       <Route
         path="/my-bookings"
         element={
@@ -181,7 +181,7 @@ export default function ClientRoutes({
         }
       />
 
-      {/* Payment Routes */}
+      {/* Payment Routes (Bảo vệ) */}
       <Route
         path="/payment/:bookingId"
         element={
@@ -210,6 +210,7 @@ export default function ClientRoutes({
         }
       />
 
+      {/* Supporter Route (Bảo vệ) */}
       <Route
         path="/supporter/tickets"
         element={
