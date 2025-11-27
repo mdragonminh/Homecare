@@ -1,4 +1,5 @@
-﻿using HSP.Core.Dtos.FileDto;
+﻿using HSP.Core.Constants;
+using HSP.Core.Dtos.FileDto;
 using HSP.Core.Dtos.TechnicianProfileDto;
 using HSP.Core.Entities;
 using HSP.Core.Enums;
@@ -90,13 +91,31 @@ namespace HSP.Service.Test.Implementations.Internal
         [Fact]
         public async Task GetTechnicianByIdAsync_ShouldReturnTechnician()
         {
+            // Arrange
+            var technicianId = Guid.NewGuid();
             var userId = Guid.NewGuid();
+
             var technician = new TechnicianProfile
             {
-                Id = Guid.NewGuid(),
+                Id = technicianId,  // ✅ Sử dụng technicianId
                 UserId = userId,
                 ExperienceYears = 5,
-                User = new AppUser { UserName = "tech1", Email = "tech1@test.com", FullName = "Tech One" }
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                User = new AppUser
+                {
+                    UserName = "tech1",
+                    Email = "tech1@test.com",
+                    FullName = "Tech One",
+                    PhoneNumber = "0123456789",
+                    IsActive = true
+                },
+                Services = new List<Core.Entities.Service>  // ✅ Thêm Services
+        {
+            new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Sửa điện" },
+            new Core.Entities.Service { Id = Guid.NewGuid(), Name = "Sửa nước" }
+        }
             };
 
             var technicians = new List<TechnicianProfile> { technician }.BuildMock();
@@ -104,14 +123,46 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
                      .Returns(technicians);
 
-            _mockFileService.Setup(f => f.GetFilesAsync(It.IsAny<GetFilesRequestDto>()))
-                            .ReturnsAsync(new List<FileDto>());
+            // ✅ Mock 3 lần gọi GetFilesAsync (Certificates, LegalDocument, Avatar)
+            _mockFileService.Setup(f => f.GetFilesAsync(It.Is<GetFilesRequestDto>(
+                req => req.relationType == FileConstants.TechnicianCertificate)))
+                .ReturnsAsync(new List<FileDto>
+                {
+            new FileDto { Id = Guid.NewGuid(), FileName = "cert.pdf" }
+                });
 
-            var result = await _service.GetTechnicianByIdAsync(userId);
+            _mockFileService.Setup(f => f.GetFilesAsync(It.Is<GetFilesRequestDto>(
+                req => req.relationType == FileConstants.LegalDocument)))
+                .ReturnsAsync(new List<FileDto>
+                {
+            new FileDto { Id = Guid.NewGuid(), FileName = "legal.pdf" }
+                });
 
+            _mockFileService.Setup(f => f.GetFilesAsync(It.Is<GetFilesRequestDto>(
+                req => req.relationType == FileConstants.Avatar)))
+                .ReturnsAsync(new List<FileDto>
+                {
+            new FileDto { Id = Guid.NewGuid(), FileName = "avatar.jpg" }
+                });
+
+            // Act
+            var result = await _service.GetTechnicianByIdAsync(technicianId);  // ✅ Truyền technicianId
+
+            // Assert
             Assert.NotNull(result);
-            Assert.Equal(technician.UserId, result.UserId);
+            Assert.Equal(technicianId, result.Id);
+            Assert.Equal(userId, result.UserId);
             Assert.Equal("Tech One", result.FullName);
+            Assert.Equal("tech1@test.com", result.Email);
+            Assert.Equal("0123456789", result.PhoneNumber);
+            Assert.Equal(5, result.ExperienceYears);
+            Assert.Equal(2, result.Services.Count);
+            Assert.NotNull(result.CertificateFiles);
+            Assert.NotNull(result.LegalDocument);
+            Assert.NotNull(result.Avatar);
+
+            // ✅ Verify GetFilesAsync được gọi 3 lần
+            _mockFileService.Verify(f => f.GetFilesAsync(It.IsAny<GetFilesRequestDto>()), Times.Exactly(3));
         }
 
 
