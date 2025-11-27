@@ -1,4 +1,5 @@
 // src/components/TechnicianDetails.jsx
+
 import {
   Award,
   Briefcase,
@@ -11,13 +12,19 @@ import {
   X,
   AlertCircle,
   Trash2,
+  Edit,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import axiosClient from "../config/axiosClient";
 import { serviceApi } from "../services/serviceApi";
 import { toast } from "sonner";
 
-// FilePreviewModal giữ nguyên 100%
+// Mock data cho địa chỉ
+const CITIES = ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Cần Thơ", "Hải Phòng"];
+
+// ----------------------------------------------------
+// Component con: FilePreviewModal (Giữ nguyên)
+// ----------------------------------------------------
 const FilePreviewModal = ({ isOpen, onClose, fileUrl, fileName }) => {
   const [scale, setScale] = useState(1);
   const [rotate, setRotate] = useState(0);
@@ -104,39 +111,122 @@ const FilePreviewModal = ({ isOpen, onClose, fileUrl, fileName }) => {
     </div>
   );
 };
-
-// Mock data cho địa chỉ
-const CITIES = ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Cần Thơ", "Hải Phòng"];
-
+// eslint-disable-next-line no-unused-vars
+const SimpleFieldEditor = ({ label, icon: Icon, value, fieldName, error, children, isFieldEditing, handleEditField }) => {
+    return (
+      <div className="flex flex-col space-y-1 p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-white transition relative">
+        <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
+          <Icon className="w-4 h-4 text-blue-500" /> {label}
+        </label>
+        
+        {isFieldEditing ? (
+          <>
+            <div className="pt-1">{children}</div>
+            {error && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    <p className="text-xs text-red-700 font-medium">{error}</p>
+                </div>
+            )}
+          </>
+        ) : (
+          <div
+            className="flex items-center justify-between py-1 cursor-pointer group"
+            onClick={() => handleEditField(fieldName)}
+          >
+            <p className="text-gray-900 font-medium text-lg truncate group-hover:text-blue-600 transition">
+              {value}
+            </p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditField(fieldName);
+              }}
+              className="text-blue-600 hover:text-blue-700 p-1"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+};
+// eslint-disable-next-line no-unused-vars
+const ComplexSectionEditor = ({ label, icon: Icon, fieldName, error, children, viewContent, isFieldEditing, handleEditField }) => {
+    return (
+      <div>
+        <div className="flex items-center justify-between pb-2 mb-2"> 
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <Icon className="w-4 h-4 text-blue-500" /> {label}
+          </label>
+          {!isFieldEditing && (
+            <button 
+              onClick={() => handleEditField(fieldName)} 
+              className="text-blue-500 hover:text-blue-700 transition p-1"
+              title="Chỉnh sửa phần này"
+            >
+              <Edit className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        
+        {isFieldEditing ? (
+          <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+            {children}
+            {error && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    <p className="text-xs text-red-700 font-medium">{error}</p>
+                </div>
+            )}
+          </div>
+        ) : (
+          <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+            {viewContent}
+          </div>
+        )}
+      </div>
+    );
+};
 const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
   const [previewFile, setPreviewFile] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [editingField, setEditingField] = useState(null);
   const [loadingServices, setLoadingServices] = useState(false);
   const [allServices, setAllServices] = useState([]);
 
-  // Form state - Giữ file cũ khi edit
   const [form, setForm] = useState({
     citizenId: "",
     address: "",
     experienceYears: 0,
     selectedServiceIds: [],
-    legalDocumentFile: null, // Single file: object or null
-    certificateFiles: [], // Multiple: array of objects
+    legalDocumentFile: null, 
+    certificateFiles: [],
   });
 
   const [errors, setErrors] = useState({});
+  const [originalForm, setOriginalForm] = useState(null);
 
-  // Sync form với profile, giữ file cũ
+  const clearError = useCallback((fieldName) => {
+    setErrors((prevErrors) => {
+      if (!prevErrors[fieldName]) return prevErrors;
+      const newErrors = { ...prevErrors };
+      delete newErrors[fieldName];
+      return newErrors;
+    });
+  }, []);
+
   useEffect(() => {
     if (profile) {
-      setForm({
-        citizenId: profile.citizenId || "",
-        address: profile.address || "",
-        experienceYears: profile.experienceYears || 0,
-        selectedServiceIds: (profile.services || []).map((s) => s.id),
-        legalDocumentFile: profile.legalDocument?.[0] || null, // Giữ file cũ nếu có (giả sử legalDocument là array)
-        certificateFiles: profile.certificateFiles || [], // Giữ list file cũ
-      });
+        const initialForm = {
+            citizenId: profile.citizenId || "",
+            address: profile.address || "",
+            experienceYears: profile.experienceYears || 0,
+            selectedServiceIds: (profile.services || []).map((s) => s.id),
+            legalDocumentFile: profile.legalDocument?.[0] || null,
+            certificateFiles: profile.certificateFiles || [],
+        };
+        setForm(initialForm);
+        setOriginalForm(initialForm);
     }
   }, [profile]);
 
@@ -153,30 +243,25 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
     }
   }, []);
 
-  const handleEdit = () => {
-    fetchServices();
-    setIsEditing(true);
-    setErrors({});
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setErrors({});
-    // Reset về profile gốc, giữ file cũ
-    if (profile) {
-      setForm({
-        citizenId: profile.citizenId || "",
-        address: profile.address || "",
-        experienceYears: profile.experienceYears || 0,
-        selectedServiceIds: (profile.services || []).map((s) => s.id),
-        legalDocumentFile: profile.legalDocument?.[0] || null,
-        certificateFiles: profile.certificateFiles || [],
-      });
+  const handleEditField = useCallback((fieldName) => {
+    if (fieldName === 'services') {
+      fetchServices();
     }
-  };
+    setEditingField(fieldName);
+    setErrors({});
+  }, [fetchServices]);
 
-  const validate = () => {
+  const handleCancel = useCallback(() => {
+    if (originalForm) {
+        setForm(originalForm);
+    }
+    setEditingField(null);
+    setErrors({});
+  }, [originalForm]);
+
+  const validate = useCallback(() => {
     const newErrors = {};
+
     if (!form.citizenId.trim()) newErrors.citizenId = "Số CCCD không được để trống";
     else if (!/^\d{12}$/.test(form.citizenId)) newErrors.citizenId = "CCCD phải có 12 chữ số";
 
@@ -189,177 +274,168 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
     if (!form.legalDocumentFile) newErrors.legalDocumentFile = "Phải tải lên tài liệu pháp lý";
 
     setErrors(newErrors);
+    
     return Object.keys(newErrors).length === 0;
+  }, [form]);
+
+  const handleSave = async () => {
+    if (!validate()) {
+      toast.error("Vui lòng kiểm tra các trường bị lỗi");
+      return;
+    }
+
+    const jwtToken = localStorage.getItem("jwtToken");
+    if (!jwtToken) {
+      toast.error("Phiên đăng nhập hết hạn");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      
+      formData.append("CitizenId", form.citizenId);
+      formData.append("Address", form.address);
+      formData.append("ExperienceYears", form.experienceYears.toString());
+      
+      form.selectedServiceIds.forEach((id) => {
+        formData.append("Services", id);
+      });
+
+      // Xử lý LegalDocument
+      if (form.legalDocumentFile) {
+        let legalFile = form.legalDocumentFile instanceof File
+          ? form.legalDocumentFile
+          : await fetch(getFileUrl(form.legalDocumentFile.filePath))
+              .then(r => r.blob())
+              .then(blob => new File([blob], form.legalDocumentFile.fileName, { type: blob.type }));
+        formData.append("LegalDocument", legalFile);
+      }
+
+      // Xử lý Certificates
+      for (const file of form.certificateFiles) {
+        let certFile = file instanceof File
+          ? file
+          : await fetch(getFileUrl(file.filePath))
+              .then(r => r.blob())
+              .then(blob => new File([blob], file.fileName, { type: blob.type }));
+        formData.append("Certificates", certFile);
+      }
+
+      await axiosClient.put(`/TechnicianManagement`, formData, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
+
+      toast.success("Cập nhật thông tin kỹ thuật viên thành công!");
+      setEditingField(null);
+      onUpdateSuccess?.(); 
+    } catch (err) {
+      console.error("Full error:", err);
+      console.error("Response data:", err.response?.data);
+      toast.error(err.response?.data?.message || "Cập nhật thất bại");
+    }
   };
 
- const handleSave = async () => {
-  if (!validate()) return;
-
-  const jwtToken = localStorage.getItem("jwtToken");
-  if (!jwtToken) {
-    toast.error("Phiên đăng nhập hết hạn");
-    return;
-  }
-
-  try {
-    const formData = new FormData();
-    
-    formData.append("CitizenId", form.citizenId);
-    formData.append("Address", form.address);
-    formData.append("ExperienceYears", form.experienceYears.toString());
-    
-    // ✅ DEBUG: Kiểm tra Services trước khi gửi
-    console.log("Selected Service IDs:", form.selectedServiceIds);
-    form.selectedServiceIds.forEach((id) => {
-      console.log("Appending service:", id);
-      formData.append("Services", id);
-    });
-
-    // ✅ DEBUG: Xem toàn bộ FormData
-    console.log("=== FormData Contents ===");
-    for (let [key, value] of formData.entries()) {
-      console.log(key, ":", value);
-    }
-
-    // LegalDocument
-    if (form.legalDocumentFile) {
-      let legalFile = form.legalDocumentFile instanceof File
-        ? form.legalDocumentFile
-        : await fetch(getFileUrl(form.legalDocumentFile.filePath))
-            .then(r => r.blob())
-            .then(blob => new File([blob], form.legalDocumentFile.fileName, { type: blob.type }));
-      formData.append("LegalDocument", legalFile);
-    }
-
-    // Certificates
-    for (const file of form.certificateFiles) {
-      let certFile = file instanceof File
-        ? file
-        : await fetch(getFileUrl(file.filePath))
-            .then(r => r.blob())
-            .then(blob => new File([blob], file.fileName, { type: blob.type }));
-      formData.append("Certificates", certFile);
-    }
-
-    await axiosClient.put(`/TechnicianManagement`, formData, {
-      headers: {
-        Authorization: `Bearer ${jwtToken}`,
-      },
-    });
-
-    toast.success("Cập nhật thông tin kỹ thuật viên thành công!");
-    setIsEditing(false);
-    onUpdateSuccess?.();
-  } catch (err) {
-    console.error("Full error:", err);
-    console.error("Response data:", err.response?.data);
-    toast.error(err.response?.data?.message || "Cập nhật thất bại");
-  }
-};  const handlePreview = (file) => {
+  const handlePreview = (file) => {
     const url = file.filePath ? getFileUrl(file.filePath) : URL.createObjectURL(file);
     setPreviewFile({ url, name: file.fileName || file.name });
   };
 
-  // Xóa file certificate
-  const handleDeleteCertificate = (index) => {
+  const handleDeleteCertificate = useCallback((index) => {
+    clearError('certificateFiles');
     const newFiles = form.certificateFiles.filter((_, i) => i !== index);
     setForm({ ...form, certificateFiles: newFiles });
-  };
+  }, [form, clearError]);
 
-  // Thay thế legal document
-  const handleLegalFileChange = (e) => {
+  const handleLegalFileChange = useCallback((e) => {
+    clearError('legalDocumentFile');
     const file = e.target.files[0];
     if (file) {
-      setForm({ ...form, legalDocumentFile: file });
+      setForm((prevForm) => ({ ...prevForm, legalDocumentFile: file }));
     }
-  };
-
-  // Thêm certificate files
-  const handleCertificateFileChange = (e) => {
+  }, [clearError]);
+  
+  const handleCertificateFileChange = useCallback((e) => {
+    clearError('certificateFiles');
     const newFiles = Array.from(e.target.files);
-    setForm({ ...form, certificateFiles: [...form.certificateFiles, ...newFiles] });
-  };
+    setForm((prevForm) => ({ ...prevForm, certificateFiles: [...prevForm.certificateFiles, ...newFiles] }));
+  }, [clearError]);
+  
+  const handleDeleteLegalDocument = useCallback(() => {
+    clearError('legalDocumentFile');
+    setForm((prevForm) => ({ ...prevForm, legalDocumentFile: null }));
+  }, [clearError]);
 
   if (!profile) return null;
 
+
   return (
     <div className="space-y-6">
-      {/* Nút Edit */}
-      <div className="flex justify-end">
-        {!isEditing ? (
-          <button
-            onClick={handleEdit}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-          >
-            <Edit3 className="w-4 h-4" />
-            Chỉnh sửa thông tin kỹ thuật viên
-          </button>
-        ) : (
-          <div className="flex gap-3">
-            <button
-              onClick={handleSave}
-              className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            >
-              <Save className="w-4 h-4" />
-              Lưu thay đổi
-            </button>
-            <button
-              onClick={handleCancel}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
-            >
-              <X className="w-4 h-4" />
-              Hủy
-            </button>
-          </div>
-        )}
-      </div>
 
-      {/* 3 ô thông tin */}
+      {/* 3 ô thông tin đơn lẻ */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="flex flex-col space-y-1 p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-white transition">
-          <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
-            <Briefcase className="w-4 h-4 text-blue-500" /> SỐ NĂM KINH NGHIỆM
-          </label>
-          {isEditing ? (
+
+        {/* Số năm kinh nghiệm */}
+        <SimpleFieldEditor
+            label="SỐ NĂM KINH NGHIỆM"
+            icon={Briefcase}
+            fieldName="experience"
+            value={`${form.experienceYears || 0} năm`}
+            error={errors.experienceYears}
+            isFieldEditing={editingField === 'experience'}
+            handleEditField={handleEditField}
+        >
             <input
               type="number"
               min="0"
               value={form.experienceYears}
-              onChange={(e) => setForm({ ...form, experienceYears: +e.target.value || 0 })}
+              onChange={(e) => {
+                clearError('experienceYears');
+                setForm({ ...form, experienceYears: +e.target.value || 0 })
+              }}
               className={`w-full px-3 py-2 border rounded-lg ${errors.experienceYears ? "border-red-500" : "border-gray-300"}`}
             />
-          ) : (
-            <p className="text-gray-900 font-medium text-lg">{`${profile.experienceYears || 0} năm`}</p>
-          )}
-          {errors.experienceYears && <p className="text-red-600 text-xs mt-1">{errors.experienceYears}</p>}
-        </div>
+        </SimpleFieldEditor>
 
-        <div className="flex flex-col space-y-1 p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-white transition">
-          <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
-            <CreditCard className="w-4 h-4 text-blue-500" /> SỐ CCCD
-          </label>
-          {isEditing ? (
+        {/* Số CCCD */}
+        <SimpleFieldEditor
+            label="SỐ CCCD"
+            icon={CreditCard}
+            fieldName="citizenId"
+            value={form.citizenId || "Chưa cập nhật"}
+            error={errors.citizenId}
+            isFieldEditing={editingField === 'citizenId'}
+            handleEditField={handleEditField}
+        >
             <input
               type="text"
               value={form.citizenId}
-              onChange={(e) => setForm({ ...form, citizenId: e.target.value.replace(/\D/g, '').slice(0, 12) })}
+              onChange={(e) => {
+                clearError('citizenId');
+                setForm({ ...form, citizenId: e.target.value.replace(/\D/g, '').slice(0, 12) })
+              }}
               className={`w-full px-3 py-2 border rounded-lg ${errors.citizenId ? "border-red-500" : "border-gray-300"}`}
               placeholder="12 chữ số"
             />
-          ) : (
-            <p className="text-gray-900 font-medium text-lg truncate">{profile.citizenId || "Chưa cập nhật"}</p>
-          )}
-          {errors.citizenId && <p className="text-red-600 text-xs mt-1">{errors.citizenId}</p>}
-        </div>
+        </SimpleFieldEditor>
 
-        <div className="flex flex-col space-y-1 p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-white transition">
-          <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
-            <MapPin className="w-4 h-4 text-blue-500" /> ĐỊA CHỈ
-          </label>
-          {isEditing ? (
+        {/* Địa chỉ */}
+        <SimpleFieldEditor
+            label="ĐỊA CHỈ"
+            icon={MapPin}
+            fieldName="address"
+            value={form.address || "Chưa cập nhật"}
+            error={errors.address}
+            isFieldEditing={editingField === 'address'}
+            handleEditField={handleEditField}
+        >
             <select
               value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
+              onChange={(e) => {
+                clearError('address');
+                setForm({ ...form, address: e.target.value })
+              }}
               className={`w-full px-3 py-2 border rounded-lg ${errors.address ? "border-red-500" : "border-gray-300"}`}
             >
               <option value="">-- Chọn thành phố --</option>
@@ -369,153 +445,174 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
                 </option>
               ))}
             </select>
-          ) : (
-            <p className="text-gray-900 font-medium text-lg truncate">{profile.address || "Chưa cập nhật"}</p>
-          )}
-          {errors.address && <p className="text-red-600 text-xs mt-1">{errors.address}</p>}
-        </div>
+        </SimpleFieldEditor>
       </div>
 
-      {/* Dịch vụ cung cấp - Làm đẹp hơn với grid layout và hover effects */}
-      <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-          <Award className="w-4 h-4 text-blue-500" /> Dịch vụ cung cấp
-        </label>
-        {isEditing ? (
-          <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
-            {loadingServices ? (
-              <p className="text-sm text-gray-500">Đang tải dịch vụ...</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-48 overflow-y-auto">
-                {allServices.map((s) => (
-                  <label key={s.id} className="flex items-center gap-2 p-2 border rounded-lg hover:bg-blue-50 cursor-pointer transition">
-                    <input
-                      type="checkbox"
-                      checked={form.selectedServiceIds.includes(s.id)}
-                      onChange={(e) => {
-                        const newIds = e.target.checked
-                          ? [...form.selectedServiceIds, s.id]
-                          : form.selectedServiceIds.filter((id) => id !== s.id);
-                        setForm({ ...form, selectedServiceIds: newIds });
-                      }}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-medium text-gray-800">{s.name}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-            {errors.services && <p className="text-red-600 text-sm mt-2">{errors.services}</p>}
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2 p-4 border border-gray-200 rounded-lg bg-gray-50">
+      {/* Dịch vụ cung cấp */}
+      <ComplexSectionEditor
+        label="Dịch vụ cung cấp"
+        icon={Award}
+        fieldName="services"
+        error={errors.services}
+        isFieldEditing={editingField === 'services'}
+        handleEditField={handleEditField}
+        viewContent={
+          <div className="flex flex-wrap gap-2">
             {profile.services?.length > 0 ? profile.services.map((s) => (
               <span key={s.id} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{s.name}</span>
             )) : <p className="text-sm text-yellow-800">Chưa có dịch vụ nào.</p>}
           </div>
-        )}
-      </div>
+        }
+      >
+        {/* Children content (Edit mode) */}
+        <div>
+          {loadingServices ? (
+            <p className="text-sm text-gray-500">Đang tải dịch vụ...</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-48 overflow-y-auto">
+              {allServices.map((s) => (
+                <label key={s.id} className="flex items-center gap-2 p-2 border rounded-lg hover:bg-blue-50 cursor-pointer transition bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={form.selectedServiceIds.includes(s.id)}
+                    onChange={(e) => {
+                      clearError('services');
+                      const newIds = e.target.checked
+                        ? [...form.selectedServiceIds, s.id]
+                        : form.selectedServiceIds.filter((id) => id !== s.id);
+                      setForm({ ...form, selectedServiceIds: newIds });
+                    }}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-800">{s.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </ComplexSectionEditor>
 
       {/* Chứng chỉ - Multiple files với xóa */}
-      <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-          <Award className="w-4 h-4 text-blue-500" /> Chứng chỉ đã đính kèm
-        </label>
-        <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
-          {isEditing ? (
-            <div>
-              <input
-                type="file"
-                multiple
-                accept="image/*,.pdf"
-                onChange={handleCertificateFileChange}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-4"
-              />
-              <div className="space-y-2">
-                {form.certificateFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-white border rounded-lg">
-                    <span className="text-sm truncate">{file.fileName || file.name}</span>
-                    <div className="flex gap-2">
-                      <button onClick={() => handlePreview(file)} className="text-blue-600 hover:text-blue-800">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDeleteCertificate(index)} className="text-red-600 hover:text-red-800">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+      <ComplexSectionEditor
+        label="Chứng chỉ đã đính kèm"
+        icon={Award}
+        fieldName="certificates"
+        error={errors.certificateFiles}
+        isFieldEditing={editingField === 'certificates'}
+        handleEditField={handleEditField}
+        viewContent={
+          <div className="space-y-2">
+            {profile.certificateFiles?.length > 0 ? profile.certificateFiles.map((cert) => (
+              <button
+                key={cert.id}
+                onClick={() => handlePreview(cert)}
+                // ✅ Sửa viền cho Chế độ Xem (View Mode) Chứng chỉ
+                className="w-full flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg hover:bg-green-50"
+              >
+                <span className="text-sm truncate">{cert.fileName}</span>
+                <Eye className="w-4 h-4 text-gray-600" />
+              </button>
+            )) : <p className="text-sm text-yellow-800">Không có chứng chỉ.</p>}
+          </div>
+        }
+      >
+        {/* Children content (Edit mode) */}
+        <div>
+          <input
+            type="file"
+            multiple
+            accept="image/*,.pdf"
+            onChange={handleCertificateFileChange}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-4"
+          />
+          <div className="space-y-2">
+            {form.certificateFiles.map((file, index) => (
+              // ✅ Sửa viền cho Chế độ Chỉnh sửa (Edit Mode) Chứng chỉ
+              <div key={index} className="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg">
+                <span className="text-sm truncate">{file.fileName || file.name}</span>
+                <div className="flex gap-2">
+                  <button onClick={() => handlePreview(file)} className="text-blue-600 hover:text-blue-800">
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => handleDeleteCertificate(index)} className="text-red-600 hover:text-red-800">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {profile.certificateFiles?.length > 0 ? profile.certificateFiles.map((cert) => (
-                <button
-                  key={cert.id}
-                  onClick={() => handlePreview(cert)}
-                  className="w-full flex items-center justify-between p-2 bg-white border rounded-lg hover:bg-green-50"
-                >
-                  <span className="text-sm truncate">{cert.fileName}</span>
-                  <Eye className="w-4 h-4 text-gray-600" />
-                </button>
-              )) : <p className="text-sm text-yellow-800">Không có chứng chỉ.</p>}
-            </div>
-          )}
+            ))}
+          </div>
         </div>
-      </div>
+      </ComplexSectionEditor>
 
       {/* Tài liệu pháp lý - Single file với thay thế */}
-      <div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-          <FileText className="w-4 h-4 text-blue-500" /> Tài liệu pháp lý
-        </label>
-        <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
-          {isEditing ? (
-            <div>
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleLegalFileChange}
-                className={`block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 ${
-                  errors.legalDocumentFile ? "file:bg-red-50 file:text-red-700" : "file:bg-blue-50 file:text-blue-700"
-                } hover:file:bg-blue-100 mb-4`}
-              />
-              {form.legalDocumentFile && (
-                <div className="flex items-center justify-between p-2 bg-white border rounded-lg">
-                  <span className="text-sm truncate">{form.legalDocumentFile.fileName || form.legalDocumentFile.name}</span>
-                  <div className="flex gap-2">
-                    <button onClick={() => handlePreview(form.legalDocumentFile)} className="text-blue-600 hover:text-blue-800">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setForm({ ...form, legalDocumentFile: null })} className="text-red-600 hover:text-red-800">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-              {errors.legalDocumentFile && (
-                <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.legalDocumentFile}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {profile.legalDocument?.length > 0 ? profile.legalDocument.map((doc) => (
-                <button
-                  key={doc.id}
-                  onClick={() => handlePreview(doc)}
-                  className="w-full flex items-center justify-between p-2 bg-white border rounded-lg hover:bg-indigo-50"
-                >
-                  <span className="text-sm truncate">{doc.fileName}</span>
-                  <Eye className="w-4 h-4 text-gray-600" />
+      <ComplexSectionEditor
+        label="Tài liệu pháp lý"
+        icon={FileText}
+        fieldName="legalDocument"
+        error={errors.legalDocumentFile}
+        isFieldEditing={editingField === 'legalDocument'}
+        handleEditField={handleEditField}
+        viewContent={
+          <div className="space-y-2">
+            {profile.legalDocument?.length > 0 ? profile.legalDocument.map((doc) => (
+              <button
+                key={doc.id}
+                onClick={() => handlePreview(doc)}
+                // ✅ Sửa viền cho Chế độ Xem (View Mode) Tài liệu pháp lý
+                className="w-full flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg hover:bg-indigo-50"
+              >
+                <span className="text-sm truncate">{doc.fileName}</span>
+                <Eye className="w-4 h-4 text-gray-600" />
+              </button>
+            )) : <p className="text-sm text-yellow-800">Không có tài liệu pháp lý.</p>}
+          </div>
+        }
+      >
+        {/* Children content (Edit mode) */}
+        <div>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            onChange={handleLegalFileChange}
+            className={`block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 ${
+              errors.legalDocumentFile ? "file:bg-red-50 file:text-red-700" : "file:bg-blue-50 file:text-blue-700"
+            } hover:file:bg-blue-100 mb-4`}
+          />
+          {form.legalDocumentFile && (
+            <div className="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg">
+              <span className="text-sm truncate">{form.legalDocumentFile.fileName || form.legalDocumentFile.name}</span>
+              <div className="flex gap-2">
+                <button onClick={() => handlePreview(form.legalDocumentFile)} className="text-blue-600 hover:text-blue-800">
+                  <Eye className="w-4 h-4" />
                 </button>
-              )) : <p className="text-sm text-yellow-800">Không có tài liệu pháp lý.</p>}
+                <button onClick={handleDeleteLegalDocument} className="text-red-600 hover:text-red-800">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           )}
         </div>
-      </div>
+      </ComplexSectionEditor>
+
+      {/* Nút Lưu và Hủy nằm ở cuối form (GLOBAL) */}
+      {editingField && (
+        <div className="flex justify-end gap-3 pt-6 mt-6"> 
+          <button
+            onClick={handleSave}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-all duration-200 group"
+          >
+            <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+            Lưu thay đổi
+          </button>
+          <button
+            onClick={handleCancel}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 group"
+          >
+            <X className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+            Hủy
+          </button>
+        </div>
+      )}
 
       <FilePreviewModal
         isOpen={!!previewFile}
