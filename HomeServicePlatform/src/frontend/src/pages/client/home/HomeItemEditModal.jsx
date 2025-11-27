@@ -182,7 +182,7 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     onChange={handleChange}
                                     placeholder={t("form.placeholder.item_name")}
                                     className={`block w-full border rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white ${
-                                        validationErrors.name ? "border-red-400" : "border-gray-200" // Cập nhật style border
+                                        validationErrors.name ? "border-red-400" : "border-gray-200" 
                                     }`}
                                 />
                                 {validationErrors.name && (
@@ -233,8 +233,6 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     <p className="mt-1 text-xs text-red-500">{validationErrors.brand}</p>
                                 )}
                             </div>
-
-                            {/* Input: Model Number */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     {t("form.label.model_number")} <span className="text-red-500">*</span>
@@ -253,8 +251,6 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     <p className="mt-1 text-xs text-red-500">{validationErrors.modelNumber}</p>
                                 )}
                             </div>
-
-                            {/* Input: Serial Number (Không bắt buộc, không cần kiểm tra lỗi) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     {t("form.label.serial_number")}
@@ -268,8 +264,6 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     className="block w-full border border-gray-200 rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white"
                                 />
                             </div>
-
-                            {/* Textarea: Notes (Không bắt buộc, không cần kiểm tra lỗi) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     {t("form.label.notes")}
