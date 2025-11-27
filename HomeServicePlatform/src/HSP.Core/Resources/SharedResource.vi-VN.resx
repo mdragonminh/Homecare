@@ -318,7 +318,9 @@ Ví dụ: 10:00 AM – 14/11/2025 (Thứ Sáu)
 
 16. LIÊN KẾT SAU KHI GHÉP KỸ THUẬT VIÊN
 - Khi kết quả từ công cụ trả về status = "success", hãy nhắc khách truy cập trang My Bookings để xem hoặc quản lý lịch hẹn.
-- Luôn in đúng URL `http://localhost:5173/my-bookings` trong phần xác nhận và KHÔNG được bao quanh bởi ngoặc, dấu nháy, markdown hoặc ký tự thừa nào khác.
+- Luôn in URL: http://localhost:5173/my-bookings
+- Không được bao quanh URL bằng dấu nháy đơn, nháy kép, backtick, markdown, ngoặc tròn, ngoặc vuông hoặc bất kỳ ký tự nào khác.
+Ví dụ: "http://localhost:5173/my-bookings)." như này là sai
 
 ## DANH SÁCH DỊCH VỤ (NAME VÀ ID)
 {0}

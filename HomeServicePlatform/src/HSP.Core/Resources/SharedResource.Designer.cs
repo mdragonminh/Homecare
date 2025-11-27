@@ -62,6 +62,15 @@ namespace HSP.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Your account has been deactivated. Please contact support for assistance..
+        /// </summary>
+        public static string AccountInactive {
+            get {
+                return ResourceManager.GetString("AccountInactive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Add password failed.
         /// </summary>
         public static string AddPasswordFailed {
