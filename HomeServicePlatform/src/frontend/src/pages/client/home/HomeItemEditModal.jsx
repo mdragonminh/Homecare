@@ -26,7 +26,8 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
     const [itemData, setItemData] = useState(initialItemState);
     const [loading, setLoading] = useState(false);
     const [fetchError, setFetchError] = useState(null);
-    const [submitError, setSubmitError] = useState(null); 
+    // THAY ĐỔI 1: Sử dụng object để lưu lỗi cho từng trường
+    const [validationErrors, setValidationErrors] = useState({}); 
 
     // Fetch item details
     useEffect(() => {
@@ -65,25 +66,35 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setItemData((prev) => ({ ...prev, [name]: value }));
-        setSubmitError(null); 
+        // THAY ĐỔI 2: Xóa lỗi cho trường cụ thể này khi người dùng thay đổi giá trị
+        setValidationErrors((prev) => ({ ...prev, [name]: null })); 
     };
 
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmitError(null);
-        if (!itemData.name || !itemData.type || !itemData.brand || !itemData.modelNumber) {
-            let validationError = t("validation.required_fields_missing") || "Vui lòng điền đầy đủ các trường bắt buộc.";
-            
-            if (!itemData.name) validationError = t("validation.item_name_required") || "Tên vật phẩm là bắt buộc.";
-            else if (!itemData.brand) validationError = t("validation.brand_required") || "Thương hiệu là bắt buộc.";
-            else if (!itemData.type) validationError = t("validation.type_required") || "Loại vật phẩm là bắt buộc.";
-            else if (!itemData.modelNumber) validationError = t("validation.model_number_required") || "Mã Model là bắt buộc.";
-
-            setSubmitError(validationError);
+        setValidationErrors({}); // Đặt lại lỗi trước khi kiểm tra mới
+        
+        const errors = {};
+        
+        if (!itemData.name) {
+            errors.name = t("validation.item_name_required") || "Tên vật phẩm là bắt buộc.";
+        }
+        if (!itemData.brand) {
+            errors.brand = t("validation.brand_required") || "Thương hiệu là bắt buộc.";
+        }
+        if (!itemData.type) {
+            errors.type = t("validation.type_required") || "Loại vật phẩm là bắt buộc.";
+        }
+        if (!itemData.modelNumber) {
+            errors.modelNumber = t("validation.model_number_required") || "Mã Model là bắt buộc.";
+        }
+        
+        // Nếu có lỗi, cập nhật trạng thái lỗi và dừng
+        if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
             return;
         }
-
 
         setLoading(true);
 
@@ -96,14 +107,17 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                 onSuccess();
                 onClose(); 
             } else {
-                setSubmitError(res.message);
+                // Giữ nguyên lỗi API (nếu có), sử dụng một key riêng biệt
+                setValidationErrors({ apiError: res.message }); 
             }
         } catch (err) {
             setLoading(false);
             console.error("Error updating item:", err);
-            setSubmitError(t("error.network_connect_failed") || "Lỗi kết nối mạng, vui lòng thử lại.");
+            setValidationErrors({ apiError: t("error.network_connect_failed") || "Lỗi kết nối mạng, vui lòng thử lại." });
         }
     };
+    
+    // ... (Phần hiển thị lỗi fetchError không thay đổi)
     if (fetchError) {
         return (
             <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
@@ -149,10 +163,10 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
 
                     {!loading && (
                         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                            {/* Error Message */}
-                            {submitError && (
+                            {/* THAY ĐỔI 3: Hiển thị lỗi API/network chung ở đây */}
+                            {validationErrors.apiError && (
                                 <div className="p-3 text-sm text-red-700 bg-red-50 rounded-xl shadow-sm border border-red-100">
-                                    {submitError}
+                                    {validationErrors.apiError}
                                 </div>
                             )}
 
@@ -167,8 +181,13 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     value={itemData.name}
                                     onChange={handleChange}
                                     placeholder={t("form.placeholder.item_name")}
-                                    className="block w-full border border-gray-200 rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white"
+                                    className={`block w-full border rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white ${
+                                        validationErrors.name ? "border-red-400" : "border-gray-200" // Cập nhật style border
+                                    }`}
                                 />
+                                {validationErrors.name && (
+                                    <p className="mt-1 text-xs text-red-500">{validationErrors.name}</p> // Hiển thị lỗi riêng
+                                )}
                             </div>
 
                             {/* Select: Item Type */}
@@ -180,8 +199,9 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     name="type"
                                     value={itemData.type}
                                     onChange={handleChange}
-                                    className="block w-full border border-gray-200 rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white"
-                                   
+                                    className={`block w-full border rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white ${
+                                        validationErrors.type ? "border-red-400" : "border-gray-200"
+                                    }`}
                                 >
                                     {itemTypes.map((type) => (
                                         <option key={type} value={type}>
@@ -189,6 +209,9 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                         </option>
                                     ))}
                                 </select>
+                                {validationErrors.type && (
+                                    <p className="mt-1 text-xs text-red-500">{validationErrors.type}</p>
+                                )}
                             </div>
 
                             {/* Input: Brand */}
@@ -202,8 +225,13 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     value={itemData.brand}
                                     onChange={handleChange}
                                     placeholder={t("form.placeholder.brand")}
-                                    className="block w-full border border-gray-200 rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white"
+                                    className={`block w-full border rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white ${
+                                        validationErrors.brand ? "border-red-400" : "border-gray-200"
+                                    }`}
                                 />
+                                {validationErrors.brand && (
+                                    <p className="mt-1 text-xs text-red-500">{validationErrors.brand}</p>
+                                )}
                             </div>
 
                             {/* Input: Model Number */}
@@ -217,11 +245,16 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     value={itemData.modelNumber}
                                     onChange={handleChange}
                                     placeholder={t("form.placeholder.model_number")}
-                                    className="block w-full border border-gray-200 rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white"
+                                    className={`block w-full border rounded-xl shadow-sm p-2.5 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 bg-white ${
+                                        validationErrors.modelNumber ? "border-red-400" : "border-gray-200"
+                                    }`}
                                 />
+                                {validationErrors.modelNumber && (
+                                    <p className="mt-1 text-xs text-red-500">{validationErrors.modelNumber}</p>
+                                )}
                             </div>
 
-                            {/* Input: Serial Number */}
+                            {/* Input: Serial Number (Không bắt buộc, không cần kiểm tra lỗi) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     {t("form.label.serial_number")}
@@ -236,7 +269,7 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                 />
                             </div>
 
-                            {/* Textarea: Notes */}
+                            {/* Textarea: Notes (Không bắt buộc, không cần kiểm tra lỗi) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     {t("form.label.notes")}
@@ -274,7 +307,7 @@ export default function HomeItemEditModal({ homeItemId, onClose, onSuccess }) {
                                     ) : (
                                         <>
                                             <Save size={16} />
-                                            {t("ui.save_address") || "Save"}
+                                            {t("ui.save_item") || "Save"}
                                         </>
                                     )}
                                 </button>

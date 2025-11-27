@@ -227,6 +227,7 @@
     "delete_confirm_message": "Bạn có chắc chắn muốn xóa vật phẩm \"{{item_name}}\"? Thao tác này không thể hoàn tác.", 
     
     "saving": "Đang lưu...",
+    "save_item": "Lưu vật phẩm",
     "save_address": "Lưu địa chỉ",
     "active_status": "hoạt động",
     "set_password_title": "Thêm mật khẩu cho tài khoản",

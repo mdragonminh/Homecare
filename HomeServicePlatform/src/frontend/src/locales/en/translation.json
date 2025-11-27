@@ -261,7 +261,8 @@
     "preferred_time_label": "Preferred Time",
     "preferred_date_label": "Preferred Date",
     "match_technician_button": "Request & Match Now",
-    "setting_password": "Setting password..."
+    "setting_password": "Setting password...",
+    "save_item": "Save Item"
   },
   "form": {
     "label": {
