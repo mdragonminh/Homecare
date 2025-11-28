@@ -32,7 +32,7 @@ export const FeedbackModal = ({ isOpen, onClose, onSubmit }) => {
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Đánh giá Technician</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">Phản hồi và Đánh giá</h2>
               <p className="text-blue-100 text-sm">Giúp chúng tôi cải thiện dịch vụ</p>
             </div>
             <button
