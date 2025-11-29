@@ -11,6 +11,9 @@ namespace HSP.Core.Dtos.TechnicianProfileDto
         public string PhoneNumber { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public int ExperienceYears { get; set; }
+        public double Rating { get; set; }
+        public int RatingCount { get; set; }
+        public string Comment { get; set; } = string.Empty;
         public TechnicianApprovalStatus ApprovalStatus { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime? ApprovedAt { get; set; }
