@@ -88,10 +88,23 @@ namespace HSP.Service.Implementations.Internal
             var technician = await _technicianProfileRepository.GetAll()
                     .Include(x => x.User)
                     .Include(x => x.Services)
+                    .Include(x => x.Bookings) 
+                        .ThenInclude(b => b.Feedbacks)
                     .FirstOrDefaultAsync(x => x.Id == technicianId);
 
             if (technician == null)
                 throw new KeyNotFoundException("Không tìm thấy kĩ thuật viên");
+
+            var customerFeedbacks = technician.Bookings
+                    .SelectMany(b => b.Feedbacks)
+                    .Where(f => f.Source == FeedbackSource.Customer)
+                    .ToList();
+
+            double avgRating = 0;
+            if (customerFeedbacks.Any())
+            {
+                avgRating = Math.Round(customerFeedbacks.Average(f => f.Rating), 1);
+            }
 
             var certificates = await _fileService.GetFilesAsync(new GetFilesRequestDto
             {
@@ -123,6 +136,9 @@ namespace HSP.Service.Implementations.Internal
                 ExperienceYears = technician.ExperienceYears,
                 ApprovalStatus = technician.ApprovalStatus,
                 IsActive = technician.User?.IsActive ?? true,
+                Rating = avgRating,
+                RatingCount = customerFeedbacks.Count,
+                Comment = customerFeedbacks.Select(x => x.Comment).ToString(),
                 ApprovedAt = technician.ApprovedAt,
                 ApprovedBy = technician.ApprovedBy,
                 DateCreated = technician.DateCreated,

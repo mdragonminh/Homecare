@@ -18,14 +18,15 @@ import {
   TrophyOutlined,
   StarOutlined,
   FileTextOutlined,
-  ToolOutlined,
   IdcardOutlined,
+  ToolOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import dayjs from "dayjs";
 import { technicianApi } from "../../services/technicianApi";
 import { bookingApi } from "../../services/bookingApi";
 import { adminApi } from "../../services/adminApi";
+import { FeedbackSource } from "../../constants/enums"; 
 
 export default function TechnicianDetailModal({
   visible,
@@ -74,18 +75,18 @@ export default function TechnicianDetailModal({
               (f) => f.source === FeedbackSource.Customer
             );
 
-            if (!cFeedback) return null; 
+            if (!cFeedback) return null;
 
             return {
-              id: cFeedback.id || booking.id, 
+              id: cFeedback.id || booking.id,
               rating: cFeedback.rating,
               comment: cFeedback.comment,
               bookingId: booking.id,
-              customerName: booking.customer?.fullName || "Anonymous",
-              createdAt: booking.dateCompleted, 
+              customerName: booking.customer?.fullName || "Khách hàng",
+              createdAt: booking.dateCompleted || booking.dateCreated,
             };
           })
-          .filter((item) => item !== null); 
+          .filter((item) => item !== null);
 
         setFeedbacks(feedbackList);
       }
@@ -99,16 +100,13 @@ export default function TechnicianDetailModal({
     }
   };
 
-  const calculateAverageRating = () => {
-    if (feedbacks.length === 0) return 0;
-    const sum = feedbacks.reduce((acc, feedback) => acc + feedback.rating, 0);
-    return (sum / feedbacks.length).toFixed(1);
-  };
-
   const getRatingDistribution = () => {
     const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     feedbacks.forEach((feedback) => {
-      distribution[feedback.rating] = (distribution[feedback.rating] || 0) + 1;
+      if (feedback.rating >= 1 && feedback.rating <= 5) {
+        distribution[feedback.rating] =
+          (distribution[feedback.rating] || 0) + 1;
+      }
     });
     return distribution;
   };
@@ -183,10 +181,10 @@ export default function TechnicianDetailModal({
                 <div
                   style={{ fontSize: 24, fontWeight: "bold", color: "#faad14" }}
                 >
-                  <StarOutlined /> {calculateAverageRating()}
+                  <StarOutlined /> {technicianDetail.rating || 0}
                 </div>
                 <div style={{ color: "#8c8c8c", fontSize: 12 }}>
-                  {feedbacks.length}{" "}
+                  {technicianDetail.ratingCount || 0}{" "}
                   {t("ui.reviews", { defaultValue: "đánh giá" })}
                 </div>
               </div>
@@ -238,9 +236,9 @@ export default function TechnicianDetailModal({
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <Spin />
               </div>
-            ) : feedbacks.length > 0 ? (
+            ) : (
               <div>
-                {/* Rating Distribution */}
+                {/* Rating Distribution Header */}
                 <div
                   style={{
                     marginBottom: 16,
@@ -260,21 +258,22 @@ export default function TechnicianDetailModal({
                           color: "#faad14",
                         }}
                       >
-                        {calculateAverageRating()}
+                        {technicianDetail.rating || 0}
                       </div>
                       <Rate
                         disabled
-                        value={parseFloat(calculateAverageRating())}
+                        value={technicianDetail.rating || 0}
                         allowHalf
                       />
                       <div
                         style={{ color: "#8c8c8c", fontSize: 12, marginTop: 4 }}
                       >
-                        {feedbacks.length}{" "}
+                        {technicianDetail.ratingCount || 0}{" "}
                         {t("ui.reviews", { defaultValue: "đánh giá" })}
                       </div>
                     </div>
                     <Divider type="vertical" style={{ height: 80 }} />
+                    
                     <div style={{ flex: 1 }}>
                       {Object.entries(getRatingDistribution())
                         .reverse()
@@ -328,64 +327,66 @@ export default function TechnicianDetailModal({
                   </div>
                 </div>
 
-                {/* Individual Feedbacks */}
-                <div style={{ maxHeight: 300, overflowY: "auto" }}>
-                  {feedbacks.map((feedback) => (
-                    <div
-                      key={feedback.id}
-                      style={{
-                        padding: 12,
-                        borderBottom: "1px solid #f0f0f0",
-                        marginBottom: 12,
-                      }}
-                    >
+                {/* Individual Feedbacks List */}
+                {feedbacks.length > 0 ? (
+                  <div style={{ maxHeight: 300, overflowY: "auto" }}>
+                    {feedbacks.map((feedback) => (
                       <div
+                        key={feedback.id}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          marginBottom: 8,
+                          padding: 12,
+                          borderBottom: "1px solid #f0f0f0",
+                          marginBottom: 12,
                         }}
                       >
-                        <Avatar
-                          size={32}
-                          icon={<UserOutlined />}
-                          style={{ backgroundColor: "#87d068" }}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            marginBottom: 8,
+                          }}
                         >
-                          {feedback.customerName?.charAt(0)}
-                        </Avatar>
-                        <div style={{ flex: 1 }}>
-                          <strong>{feedback.customerName}</strong>
-                          <div style={{ fontSize: 12, color: "#8c8c8c" }}>
-                            {feedback.createdAt
-                              ? dayjs(feedback.createdAt).format(
-                                  "DD/MM/YYYY HH:mm"
-                                )
-                              : ""}
+                          <Avatar
+                            size={32}
+                            icon={<UserOutlined />}
+                            style={{ backgroundColor: "#87d068" }}
+                          >
+                            {feedback.customerName?.charAt(0)}
+                          </Avatar>
+                          <div style={{ flex: 1 }}>
+                            <strong>{feedback.customerName}</strong>
+                            <div style={{ fontSize: 12, color: "#8c8c8c" }}>
+                              {feedback.createdAt
+                                ? dayjs(feedback.createdAt).format(
+                                    "DD/MM/YYYY HH:mm"
+                                  )
+                                : ""}
+                            </div>
                           </div>
+                          <Rate
+                            disabled
+                            value={feedback.rating}
+                            style={{ fontSize: 14 }}
+                          />
                         </div>
-                        <Rate
-                          disabled
-                          value={feedback.rating}
-                          style={{ fontSize: 14 }}
-                        />
+                        {feedback.comment && (
+                          <div style={{ paddingLeft: 40, color: "#595959" }}>
+                            {feedback.comment}
+                          </div>
+                        )}
                       </div>
-                      {feedback.comment && (
-                        <div style={{ paddingLeft: 40, color: "#595959" }}>
-                          {feedback.comment}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Empty
+                    description={t("ui.no_ratings_yet", {
+                      defaultValue: "Chưa có nhận xét chi tiết",
+                    })}
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                )}
               </div>
-            ) : (
-              <Empty
-                description={t("ui.no_ratings_yet", {
-                  defaultValue: "Chưa có đánh giá",
-                })}
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
             )}
           </Card>
 
@@ -461,79 +462,82 @@ export default function TechnicianDetailModal({
             )}
 
           {/* Legal Documents Section */}
-          {technicianDetail.legalDocument && (
-            <Card
-              title={
-                <span>
-                  <IdcardOutlined />{" "}
-                  {t("ui.legal_documents", { defaultValue: "Giấy tờ pháp lý" })}
-                </span>
-              }
-              style={{ marginBottom: 16 }}
-            >
-              <div
-                style={{
-                  padding: 12,
-                  border: "1px solid #e9d8fd",
-                  borderRadius: 8,
-                  backgroundColor: "#f9f0ff",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  transition: "all 0.3s",
-                }}
+          {technicianDetail.legalDocument &&
+            technicianDetail.legalDocument.length > 0 && (
+              <Card
+                title={
+                  <span>
+                    <IdcardOutlined />{" "}
+                    {t("ui.legal_documents", {
+                      defaultValue: "Giấy tờ pháp lý",
+                    })}
+                  </span>
+                }
+                style={{ marginBottom: 16 }}
               >
                 <div
                   style={{
-                    width: 40,
-                    height: 40,
+                    padding: 12,
+                    border: "1px solid #e9d8fd",
                     borderRadius: 8,
-                    background:
-                      "linear-gradient(135deg, #b37feb 0%, #722ed1 100%)",
+                    backgroundColor: "#f9f0ff",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 20,
-                    boxShadow: "0 2px 4px rgba(114, 46, 209, 0.3)",
+                    gap: 12,
+                    transition: "all 0.3s",
                   }}
                 >
-                  🆔
-                </div>
-
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500, color: "#262626" }}>
-                    {technicianDetail.legalDocument?.[0]?.fileName}
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 8,
+                      background:
+                        "linear-gradient(135deg, #b37feb 0%, #722ed1 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 20,
+                      boxShadow: "0 2px 4px rgba(114, 46, 209, 0.3)",
+                    }}
+                  >
+                    🆔
                   </div>
-                  <div style={{ fontSize: 12, color: "#8c8c8c" }}>
-                    {t("ui.identity_document", {
-                      defaultValue: "Giấy tờ tùy thân (CCCD/CMND)",
-                    })}
-                  </div>
-                </div>
 
-                <Button
-                  size="small"
-                  type="text"
-                  onClick={() =>
-                    handlePreviewFile(
-                      technicianDetail.legalDocument?.[0]?.filePath
-                    )
-                  }
-                  style={{
-                    padding: "4px 12px",
-                    height: "auto",
-                    color: "#722ed1",
-                    fontWeight: 500,
-                    borderRadius: 6,
-                    border: "1px solid #d9d9d9",
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  {t("ui.view", { defaultValue: "Xem" })}
-                </Button>
-              </div>
-            </Card>
-          )}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 500, color: "#262626" }}>
+                      {technicianDetail.legalDocument[0].fileName}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#8c8c8c" }}>
+                      {t("ui.identity_document", {
+                        defaultValue: "Giấy tờ tùy thân (CCCD/CMND)",
+                      })}
+                    </div>
+                  </div>
+
+                  <Button
+                    size="small"
+                    type="text"
+                    onClick={() =>
+                      handlePreviewFile(
+                        technicianDetail.legalDocument[0].filePath
+                      )
+                    }
+                    style={{
+                      padding: "4px 12px",
+                      height: "auto",
+                      color: "#722ed1",
+                      fontWeight: 500,
+                      borderRadius: 6,
+                      border: "1px solid #d9d9d9",
+                      backgroundColor: "#fff",
+                    }}
+                  >
+                    {t("ui.view", { defaultValue: "Xem" })}
+                  </Button>
+                </div>
+              </Card>
+            )}
         </div>
       ) : (
         <Empty
