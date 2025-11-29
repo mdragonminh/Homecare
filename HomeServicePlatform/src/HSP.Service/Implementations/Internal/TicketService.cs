@@ -29,9 +29,9 @@ namespace HSP.Service.Implementations.Internal
             IUserRepository userRepository,
             IRepository<Equipment, Guid> equipmentRepository,
             IRepository<TechnicianProfile, Guid> technicianProfileRepository,
-            IUnitOfWork unitOfWork, 
-            IStringLocalizer<SharedResource> localizer 
-            ) : base(unitOfWork, localizer) 
+            IUnitOfWork unitOfWork,
+            IStringLocalizer<SharedResource> localizer
+            ) : base(unitOfWork, localizer)
         {
             _ticketRepository = ticketRepository;
             _bookingRepository = bookingRepository;
@@ -45,8 +45,8 @@ namespace HSP.Service.Implementations.Internal
         {
             var ticketsQuery = _ticketRepository.GetAll()
                 .Where(t => t.IsDeleted == false)
-                .Include(t => t.Customer) 
-                .Include(t => t.Booking)  
+                .Include(t => t.Customer)
+                .Include(t => t.Booking)
                 .Include(t => t.Technician)
                     .ThenInclude(tech => tech.User)
                 .AsQueryable();
@@ -123,7 +123,7 @@ namespace HSP.Service.Implementations.Internal
             ticket.DateModified = DateTime.UtcNow;
 
             _ticketRepository.Update(ticket);
-            await _unitOfWork.SaveChangesAsync(); 
+            await _unitOfWork.SaveChangesAsync();
 
             var techUser = await _userRepository.FindByIdAsync(technicianProfile.UserId);
             if (techUser != null && !string.IsNullOrEmpty(techUser.Email))
@@ -162,7 +162,7 @@ namespace HSP.Service.Implementations.Internal
             }
 
             var oldStatus = ticket.Status;
-            var newStatus = updateDto.NewStatus;
+            var newStatus = updateDto.NewStatus; 
 
             if (oldStatus == newStatus) return true;
 
@@ -181,7 +181,28 @@ namespace HSP.Service.Implementations.Internal
             _ticketRepository.Update(ticket);
             await _unitOfWork.SaveChangesAsync(); 
 
+
+            var customer = await _userRepository.FindByIdAsync(ticket.CustomerId);
             var supporterUser = await _userRepository.FindByIdAsync(supporterGuid);
+
+            if (customer != null && !string.IsNullOrEmpty(customer.Email))
+            {
+                var emailDto = new Dtos.EmailDto.EmailDto
+                {
+                    ToEmail = customer.Email,
+                    Subject = $"Cập nhật trạng thái Ticket #{ticket.Id}",
+                    HtmlBody = $@"
+                            <h3>Xin chào {customer.FullName},</h3>
+                            <p>Ticket hỗ trợ <strong>#{ticket.Id}</strong> của bạn vừa có sự thay đổi trạng thái.</p>
+                            <p>
+                                Trạng thái cũ: <strong>{oldStatus}</strong><br/>
+                                Trạng thái mới: <span style='color:blue; font-weight:bold'>{newStatus}</span>
+                            </p>
+                            <p>Trân trọng,<br/>Đội ngũ hỗ trợ.</p>"
+                };
+                await _emailService.SendEmailAsync(emailDto);
+            }
+
             if (supporterUser != null && !string.IsNullOrEmpty(supporterUser.Email))
             {
                 var emailDto = new Dtos.EmailDto.EmailDto
@@ -226,8 +247,8 @@ namespace HSP.Service.Implementations.Internal
                 BookingId = createDto.BookingId,
                 CustomerId = customerGuid,
                 IssueDescription = createDto.IssueDescription,
-                Status = TicketStatus.NotAccepted, 
-                SupporterId = null, 
+                Status = TicketStatus.NotAccepted,
+                SupporterId = null,
                 DateCreated = DateTime.UtcNow,
                 DateModified = DateTime.UtcNow,
                 IsDeleted = false
@@ -244,7 +265,7 @@ namespace HSP.Service.Implementations.Internal
                 IssueDescription = newTicket.IssueDescription,
                 Status = newTicket.Status.ToString(),
                 DateCreated = newTicket.DateCreated,
-                CustomerName = booking.Customer?.FullName ?? "N/A" 
+                CustomerName = booking.Customer?.FullName ?? "N/A"
             };
         }
     }
