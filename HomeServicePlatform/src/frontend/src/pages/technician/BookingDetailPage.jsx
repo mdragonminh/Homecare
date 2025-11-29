@@ -187,9 +187,7 @@ const BookingDetailPage = () => {
   };
 
   const canRejectBooking = (status) => {
-    return (
-      status === BookingStatus.Pending || status === BookingStatus.Confirmed
-    );
+    return status === BookingStatus.Pending;
   };
 
   const getAvailableStatuses = (currentStatus) => {
@@ -356,25 +354,22 @@ const BookingDetailPage = () => {
               Thông tin khách hàng
             </h3>
             <div className="space-y-4">
-              {/* 1. Tên */}
               <div className="flex items-center">
                 <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
                 <span className="font-medium text-gray-900">
-                  {booking.customerName || "Không có tên"}
+                  {booking.customer?.fullName || booking.customerName || "Không có tên"}
                 </span>
               </div>
 
-              {/* 2. SĐT */}
-              {booking.customerPhone && (
-                <div className="flex items-center">
-                  <PhoneIcon className="h-5 w-5 text-gray-400 mr-3" />
-                  <span className="text-gray-700">{booking.customerPhone}</span>
-                </div>
-              )}
+              <div className="flex items-center">
+                <PhoneIcon className="h-5 w-5 text-gray-400 mr-3" />
+                <span className="text-gray-700">
+                  {booking.customer?.phoneNumber || booking.customerPhone || "N/A"}
+                </span>
+              </div>
 
-              {/* 4. ĐIỂM UY TÍN KHÁCH HÀNG (Average Rating) */}
               <div className="flex items-center border-t border-gray-100 pt-4 mt-2">
-                <StarIcon className="h-5 w-5 text-purple-500 mr-3" /> {/* Dùng màu khác để phân biệt */}
+                <StarIcon className="h-5 w-5 text-purple-500 mr-3" /> 
                 <div>
                   <span className="text-xs text-gray-500 block font-medium uppercase tracking-wide">
                     Uy tín khách hàng
@@ -450,7 +445,6 @@ const BookingDetailPage = () => {
 
               {customerFeedback && myFeedback && <hr className="my-4 border-gray-200" />}
 
-              {/* Technician đánh giá (Mình) */}
               {myFeedback && (
                 <div>
                   <p className="text-sm font-semibold text-blue-600 mb-2">BẠN ĐÃ ĐÁNH GIÁ KHÁCH:</p>

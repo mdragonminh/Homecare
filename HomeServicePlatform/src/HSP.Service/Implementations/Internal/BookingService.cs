@@ -7,6 +7,7 @@ using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
 using HSP.DAL.Extensions;
+using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -22,6 +23,7 @@ namespace HSP.Service.Implementations.Internal
         private readonly IRepository<ChatConversation, Guid> _conversationRepository;
         private readonly IUserRepository _userRepository;
         private readonly IRedisCacheService _redisCacheService;
+        private readonly IEmailService _emailService;
         public BookingService(
                 IRepository<Booking, Guid> bookingRepository,
                 IRepository<BookingItem, Guid> bookingItemRepository,
@@ -31,7 +33,8 @@ namespace HSP.Service.Implementations.Internal
                 IRedisCacheService redisCacheService,
                 IRepository<ChatConversation, Guid> conversationRepository,
                 IUnitOfWork unitOfWork,
-                IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
+                IStringLocalizer<SharedResource> localizer,
+                IEmailService emailService) : base(unitOfWork, localizer)
         {
             _bookingRepository = bookingRepository;
             _bookingItemRepository = bookingItemRepository;
@@ -40,6 +43,7 @@ namespace HSP.Service.Implementations.Internal
             _userRepository = userRepository;
             _redisCacheService = redisCacheService;
             _conversationRepository = conversationRepository;
+            _emailService = emailService;
         }
 
         public async Task<PagedList<BookingDto>> GetAllBookingsAsync(BookingInput input)
@@ -103,6 +107,7 @@ namespace HSP.Service.Implementations.Internal
                 {
                     Id = b.Customer.Id,
                     UserId = b.CustomerId,
+                    FullName = b.Customer.FullName,
                     Email = b.Customer.Email ?? "",
                     PhoneNumber = b.Customer.PhoneNumber ?? ""
                 } : null,
@@ -260,26 +265,24 @@ namespace HSP.Service.Implementations.Internal
 
         public async Task<bool> CancelBookingAsync(CancelBookingDto input, string userId)
         {
-            var booking = await _bookingRepository.GetByIdAsync(input.BookingId);
+            var booking = await _bookingRepository.GetAll(b => b.Customer, b => b.Items)
+                    .FirstOrDefaultAsync(b => b.Id == input.BookingId);
+
             if (booking == null)
                 return false;
 
-            // Verify user is the technician assigned to this booking
             var technicianProfile = await _technicianRepository.GetAll(t => t.User)
                     .FirstOrDefaultAsync(t => t.User.Id.ToString() == userId);
 
             if (technicianProfile == null || booking.TechnicianId != technicianProfile.Id)
                 return false;
 
-            // Check if booking can be cancelled
             if (booking.Status == BookingStatus.Completed || booking.Status == BookingStatus.Cancelled)
                 return false;
 
-            // Update booking status
             booking.Status = BookingStatus.Cancelled;
             booking.DateModified = DateTime.UtcNow;
 
-            // Create cancellation record (we'll use Entity Framework navigation property)
             booking.Cancellation = new BookingCancellation
             {
                 BookingId = booking.Id,
@@ -291,7 +294,84 @@ namespace HSP.Service.Implementations.Internal
             _bookingRepository.Update(booking);
             await _unitOfWork.SaveChangesAsync();
 
+            if (booking.Customer != null && !string.IsNullOrEmpty(booking.Customer.Email))
+            {
+                try
+                {
+                    var serviceName = booking.Items?.FirstOrDefault()?.Service?.Name ?? "Dịch vụ";
+
+                    var emailDto = new EmailDto
+                    {
+                        ToEmail = booking.Customer.Email,
+                        Subject = "⚠️ Thông báo hủy lịch hẹn - HomeService Platform",
+                        HtmlBody = GenerateBookingCancellationEmailTemplate(
+                            booking.Customer.FullName ?? booking.Customer.UserName,
+                            booking.DesiredDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A",
+                            input.Reason
+                        )
+                    };
+
+                    await _emailService.SendEmailAsync(emailDto);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to send cancellation email: {ex.Message}");
+                }
+            }
+
             return true;
+        }
+
+        private string GenerateBookingCancellationEmailTemplate(string customerName, string bookingDate, string reason)
+        {
+            return $@"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset='utf-8'>
+                <style>
+                    body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                    .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                    .icon {{ font-size: 48px; margin-bottom: 20px; }}
+                    .info-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff4d4f; }}
+                    .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 14px; }}
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div class='header'>
+                        <div class='icon'>❌</div>
+                        <h1>Thông báo hủy lịch hẹn</h1>
+                    </div>
+                    <div class='content'>
+                        <p>Xin chào <strong>{customerName}</strong>,</p>
+                        
+                        <p>Chúng tôi rất tiếc phải thông báo rằng lịch hẹn dịch vụ của bạn đã bị hủy bởi kỹ thuật viên.</p>
+                        
+                        <div class='info-box'>
+                            <h3 style='color: #ff4d4f; margin: 0 0 15px 0;'>Chi tiết hủy đơn:</h3>
+                            <ul style='margin: 0; padding-left: 20px;'>
+                                <li><strong>Thời gian hẹn:</strong> {bookingDate}</li>
+                                <li><strong>Lý do hủy:</strong> {reason}</li>
+                            </ul>
+                        </div>
+                        
+                        <p>Nếu bạn cần hỗ trợ đặt lại lịch mới hoặc có thắc mắc, vui lòng liên hệ với bộ phận CSKH.</p>
+                        
+                        <p>Chúng tôi thành thật xin lỗi vì sự bất tiện này.</p>
+                        
+                        <p>Trân trọng,<br>
+                        <strong>Đội ngũ HomeService Platform</strong></p>
+                    </div>
+                    <div class='footer'>
+                        <p>© 2024 HomeService Platform. Tất cả quyền được bảo lưu.</p>
+                        <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+                    </div>
+                </div>
+            </body>
+            </html>";
         }
 
         public async Task<BookingAcceptResultDto> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, List<Guid> ServiceIds,
