@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from "react"
 import { chatbotApi } from "../../services/chatbotApi"
 import { toast } from "sonner"
-import { PaperAirplaneIcon, XMarkIcon, MinusIcon, PlusIcon } from "@heroicons/react/24/solid"
+import { PaperAirplaneIcon, XMarkIcon, MinusIcon, PlusIcon, CheckCircleIcon } from "@heroicons/react/24/solid"
 import { useTranslation } from "react-i18next"
+import { useNavigate } from "react-router-dom"
 
 const ChatMessage = ({ message }) => {
   const isUser = message.sender === "user"
@@ -64,13 +65,75 @@ const ChatMessage = ({ message }) => {
   )
 }
 
+const BookingSuccessModal = ({ isOpen, onClose, onNavigate }) => {
+  if (!isOpen) return null
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-full">
+                <CheckCircleIcon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Đặt lịch thành công!</h2>
+                <p className="text-blue-100 text-sm mt-1">Kỹ thuật viên đã được tìm thấy</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-blue-100 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 py-6 space-y-4">
+          <p className="text-gray-700 text-base leading-relaxed">
+            Lịch hẹn của bạn đã được tạo thành công. Bạn có thể xem và quản lý lịch hẹn trong trang My Bookings.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors font-medium"
+          >
+            Đóng
+          </button>
+          <button
+            onClick={onNavigate}
+            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-medium shadow-md"
+          >
+            Xem lịch hẹn
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export const ChatWidget = ({ onClose }) => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [messages, setMessages] = useState([])
   const [currentMessage, setCurrentMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [conversationId, setConversationId] = useState(null)
   const [isMinimized, setIsMinimized] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   const messagesEndRef = useRef(null)
   const [isInitialized, setIsInitialized] = useState(false)
@@ -129,6 +192,11 @@ export const ChatWidget = ({ onClose }) => {
       const data = await chatbotApi.postMessage(payload)
       const assistantMessage = { sender: "assistant", text: data.response }
       setMessages((prev) => [...prev, assistantMessage])
+      
+      // Check if response contains my-bookings link (matching success)
+      if (data.response && data.response.includes("http://localhost:5173/my-bookings")) {
+        setShowSuccessModal(true)
+      }
     } catch (error) {
       console.error("Error posting message:", error)
       toast.error("Lỗi: Không thể gửi tin nhắn.")
@@ -247,9 +315,18 @@ export const ChatWidget = ({ onClose }) => {
                 </button>
               </form>
             </div>
-          </>
+          </> 
         )}
       </div>
+      
+      <BookingSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        onNavigate={() => {
+          setShowSuccessModal(false)
+          navigate("/my-bookings")
+        }}
+      />
     </div>
   )
 }
