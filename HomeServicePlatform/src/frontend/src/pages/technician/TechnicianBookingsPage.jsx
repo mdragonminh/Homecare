@@ -61,17 +61,23 @@ const TechnicianBookingsPage = () => {
         1,
         100, 
         "",
-        BookingStatus.Pending,
+        "", 
         "",
         ""
       );
-      const pendingOnly = (allBookings.items || []).filter(
-        (booking) => booking.status === BookingStatus.Pending
+      
+      const activeSchedule = (allBookings.items || []).filter(
+        (booking) => 
+          booking.status === BookingStatus.Pending ||
+          booking.status === BookingStatus.Confirmed ||
+          booking.status === BookingStatus.TechnicianOnTheWay ||
+          booking.status === BookingStatus.InProgress
       );
-      setPendingRequests(pendingOnly);
+      
+      setPendingRequests(activeSchedule);
     } catch (error) {
-      console.error("Error fetching pending requests:", error);
-      toast.error("Không thể tải danh sách chờ xử lý");
+      console.error("Error fetching requests:", error);
+      toast.error("Không thể tải lịch trình");
     } finally {
       setLoading(false);
     }
@@ -256,7 +262,7 @@ const TechnicianBookingsPage = () => {
         <div className="text-sm text-gray-600 mb-3">
           <div className="flex items-center mb-1">
             <UserIcon className="h-4 w-4 mr-2 text-blue-500" />
-            {booking.customer?.fullName || "Khách hàng"}
+            {booking.customer?.fullName || booking.customerName || "Khách hàng"}
           </div>
           <div className="flex items-center">
             <PhoneIcon className="h-4 w-4 mr-2 text-green-500" />
