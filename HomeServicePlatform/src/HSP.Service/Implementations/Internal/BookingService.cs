@@ -103,6 +103,14 @@ namespace HSP.Service.Implementations.Internal
                 DateCompleted = b.DateCompleted,
                 DateCreated = b.DateCreated,
                 DateModified = b.DateModified,
+                Service = _bookingItemRepository.GetAll()
+                            .Where(item => item.BookingId == b.Id && !item.IsDeleted)
+                            .Select(item => new Core.Dtos.ServiceDto.HomeServiceDto
+                            {
+                                Id = item.Service.Id,
+                                Name = item.Service.Name,
+                            })
+                            .FirstOrDefault(),
                 Customer = b.Customer != null ? new Core.Dtos.CustomerProfileDto.CustomerProfileDto
                 {
                     Id = b.Customer.Id,
