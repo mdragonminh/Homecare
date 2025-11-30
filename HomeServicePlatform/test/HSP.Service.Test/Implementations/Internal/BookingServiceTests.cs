@@ -4,6 +4,7 @@ using HSP.Core.Enums;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
 using HSP.Core.Resources;
+using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Implementations.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Localization;
@@ -30,6 +31,8 @@ namespace HSP.Service.Test.Implementations.Internal
         private readonly Mock<IRedisCacheService> _mockRedisService;
         private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly Mock<IStringLocalizer<SharedResource>> _mockLocalizer;
+        private readonly Mock<IEmailService> _mockEmailService; // ADDED
+
 
         public BookingServiceTests()
         {
@@ -42,6 +45,8 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockRedisService = new Mock<IRedisCacheService>();
             _mockUnitOfWork = new Mock<IUnitOfWork>();
             _mockLocalizer = new Mock<IStringLocalizer<SharedResource>>();
+            _mockEmailService = new Mock<IEmailService>(); // ✅ KHỞI TẠO MOCK
+
         }
 
         private BookingService CreateService()
@@ -55,7 +60,8 @@ namespace HSP.Service.Test.Implementations.Internal
                 _mockRedisService.Object,
                 _mockConversationRepo.Object,
                 _mockUnitOfWork.Object,
-                _mockLocalizer.Object
+                _mockLocalizer.Object,
+                _mockEmailService.Object // ✅ THÊM VÀO CONSTRUCTOR
             );
         }
 
@@ -695,68 +701,68 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Empty(result.Items);
         }
 
-    //    [Fact]
-    //    public async Task GetAllBookingsAsync_ShouldIncludeFeedbackAndCancellation_WhenAvailable()
-    //    {
-    //        // Arrange
-    //        var bookingId = Guid.NewGuid();
+        //    [Fact]
+        //    public async Task GetAllBookingsAsync_ShouldIncludeFeedbackAndCancellation_WhenAvailable()
+        //    {
+        //        // Arrange
+        //        var bookingId = Guid.NewGuid();
 
-    //        var bookings = new List<Booking>
-    //{
-    //    new Booking
-    //    {
-    //        Id = bookingId,
-    //        CustomerId = Guid.NewGuid(),
-    //        DesiredDate = DateTime.UtcNow,
-    //        ProblemDescription = "Issue",
-    //        Status = BookingStatus.Cancelled,
-    //        DateCreated = DateTime.UtcNow,
-    //        DateModified = DateTime.UtcNow,
-    //        Customer = new AppUser { Id = Guid.NewGuid(), UserName = "User1", IsActive = true },
-    //        Feedback = new BookingFeedback
-    //        {
-    //            BookingId = bookingId,
-    //            Rating = 5,
-    //            Comment = "Great service"
-    //        },
-    //        Cancellation = new BookingCancellation
-    //        {
-    //            BookingId = bookingId,
-    //            Reason = "Customer request",
-    //            CancelledBy = Guid.NewGuid(),
-    //            CancelledAt = DateTime.UtcNow
-    //        }
-    //    }
-    //};
+        //        var bookings = new List<Booking>
+        //{
+        //    new Booking
+        //    {
+        //        Id = bookingId,
+        //        CustomerId = Guid.NewGuid(),
+        //        DesiredDate = DateTime.UtcNow,
+        //        ProblemDescription = "Issue",
+        //        Status = BookingStatus.Cancelled,
+        //        DateCreated = DateTime.UtcNow,
+        //        DateModified = DateTime.UtcNow,
+        //        Customer = new AppUser { Id = Guid.NewGuid(), UserName = "User1", IsActive = true },
+        //        Feedback = new BookingFeedback
+        //        {
+        //            BookingId = bookingId,
+        //            Rating = 5,
+        //            Comment = "Great service"
+        //        },
+        //        Cancellation = new BookingCancellation
+        //        {
+        //            BookingId = bookingId,
+        //            Reason = "Customer request",
+        //            CancelledBy = Guid.NewGuid(),
+        //            CancelledAt = DateTime.UtcNow
+        //        }
+        //    }
+        //};
 
-    //        var bookingsMock = bookings.BuildMock();
-    //        _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-    //            .Returns(bookingsMock);
+        //        var bookingsMock = bookings.BuildMock();
+        //        _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+        //            .Returns(bookingsMock);
 
-    //        _mockBookingItemRepo.Setup(r => r.GetAll())
-    //            .Returns(new List<BookingItem>().BuildMock());
+        //        _mockBookingItemRepo.Setup(r => r.GetAll())
+        //            .Returns(new List<BookingItem>().BuildMock());
 
-    //        var input = new BookingInput
-    //        {
-    //            PageNumber = 1,
-    //            PageSize = 10
-    //        };
+        //        var input = new BookingInput
+        //        {
+        //            PageNumber = 1,
+        //            PageSize = 10
+        //        };
 
-    //        var service = CreateService();
+        //        var service = CreateService();
 
-    //        // Act
-    //        var result = await service.GetAllBookingsAsync(input);
+        //        // Act
+        //        var result = await service.GetAllBookingsAsync(input);
 
-    //        // Assert
-    //        Assert.NotNull(result);
-    //        Assert.Single(result.Items);
-    //        var booking = result.Items.First();
-    //        Assert.NotNull(booking.Feedback);
-    //        Assert.Equal(5, booking.Feedback.Rating);
-    //        Assert.Equal("Great service", booking.Feedback.Comment);
-    //        Assert.NotNull(booking.Cancellation);
-    //        Assert.Equal("Customer request", booking.Cancellation.Reason);
-    //    }
+        //        // Assert
+        //        Assert.NotNull(result);
+        //        Assert.Single(result.Items);
+        //        var booking = result.Items.First();
+        //        Assert.NotNull(booking.Feedback);
+        //        Assert.Equal(5, booking.Feedback.Rating);
+        //        Assert.Equal("Great service", booking.Feedback.Comment);
+        //        Assert.NotNull(booking.Cancellation);
+        //        Assert.Equal("Customer request", booking.Cancellation.Reason);
+        //    }
 
         [Fact]
         public async Task GetAllBookingsAsync_ShouldApplyPagination_Correctly()
@@ -906,6 +912,344 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Equal(2, result.Items.Count); // Last page only has 2 items
             Assert.True(result.HasPrevious); // Has previous pages
             Assert.False(result.HasNext); // Last page has no next
+        }
+
+        // ================== GET ALL BOOKINGS - FEEDBACKS & CANCELLATION ==================
+
+        [Fact]
+        public async Task GetAllBookingsAsync_ShouldIncludeFeedbacks_InBookingList()
+        {
+            // Arrange
+            var bookingId1 = Guid.NewGuid();
+            var bookingId2 = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId1,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            ProblemDescription = "Issue 1",
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = customerId, UserName = "Customer1", IsActive = true },
+            Feedbacks = new List<BookingFeedback>
+            {
+                new BookingFeedback
+                {
+                    BookingId = bookingId1,
+                    Rating = 5,
+                    Comment = "Great!",
+                    Source = FeedbackSource.Customer
+                },
+                new BookingFeedback
+                {
+                    BookingId = bookingId1,
+                    Rating = 4,
+                    Comment = "Good customer",
+                    Source = FeedbackSource.Technician
+                }
+            }
+        },
+        new Booking
+        {
+            Id = bookingId2,
+            CustomerId = Guid.NewGuid(),
+            DesiredDate = DateTime.UtcNow,
+            ProblemDescription = "Issue 2",
+            Status = BookingStatus.Pending,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = Guid.NewGuid(), UserName = "Customer2", IsActive = true },
+            Feedbacks = new List<BookingFeedback>()
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll())
+                .Returns(new List<BookingItem>().BuildMock());
+
+            var input = new BookingInput { PageNumber = 1, PageSize = 10 };
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetAllBookingsAsync(input);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.TotalCount);
+
+            var booking1 = result.Items.First(b => b.Id == bookingId1);
+            Assert.Equal(2, booking1.Feedbacks.Count);
+            Assert.Contains(booking1.Feedbacks, f => f.Rating == 5 && f.Source == FeedbackSource.Customer);
+            Assert.Contains(booking1.Feedbacks, f => f.Rating == 4 && f.Source == FeedbackSource.Technician);
+
+            var booking2 = result.Items.First(b => b.Id == bookingId2);
+            Assert.Empty(booking2.Feedbacks);
+        }
+
+        [Fact]
+        public async Task GetAllBookingsAsync_ShouldIncludeCancellation_InBookingList()
+        {
+            // Arrange
+            var bookingId1 = Guid.NewGuid();
+            var bookingId2 = Guid.NewGuid();
+            var cancelledBy = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId1,
+            CustomerId = Guid.NewGuid(),
+            DesiredDate = DateTime.UtcNow,
+            ProblemDescription = "Cancelled Issue",
+            Status = BookingStatus.Cancelled,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = Guid.NewGuid(), UserName = "Customer1", IsActive = true },
+            Cancellation = new BookingCancellation
+            {
+                BookingId = bookingId1,
+                Reason = "Weather conditions",
+                CancelledBy = cancelledBy,
+                CancelledAt = DateTime.UtcNow
+            }
+        },
+        new Booking
+        {
+            Id = bookingId2,
+            CustomerId = Guid.NewGuid(),
+            DesiredDate = DateTime.UtcNow,
+            ProblemDescription = "Active Issue",
+            Status = BookingStatus.Confirmed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = Guid.NewGuid(), UserName = "Customer2", IsActive = true },
+            Cancellation = null
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll())
+                .Returns(new List<BookingItem>().BuildMock());
+
+            var input = new BookingInput { PageNumber = 1, PageSize = 10 };
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetAllBookingsAsync(input);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.TotalCount);
+
+            var cancelledBooking = result.Items.First(b => b.Id == bookingId1);
+            Assert.NotNull(cancelledBooking.Cancellation);
+            Assert.Equal("Weather conditions", cancelledBooking.Cancellation.Reason);
+            Assert.Equal(cancelledBy, cancelledBooking.Cancellation.CancelledBy);
+
+            var activeBooking = result.Items.First(b => b.Id == bookingId2);
+            Assert.Null(activeBooking.Cancellation);
+        }
+
+        [Fact]
+        public async Task GetAllBookingsAsync_ShouldMapAllFeedbackProperties_Correctly()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            ProblemDescription = "Test",
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = customerId, UserName = "Customer", IsActive = true },
+            Feedbacks = new List<BookingFeedback>
+            {
+                new BookingFeedback
+                {
+                    BookingId = bookingId,
+                    Rating = 3,
+                    Comment = "Test comment",
+                    Source = FeedbackSource.Customer
+                }
+            }
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll())
+                .Returns(new List<BookingItem>().BuildMock());
+
+            var input = new BookingInput { PageNumber = 1, PageSize = 10 };
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetAllBookingsAsync(input);
+
+            // Assert
+            Assert.NotNull(result);
+            var booking = result.Items.First();
+            var feedback = booking.Feedbacks.First();
+
+            Assert.Equal(bookingId, feedback.BookingId);
+            Assert.Equal(3, feedback.Rating);
+            Assert.Equal("Test comment", feedback.Comment);
+            Assert.Equal(FeedbackSource.Customer, feedback.Source);
+        }
+
+        // ================== UPDATE BOOKING STATUS - ADDITIONAL TESTS ==================
+
+        [Fact]
+        public async Task UpdateBookingStatusAsync_ShouldNotSetDateCompleted_WhenStatusIsNotCompleted()
+        {
+            // Arrange
+            var technicianId = Guid.NewGuid();
+            var technicianUserId = Guid.NewGuid();
+
+            var booking = new Booking
+            {
+                Id = Guid.NewGuid(),
+                TechnicianId = technicianId,
+                Status = BookingStatus.Pending,
+                CustomerId = Guid.NewGuid(),
+                DesiredDate = DateTime.UtcNow,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                DateCompleted = null
+            };
+
+            var technicianProfile = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = technicianUserId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = technicianUserId }
+            };
+
+            _mockBookingRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(booking);
+
+            var techs = new List<TechnicianProfile> { technicianProfile }.BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var service = CreateService();
+            var input = new UpdateBookingStatusDto
+            {
+                BookingId = booking.Id,
+                Status = BookingStatus.InProgress
+            };
+
+            // Act
+            var result = await service.UpdateBookingStatusAsync(input, technicianUserId.ToString());
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(BookingStatus.InProgress, booking.Status);
+            Assert.Null(booking.DateCompleted); // Should remain null
+            Assert.NotNull(booking.DateModified);
+        }
+
+        [Fact]
+        public async Task UpdateBookingStatusAsync_ShouldUpdateFromPendingToConfirmed()
+        {
+            // Arrange
+            var technicianId = Guid.NewGuid();
+            var technicianUserId = Guid.NewGuid();
+
+            var booking = new Booking
+            {
+                Id = Guid.NewGuid(),
+                TechnicianId = technicianId,
+                Status = BookingStatus.Pending,
+                CustomerId = Guid.NewGuid(),
+                DesiredDate = DateTime.UtcNow,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow
+            };
+
+            var technicianProfile = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = technicianUserId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = technicianUserId }
+            };
+
+            _mockBookingRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(booking);
+
+            var techs = new List<TechnicianProfile> { technicianProfile }.BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var service = CreateService();
+            var input = new UpdateBookingStatusDto
+            {
+                BookingId = booking.Id,
+                Status = BookingStatus.Confirmed
+            };
+
+            // Act
+            var result = await service.UpdateBookingStatusAsync(input, technicianUserId.ToString());
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(BookingStatus.Confirmed, booking.Status);
+        }
+
+        [Fact]
+        public async Task UpdateBookingStatusAsync_ShouldReturnFalse_WhenTechnicianProfileNotFound()
+        {
+            // Arrange
+            var booking = new Booking
+            {
+                Id = Guid.NewGuid(),
+                TechnicianId = Guid.NewGuid(),
+                Status = BookingStatus.Pending,
+                CustomerId = Guid.NewGuid(),
+                DesiredDate = DateTime.UtcNow
+            };
+
+            _mockBookingRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(booking);
+
+            var techs = new List<TechnicianProfile>().BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            var service = CreateService();
+            var input = new UpdateBookingStatusDto
+            {
+                BookingId = booking.Id,
+                Status = BookingStatus.Completed
+            };
+
+            // Act
+            var result = await service.UpdateBookingStatusAsync(input, Guid.NewGuid().ToString());
+
+            // Assert
+            Assert.False(result);
+            _mockBookingRepo.Verify(r => r.Update(It.IsAny<Booking>()), Times.Never);
         }
 
         // ================== GET BOOKING DETAIL ==================
@@ -1315,6 +1659,542 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Equal(createdAt, payment.DateCreated);
         }
 
+        // ================== GET BOOKING DETAIL - CUSTOMER RATING ==================
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldCalculateCustomerAverageRating_FromTechnicianFeedbacks()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var otherBookingId1 = Guid.NewGuid();
+            var otherBookingId2 = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser
+            {
+                Id = customerId,
+                UserName = "Customer",
+                FullName = "Customer Name",
+                IsActive = true
+            },
+            Payments = new List<Payment>(),
+            Feedbacks = new List<BookingFeedback>()
+        },
+        new Booking
+        {
+            Id = otherBookingId1,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Feedbacks = new List<BookingFeedback>
+            {
+                new BookingFeedback
+                {
+                    BookingId = otherBookingId1,
+                    Rating = 5,
+                    Comment = "Great customer",
+                    Source = FeedbackSource.Technician
+                }
+            }
+        },
+        new Booking
+        {
+            Id = otherBookingId2,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Feedbacks = new List<BookingFeedback>
+            {
+                new BookingFeedback
+                {
+                    BookingId = otherBookingId2,
+                    Rating = 3,
+                    Comment = "Average",
+                    Source = FeedbackSource.Technician
+                }
+            }
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(new List<TechnicianProfile>().BuildMock());
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetBookingDetailAsync(bookingId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.CustomerAverageRating);
+            Assert.Equal(4.0, result.CustomerAverageRating); // (5 + 3) / 2 = 4.0
+            Assert.Equal(2, result.CustomerRatingCount);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldExcludeCustomerFeedbacks_FromAverageRating()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var otherBookingId = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = customerId, UserName = "Customer", IsActive = true },
+            Payments = new List<Payment>(),
+            Feedbacks = new List<BookingFeedback>()
+        },
+        new Booking
+        {
+            Id = otherBookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Feedbacks = new List<BookingFeedback>
+            {
+                new BookingFeedback
+                {
+                    BookingId = otherBookingId,
+                    Rating = 5,
+                    Source = FeedbackSource.Technician
+                },
+                new BookingFeedback
+                {
+                    BookingId = otherBookingId,
+                    Rating = 1, // This should be excluded (Customer feedback)
+                    Source = FeedbackSource.Customer
+                }
+            }
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(new List<TechnicianProfile>().BuildMock());
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetBookingDetailAsync(bookingId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.CustomerAverageRating);
+            Assert.Equal(5.0, result.CustomerAverageRating); // Only technician rating counted
+            Assert.Equal(1, result.CustomerRatingCount);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldExcludeCurrentBooking_FromAverageRating()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = customerId, UserName = "Customer", IsActive = true },
+            Payments = new List<Payment>(),
+            Feedbacks = new List<BookingFeedback>
+            {
+                new BookingFeedback
+                {
+                    BookingId = bookingId,
+                    Rating = 5,
+                    Source = FeedbackSource.Technician
+                }
+            }
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(new List<TechnicianProfile>().BuildMock());
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetBookingDetailAsync(bookingId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Null(result.CustomerAverageRating); // Current booking excluded
+            Assert.Equal(0, result.CustomerRatingCount);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldReturnNull_ForCustomerAverageRating_WhenNoRatings()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Pending,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = customerId, UserName = "Customer", IsActive = true },
+            Payments = new List<Payment>(),
+            Feedbacks = new List<BookingFeedback>()
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(new List<TechnicianProfile>().BuildMock());
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetBookingDetailAsync(bookingId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Null(result.CustomerAverageRating);
+            Assert.Equal(0, result.CustomerRatingCount);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldRoundAverageRating_ToOneDecimalPlace()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var otherBookingId1 = Guid.NewGuid();
+            var otherBookingId2 = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = customerId, UserName = "Customer", IsActive = true },
+            Payments = new List<Payment>(),
+            Feedbacks = new List<BookingFeedback>()
+        },
+        new Booking
+        {
+            Id = otherBookingId1,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Feedbacks = new List<BookingFeedback>
+            {
+                new BookingFeedback { Rating = 4, Source = FeedbackSource.Technician }
+            }
+        },
+        new Booking
+        {
+            Id = otherBookingId2,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Feedbacks = new List<BookingFeedback>
+            {
+                new BookingFeedback { Rating = 5, Source = FeedbackSource.Technician }
+            }
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(new List<TechnicianProfile>().BuildMock());
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetBookingDetailAsync(bookingId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.CustomerAverageRating);
+            Assert.Equal(4.5, result.CustomerAverageRating); // (4 + 5) / 2 = 4.5
+        }
+
+        // ================== GET BOOKING DETAIL - FEEDBACKS & CANCELLATION ==================
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldMapFeedbacks_Correctly()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = customerId, UserName = "Customer", IsActive = true },
+            Payments = new List<Payment>(),
+            Feedbacks = new List<BookingFeedback>
+            {
+                new BookingFeedback
+                {
+                    BookingId = bookingId,
+                    Rating = 5,
+                    Comment = "Excellent service",
+                    Source = FeedbackSource.Customer
+                },
+                new BookingFeedback
+                {
+                    BookingId = bookingId,
+                    Rating = 4,
+                    Comment = "Good customer",
+                    Source = FeedbackSource.Technician
+                }
+            }
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(new List<TechnicianProfile>().BuildMock());
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetBookingDetailAsync(bookingId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Feedbacks.Count);
+
+            var customerFeedback = result.Feedbacks.First(f => f.Source == FeedbackSource.Customer);
+            Assert.Equal(bookingId, customerFeedback.BookingId);
+            Assert.Equal(5, customerFeedback.Rating);
+            Assert.Equal("Excellent service", customerFeedback.Comment);
+
+            var technicianFeedback = result.Feedbacks.First(f => f.Source == FeedbackSource.Technician);
+            Assert.Equal(bookingId, technicianFeedback.BookingId);
+            Assert.Equal(4, technicianFeedback.Rating);
+            Assert.Equal("Good customer", technicianFeedback.Comment);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldReturnEmptyFeedbacks_WhenNoFeedbacks()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Pending,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = customerId, UserName = "Customer", IsActive = true },
+            Payments = new List<Payment>(),
+            Feedbacks = new List<BookingFeedback>()
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(new List<TechnicianProfile>().BuildMock());
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetBookingDetailAsync(bookingId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result.Feedbacks);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldMapCancellation_Correctly()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var cancelledBy = Guid.NewGuid();
+            var cancelledAt = DateTime.UtcNow.AddHours(-2);
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Cancelled,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = customerId, UserName = "Customer", IsActive = true },
+            Payments = new List<Payment>(),
+            Feedbacks = new List<BookingFeedback>(),
+            Cancellation = new BookingCancellation
+            {
+                BookingId = bookingId,
+                Reason = "Customer requested cancellation",
+                CancelledBy = cancelledBy,
+                CancelledAt = cancelledAt
+            }
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(new List<TechnicianProfile>().BuildMock());
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetBookingDetailAsync(bookingId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Cancellation);
+            Assert.Equal(bookingId, result.Cancellation.BookingId);
+            Assert.Equal("Customer requested cancellation", result.Cancellation.Reason);
+            Assert.Equal(cancelledBy, result.Cancellation.CancelledBy);
+            Assert.Equal(cancelledAt, result.Cancellation.CancelledAt);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldReturnNullCancellation_WhenNotCancelled()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            Id = bookingId,
+            CustomerId = customerId,
+            DesiredDate = DateTime.UtcNow,
+            Status = BookingStatus.Completed,
+            DateCreated = DateTime.UtcNow,
+            DateModified = DateTime.UtcNow,
+            Customer = new AppUser { Id = customerId, UserName = "Customer", IsActive = true },
+            Payments = new List<Payment>(),
+            Feedbacks = new List<BookingFeedback>(),
+            Cancellation = null
+        }
+    };
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings.BuildMock());
+
+            _mockBookingItemRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(new List<TechnicianProfile>().BuildMock());
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.GetBookingDetailAsync(bookingId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Null(result.Cancellation);
+        }
+
         // ================== UPDATE BOOKING STATUS ==================
         [Fact]
         public async Task UpdateBookingStatusAsync_ShouldReturnTrue_WhenValid()
@@ -1608,6 +2488,538 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockBookingRepo.Verify(r => r.Update(It.IsAny<Booking>()), Times.Never);
         }
 
+        // ================== CANCEL BOOKING - EMAIL SENDING ==================
+
+        [Fact]
+        public async Task CancelBookingAsync_ShouldSendEmail_WhenCustomerHasEmail()
+        {
+            // Arrange
+            var technicianId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+            var desiredDate = DateTime.UtcNow.AddDays(1);
+            var serviceId = Guid.NewGuid();
+
+            var customer = new AppUser
+            {
+                Id = customerId,
+                Email = "customer@test.com",
+                FullName = "John Doe",
+                UserName = "johndoe",
+                IsActive = true
+            };
+
+            var service = new Core.Entities.Service
+            {
+                Id = serviceId,
+                Name = "Plumbing Service"
+            };
+
+            var bookingItem = new BookingItem
+            {
+                Id = Guid.NewGuid(),
+                BookingId = bookingId,
+                ServiceId = serviceId,
+                Service = service,
+                Price = 100
+            };
+
+            var booking = new Booking
+            {
+                Id = bookingId,
+                TechnicianId = technicianId,
+                CustomerId = customerId,
+                Status = BookingStatus.Confirmed,
+                DesiredDate = desiredDate,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                Customer = customer,
+                Items = new List<BookingItem> { bookingItem }
+            };
+
+            var bookings = new List<Booking> { booking }.BuildMock();
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings);
+
+            var technicianProfile = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = userId }
+            };
+
+            var techs = new List<TechnicianProfile> { technicianProfile }.BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            _mockEmailService.Setup(e => e.SendEmailAsync(It.IsAny<EmailDto>()))
+                .Returns(Task.CompletedTask);
+
+            var bookingService = CreateService();
+            var input = new CancelBookingDto
+            {
+                BookingId = bookingId,
+                Reason = "Unable to attend"
+            };
+
+            // Act
+            var result = await bookingService.CancelBookingAsync(input, userId.ToString());
+
+            // Assert
+            Assert.True(result);
+
+            _mockEmailService.Verify(e => e.SendEmailAsync(It.Is<EmailDto>(dto =>
+                dto.ToEmail == "customer@test.com" &&
+                dto.Subject == "⚠️ Thông báo hủy lịch hẹn - HomeService Platform" &&
+                dto.HtmlBody.Contains("John Doe") &&
+                dto.HtmlBody.Contains("Unable to attend")
+            )), Times.Once);
+        }
+
+        [Fact]
+        public async Task CancelBookingAsync_ShouldNotSendEmail_WhenCustomerEmailIsNull()
+        {
+            // Arrange
+            var technicianId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+
+            var customer = new AppUser
+            {
+                Id = customerId,
+                Email = null,
+                FullName = "John Doe",
+                UserName = "johndoe",
+                IsActive = true
+            };
+
+            var booking = new Booking
+            {
+                Id = bookingId,
+                TechnicianId = technicianId,
+                CustomerId = customerId,
+                Status = BookingStatus.Confirmed,
+                DesiredDate = DateTime.UtcNow,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                Customer = customer,
+                Items = new List<BookingItem>()
+            };
+
+            var bookings = new List<Booking> { booking }.BuildMock();
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings);
+
+            var technicianProfile = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = userId }
+            };
+
+            var techs = new List<TechnicianProfile> { technicianProfile }.BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var bookingService = CreateService();
+            var input = new CancelBookingDto
+            {
+                BookingId = bookingId,
+                Reason = "Unable to attend"
+            };
+
+            // Act
+            var result = await bookingService.CancelBookingAsync(input, userId.ToString());
+
+            // Assert
+            Assert.True(result);
+            _mockEmailService.Verify(e => e.SendEmailAsync(It.IsAny<EmailDto>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CancelBookingAsync_ShouldNotSendEmail_WhenCustomerEmailIsEmpty()
+        {
+            // Arrange
+            var technicianId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+
+            var customer = new AppUser
+            {
+                Id = customerId,
+                Email = "",
+                FullName = "John Doe",
+                UserName = "johndoe",
+                IsActive = true
+            };
+
+            var booking = new Booking
+            {
+                Id = bookingId,
+                TechnicianId = technicianId,
+                CustomerId = customerId,
+                Status = BookingStatus.Confirmed,
+                DesiredDate = DateTime.UtcNow,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                Customer = customer,
+                Items = new List<BookingItem>()
+            };
+
+            var bookings = new List<Booking> { booking }.BuildMock();
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings);
+
+            var technicianProfile = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = userId }
+            };
+
+            var techs = new List<TechnicianProfile> { technicianProfile }.BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var bookingService = CreateService();
+            var input = new CancelBookingDto
+            {
+                BookingId = bookingId,
+                Reason = "Unable to attend"
+            };
+
+            // Act
+            var result = await bookingService.CancelBookingAsync(input, userId.ToString());
+
+            // Assert
+            Assert.True(result);
+            _mockEmailService.Verify(e => e.SendEmailAsync(It.IsAny<EmailDto>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CancelBookingAsync_ShouldNotSendEmail_WhenCustomerIsNull()
+        {
+            // Arrange
+            var technicianId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+
+            var booking = new Booking
+            {
+                Id = bookingId,
+                TechnicianId = technicianId,
+                CustomerId = Guid.NewGuid(),
+                Status = BookingStatus.Confirmed,
+                DesiredDate = DateTime.UtcNow,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                Customer = null,
+                Items = new List<BookingItem>()
+            };
+
+            var bookings = new List<Booking> { booking }.BuildMock();
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings);
+
+            var technicianProfile = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = userId }
+            };
+
+            var techs = new List<TechnicianProfile> { technicianProfile }.BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var bookingService = CreateService();
+            var input = new CancelBookingDto
+            {
+                BookingId = bookingId,
+                Reason = "Unable to attend"
+            };
+
+            // Act
+            var result = await bookingService.CancelBookingAsync(input, userId.ToString());
+
+            // Assert
+            Assert.True(result);
+            _mockEmailService.Verify(e => e.SendEmailAsync(It.IsAny<EmailDto>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CancelBookingAsync_ShouldStillSucceed_WhenEmailSendingFails()
+        {
+            // Arrange
+            var technicianId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+
+            var customer = new AppUser
+            {
+                Id = customerId,
+                Email = "customer@test.com",
+                FullName = "John Doe",
+                UserName = "johndoe",
+                IsActive = true
+            };
+
+            var booking = new Booking
+            {
+                Id = bookingId,
+                TechnicianId = technicianId,
+                CustomerId = customerId,
+                Status = BookingStatus.Confirmed,
+                DesiredDate = DateTime.UtcNow,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                Customer = customer,
+                Items = new List<BookingItem>()
+            };
+
+            var bookings = new List<Booking> { booking }.BuildMock();
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings);
+
+            var technicianProfile = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = userId }
+            };
+
+            var techs = new List<TechnicianProfile> { technicianProfile }.BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            _mockEmailService.Setup(e => e.SendEmailAsync(It.IsAny<EmailDto>()))
+                .ThrowsAsync(new Exception("Email service unavailable"));
+
+            var bookingService = CreateService();
+            var input = new CancelBookingDto
+            {
+                BookingId = bookingId,
+                Reason = "Unable to attend"
+            };
+
+            // Act
+            var result = await bookingService.CancelBookingAsync(input, userId.ToString());
+
+            // Assert
+            Assert.True(result); // Should still succeed even if email fails
+            Assert.Equal(BookingStatus.Cancelled, booking.Status);
+            Assert.NotNull(booking.Cancellation);
+        }
+
+        [Fact]
+        public async Task CancelBookingAsync_EmailTemplate_ShouldContainAllRequiredInformation()
+        {
+            // Arrange
+            var technicianId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+            var desiredDate = new DateTime(2024, 12, 25, 14, 30, 0);
+
+            var customer = new AppUser
+            {
+                Id = customerId,
+                Email = "customer@test.com",
+                FullName = "John Doe",
+                UserName = "johndoe",
+                IsActive = true
+            };
+
+            var booking = new Booking
+            {
+                Id = bookingId,
+                TechnicianId = technicianId,
+                CustomerId = customerId,
+                Status = BookingStatus.Confirmed,
+                DesiredDate = desiredDate,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                Customer = customer,
+                Items = new List<BookingItem>()
+            };
+
+            var bookings = new List<Booking> { booking }.BuildMock();
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings);
+
+            var technicianProfile = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = userId }
+            };
+
+            var techs = new List<TechnicianProfile> { technicianProfile }.BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            string capturedEmailBody = null;
+            _mockEmailService.Setup(e => e.SendEmailAsync(It.IsAny<EmailDto>()))
+                .Callback<EmailDto>(dto => capturedEmailBody = dto.HtmlBody)
+                .Returns(Task.CompletedTask);
+
+            var bookingService = CreateService();
+            var input = new CancelBookingDto
+            {
+                BookingId = bookingId,
+                Reason = "Emergency situation"
+            };
+
+            // Act
+            var result = await bookingService.CancelBookingAsync(input, userId.ToString());
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(capturedEmailBody);
+            Assert.Contains("John Doe", capturedEmailBody);
+            Assert.Contains("25/12/2024 14:30", capturedEmailBody);
+            Assert.Contains("Emergency situation", capturedEmailBody);
+            Assert.Contains("Thông báo hủy lịch hẹn", capturedEmailBody);
+        }
+
+        [Fact]
+        public async Task CancelBookingAsync_ShouldUseUserNameAsFallback_WhenFullNameIsNull()
+        {
+            // Arrange
+            var technicianId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+
+            var customer = new AppUser
+            {
+                Id = customerId,
+                Email = "customer@test.com",
+                FullName = null,
+                UserName = "johndoe",
+                IsActive = true
+            };
+
+            var booking = new Booking
+            {
+                Id = bookingId,
+                TechnicianId = technicianId,
+                CustomerId = customerId,
+                Status = BookingStatus.Confirmed,
+                DesiredDate = DateTime.UtcNow,
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow,
+                Customer = customer,
+                Items = new List<BookingItem>()
+            };
+
+            var bookings = new List<Booking> { booking }.BuildMock();
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings);
+
+            var technicianProfile = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = userId }
+            };
+
+            var techs = new List<TechnicianProfile> { technicianProfile }.BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            string capturedEmailBody = null;
+            _mockEmailService.Setup(e => e.SendEmailAsync(It.IsAny<EmailDto>()))
+                .Callback<EmailDto>(dto => capturedEmailBody = dto.HtmlBody)
+                .Returns(Task.CompletedTask);
+
+            var bookingService = CreateService();
+            var input = new CancelBookingDto
+            {
+                BookingId = bookingId,
+                Reason = "Test"
+            };
+
+            // Act
+            var result = await bookingService.CancelBookingAsync(input, userId.ToString());
+
+            // Assert
+            Assert.True(result);
+            Assert.Contains("johndoe", capturedEmailBody); // Should use username
+        }
+
+        [Fact]
+        public async Task CancelBookingAsync_ShouldReturnFalse_WhenTechnicianProfileNotFound()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var technicianId = Guid.NewGuid();
+
+            var booking = new Booking
+            {
+                Id = bookingId,
+                TechnicianId = technicianId,
+                Status = BookingStatus.Confirmed,
+                CustomerId = Guid.NewGuid(),
+                DesiredDate = DateTime.UtcNow
+            };
+
+            var bookings = new List<Booking> { booking }.BuildMock();
+
+            _mockBookingRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(bookings);
+
+            var techs = new List<TechnicianProfile>().BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                .Returns(techs);
+
+            var bookingService = CreateService();
+            var input = new CancelBookingDto
+            {
+                BookingId = bookingId,
+                Reason = "Test"
+            };
+
+            // Act
+            var result = await bookingService.CancelBookingAsync(input, Guid.NewGuid().ToString());
+
+            // Assert
+            Assert.False(result);
+            _mockBookingRepo.Verify(r => r.Update(It.IsAny<Booking>()), Times.Never);
+        }
+
         // ================== ACCEPT BOOKING EMAIL ==================
         [Fact]
         public async Task AcceptBookingEmailAsync_ShouldReturnSuccess_WhenValid()
@@ -1633,8 +3045,18 @@ namespace HSP.Service.Test.Implementations.Internal
                 {
                     Id = technicianUserId,
                     FullName = "Tech Full Name"
-                }
+                },
+                Services = new List<Core.Entities.Service>
+    {
+        new Core.Entities.Service
+        {
+            Id = serviceId,
+            Name = "Test Service",
+            Price = 100
+        }
+    }
             };
+
 
             _mockTechnicianRepo.Setup(r => r.GetAll())
                 .Returns(new List<TechnicianProfile> { technician }
@@ -1831,6 +3253,421 @@ namespace HSP.Service.Test.Implementations.Internal
 
             Assert.False(result.IsSuccess);
             Assert.Equal("Không tìm thấy dịch vụ hợp lệ.", result.Message);
+        }
+
+        // ================== ACCEPT BOOKING EMAIL - EDGE CASES ==================
+
+        [Fact]
+        public async Task AcceptBookingEmailAsync_ShouldReturnFailure_WhenTokenIsEmpty()
+        {
+            // Arrange
+            var service = CreateService();
+            var token = Guid.Empty.ToString();
+
+            _mockRedisService.Setup(r => r.GetAsync<Guid>($"accept_{token}"))
+                .ReturnsAsync(Guid.Empty);
+
+            // Act
+            var result = await service.AcceptBookingEmailAsync(
+                Guid.NewGuid(), Guid.NewGuid(), new List<Guid>(), token, DateTime.UtcNow);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Token không hợp lệ hoặc kỹ thuật viên không khớp.", result.Message);
+        }
+
+        [Fact]
+        public async Task AcceptBookingEmailAsync_ShouldReturnFailure_WhenServicesListIsEmpty()
+        {
+            // Arrange
+            var customerId = Guid.NewGuid();
+            var technicianId = Guid.NewGuid();
+            var technicianUserId = Guid.NewGuid();
+            var token = "valid-token";
+
+            _mockRedisService.Setup(r => r.GetAsync<string>($"waiting_{token}")).ReturnsAsync("exists");
+            _mockRedisService.Setup(r => r.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(technicianId);
+
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = technicianUserId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = technicianUserId },
+                Services = new List<Core.Entities.Service>()
+            };
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockTechnicianRepo.Setup(r => r.GetAll()).Returns(technicians);
+
+            var customer = new AppUser { Id = customerId };
+            _mockUserRepo.Setup(r => r.FindByIdAsync(customerId)).ReturnsAsync(customer);
+
+            var services = new List<Core.Entities.Service>().BuildMock();
+            _mockServiceRepo.Setup(r => r.GetAll()).Returns(services);
+
+            var bookingService = CreateService();
+
+            // Act
+            var result = await bookingService.AcceptBookingEmailAsync(
+                customerId, technicianId, new List<Guid>(), token, DateTime.UtcNow);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal("Không tìm thấy dịch vụ hợp lệ.", result.Message);
+        }
+
+        [Fact]
+        public async Task AcceptBookingEmailAsync_ShouldFilterServices_ByTechnicianAvailableServices()
+        {
+            // Arrange
+            var customerId = Guid.NewGuid();
+            var technicianId = Guid.NewGuid();
+            var technicianUserId = Guid.NewGuid();
+            var serviceId1 = Guid.NewGuid();
+            var serviceId2 = Guid.NewGuid();
+            var serviceId3 = Guid.NewGuid(); // Not in technician services
+            var token = "valid-token";
+
+            _mockRedisService.Setup(r => r.GetAsync<string>($"waiting_{token}")).ReturnsAsync("exists");
+            _mockRedisService.Setup(r => r.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(technicianId);
+
+            var technicianServices = new List<Core.Entities.Service>
+    {
+        new Core.Entities.Service { Id = serviceId1, Name = "Service 1", Price = 100 },
+        new Core.Entities.Service { Id = serviceId2, Name = "Service 2", Price = 200 }
+    };
+
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = technicianUserId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = technicianUserId },
+                Services = technicianServices
+            };
+
+            _mockTechnicianRepo.Setup(r => r.GetAll())
+                .Returns(new List<TechnicianProfile> { technician }.BuildMockDbSet().Object);
+
+            var customer = new AppUser { Id = customerId };
+            _mockUserRepo.Setup(r => r.FindByIdAsync(customerId)).ReturnsAsync(customer);
+
+            var allServices = new List<Core.Entities.Service>
+    {
+        new Core.Entities.Service { Id = serviceId1, Name = "Service 1", Price = 100 },
+        new Core.Entities.Service { Id = serviceId2, Name = "Service 2", Price = 200 },
+        new Core.Entities.Service { Id = serviceId3, Name = "Service 3", Price = 300 }
+    };
+
+            _mockServiceRepo.Setup(r => r.GetAll())
+                .Returns(allServices.BuildMockDbSet().Object);
+
+            List<BookingItem> capturedItems = null;
+            _mockBookingItemRepo.Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<BookingItem>>()))
+                .Callback<IEnumerable<BookingItem>>(items => capturedItems = items.ToList())
+                .Returns(Task.CompletedTask);
+
+            _mockBookingRepo.Setup(r => r.AddAsync(It.IsAny<Booking>()))
+                .ReturnsAsync((Booking b) => b);
+
+            _mockConversationRepo.Setup(r => r.AddAsync(It.IsAny<ChatConversation>()))
+                .ReturnsAsync((ChatConversation c) => c);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var mockTransaction = new Mock<IDbContextTransaction>();
+            mockTransaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _mockUnitOfWork.Setup(u => u.BeginTransactionAsync())
+                .ReturnsAsync(mockTransaction.Object);
+
+            var bookingService = CreateService();
+
+            // Act - Request all 3 services but only 2 should be added
+            var result = await bookingService.AcceptBookingEmailAsync(
+                customerId, technicianId,
+                new List<Guid> { serviceId1, serviceId2, serviceId3 },
+                token, DateTime.UtcNow);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(capturedItems);
+            Assert.Equal(2, capturedItems.Count); // Only service1 and service2
+            Assert.Contains(capturedItems, i => i.ServiceId == serviceId1);
+            Assert.Contains(capturedItems, i => i.ServiceId == serviceId2);
+            Assert.DoesNotContain(capturedItems, i => i.ServiceId == serviceId3);
+        }
+
+        [Fact]
+        public async Task AcceptBookingEmailAsync_ShouldRollbackTransaction_OnException()
+        {
+            // Arrange
+            var customerId = Guid.NewGuid();
+            var technicianId = Guid.NewGuid();
+            var technicianUserId = Guid.NewGuid();
+            var serviceId = Guid.NewGuid();
+            var token = "valid-token";
+
+            _mockRedisService.Setup(r => r.GetAsync<string>($"waiting_{token}")).ReturnsAsync("exists");
+            _mockRedisService.Setup(r => r.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(technicianId);
+
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = technicianUserId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = technicianUserId },
+                Services = new List<Core.Entities.Service>
+        {
+            new Core.Entities.Service { Id = serviceId, Name = "Test Service", Price = 100 }
+        }
+            };
+
+            _mockTechnicianRepo.Setup(r => r.GetAll())
+                .Returns(new List<TechnicianProfile> { technician }.BuildMockDbSet().Object);
+
+            var customer = new AppUser { Id = customerId };
+            _mockUserRepo.Setup(r => r.FindByIdAsync(customerId)).ReturnsAsync(customer);
+
+            var service = new Core.Entities.Service { Id = serviceId, Name = "Test Service", Price = 100 };
+            _mockServiceRepo.Setup(r => r.GetAll())
+                .Returns(new List<Core.Entities.Service> { service }.BuildMockDbSet().Object);
+
+            _mockBookingRepo.Setup(r => r.AddAsync(It.IsAny<Booking>()))
+                .ReturnsAsync((Booking b) => b);
+
+            _mockBookingItemRepo.Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<BookingItem>>()))
+                .Returns(Task.CompletedTask);
+
+            // Throw exception when saving changes
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync())
+                .ThrowsAsync(new Exception("Database error"));
+
+            var mockTransaction = new Mock<IDbContextTransaction>();
+            mockTransaction.Setup(t => t.RollbackAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _mockUnitOfWork.Setup(u => u.BeginTransactionAsync())
+                .ReturnsAsync(mockTransaction.Object);
+
+            var bookingService = CreateService();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(async () =>
+                await bookingService.AcceptBookingEmailAsync(
+                    customerId, technicianId, new List<Guid> { serviceId }, token, DateTime.UtcNow));
+
+            mockTransaction.Verify(t => t.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task AcceptBookingEmailAsync_ShouldCreateBookingWithCorrectStatus()
+        {
+            // Arrange
+            var customerId = Guid.NewGuid();
+            var technicianId = Guid.NewGuid();
+            var technicianUserId = Guid.NewGuid();
+            var serviceId = Guid.NewGuid();
+            var token = "valid-token";
+            var desiredDate = DateTime.UtcNow.AddDays(1);
+
+            _mockRedisService.Setup(r => r.GetAsync<string>($"waiting_{token}")).ReturnsAsync("exists");
+            _mockRedisService.Setup(r => r.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(technicianId);
+
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = technicianUserId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = technicianUserId },
+                Services = new List<Core.Entities.Service>
+        {
+            new Core.Entities.Service { Id = serviceId, Name = "Test Service", Price = 100 }
+        }
+            };
+
+            _mockTechnicianRepo.Setup(r => r.GetAll())
+                .Returns(new List<TechnicianProfile> { technician }.BuildMockDbSet().Object);
+
+            var customer = new AppUser { Id = customerId };
+            _mockUserRepo.Setup(r => r.FindByIdAsync(customerId)).ReturnsAsync(customer);
+
+            var service = new Core.Entities.Service { Id = serviceId, Name = "Test Service", Price = 100 };
+            _mockServiceRepo.Setup(r => r.GetAll())
+                .Returns(new List<Core.Entities.Service> { service }.BuildMockDbSet().Object);
+
+            Booking capturedBooking = null;
+            _mockBookingRepo.Setup(r => r.AddAsync(It.IsAny<Booking>()))
+                .Callback<Booking>(b => capturedBooking = b)
+                .ReturnsAsync((Booking b) => b);
+
+            _mockBookingItemRepo.Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<BookingItem>>()))
+                .Returns(Task.CompletedTask);
+
+            _mockConversationRepo.Setup(r => r.AddAsync(It.IsAny<ChatConversation>()))
+                .ReturnsAsync((ChatConversation c) => c);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var mockTransaction = new Mock<IDbContextTransaction>();
+            mockTransaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _mockUnitOfWork.Setup(u => u.BeginTransactionAsync())
+                .ReturnsAsync(mockTransaction.Object);
+
+            var bookingService = CreateService();
+
+            // Act
+            var result = await bookingService.AcceptBookingEmailAsync(
+                customerId, technicianId, new List<Guid> { serviceId }, token, desiredDate);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(capturedBooking);
+            Assert.Equal(customerId, capturedBooking.CustomerId);
+            Assert.Equal(technicianId, capturedBooking.TechnicianId);
+            Assert.Equal(desiredDate, capturedBooking.DesiredDate);
+            Assert.Equal(BookingStatus.Pending, capturedBooking.Status);
+        }
+
+        [Fact]
+        public async Task AcceptBookingEmailAsync_ShouldCreateChatConversation()
+        {
+            // Arrange
+            var customerId = Guid.NewGuid();
+            var technicianId = Guid.NewGuid();
+            var technicianUserId = Guid.NewGuid();
+            var serviceId = Guid.NewGuid();
+            var token = "valid-token";
+
+            _mockRedisService.Setup(r => r.GetAsync<string>($"waiting_{token}")).ReturnsAsync("exists");
+            _mockRedisService.Setup(r => r.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(technicianId);
+
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = technicianUserId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = technicianUserId },
+                Services = new List<Core.Entities.Service>
+        {
+            new Core.Entities.Service { Id = serviceId, Name = "Test Service", Price = 100 }
+        }
+            };
+
+            _mockTechnicianRepo.Setup(r => r.GetAll())
+                .Returns(new List<TechnicianProfile> { technician }.BuildMockDbSet().Object);
+
+            var customer = new AppUser { Id = customerId };
+            _mockUserRepo.Setup(r => r.FindByIdAsync(customerId)).ReturnsAsync(customer);
+
+            var service = new Core.Entities.Service { Id = serviceId, Name = "Test Service", Price = 100 };
+            _mockServiceRepo.Setup(r => r.GetAll())
+                .Returns(new List<Core.Entities.Service> { service }.BuildMockDbSet().Object);
+
+            _mockBookingRepo.Setup(r => r.AddAsync(It.IsAny<Booking>()))
+                .ReturnsAsync((Booking b) => b);
+
+            _mockBookingItemRepo.Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<BookingItem>>()))
+                .Returns(Task.CompletedTask);
+
+            ChatConversation capturedConversation = null;
+            _mockConversationRepo.Setup(r => r.AddAsync(It.IsAny<ChatConversation>()))
+                .Callback<ChatConversation>(c => capturedConversation = c)
+                .ReturnsAsync((ChatConversation c) => c);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var mockTransaction = new Mock<IDbContextTransaction>();
+            mockTransaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _mockUnitOfWork.Setup(u => u.BeginTransactionAsync())
+                .ReturnsAsync(mockTransaction.Object);
+
+            var bookingService = CreateService();
+
+            // Act
+            var result = await bookingService.AcceptBookingEmailAsync(
+                customerId, technicianId, new List<Guid> { serviceId }, token, DateTime.UtcNow);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(capturedConversation);
+            Assert.Equal(customerId, capturedConversation.CustomerId);
+            Assert.Equal(technicianId, capturedConversation.TechnicianId);
+            _mockConversationRepo.Verify(r => r.AddAsync(It.IsAny<ChatConversation>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task AcceptBookingEmailAsync_ShouldManageRedisTokens_Correctly()
+        {
+            // Arrange
+            var customerId = Guid.NewGuid();
+            var technicianId = Guid.NewGuid();
+            var technicianUserId = Guid.NewGuid();
+            var serviceId = Guid.NewGuid();
+            var token = "valid-token";
+
+            _mockRedisService.Setup(r => r.GetAsync<string>($"waiting_{token}")).ReturnsAsync("exists");
+            _mockRedisService.Setup(r => r.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(technicianId);
+
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = technicianUserId,
+                CitizenId = "123456789012",
+                User = new AppUser { Id = technicianUserId },
+                Services = new List<Core.Entities.Service>
+        {
+            new Core.Entities.Service { Id = serviceId, Name = "Test Service", Price = 100 }
+        }
+            };
+
+            _mockTechnicianRepo.Setup(r => r.GetAll())
+                .Returns(new List<TechnicianProfile> { technician }.BuildMockDbSet().Object);
+
+            var customer = new AppUser { Id = customerId };
+            _mockUserRepo.Setup(r => r.FindByIdAsync(customerId)).ReturnsAsync(customer);
+
+            var service = new Core.Entities.Service { Id = serviceId, Name = "Test Service", Price = 100 };
+            _mockServiceRepo.Setup(r => r.GetAll())
+                .Returns(new List<Core.Entities.Service> { service }.BuildMockDbSet().Object);
+
+            _mockBookingRepo.Setup(r => r.AddAsync(It.IsAny<Booking>()))
+                .ReturnsAsync((Booking b) => b);
+
+            _mockBookingItemRepo.Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<BookingItem>>()))
+                .Returns(Task.CompletedTask);
+
+            _mockConversationRepo.Setup(r => r.AddAsync(It.IsAny<ChatConversation>()))
+                .ReturnsAsync((ChatConversation c) => c);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var mockTransaction = new Mock<IDbContextTransaction>();
+            mockTransaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _mockUnitOfWork.Setup(u => u.BeginTransactionAsync())
+                .ReturnsAsync(mockTransaction.Object);
+
+            var bookingService = CreateService();
+
+            // Act
+            var result = await bookingService.AcceptBookingEmailAsync(
+                customerId, technicianId, new List<Guid> { serviceId }, token, DateTime.UtcNow);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+
+            // Verify waiting token is removed
+            _mockRedisService.Verify(r => r.RemoveAsync($"waiting_{token}"), Times.Once);
+
+            // Verify accepted token is set with 60 seconds expiration
+            _mockRedisService.Verify(r => r.SetAsync($"accepted_{token}", technician.Id, TimeSpan.FromSeconds(60)), Times.Once);
         }
     }
 }
