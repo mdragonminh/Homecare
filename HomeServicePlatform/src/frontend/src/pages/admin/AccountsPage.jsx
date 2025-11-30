@@ -708,6 +708,7 @@ export default function AccountsPage() {
       <AccountDetailModal
         visible={detailModalVisible}
         account={selectedAccount}
+        accountType={activeTab}
         onClose={() => {
           setDetailModalVisible(false);
           setSelectedAccount(null);

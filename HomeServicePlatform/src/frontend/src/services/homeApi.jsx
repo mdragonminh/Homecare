@@ -99,6 +99,36 @@ export const homeApi = {
     }
   },
 
+  getHomesByCustomerId: async (
+    customerId,
+    page = 1,
+    pageSize = 100,
+    searchTerm = ""
+  ) => {
+    try {
+      const queryParams = new URLSearchParams({
+        pageNumber: page,
+        pageSize: pageSize,
+        ...(searchTerm && { Search: searchTerm }),
+      }).toString();
+
+      const url = `/Home/by-customer/${customerId}?${queryParams}`;
+
+      const res = await axiosClient.get(url);
+
+      if (ENABLE_DEBUG) console.log("Get homes by customer success:", res.data);
+
+      return { success: true, data: res.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error("Get homes by customer error:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Lỗi khi lấy danh sách địa chỉ khách hàng",
+      };
+    }
+  },
+
   getHomeById: async (homeId) => {
     try {
       const url = `/Home/${homeId}`;

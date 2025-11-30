@@ -2,6 +2,7 @@
   "app": {
     "name": "HomeServicePlatform"
   },
+  "year": "year",
   "ui": {
     "validation": {
       "fullname": {
@@ -364,7 +365,9 @@
     "technician_found": "Found {{count}} technicians near you within {{radius}}km.",
     "home_loaded": "Loaded {{count}} addresses. Default address: {{name}}",
     "my_location_set": "Your current location has been set. Click Search to continue.",
-    "match_booking_success": "Booking request submitted successfully! A technician will contact you soon."
+    "match_booking_success": "Booking request submitted successfully! A technician will contact you soon.",
+    "download_success": "Download successful!",
+    "download_error": "An error occurred while downloading!"
   },
   "error": {
     "email_in_use": "Email is already in use, please use another email.",
@@ -478,6 +481,12 @@
     "create_operator_account": "Create Operator Account",
     "create_account": "Create Account",
     "menu": {
+      "dashboard": "Dashboard",
+      "accounts": "Account Management",
+      "homeservices": "Service Management",
+      "payments": "Payments",
+      "settings": "Settings",
+      "activity_logs": "Activity Logs",
       "account_management": "Account Management",
       "technicians": "Technicians"
     }
@@ -535,6 +544,7 @@
       "rejected": "Rejected",
       "total": "Total"
     },
+    "rejection_reason_placeholder": "Enter rejection reason",
     "modal": {
       "basic_info": "Basic Information",
       "username": "Username",

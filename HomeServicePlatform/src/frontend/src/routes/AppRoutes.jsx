@@ -13,6 +13,7 @@ import { GoogleCallbackPage } from "../pages/Auth/GoogleCallbackPage";
 import AdminLayout from "../pages/admin/AdminLayout";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminSettingsPage from "../pages/admin/AdminSettingsPage";
+import ActivityLogsPage from "../pages/admin/ActivityLogsPage";
 import AccountsPage from "../pages/admin/AccountsPage";
 import HomeServicePage from "../pages/admin/HomeServicePage";
 import PaymentManagementPage from "../pages/admin/PaymentManagementPage";
@@ -217,6 +218,7 @@ export default function AppRoutes({
         <Route path="/admin/home-services" element={<HomeServicePage />} />
         <Route path="/admin/payments" element={<PaymentManagementPage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
+        <Route path="/admin/activity-logs" element={<ActivityLogsPage />} />
       </Route>
 
       {/* ---- Operator & Supporter ---- */}

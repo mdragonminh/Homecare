@@ -19,6 +19,26 @@ namespace HSP.API.Controllers
 		{
 			_homeService = homeService;
 		}
+
+	/// <summary>
+	/// Get homes by customer ID - for operators and admins
+	/// </summary>
+	[HttpGet("by-customer/{customerId}")]
+	[AllowAnonymous]
+	[Authorize(Roles = RoleNames.Admin + "," + RoleNames.Operator)]
+	public async Task<IActionResult> GetHomesByCustomerId(Guid customerId, [FromQuery] HomeInput input)
+		{
+			try
+			{
+				var homes = await _homeService.GetHomesByCustomerIdAsync(input, customerId);
+				return Ok(homes);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new { message = ex.Message });
+			}
+		}
+
 		[HttpPost("create-home")]
 		public async Task<IActionResult> CreateHome([FromBody] CreateHomeDto input)
 		{

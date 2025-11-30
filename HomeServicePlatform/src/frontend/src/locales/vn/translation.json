@@ -2,6 +2,7 @@
   "app": {
     "name": "HomeServicePlatform"
   },
+  "year": "năm",
   
   "ui": {
     "validation": {
@@ -372,7 +373,9 @@
     "home_loaded": "Đã tải {{count}} địa chỉ. Địa chỉ mặc định: {{name}}",
     "my_location_set": "Vị trí hiện tại của bạn đã được thiết lập. Nhấn Tìm kiếm để tiếp tục.",
     "match_booking_success": "Yêu cầu đặt lịch thành công! Một kỹ thuật viên sẽ liên hệ với bạn sớm.",
-    "item_scanned_filled": "Quét thành công! Thông tin vật phẩm đã được tự động điền."
+    "item_scanned_filled": "Quét thành công! Thông tin vật phẩm đã được tự động điền.",
+    "download_success": "Tải xuống thành công!",
+    "download_error": "Có lỗi xảy ra khi tải xuống!"
   },
   "error": {
     "email_in_use": "Email đã được sử dụng, vui lòng dùng email khác.",
@@ -486,6 +489,12 @@
     "create_operator_account": "Tạo tài khoản Operator",
     "create_account": "Tạo tài khoản",
     "menu": {
+      "dashboard": "Tổng quan",
+      "accounts": "Quản lý tài khoản",
+      "homeservices": "Quản lý dịch vụ",
+      "payments": "Thanh toán",
+      "settings": "Cài đặt",
+      "activity_logs": "Nhật ký hoạt động",
       "account_management": "Quản lý tài khoản",
       "technicians": "Kỹ thuật viên"
     }
@@ -543,6 +552,7 @@
       "rejected": "Bị từ chối",
       "total": "Tổng cộng"
     },
+    "rejection_reason_placeholder": "Nhập lý do từ chối",
     
     "modal": {
       "basic_info": "Thông tin cơ bản",
