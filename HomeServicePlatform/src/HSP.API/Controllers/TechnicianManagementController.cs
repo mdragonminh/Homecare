@@ -55,13 +55,11 @@ namespace HSP.API.Controllers
        
         [HttpGet("technicians/{id}")]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter},{RoleNames.Technician}")]
-        public async Task<ActionResult<TechnicianProfileResponseDto>> GetTechnicianById(string id)
+        public async Task<ActionResult<TechnicianProfileResponseDto>> GetTechnicianById(Guid id)
         {
             try
             {
-                var userId = User.GetUserId();
-                var technicianId = await _technicianProfileService.GetTechnicianIdByUserId(userId);
-                var result = await _technicianProfileService.GetTechnicianByIdAsync(technicianId);
+                var result = await _technicianProfileService.GetTechnicianByIdAsync(id);
                 if (result == null)
                 {
                     return NotFound(new { message = "Không tìm thấy technician" });

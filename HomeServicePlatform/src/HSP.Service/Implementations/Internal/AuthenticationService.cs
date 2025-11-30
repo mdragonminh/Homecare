@@ -115,13 +115,13 @@ namespace HSP.Service.Implementations.Internal
             {
                 throw new ValidationException(_localizer["InvalidEmailOrPhone"]);
             }
-            if (!user.EmailConfirmed)
-            {
-                throw new UnauthorizedAccessException(_localizer["EmailNotConfirmed"]);
-            }
             if (!user.IsActive)
             {
                 throw new UnauthorizedAccessException(_localizer["AccountInactive"]);
+            }
+            if (!user.EmailConfirmed)
+            {
+                throw new UnauthorizedAccessException(_localizer["EmailNotConfirmed"]);
             }
             bool passwordValid = await _userRepository.CheckPasswordAsync(user, input.Password);
             if (!passwordValid)

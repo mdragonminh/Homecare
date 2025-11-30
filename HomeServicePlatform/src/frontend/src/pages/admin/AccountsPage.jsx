@@ -276,13 +276,17 @@ export default function AccountsPage() {
   const handleToggleStatus = async (record) => {
     try {
       let result;
+      const accountId = activeTab === "technician" 
+        ? (record.userId || record.user?.id) 
+        : (record.id || record.userId);
+      
       if (record.isActive || record.user?.isActive) {
         result = await adminApi.suspendAccount(
-          record.id || record.userId,
+          accountId,
           "Vô hiệu hóa bởi admin"
         );
       } else {
-        result = await adminApi.unsuspendAccount(record.id || record.userId);
+        result = await adminApi.unsuspendAccount(accountId);
       }
 
       if (result.success) {
@@ -704,6 +708,7 @@ export default function AccountsPage() {
       <AccountDetailModal
         visible={detailModalVisible}
         account={selectedAccount}
+        accountType={activeTab}
         onClose={() => {
           setDetailModalVisible(false);
           setSelectedAccount(null);

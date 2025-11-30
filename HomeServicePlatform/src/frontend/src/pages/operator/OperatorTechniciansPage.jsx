@@ -10,6 +10,7 @@ import {
   Select,
   Modal,
   message,
+  Rate,
 } from "antd";
 import {
   ToolOutlined,
@@ -63,27 +64,27 @@ export default function OperatorTechniciansPage() {
             email: tech.email,
             phone: tech.phoneNumber || tech.phone,
             experience: tech.yearsOfExperience
-              ? `${tech.yearsOfExperience} năm`
-              : tech.experience || "Chưa xác định",
+              ? `${tech.yearsOfExperience} ${t("year")}`
+              : tech.experience || t("technicians.unknown_status"),
             approvalStatus: tech.approvalStatus,
             rating: tech.averageRating || tech.rating || 0,
             completedJobs: tech.completedJobsCount || tech.completedJobs || 0,
             joinDate: tech.createdAt
               ? new Date(tech.createdAt).toLocaleDateString("vi-VN")
               : tech.joinDate,
-            address: tech.address || "Chưa cập nhật",
+            address: tech.address || t("technicians.modal.not_updated"),
           })) || [];
 
         setTechnicians(mappedData);
         setFilteredTechnicians(mappedData);
       } else {
         message.error(
-          response.message || "Không thể tải danh sách kỹ thuật viên"
+          response.message || t("technicians.error_loading_list")
         );
       }
     } catch (error) {
       console.error("Error loading technicians:", error);
-      message.error("Đã có lỗi xảy ra khi tải danh sách kỹ thuật viên");
+      message.error(t("technicians.error_loading_list"));
     } finally {
       setLoading(false);
     }
@@ -123,12 +124,12 @@ export default function OperatorTechniciansPage() {
         // { id, fullName, email, experienceYears, services: [...], certificateFiles: [...] }
         setTechnicianDetail(response.data); // <-- CHỈ CẦN SET TRỰC TIẾP
       } else {
-        message.error(response.message || "Không thể tải chi tiết");
+        message.error(response.message || t("technicians.error_loading_detail"));
         setTechnicianDetail(technician); // Fallback
       }
     } catch (error) {
       console.error("Error getting technician details:", error);
-      message.error("Lỗi khi tải chi tiết kỹ thuật viên");
+      message.error(t("technicians.error_loading_detail"));
       setTechnicianDetail(technician); // Fallback
     }
     // Force re-render by setting to false first then true
@@ -148,17 +149,17 @@ export default function OperatorTechniciansPage() {
         selectedTechnicianId
       );
       if (response.success) {
-        message.success("Đã duyệt thành công kỹ thuật viên");
+        message.success(t("technicians.approve_success"));
         setApproveModalVisible(false);
         setSelectedTechnicianId(null);
         // Reload dữ liệu để cập nhật trạng thái
         loadTechnicians();
       } else {
-        message.error(response.message || "Không thể duyệt kỹ thuật viên");
+        message.error(response.message || t("technicians.error_approving"));
       }
     } catch (error) {
       console.error("Error approving technician:", error);
-      message.error("Đã có lỗi xảy ra khi duyệt kỹ thuật viên");
+      message.error(t("technicians.error_approving"));
     } finally {
       setLoading(false);
     }
@@ -171,7 +172,7 @@ export default function OperatorTechniciansPage() {
 
   const confirmReject = async () => {
     if (!rejectionReason.trim()) {
-      message.error("Vui lòng nhập lý do từ chối.");
+      message.error(t("technicians.select_at_least_one"));
       return;
     }
 
@@ -188,17 +189,17 @@ export default function OperatorTechniciansPage() {
       );
 
       if (response.success) {
-        message.success("Đã từ chối thành công kỹ thuật viên");
+        message.success(t("technicians.reject_success"));
         setRejectModalVisible(false);
         setSelectedTechnicianId(null);
         setRejectionReason("");
         loadTechnicians();
       } else {
-        message.error(response.message || "Không thể từ chối kỹ thuật viên");
+        message.error(response.message || t("technicians.error_rejecting"));
       }
     } catch (error) {
       console.error("Error rejecting technician:", error);
-      message.error("Đã có lỗi xảy ra khi từ chối kỹ thuật viên");
+      message.error(t("technicians.error_rejecting"));
     } finally {
       setLoading(false);
     }
@@ -217,23 +218,23 @@ export default function OperatorTechniciansPage() {
       ),
     },
     {
-      title: "Tên kỹ thuật viên",
+      title: t("technicians.table.full_name"),
       dataIndex: "name",
       key: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
-      title: "Email",
+      title: t("technicians.table.email"),
       dataIndex: "email",
       key: "email",
     },
     {
-      title: "Số điện thoại",
+      title: t("technicians.table.phone_number"),
       dataIndex: "phone",
       key: "phone",
     },
     {
-      title: "Trạng thái",
+      title: t("technicians.table.status"),
       dataIndex: "approvalStatus",
       key: "approvalStatus",
       render: (status) => (
@@ -243,7 +244,7 @@ export default function OperatorTechniciansPage() {
       ),
     },
     {
-      title: "Thao tác",
+      title: t("technicians.table.actions"),
       key: "action",
       width: 200,
       render: (_, record) => (
@@ -283,10 +284,10 @@ export default function OperatorTechniciansPage() {
         <h1
           style={{ fontSize: 24, fontWeight: 600, margin: 0, color: "#262626" }}
         >
-          🔧 Quản lý kỹ thuật viên
+          🔧 {t("technicians.page_title")}
         </h1>
         <p style={{ color: "#8c8c8c", margin: "8px 0 0 0" }}>
-          Quản lý và duyệt đăng ký của kỹ thuật viên
+          {t("technicians.page_description")}
         </p>
       </div>
 
@@ -300,7 +301,7 @@ export default function OperatorTechniciansPage() {
               ).length
             }
           </div>
-          <div style={{ color: "#8c8c8c" }}>Đã duyệt</div>
+          <div style={{ color: "#8c8c8c" }}>{t("technicians.stats.approved")}</div>
         </Card>
         <Card style={{ flex: 1, textAlign: "center" }}>
           <div style={{ fontSize: 24, fontWeight: "bold", color: "#faad14" }}>
@@ -310,7 +311,7 @@ export default function OperatorTechniciansPage() {
               ).length
             }
           </div>
-          <div style={{ color: "#8c8c8c" }}>Chờ duyệt</div>
+          <div style={{ color: "#8c8c8c" }}>{t("technicians.stats.pending")}</div>
         </Card>
         <Card style={{ flex: 1, textAlign: "center" }}>
           <div style={{ fontSize: 24, fontWeight: "bold", color: "#ff4d4f" }}>
@@ -320,7 +321,7 @@ export default function OperatorTechniciansPage() {
               ).length
             }
           </div>
-          <div style={{ color: "#8c8c8c" }}>Đã từ chối</div>
+          <div style={{ color: "#8c8c8c" }}>{t("technicians.stats.rejected")}</div>
         </Card>
       </div>
 
@@ -328,31 +329,31 @@ export default function OperatorTechniciansPage() {
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <Search
-            placeholder="Tìm kiếm theo tên, email, số điện thoại"
+            placeholder={t("technicians.search_placeholder")}
             allowClear
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: 400 }}
             prefix={<SearchOutlined />}
           />
           <Select
-            placeholder="Lọc theo trạng thái"
+            placeholder={t("technicians.approval_status_placeholder")}
             style={{ width: 160 }}
             value={statusFilter}
             onChange={setStatusFilter}
           >
-            <Option value="all">Tất cả</Option>
+            <Option value="all">{t("technicians.all_statuses")}</Option>
             <Option value={TechnicianApprovalStatus.Approved.toString()}>
-              Đã duyệt
+              {t("technicians.stats.approved")}
             </Option>
             <Option value={TechnicianApprovalStatus.Pending.toString()}>
-              Chờ duyệt
+              {t("technicians.stats.pending")}
             </Option>
             <Option value={TechnicianApprovalStatus.Rejected.toString()}>
-              Đã từ chối
+              {t("technicians.stats.rejected")}
             </Option>
           </Select>
           <div style={{ marginLeft: "auto", color: "#8c8c8c" }}>
-            Tổng số: {filteredTechnicians.length} kỹ thuật viên
+            {t("technicians.stats.total")}: {filteredTechnicians.length} {t("technician")}
           </div>
         </div>
       </Card>
@@ -366,7 +367,11 @@ export default function OperatorTechniciansPage() {
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} kỹ thuật viên`,
+              t("technicians.pagination_total", {
+                start: range[0],
+                end: range[1],
+                total: total,
+              }),
           }}
           scroll={{ x: 1400 }}
           loading={loading}
@@ -376,7 +381,7 @@ export default function OperatorTechniciansPage() {
       {/* Detail Modal */}
       <Modal
         key={technicianDetail?.id || "modal"}
-        title="Chi tiết kỹ thuật viên"
+        title={t("technicians.view_details")}
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={null}
@@ -387,18 +392,30 @@ export default function OperatorTechniciansPage() {
         {technicianDetail && (
           <div>
             <div className="mb-4">
-              <strong>Tên:</strong> {technicianDetail.fullName}
+              <strong>{t("technicians.modal.username")}:</strong> {technicianDetail.fullName}
             </div>
             <div className="mb-4">
-              <strong>Email:</strong> {technicianDetail.email}
-            </div>
-
-            <div className="mb-4">
-              <strong>Kinh nghiệm:</strong> {technicianDetail.experienceYears}
+              <strong>{t("technicians.modal.email")}:</strong> {technicianDetail.email}
             </div>
 
             <div className="mb-4">
-              <strong>Ngày tham gia:</strong>{" "}
+              <strong>{t("technicians.modal.experience")}:</strong> {technicianDetail.experienceYears}
+            </div>
+
+            {technicianDetail.citizenId && (
+              <div className="mb-4">
+                <strong>CCCD/CMND:</strong> {technicianDetail.citizenId}
+              </div>
+            )}
+
+            <div className="mb-4">
+              <strong>Đánh giá:</strong>{" "}
+              <Rate disabled value={technicianDetail.rating || 0} allowHalf style={{ fontSize: 16 }} />
+              {" "}({technicianDetail.rating || 0}/5 - {technicianDetail.ratingCount || 0} đánh giá)
+            </div>
+
+            <div className="mb-4">
+              <strong>{t("technicians.modal.registration_date")}:</strong>{" "}
               {dayjs(technicianDetail.dateCreated).format("DD/MM/YYYY")}
             </div>
 
@@ -406,7 +423,7 @@ export default function OperatorTechniciansPage() {
               technicianDetail.services.length > 0 && (
                 <div className="mb-5">
                   <div className="text-sm mb-3 font-bold flex items-center gap-1.5">
-                    Kỹ năng đăng ký:
+                    {t("technicians.modal.skills_specialization")}:
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {technicianDetail.services.map((service) => (
@@ -427,7 +444,7 @@ export default function OperatorTechniciansPage() {
               technicianDetail.certificateFiles.length > 0 && (
                 <div className="mb-5">
                   <div className="text-sm mb-3 font-bold flex items-center gap-1.5">
-                    Chứng chỉ
+                    {t("technicians.modal.certifications")}
                   </div>
                   <div className="flex flex-col gap-2.5">
                     {technicianDetail.certificateFiles.map((file, index) => {
@@ -444,7 +461,7 @@ export default function OperatorTechniciansPage() {
                               {file.fileName}
                             </div>
                             <div className="text-xs text-gray-400">
-                              Chứng chỉ #{index + 1}
+                              {t("technicians.modal.certifications")} #{index + 1}
                             </div>
                           </div>
                           <Space size={8}>
@@ -466,7 +483,7 @@ export default function OperatorTechniciansPage() {
                                 border: "1px solid #d9d9d9",
                               }}
                             >
-                              Xem
+                              {t("technicians.modal.preview")}
                             </Button>
                             <Button
                               size="small"
@@ -477,14 +494,14 @@ export default function OperatorTechniciansPage() {
                                     file.filePath
                                   );
                                   if (result.success) {
-                                    toast.success("Tải xuống thành công!");
+                                    toast.success(t("success.download_success"));
                                   } else {
                                     toast.error(
-                                      result.message || "Tải xuống thất bại!"
+                                      result.message || t("success.download_error")
                                     );
                                   }
                                 } catch (error) {
-                                  toast.error("Có lỗi xảy ra khi tải xuống!");
+                                  toast.error(t("success.download_error"));
                                 }
                               }}
                               style={{
@@ -499,7 +516,7 @@ export default function OperatorTechniciansPage() {
                                 boxShadow: "0 2px 4px rgba(82,196,26,0.3)",
                               }}
                             >
-                              Tải xuống
+                              {t("technicians.modal.download")}
                             </Button>
                           </Space>
                         </div>
@@ -510,10 +527,11 @@ export default function OperatorTechniciansPage() {
               )}
 
             {/* Legal Document */}
-            {technicianDetail.legalDocument && (
+            {technicianDetail.legalDocument && 
+              technicianDetail.legalDocument.length > 0 && (
               <div className="mb-5">
                 <div className="text-sm mb-3 font-bold flex items-center gap-1.5">
-                  Giấy tờ pháp lý (CCCD/CMND)
+                  {t("technician_register.legal_document.title")}
                 </div>
                 <div className="flex flex-col gap-2.5">
                   <div className="flex items-center gap-3 px-4 py-3 border border-purple-100 rounded-lg bg-purple-50 transition-all duration-300 ease-in-out shadow-sm hover:bg-purple-100 hover:border-purple-500 hover:shadow-md hover:-translate-y-px">
@@ -523,10 +541,10 @@ export default function OperatorTechniciansPage() {
 
                     <div className="flex-1">
                       <div className="text-sm text-gray-800 font-medium mb-0.5">
-                        {technicianDetail.legalDocument[0].fileName}
+                        {technicianDetail.legalDocument[0]?.fileName || t("technician_register.legal_document.title")}
                       </div>
                       <div className="text-xs text-gray-400">
-                        Giấy tờ tùy thân
+                        {t("technician_register.legal_document.title")}
                       </div>
                     </div>
 
@@ -550,7 +568,7 @@ export default function OperatorTechniciansPage() {
                           border: "1px solid #d9d9d9",
                         }}
                       >
-                        Xem
+                        {t("technicians.modal.preview")}
                       </Button>
                       <Button
                         size="small"
@@ -561,14 +579,14 @@ export default function OperatorTechniciansPage() {
                               technicianDetail.legalDocument[0].filePath
                             );
                             if (result.success) {
-                              toast.success("Tải xuống thành công!");
+                              toast.success(t("success.download_success"));
                             } else {
                               toast.error(
-                                result.message || "Tải xuống thất bại!"
+                                result.message || t("success.download_error")
                               );
                             }
                           } catch (error) {
-                            toast.error("Có lỗi xảy ra khi tải xuống!");
+                            toast.error(t("success.download_error"));
                           }
                         }}
                         style={{
@@ -583,7 +601,7 @@ export default function OperatorTechniciansPage() {
                           boxShadow: "0 2px 4px rgba(114, 46, 209, 0.3)",
                         }}
                       >
-                        Tải xuống
+                        {t("technicians.modal.download")}
                       </Button>
                     </Space>
                   </div>
@@ -592,7 +610,7 @@ export default function OperatorTechniciansPage() {
             )}
             
             <div className="mb-4">
-              <strong>Trạng thái: </strong>
+              <strong>{t("technicians.table.status")}: </strong>
               <Tag
                 color={
                   TechnicianApprovalStatusColors[
@@ -616,7 +634,7 @@ export default function OperatorTechniciansPage() {
         title={
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <CheckOutlined style={{ color: "#52c41a" }} />
-            <span>Xác nhận duyệt kỹ thuật viên</span>
+            <span>{t("technicians.confirm_batch_approve")}</span>
           </div>
         }
         open={approveModalVisible}
@@ -625,8 +643,8 @@ export default function OperatorTechniciansPage() {
           setApproveModalVisible(false);
           setSelectedTechnicianId(null);
         }}
-        okText="Duyệt"
-        cancelText="Hủy"
+        okText={t("technicians.approve")}
+        cancelText={t("cancel")}
         confirmLoading={loading}
         okButtonProps={{ style: { backgroundColor: "#52c41a" } }}
       >
@@ -634,7 +652,7 @@ export default function OperatorTechniciansPage() {
           <ExclamationCircleOutlined
             style={{ color: "#faad14", fontSize: 22 }}
           />
-          <span>Bạn có chắc chắn muốn duyệt kỹ thuật viên này?</span>
+          <span>{t("technicians.confirm_batch_approve_message", { count: 1 })}</span>
         </div>
       </Modal>
 
@@ -643,7 +661,7 @@ export default function OperatorTechniciansPage() {
         title={
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <CloseOutlined style={{ color: "#ff4d4f" }} />
-            <span>Xác nhận từ chối kỹ thuật viên</span>
+            <span>{t("technicians.confirm_batch_reject")}</span>
           </div>
         }
         open={rejectModalVisible}
@@ -653,8 +671,8 @@ export default function OperatorTechniciansPage() {
           setSelectedTechnicianId(null);
           setRejectionReason("");
         }}
-        okText="Từ chối"
-        cancelText="Hủy"
+        okText={t("technicians.reject")}
+        cancelText={t("cancel")}
         confirmLoading={loading}
         okType="danger"
       >
@@ -662,12 +680,12 @@ export default function OperatorTechniciansPage() {
           <ExclamationCircleOutlined
             style={{ color: "#faad14", fontSize: 22 }}
           />
-          <span>Bạn có chắc chắn muốn từ chối kỹ thuật viên này?</span>
+          <span>{t("technicians.confirm_batch_reject_message", { count: 1 })}</span>
         </div>
         <br></br>
         <Input.TextArea
           rows={4}
-          placeholder="Nhập lý do từ chối"
+          placeholder={t("rejection_reason_placeholder")}
           value={rejectionReason}
           onChange={(e) => setRejectionReason(e.target.value)}
         />

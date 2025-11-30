@@ -81,6 +81,25 @@ namespace HSP.Service.Implementations.Internal
 			return pagedHomes;
 		}
 
+		public async Task<PagedList<HomeDto>> GetHomesByCustomerIdAsync(HomeInput input, Guid customerId)
+		{
+			var query = _homeRepository.GetAll()
+				.Include(x => x.CustomerProfile)
+			.WhereIf(!string.IsNullOrEmpty(input.Search), x => x.Name.ToLower().Contains(input.Search.ToLower()))
+			.Where(x => x.CustomerId.Equals(customerId));
+			var homeDtos = query.Select(x => new HomeDto
+			{
+				Id = x.Id,
+				Name = x.Name,
+				Address = x.Address,
+				Latitude = x.Latitude,
+				Longitude = x.Longitude,
+				CustomerProfileId = x.CustomerId,
+			});
+			var pagedHomes = await homeDtos.ToPagedListAsync(input);
+			return pagedHomes;
+		}
+
 		public async Task<HomeDto> GetHomeByIdAsync(Guid homeId, Guid userId)
 		{
 			var query = await _homeRepository.GetAll()

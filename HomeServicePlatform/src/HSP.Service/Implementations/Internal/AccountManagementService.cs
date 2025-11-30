@@ -205,6 +205,7 @@ namespace HSP.Service.Implementations.Internal
 			if (user == null) return false;
 
 			var hasChanges = false;
+			var wasActiveChanged = false;
 
 			if (input.FullName != null && input.FullName != user.FullName)
 			{
@@ -227,6 +228,7 @@ namespace HSP.Service.Implementations.Internal
 			if (input.IsActive.HasValue && input.IsActive.Value != user.IsActive)
 			{
 				user.IsActive = input.IsActive.Value;
+				wasActiveChanged = true;
 				hasChanges = true;
 			}
 
@@ -236,6 +238,13 @@ namespace HSP.Service.Implementations.Internal
 				user.ModifiedBy = Guid.Parse(updatedById);
 
 				var result = await _userRepository.UpdateAccount(user);
+				
+				// Revoke tokens if account was disabled
+				if (result.Succeeded && wasActiveChanged && !user.IsActive)
+				{
+					await _userRepository.RemoveAllTokensForUserAsync(userId);
+				}
+				
 				return result.Succeeded;
 			}
 
@@ -258,6 +267,13 @@ namespace HSP.Service.Implementations.Internal
 			user.DisabledAt = DateTime.UtcNow;
 
 			var result = await _userRepository.UpdateAccount(user);
+			
+			// Revoke all refresh tokens to force logout
+			if (result.Succeeded)
+			{
+				await _userRepository.RemoveAllTokensForUserAsync(userId);
+			}
+			
 			return result.Succeeded;
 		}
 
@@ -297,6 +313,13 @@ namespace HSP.Service.Implementations.Internal
 			user.DisabledAt = DateTime.UtcNow;
 
 			var result = await _userRepository.UpdateAccount(user);
+			
+			// Revoke all refresh tokens to force logout
+			if (result.Succeeded)
+			{
+				await _userRepository.RemoveAllTokensForUserAsync(userId);
+			}
+			
 			return result.Succeeded;
 		}
 

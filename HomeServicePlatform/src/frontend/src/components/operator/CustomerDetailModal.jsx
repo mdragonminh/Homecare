@@ -19,6 +19,9 @@ import {
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { paymentApi, getPaymentStatusText, getPaymentMethodText, getPaymentStatusColor } from "../../services/paymentApi";
+import { homeApi } from "../../services/homeApi";
+import { bookingApi } from "../../services/bookingApi";
+import { adminApi } from "../../services/adminApi";
 import dayjs from "dayjs";
 
 export default function CustomerDetailModal({ visible, customer, onClose }) {
@@ -26,6 +29,9 @@ export default function CustomerDetailModal({ visible, customer, onClose }) {
   const [activeTab, setActiveTab] = useState("info");
   const [payments, setPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
+  const [homes, setHomes] = useState([]);
+  const [totalBookings, setTotalBookings] = useState(0);
+  const [loadingCustomerData, setLoadingCustomerData] = useState(false);
   const [paymentPagination, setPaymentPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -33,10 +39,37 @@ export default function CustomerDetailModal({ visible, customer, onClose }) {
   });
 
   useEffect(() => {
-    if (visible && activeTab === "payments" && customer?.id) {
-      loadPaymentHistory();
+    if (visible && customer?.fullId) {
+      if (activeTab === "payments") {
+        loadPaymentHistory();
+      } else if (activeTab === "info") {
+        loadCustomerData();
+      }
     }
   }, [visible, activeTab, customer, paymentPagination.current]);
+
+  const loadCustomerData = async () => {
+    if (!customer?.fullId) return;
+
+    try {
+      setLoadingCustomerData(true);
+
+      const homesResult = await homeApi.getHomesByCustomerId(customer.fullId, 1, 100);
+      if (homesResult.success && homesResult.data.items) {
+        setHomes(homesResult.data.items);
+      }
+
+      // Load customer bookings count using admin endpoint
+      const bookingsResult = await bookingApi.getAllBookingsForAdmin(1, 1);
+      if (bookingsResult.success) {
+        setTotalBookings(bookingsResult.data.totalCount || 0);
+      }
+    } catch (error) {
+      console.error("Error loading customer data:", error);
+    } finally {
+      setLoadingCustomerData(false);
+    }
+  };
 
   const loadPaymentHistory = async () => {
     if (!customer?.id) {
@@ -142,7 +175,7 @@ export default function CustomerDetailModal({ visible, customer, onClose }) {
         <Descriptions bordered column={1} style={{ marginTop: 16 }}>
           <Descriptions.Item label="Avatar">
             <Avatar
-              src={customer.avatar}
+              src={customer.avatar ? adminApi.previewFile(customer.avatar) : null}
               icon={<UserOutlined />}
               size={64}
               style={{ backgroundColor: "#87d068" }}
@@ -160,7 +193,19 @@ export default function CustomerDetailModal({ visible, customer, onClose }) {
             {customer.phone || "N/A"}
           </Descriptions.Item>
           <Descriptions.Item label="Địa chỉ">
-            {customer.address || "Chưa cập nhật"}
+            {loadingCustomerData ? (
+              <Spin size="small" />
+            ) : homes.length > 0 ? (
+              <div>
+                {homes.map((home, index) => (
+                  <div key={home.id} style={{ marginBottom: index < homes.length - 1 ? 8 : 0 }}>
+                    <Tag color="blue">{home.name}</Tag> {home.address}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              "Chưa có địa chỉ"
+            )}
           </Descriptions.Item>
           <Descriptions.Item label="Trạng thái">
             <Tag color={customer.status === "active" ? "green" : "red"}>
@@ -172,6 +217,9 @@ export default function CustomerDetailModal({ visible, customer, onClose }) {
           </Descriptions.Item>
           <Descriptions.Item label="Tổng số dịch vụ">
             {customer.totalServices || 0}
+          </Descriptions.Item>
+          <Descriptions.Item label="Tổng số đặt lịch">
+            {loadingCustomerData ? <Spin size="small" /> : totalBookings}
           </Descriptions.Item>
         </Descriptions>
       ) : (

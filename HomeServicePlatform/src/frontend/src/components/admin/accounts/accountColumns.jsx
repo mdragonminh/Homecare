@@ -277,11 +277,6 @@ export const getStaffColumns = (
     ),
   },
   {
-    title: "Tên tài khoản",
-    dataIndex: "userName",
-    key: "userName",
-  },
-  {
     title: "Họ và tên",
     dataIndex: "fullName",
     key: "fullName",

@@ -6,6 +6,7 @@ import {
   CreditCardOutlined,
   CustomerServiceOutlined,
   UserOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, Space, Typography } from "antd";
 import { useMemo, useState } from "react";
@@ -27,6 +28,7 @@ export default function AdminLayout({ loggedInUser }) {
     if (location.pathname.startsWith("/admin/accounts")) return ["accounts"];
     if (location.pathname.startsWith("/admin/home-services")) return ["homeservices"];
     if (location.pathname.startsWith("/admin/payments")) return ["payments"];
+    if (location.pathname.startsWith("/admin/activity-logs")) return ["activity-logs"];
     if (location.pathname.startsWith("/admin/settings")) return ["settings"];
     return ["dashboard"];
   }, [location.pathname]);
@@ -92,6 +94,7 @@ export default function AdminLayout({ loggedInUser }) {
             if (key === "homeservices") navigate("/admin/home-services");
             if (key === "payments") navigate("/admin/payments");
             if (key === "settings") navigate("/admin/settings");
+            if (key === "activity-logs") navigate("/admin/activity-logs");
           }}
           items={[
             {
@@ -122,6 +125,12 @@ export default function AdminLayout({ loggedInUser }) {
               key: "settings",
               icon: <SettingOutlined />,
               label: t("admin.menu.settings", "Cài đặt"),
+              style: { marginBottom: 4 },
+            },
+            {
+              key: "activity-logs",
+              icon: <HistoryOutlined />,
+              label: t("admin.menu.activity_logs", "Activity Logs"),
               style: { marginBottom: 4 },
             },
           ]}

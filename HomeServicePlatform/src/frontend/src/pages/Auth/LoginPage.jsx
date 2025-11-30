@@ -39,6 +39,17 @@ export function LoginPage({
     if (loggedInUser) {
       navigate("/");
     }
+    
+    // Check for error message from Google OAuth redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorMessage = urlParams.get('error');
+    if (errorMessage) {
+      setValidationErrors({ 
+        emailOrPhone: decodeURIComponent(errorMessage) 
+      });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, [loggedInUser, navigate]);
 
   const handleInputChange = (e) => {
