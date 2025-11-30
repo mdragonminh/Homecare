@@ -1,5 +1,5 @@
 // src/pages/client/HomePage.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   ArrowRight, 
   Play, 
@@ -22,6 +22,7 @@ import {
   Quote,
   CheckCircle
 } from "lucide-react";
+import { technicianApi } from "../../services/technicianApi";
 // LOẠI BỎ: import { Header } from "../../components/Header";
 // LOẠI BỎ: import { Footer } from "../../components/Footer";
 
@@ -80,12 +81,6 @@ const popularServices = [
   { icon: Scissors, title: "Dịch vụ khác", description: "Cắt tỉa cây, sửa nội thất", price: "Từ 100,000đ", color: "text-orange-600", bgColor: "bg-orange-50" }
 ];
 
-const featuredTechnicians = [
-  { id: 1, name: "Anh Thế Anh", specialty: "Điều hòa", rating: 4.9, reviewCount: 127, location: "Quận 1, TP.HCM", avatar: "https://i.pravatar.cc/150?img=1" },
-  { id: 2, name: "Chị Mai Hương", specialty: "Vệ sinh", rating: 4.8, reviewCount: 98, location: "Quận 7, TP.HCM", avatar: "https://i.pravatar.cc/150?img=2" },
-  { id: 3, name: "Anh Minh Tuấn", specialty: "Điện", rating: 4.9, reviewCount: 156, location: "Quận 3, TP.HCM", avatar: "https://i.pravatar.cc/150?img=3" },
-  { id: 4, name: "Anh Đức Huy", specialty: "Nước", rating: 4.7, reviewCount: 89, location: "Quận 2, TP.HCM", avatar: "https://i.pravatar.cc/150?img=4" }
-];
 
 const testimonials = [
   { id: 1, name: "Nguyễn Thị Lan", content: "HomeCare giúp tôi tìm thợ rất nhanh, giá hợp lý.", role: "Chủ căn hộ", avatar: "https://i.pravatar.cc/150?img=5" },
@@ -95,6 +90,41 @@ const testimonials = [
 // --- Main HomePage --- //
 export function HomePage({  onShowRegister, loggedInUser }) {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [featuredTechnicians, setFeaturedTechnicians] = useState([]);
+  const [loadingTechnicians, setLoadingTechnicians] = useState(true);
+
+  // Helper function to get avatar URL from filePath
+  const getAvatarUrl = (filePath) => {
+    if (!filePath) return null;
+    
+    // If already a full URL, return as is
+    if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+      return filePath;
+    }
+
+    // Construct URL from filePath
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const baseUrl = API_URL.endsWith("/api") ? API_URL : API_URL.replace(/\/api$/, "") + "/api";
+    return `${baseUrl}/File/preview?filePath=${encodeURIComponent(filePath)}`;
+  };
+
+  useEffect(() => {
+    const loadFeaturedTechnicians = async () => {
+      setLoadingTechnicians(true);
+      try {
+        const result = await technicianApi.getFeaturedTechnicians(4);
+        if (result.success) {
+          setFeaturedTechnicians(result.data || []);
+        }
+      } catch (error) {
+        console.error("Error loading featured technicians:", error);
+      } finally {
+        setLoadingTechnicians(false);
+      }
+    };
+
+    loadFeaturedTechnicians();
+  }, []);
   return (
     // LOẠI BỎ: min-h-screen flex flex-col (đã được bọc bởi Layout)
     <div className="flex-1"> 
@@ -172,19 +202,51 @@ export function HomePage({  onShowRegister, loggedInUser }) {
         <section className="py-20 bg-white">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold mb-12">Kỹ thuật viên nổi bật</h2>
+            {loadingTechnicians ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+            ) : featuredTechnicians.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredTechnicians.map((t) => (
-                <div key={t.id} className="p-6 bg-gray-50 rounded-lg shadow hover:shadow-lg">
-                  <img src={t.avatar} alt={t.name} className="w-20 h-20 mx-auto rounded-full mb-4" />
-                  <h3 className="font-semibold">{t.name}</h3>
-                  <p className="text-gray-500 text-sm">{t.specialty}</p>
+                  <div key={t.id} className="p-6 bg-gray-50 rounded-lg shadow hover:shadow-lg transition-shadow">
+                    <img 
+                      src={getAvatarUrl(t.avatarUrl) || "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70)} 
+                      alt={t.fullName} 
+                      className="w-20 h-20 mx-auto rounded-full mb-4 object-cover border-2 border-gray-200" 
+                      onError={(e) => {
+                        e.target.src = "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70);
+                      }}
+                    />
+                    <h3 className="font-semibold text-lg mb-2">{t.fullName}</h3>
+                    {t.services && t.services.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-gray-600 text-sm font-medium mb-1">Dịch vụ:</p>
+                        <div className="flex flex-wrap justify-center gap-1">
+                          {t.services.slice(0, 2).map((service, idx) => (
+                            <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                              {service}
+                            </span>
+                          ))}
+                          {t.services.length > 2 && (
+                            <span className="text-xs text-gray-500">+{t.services.length - 2}</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   <div className="flex justify-center items-center mt-2 text-yellow-500">
-                    <Star className="w-4 h-4 fill-yellow-400" /> <span className="ml-1">{t.rating}</span>
-                  </div>
-                  <p className="text-sm text-gray-500">{t.location}</p>
+                      <Star className="w-4 h-4 fill-yellow-400" /> 
+                      <span className="ml-1 font-semibold">{t.rating.toFixed(1)}</span>
+                      {t.ratingCount > 0 && (
+                        <span className="ml-2 text-gray-500 text-sm">({t.ratingCount} đánh giá)</span>
+                      )}
+                    </div>
                 </div>
               ))}
             </div>
+            ) : (
+              <p className="text-gray-500 py-12">Chưa có kỹ thuật viên nổi bật</p>
+            )}
           </div>
         </section>
 

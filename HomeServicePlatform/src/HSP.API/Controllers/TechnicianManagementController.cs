@@ -1,6 +1,7 @@
 using HSP.API.Extensions;
 using HSP.API.Filters;
 using HSP.Core.Constans;
+using HSP.Core.Dtos.ServiceRequestDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Dtos.TechnicianProfileDto;
 using HSP.Core.Enums;
@@ -21,6 +22,22 @@ namespace HSP.API.Controllers
         {
             _technicianProfileService = technicianProfileService;
         }
+
+        [HttpGet("featured-technicians")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetFeaturedTechnicians([FromQuery] int count = 4)
+        {
+            try
+            {
+                var result = await _technicianProfileService.GetFeaturedTechniciansAsync(count);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Đã có lỗi xảy ra khi lấy danh sách kỹ thuật viên nổi bật", error = ex.Message });
+            }
+        }
+
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
         [HttpGet("technicians")]
         public async Task<ActionResult<PagedList<TechnicianProfileResponseDto>>> GetTechnicians([FromQuery] TechnicianProfileFilterParams filterParams)

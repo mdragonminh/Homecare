@@ -314,5 +314,29 @@ export const technicianApi = {
       };
     }
   },
+
+  getFeaturedTechnicians: async (count = 4) => {
+    try {
+      const response = await axiosClient.get(
+        `/TechnicianManagement/featured-technicians?count=${count}`
+      );
+
+      if (ENABLE_DEBUG)
+        console.log("Lấy danh sách kỹ thuật viên nổi bật thành công:", response.data);
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      if (ENABLE_DEBUG)
+        console.error("Lấy danh sách kỹ thuật viên nổi bật lỗi:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          error.message ||
+          "Lỗi khi lấy danh sách kỹ thuật viên nổi bật",
+      };
+    }
+  },
 };
 

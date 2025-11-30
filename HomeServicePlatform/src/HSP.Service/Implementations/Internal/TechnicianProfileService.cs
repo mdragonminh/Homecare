@@ -1,6 +1,7 @@
 using HSP.Core.Constans;
 using HSP.Core.Constants;
 using HSP.Core.Dtos.FileDto;
+using HSP.Core.Dtos.ServiceRequestDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Dtos.TechnicianProfileDto;
 using HSP.Core.Entities;
@@ -582,6 +583,81 @@ namespace HSP.Service.Implementations.Internal
                 throw new KeyNotFoundException("Không tìm thấy kĩ thuật viên");
             }
             return technician.Id;
+        }
+
+        public async Task<IEnumerable<FeaturedTechnicianDto>> GetFeaturedTechniciansAsync(int count = 4)
+        {
+            var technicians = await _technicianProfileRepository.GetAll()
+                .Include(t => t.User)
+                .Include(t => t.Services)
+                .Include(t => t.Bookings)
+                    .ThenInclude(b => b.Feedbacks)
+                .Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
+                .Where(t => t.User != null && t.User.IsActive)
+                .ToListAsync();
+
+            var featuredTechnicians = technicians
+                .Select(t =>
+                {
+                    var customerFeedbacks = t.Bookings
+                        .SelectMany(b => b.Feedbacks)
+                        .Where(f => f.Source == FeedbackSource.Customer)
+                        .ToList();
+
+                    var rating = customerFeedbacks.Any()
+                        ? Math.Round(customerFeedbacks.Average(f => f.Rating), 1)
+                        : 0;
+
+                    return new
+                    {
+                        Technician = t,
+                        Rating = rating,
+                        RatingCount = customerFeedbacks.Count,
+                        CompletedBookings = t.Bookings.Count(b => b.Status == BookingStatus.Completed)
+                    };
+                })
+                .Where(x => x.RatingCount > 0) // Chỉ lấy những technician có ít nhất 1 đánh giá
+                .OrderByDescending(x => x.Rating)
+                .ThenByDescending(x => x.RatingCount)
+                .ThenByDescending(x => x.CompletedBookings)
+                .Take(count)
+                .ToList();
+
+            var result = new List<FeaturedTechnicianDto>();
+
+            foreach (var item in featuredTechnicians)
+            {
+                var technician = item.Technician;
+                string? avatarUrl = null;
+
+                try
+                {
+                    var avatarFiles = await _fileService.GetFilesAsync(new GetFilesRequestDto
+                    {
+                        objectId = technician.Id,
+                        objectTypeName = RoleNames.Technician,
+                        relationType = FileConstants.Avatar
+                    });
+
+                    avatarUrl = avatarFiles?.FirstOrDefault()?.FilePath;
+                }
+                catch
+                {
+                    // Ignore if avatar not found
+                }
+
+                result.Add(new FeaturedTechnicianDto
+                {
+                    Id = technician.Id,
+                    FullName = technician.User?.FullName ?? string.Empty,
+                    AvatarUrl = avatarUrl,
+                    Rating = item.Rating,
+                    RatingCount = item.RatingCount,
+                    Services = technician.Services.Select(s => s.Name).ToList()
+                });
+            }
+
+            return result;
         }
     }
 }
