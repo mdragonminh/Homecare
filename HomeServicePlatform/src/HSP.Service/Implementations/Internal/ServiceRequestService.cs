@@ -105,7 +105,7 @@ namespace HSP.Service.Implementations.Internal
                 throw new InvalidOperationException(_localizer["NoAvailableTechniciansFound"]);
             }
 
-            var matchResult = await NotifyTechniciansAndAwaitResponseAsync(sorted, customer, input);
+            var matchResult = await NotifyTechniciansAndAwaitResponseAsync(sorted, customer, input, desired);
             return matchResult;
         }
         private DateTime NormalizeToUtc(DateTime dt)
@@ -119,10 +119,41 @@ namespace HSP.Service.Implementations.Internal
             dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
             return dt.ToUniversalTime();
         }
+
+        private DateTime ConvertUtcToVietnamTime(DateTime utcDateTime)
+        {
+            if (utcDateTime.Kind != DateTimeKind.Utc)
+            {
+                utcDateTime = DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc);
+            }
+
+            TimeZoneInfo vietnamZone;
+            try
+            {
+                // Try Windows timezone ID first
+                vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                try
+                {
+                    // Try Linux/Mac timezone ID
+                    vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    // Fallback: manually add 7 hours (Vietnam is UTC+7)
+                    return utcDateTime.AddHours(7);
+                }
+            }
+
+            return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, vietnamZone);
+        }
         private async Task<MatchedBookingResultDto> NotifyTechniciansAndAwaitResponseAsync(
             List<(TechnicianProfile Technician, double Distance)> sortedTechnicians,
             AppUser customer,
-            CustomerCreateBookingDto input)
+            CustomerCreateBookingDto input,
+            DateTime normalizedUtcDate)
         {
             var technicianResponseTimeoutSeconds = await _systemSettingService.GetSettingValueAsIntAsync("TechnicianResponseTimeoutSeconds", 10);
             var redisExpirationSeconds = await _systemSettingService.GetSettingValueAsIntAsync("TechnicianInvitationExpirationSeconds", 15);
@@ -132,7 +163,7 @@ namespace HSP.Service.Implementations.Internal
                 var token = Guid.NewGuid().ToString("N");
                 await _redisCacheService.SetAsync($"waiting_{token}", "waiting", TimeSpan.FromSeconds(redisExpirationSeconds));
                 await _redisCacheService.SetAsync($"accept_{token}", tech.Technician.Id, TimeSpan.FromSeconds(redisExpirationSeconds));
-                await SendInvitationEmailAsync(tech, customer, input, token);
+                await SendInvitationEmailAsync(tech, customer, input, token, normalizedUtcDate);
 
                 var stopwatch = Stopwatch.StartNew();
                 while (stopwatch.Elapsed < TimeSpan.FromSeconds(technicianResponseTimeoutSeconds))
@@ -168,17 +199,22 @@ namespace HSP.Service.Implementations.Internal
             (TechnicianProfile Technician, double Distance) tech,
             AppUser customer,
             CustomerCreateBookingDto input,
-            string token)
+            string token,
+            DateTime normalizedUtcDate)
         {
             string encodedToken = WebUtility.UrlEncode(token);
             string baseUrl = _urlSettings.BaseUrl;
             string serviceIdsQuery = string.Join("&serviceIds=", input.ServiceIds.Select(id => id.ToString()));
+            
+            // Convert UTC to Vietnam timezone for display in email
+            DateTime vietnamTime = ConvertUtcToVietnamTime(normalizedUtcDate);
+            
             string acceptUrl = $"{baseUrl}/api/booking/accept" +
                                                      $"?customerId={customer.Id}" +
                                                      $"&technicianId={tech.Technician.Id}" +
                                                      $"&token={encodedToken}" +
                                                      $"&ServiceIds={serviceIdsQuery}" +
-                                                     $"&desiredDate={input.DesireDateTime:o}";
+                                                     $"&desiredDate={normalizedUtcDate:o}";
             string declineUrl = $"{baseUrl}/api/booking/cancel" +
                                                             $"?technicianId={tech.Technician.Id}&token={token}";
             var emailModel = new TechnicianInvitationDto
@@ -189,7 +225,7 @@ namespace HSP.Service.Implementations.Internal
                 DistanceKm = Math.Round(tech.Distance, 2),
                 AcceptUrl = acceptUrl,
                 DeclineUrl = declineUrl,
-                DesiredDate = input.DesireDateTime
+                DesiredDate = vietnamTime
             };
             string htmlBody = await _emailTemplateService.RenderAsync("/Views/Emails/TechnicianInvitation.cshtml", emailModel);
             var email = new EmailDto

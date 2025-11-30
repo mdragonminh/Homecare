@@ -11,6 +11,7 @@ using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using System;
 
 namespace HSP.Service.Implementations.Internal
 {
@@ -308,13 +309,21 @@ namespace HSP.Service.Implementations.Internal
                 {
                     var serviceName = booking.Items?.FirstOrDefault()?.Service?.Name ?? "Dịch vụ";
 
+                    // Convert UTC to Vietnam timezone for display in email
+                    string bookingDateStr = "N/A";
+                    if (booking.DesiredDate.HasValue)
+                    {
+                        DateTime vietnamTime = ConvertUtcToVietnamTime(booking.DesiredDate.Value);
+                        bookingDateStr = vietnamTime.ToString("dd/MM/yyyy HH:mm");
+                    }
+
                     var emailDto = new EmailDto
                     {
                         ToEmail = booking.Customer.Email,
                         Subject = "⚠️ Thông báo hủy lịch hẹn - HomeService Platform",
                         HtmlBody = GenerateBookingCancellationEmailTemplate(
                             booking.Customer.FullName ?? booking.Customer.UserName,
-                            booking.DesiredDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A",
+                            bookingDateStr,
                             input.Reason
                         )
                     };
@@ -448,6 +457,36 @@ namespace HSP.Service.Implementations.Internal
                     throw;
                 }
             }
+        }
+
+        private DateTime ConvertUtcToVietnamTime(DateTime utcDateTime)
+        {
+            if (utcDateTime.Kind != DateTimeKind.Utc)
+            {
+                utcDateTime = DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc);
+            }
+
+            TimeZoneInfo vietnamZone;
+            try
+            {
+                // Try Windows timezone ID first
+                vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                try
+                {
+                    // Try Linux/Mac timezone ID
+                    vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    // Fallback: manually add 7 hours (Vietnam is UTC+7)
+                    return utcDateTime.AddHours(7);
+                }
+            }
+
+            return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, vietnamZone);
         }
     }
 }

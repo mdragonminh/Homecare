@@ -173,12 +173,25 @@ const BookingDetailPage = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("vi-VN", {
+    if (!dateString) return "";
+    // Parse the date string - if it doesn't have timezone info, treat it as UTC
+    let date;
+    const dateStr = String(dateString);
+    // Check if date string has timezone indicator
+    if (dateStr.includes('Z') || dateStr.includes('+') || dateStr.match(/-\d{2}:\d{2}$/)) {
+      // Has timezone info, parse normally
+      date = new Date(dateStr);
+    } else {
+      // No timezone info, assume UTC and append 'Z'
+      date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+    }
+    return date.toLocaleString("vi-VN", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Asia/Ho_Chi_Minh"
     });
   };
 

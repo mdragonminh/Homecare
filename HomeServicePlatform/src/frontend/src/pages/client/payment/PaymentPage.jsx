@@ -183,7 +183,24 @@ const PaymentPage = () => {
               <div className="flex justify-between">
                 <span className="text-gray-600">Ngày hẹn:</span>
                 <span className="font-medium">
-                  {new Date(booking.desiredDate).toLocaleDateString("vi-VN")}
+                  {(() => {
+                    if (!booking.desiredDate) return "";
+                    const dateStr = String(booking.desiredDate);
+                    let date;
+                    if (dateStr.includes('Z') || dateStr.includes('+') || dateStr.match(/-\d{2}:\d{2}$/)) {
+                      date = new Date(dateStr);
+                    } else {
+                      date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+                    }
+                    return date.toLocaleString("vi-VN", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Asia/Ho_Chi_Minh"
+                    });
+                  })()}
                 </span>
               </div>
               

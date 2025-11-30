@@ -32,6 +32,11 @@ import { useTranslation } from "react-i18next";
 import { bookingApi } from "../../services/bookingApi";
 import { paymentApi, getPaymentStatusText, getPaymentMethodText, getPaymentStatusColor } from "../../services/paymentApi";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -270,7 +275,7 @@ export default function OperatorBookingDetailPage() {
           >
             <Descriptions column={1} size="small" bordered>
               <Descriptions.Item label="Ngày hẹn">
-                {dayjs(booking.desiredDate).format("DD/MM/YYYY HH:mm")}
+                {dayjs.utc(booking.desiredDate).tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY HH:mm")}
               </Descriptions.Item>
               <Descriptions.Item label="Ngày tạo">
                 {dayjs(booking.dateCreated).format("DD/MM/YYYY HH:mm")}

@@ -228,14 +228,42 @@ const TechnicianBookingsPage = () => {
   };
 
   const formatTime = (dateString) => {
-    return new Date(dateString).toLocaleTimeString("vi-VN", {
-      hour: "2-digit", minute: "2-digit",
+    if (!dateString) return "";
+    // Parse the date string - if it doesn't have timezone info, treat it as UTC
+    let date;
+    const dateStr = String(dateString);
+    // Check if date string has timezone indicator
+    if (dateStr.includes('Z') || dateStr.includes('+') || dateStr.match(/-\d{2}:\d{2}$/)) {
+      // Has timezone info, parse normally
+      date = new Date(dateStr);
+    } else {
+      // No timezone info, assume UTC and append 'Z'
+      date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+    }
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit", 
+      minute: "2-digit",
+      timeZone: "Asia/Ho_Chi_Minh"
     });
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("vi-VN", {
-      day: "2-digit", month: "2-digit",
+    if (!dateString) return "";
+    // Parse the date string - if it doesn't have timezone info, treat it as UTC
+    let date;
+    const dateStr = String(dateString);
+    // Check if date string has timezone indicator
+    if (dateStr.includes('Z') || dateStr.includes('+') || dateStr.match(/-\d{2}:\d{2}$/)) {
+      // Has timezone info, parse normally
+      date = new Date(dateStr);
+    } else {
+      // No timezone info, assume UTC and append 'Z'
+      date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+    }
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit", 
+      month: "2-digit",
+      timeZone: "Asia/Ho_Chi_Minh"
     });
   };
 

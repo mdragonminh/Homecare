@@ -28,6 +28,11 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { bookingApi } from "../../services/bookingApi";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -213,8 +218,12 @@ export default function OperatorBookingsPage() {
       dataIndex: "desiredDate",
       key: "desiredDate",
       width: 150,
-      render: (date) => dayjs(date).format("DD/MM/YYYY HH:mm"),
-      sorter: (a, b) => new Date(a.desiredDate) - new Date(b.desiredDate),
+      render: (date) => dayjs.utc(date).tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY HH:mm"),
+      sorter: (a, b) => {
+        const dateA = dayjs.utc(a.desiredDate).valueOf();
+        const dateB = dayjs.utc(b.desiredDate).valueOf();
+        return dateA - dateB;
+      },
     },
     {
       title: "Trạng thái",
@@ -243,7 +252,7 @@ export default function OperatorBookingsPage() {
       dataIndex: "dateCreated",
       key: "dateCreated",
       width: 150,
-      render: (date) => dayjs(date).format("DD/MM/YYYY HH:mm"),
+      render: (date) => dayjs.utc(date).tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY HH:mm"),
     },
     {
       title: "Thao tác",
