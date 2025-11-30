@@ -48,6 +48,21 @@ namespace HSP.API.Extensions
 						}
 						
 						return Task.CompletedTask;
+					},
+					OnTokenValidated = async context =>
+					{
+						// Check if user is still active when token is validated
+						var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<HSP.Core.Entities.AppUser>>();
+						var userIdClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+						
+						if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
+						{
+							var user = await userManager.FindByIdAsync(userId.ToString());
+							if (user == null || !user.IsActive)
+							{
+								context.Fail("Tài khoản của bạn đã bị xóa hoặc vô hiệu hóa");
+							}
+						}
 					}
 				};
 			}).AddGoogle(options =>

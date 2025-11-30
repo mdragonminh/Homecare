@@ -218,13 +218,30 @@ namespace HSP.API.Controllers
 		[AllowAnonymous]
 		public async Task<IActionResult> GoogleCallback()
 		{
-			var loginResponse = await _authenticationService.GoogleLogin();
-			var code = Guid.NewGuid().ToString("N");
-			await _redisCacheService.SetAsync($"auth:{code}",
-				JsonSerializer.Serialize(loginResponse),
-				TimeSpan.FromMinutes(3));
-			var redirectUrl = $"{_urlSettings.FrontendLoginSuccess}?code={code}";
-			return Redirect(redirectUrl);
+			try
+			{
+				var loginResponse = await _authenticationService.GoogleLogin();
+				var code = Guid.NewGuid().ToString("N");
+				await _redisCacheService.SetAsync($"auth:{code}",
+					JsonSerializer.Serialize(loginResponse),
+					TimeSpan.FromMinutes(3));
+				var redirectUrl = $"{_urlSettings.FrontendLoginSuccess}?code={code}";
+				return Redirect(redirectUrl);
+			}
+			catch (UnauthorizedAccessException ex)
+			{
+				// Redirect to login page with error message for banned/inactive accounts
+				var errorMessage = Uri.EscapeDataString(ex.Message);
+				var redirectUrl = $"{_urlSettings.FrontendLoginFailed}?error={errorMessage}";
+				return Redirect(redirectUrl);
+			}
+			catch (Exception ex)
+			{
+				// Redirect to login page with generic error for other exceptions
+				var errorMessage = Uri.EscapeDataString("Đăng nhập Google thất bại. Vui lòng thử lại.");
+				var redirectUrl = $"{_urlSettings.FrontendLoginFailed}?error={errorMessage}";
+				return Redirect(redirectUrl);
+			}
 		}
 		[HttpGet("exchange-token")]
 		[AllowAnonymous]
