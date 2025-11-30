@@ -1,7 +1,9 @@
-﻿using HSP.Core.Dtos.ServiceRequestDto;
-using HSP.Service.Interfaces;
-using Microsoft.AspNetCore.Mvc;
+﻿using HSP.Core.Constans;
 using HSP.Core.Dtos.BookingDto;
+using HSP.Core.Dtos.ServiceRequestDto;
+using HSP.Service.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace HSP.API.Controllers
 {
@@ -69,7 +71,8 @@ namespace HSP.API.Controllers
 			}
 		}
 		[HttpPost("create-and-match-booking")]
-		public async Task<IActionResult> CreateAndMatchBooking([FromBody] CustomerCreateBookingDto input)
+        [Authorize(Roles = RoleNames.Customer)]
+        public async Task<IActionResult> CreateAndMatchBooking([FromBody] CustomerCreateBookingDto input)
 		{
 			if (!ModelState.IsValid)
 			{

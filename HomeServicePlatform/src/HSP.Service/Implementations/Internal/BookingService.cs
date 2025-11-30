@@ -390,6 +390,7 @@ namespace HSP.Service.Implementations.Internal
                 return new BookingAcceptResultDto { IsSuccess = false, Message = "Link đã hết hạn hoặc đã được sử dụng." };
             var technician = await _technicianRepository.GetAll()
                 .Include(t => t.User)
+                .Include(x=>x.Services)
                 .FirstOrDefaultAsync(t => t.Id == technicianId);
             if (technician?.User == null)
                 return new BookingAcceptResultDto { IsSuccess = false, Message = "Không tìm thấy kỹ thuật viên." };
@@ -406,8 +407,9 @@ namespace HSP.Service.Implementations.Internal
                     var customer = await _userRepository.FindByIdAsync(customerId);
                     if (customer == null)
                         return new BookingAcceptResultDto { IsSuccess = false, Message = "Dữ liệu khách hàng không hợp lệ." };
+                    var technicianAvailableServiceIds = technician.Services.Select(s => s.Id).ToList();
                     var services = await _serviceRepository.GetAll()
-                        .Where(x => ServiceIds.Contains(x.Id))
+                        .Where(x => ServiceIds.Contains(x.Id) && technicianAvailableServiceIds.Contains(x.Id))
                         .ToListAsync();
                     if (services == null || !services.Any())
                         return new BookingAcceptResultDto { IsSuccess = false, Message = "Không tìm thấy dịch vụ hợp lệ." };
