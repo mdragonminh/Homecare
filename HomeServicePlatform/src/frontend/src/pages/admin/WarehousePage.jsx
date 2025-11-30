@@ -53,6 +53,10 @@ const WarehousePage = () => {
   });
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [tempAddress, setTempAddress] = useState("");
+  const [errors, setErrors] = useState({
+    name: "",
+    address: "",
+  });
 
   useEffect(() => {
     fetchWarehouses();
@@ -111,21 +115,23 @@ const WarehousePage = () => {
       const data = await mapApi.getAddress(lat, lng);
       setFormData((prev) => ({ ...prev, address: data.address }));
       setTempAddress(data.address);
-      toast.success("Address selected");
+      setErrors((prev) => ({ ...prev, address: "" }));
+      toast.success("Đã chọn địa chỉ");
     } catch (error) {
       console.error("Error reverse geocoding:", error);
       toast.error(
-        error.response?.data?.message || "Failed to get address for location"
+        error.response?.data?.message || "Không thể lấy địa chỉ cho vị trí này"
       );
       const addressText = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
       setFormData((prev) => ({ ...prev, address: addressText }));
       setTempAddress(addressText);
+      setErrors((prev) => ({ ...prev, address: "" }));
     }
   }, []);
 
   const handleSearchAddress = async () => {
     if (!tempAddress.trim()) {
-      toast.error("Please enter an address");
+      toast.error("Vui lòng nhập địa chỉ");
       return;
     }
 
@@ -135,16 +141,17 @@ const WarehousePage = () => {
       setMapCenter(pos);
       setMarkerPosition(pos);
       setFormData((prev) => ({ ...prev, address: tempAddress }));
-      toast.success("Address found on map");
+      setErrors((prev) => ({ ...prev, address: "" }));
+      toast.success("Đã tìm thấy địa chỉ trên bản đồ");
     } catch (error) {
       console.error("Error geocoding address:", error);
-      toast.error(error.response?.data?.message || "Could not find address");
+      toast.error(error.response?.data?.message || "Không tìm thấy địa chỉ");
     }
   };
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
+      toast.error("Trình duyệt của bạn không hỗ trợ định vị");
       return;
     }
 
@@ -162,19 +169,21 @@ const WarehousePage = () => {
           const data = await mapApi.getAddress(lat, lng);
           setFormData((prev) => ({ ...prev, address: data.address }));
           setTempAddress(data.address);
-          toast.success("Current location detected");
+          setErrors((prev) => ({ ...prev, address: "" }));
+          toast.success("Đã xác định vị trí hiện tại");
         } catch (error) {
           console.error("Error getting address:", error);
           const addressText = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
           setFormData((prev) => ({ ...prev, address: addressText }));
           setTempAddress(addressText);
-          toast.success("Current location set");
+          setErrors((prev) => ({ ...prev, address: "" }));
+          toast.success("Đã đặt vị trí hiện tại");
         }
         setIsGettingLocation(false);
       },
       (error) => {
         console.error("Error getting location:", error);
-        toast.error("Could not get your location. Please enable location services.");
+        toast.error("Không thể lấy vị trí của bạn. Vui lòng bật dịch vụ định vị.");
         setIsGettingLocation(false);
       }
     );
@@ -189,6 +198,7 @@ const WarehousePage = () => {
     setEditingWarehouse(null);
     setFormData({ name: "", address: "", managerId: "" });
     setTempAddress("");
+    setErrors({ name: "", address: "" });
     setShowModal(true);
     setMarkerPosition(null);
     setMapCenter({ lat: 21.028511, lng: 105.804817 });
@@ -228,12 +238,45 @@ const WarehousePage = () => {
     setEditingWarehouse(null);
     setFormData({ name: "", address: "", managerId: "" });
     setTempAddress("");
+    setErrors({ name: "", address: "" });
     setMarkerPosition(null);
     setMapCenter({ lat: 21.028511, lng: 105.804817 });
   };
 
+  const validateForm = () => {
+    const newErrors = { name: "", address: "" };
+    let isValid = true;
+
+    // Validate tên kho
+    if (!formData.name.trim()) {
+      newErrors.name = "Vui lòng nhập tên kho";
+      isValid = false;
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = "Tên kho phải có ít nhất 3 ký tự";
+      isValid = false;
+    } else if (formData.name.trim().length > 100) {
+      newErrors.name = "Tên kho không được vượt quá 100 ký tự";
+      isValid = false;
+    }
+
+    // Validate địa chỉ
+    if (!formData.address.trim()) {
+      newErrors.address = "Vui lòng chọn địa chỉ trên bản đồ hoặc nhập địa chỉ";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form trước khi submit
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const submitData = {
         ...formData,
@@ -242,33 +285,33 @@ const WarehousePage = () => {
 
       if (editingWarehouse) {
         await warehouseApi.updateWarehouse(editingWarehouse.id, submitData);
-        toast.success("Warehouse updated successfully");
+        toast.success("Cập nhật kho thành công");
       } else {
         await warehouseApi.createWarehouse(submitData);
-        toast.success("Warehouse created successfully");
+        toast.success("Tạo kho thành công");
       }
       closeModal();
       fetchWarehouses();
     } catch (error) {
       console.error("Error saving warehouse:", error);
-      toast.error(error.response?.data?.message || "Failed to save warehouse");
+      toast.error(error.response?.data?.message || "Lưu kho thất bại");
     }
   };
 
   const handleDelete = async (warehouse) => {
     if (
       window.confirm(
-        `Are you sure you want to delete warehouse "${warehouse.name}"?`
+        `Bạn có chắc chắn muốn xóa kho "${warehouse.name}"?`
       )
     ) {
       try {
         await warehouseApi.deleteWarehouse(warehouse.id);
-        toast.success("Warehouse deleted successfully");
+        toast.success("Xóa kho thành công");
         fetchWarehouses();
       } catch (error) {
         console.error("Error deleting warehouse:", error);
         toast.error(
-          error.response?.data?.message || "Failed to delete warehouse"
+          error.response?.data?.message || "Xóa kho thất bại"
         );
       }
     }
@@ -458,34 +501,45 @@ const WarehousePage = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("warehouse.name", "Name")} *
+                    {t("warehouse.name", "Tên kho")} *
                   </label>
                   <input
                     type="text"
-                    required
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (errors.name) setErrors({ ...errors, name: "" });
+                    }}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.name ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder="Nhập tên kho..."
                   />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("warehouse.address", "Address")} *
+                    {t("warehouse.address", "Địa chỉ")} *
                   </label>
                   
                   <div className="flex gap-2 mb-2">
                     <input
                       type="text"
                       value={tempAddress}
-                      onChange={(e) => setTempAddress(e.target.value)}
+                      onChange={(e) => {
+                        setTempAddress(e.target.value);
+                        if (errors.address) setErrors({ ...errors, address: "" });
+                      }}
                       placeholder={t(
                         "warehouse.enterAddress",
-                        "Enter address or select on map..."
+                        "Nhập địa chỉ hoặc chọn trên bản đồ..."
                       )}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.address ? "border-red-500" : "border-gray-300"
+                      }`}
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -499,39 +553,43 @@ const WarehousePage = () => {
                       className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center gap-2 whitespace-nowrap"
                     >
                       <MagnifyingGlassIcon className="w-4 h-4" />
-                      {t("common.search", "Search")}
+                      {t("common.search", "Tìm")}
                     </button>
                     <button
                       type="button"
                       onClick={handleGetCurrentLocation}
                       disabled={isGettingLocation}
                       className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 whitespace-nowrap disabled:bg-gray-400"
-                      title={t("warehouse.currentLocation", "Use current location")}
+                      title={t("warehouse.currentLocation", "Dùng vị trí hiện tại")}
                     >
                       <MapPinIcon className="w-4 h-4" />
-                      {isGettingLocation ? "..." : t("warehouse.myLocation", "My Location")}
+                      {isGettingLocation ? "..." : t("warehouse.myLocation", "Vị trí của tôi")}
                     </button>
                   </div>
 
                   {/* <input
                     type="text"
-                    required
                     readOnly
                     value={formData.address}
                     placeholder={t(
                       "warehouse.addressWillAppear",
-                      "Selected address will appear here..."
+                      "Địa chỉ đã chọn sẽ hiển thị ở đây..."
                     )}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none bg-gray-50 cursor-not-allowed text-sm mb-2"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none bg-gray-50 cursor-not-allowed text-sm mb-2 ${
+                      errors.address ? "border-red-500" : "border-gray-300"
+                    }`}
                   /> */}
+                  {errors.address && (
+                    <p className="mt-1 mb-2 text-sm text-red-600">{errors.address}</p>
+                  )}
 
                   {!isLoaded ? (
                     <div className="w-full h-[300px] flex items-center justify-center bg-gray-100 text-gray-500">
-                      {t("common.loading", "Loading...")}
+                      {t("common.loading", "Đang tải...")}
                     </div>
                   ) : loadError ? (
                     <div className="w-full h-[300px] flex items-center justify-center bg-red-50 text-red-700">
-                      Error loading map.
+                      Lỗi khi tải bản đồ.
                     </div>
                   ) : (
                     <GoogleMap
@@ -547,7 +605,7 @@ const WarehousePage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("warehouse.manager", "Manager")}
+                    {t("warehouse.manager", "Quản lý")}
                   </label>
                   <select
                     value={formData.managerId}
@@ -557,7 +615,7 @@ const WarehousePage = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">
-                      {t("warehouse.selectManager", "Select Manager")}
+                      {t("warehouse.selectManager", "Chọn quản lý")}
                     </option>
                     {users.map((user) => (
                       <option key={user.id} value={user.id}>
@@ -573,15 +631,15 @@ const WarehousePage = () => {
                     onClick={closeModal}
                     className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                   >
-                    {t("common.cancel", "Cancel")}
+                    {t("common.cancel", "Hủy")}
                   </button>
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
                     {editingWarehouse
-                      ? t("common.update", "Update")
-                      : t("common.create", "Create")}
+                      ? t("common.update", "Cập nhật")
+                      : t("common.create", "Tạo mới")}
                   </button>
                 </div>
               </form>
