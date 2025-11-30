@@ -10,19 +10,21 @@ import {
   BuildingStorefrontIcon,
   UserIcon,
   MagnifyingGlassIcon,
+  MapPinIcon,
 } from "@heroicons/react/24/outline";
 import {
   GoogleMap,
-  useJsApiLoader, 
+  useJsApiLoader,
   Marker,
-} from "@react-google-maps/api"; 
+} from "@react-google-maps/api";
 
 const WarehousePage = () => {
   const { t } = useTranslation();
 
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: ['places', 'geometry']
   });
 
   const [warehouses, setWarehouses] = useState([]);
@@ -49,6 +51,8 @@ const WarehousePage = () => {
     lat: 21.028511,
     lng: 105.804817,
   });
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [tempAddress, setTempAddress] = useState("");
 
   useEffect(() => {
     fetchWarehouses();
@@ -88,10 +92,10 @@ const WarehousePage = () => {
   const fetchUsers = async () => {
     try {
       const managerList = await warehouseApi.getWarehouseManagers();
-      setUsers(managerList); 
+      setUsers(managerList);
     } catch (error) {
       console.error("Error fetching managers:", error);
-      const errorMessage = 
+      const errorMessage =
         error.response?.data?.message || "Failed to load manager list";
       toast.error(errorMessage);
     }
@@ -101,23 +105,80 @@ const WarehousePage = () => {
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
     const newPos = { lat, lng };
-    setMarkerPosition(newPos); 
+    setMarkerPosition(newPos);
 
     try {
-      const data = await mapApi.getAddress(lat, lng); 
+      const data = await mapApi.getAddress(lat, lng);
       setFormData((prev) => ({ ...prev, address: data.address }));
+      setTempAddress(data.address);
       toast.success("Address selected");
     } catch (error) {
       console.error("Error reverse geocoding:", error);
       toast.error(
         error.response?.data?.message || "Failed to get address for location"
       );
-      setFormData((prev) => ({
-        ...prev,
-        address: `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`,
-      }));
+      const addressText = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+      setFormData((prev) => ({ ...prev, address: addressText }));
+      setTempAddress(addressText);
     }
   }, []);
+
+  const handleSearchAddress = async () => {
+    if (!tempAddress.trim()) {
+      toast.error("Please enter an address");
+      return;
+    }
+
+    try {
+      const coords = await mapApi.getCoordinates(tempAddress);
+      const pos = { lat: coords.latitude, lng: coords.longitude };
+      setMapCenter(pos);
+      setMarkerPosition(pos);
+      setFormData((prev) => ({ ...prev, address: tempAddress }));
+      toast.success("Address found on map");
+    } catch (error) {
+      console.error("Error geocoding address:", error);
+      toast.error(error.response?.data?.message || "Could not find address");
+    }
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const newPos = { lat, lng };
+        
+        setMapCenter(newPos);
+        setMarkerPosition(newPos);
+
+        try {
+          const data = await mapApi.getAddress(lat, lng);
+          setFormData((prev) => ({ ...prev, address: data.address }));
+          setTempAddress(data.address);
+          toast.success("Current location detected");
+        } catch (error) {
+          console.error("Error getting address:", error);
+          const addressText = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+          setFormData((prev) => ({ ...prev, address: addressText }));
+          setTempAddress(addressText);
+          toast.success("Current location set");
+        }
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        toast.error("Could not get your location. Please enable location services.");
+        setIsGettingLocation(false);
+      }
+    );
+  };
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -127,6 +188,7 @@ const WarehousePage = () => {
   const openCreateModal = () => {
     setEditingWarehouse(null);
     setFormData({ name: "", address: "", managerId: "" });
+    setTempAddress("");
     setShowModal(true);
     setMarkerPosition(null);
     setMapCenter({ lat: 21.028511, lng: 105.804817 });
@@ -139,14 +201,15 @@ const WarehousePage = () => {
       address: warehouse.address,
       managerId: warehouse.managerId || "",
     });
+    setTempAddress(warehouse.address);
     setShowModal(true);
     setMarkerPosition(null);
 
     if (warehouse.address) {
       try {
-        const coords = await mapApi.getCoordinates(warehouse.address); 
+        const coords = await mapApi.getCoordinates(warehouse.address);
         const pos = { lat: coords.latitude, lng: coords.longitude };
-        setMapCenter(pos); 
+        setMapCenter(pos);
         setMarkerPosition(pos);
       } catch (error) {
         console.error("Error geocoding address:", error);
@@ -164,6 +227,7 @@ const WarehousePage = () => {
     setShowModal(false);
     setEditingWarehouse(null);
     setFormData({ name: "", address: "", managerId: "" });
+    setTempAddress("");
     setMarkerPosition(null);
     setMapCenter({ lat: 21.028511, lng: 105.804817 });
   };
@@ -328,11 +392,51 @@ const WarehousePage = () => {
             )}
           </tbody>
         </table>
-        {/* ... (Pagination logic) ... */}
         {pagination.totalPages > 1 && (
           <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
             <div className="flex items-center justify-between">
-              {/* ... (pagination buttons) ... */}
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
+                  disabled={pagination.currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing page <span className="font-medium">{pagination.currentPage}</span> of{" "}
+                    <span className="font-medium">{pagination.totalPages}</span>
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    <button
+                      onClick={() => handlePageChange(pagination.currentPage - 1)}
+                      disabled={pagination.currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => handlePageChange(pagination.currentPage + 1)}
+                      disabled={pagination.currentPage === pagination.totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </nav>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -352,7 +456,6 @@ const WarehousePage = () => {
                   : t("warehouse.add", "Add Warehouse")}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* ... (Input "Name") ... */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t("warehouse.name", "Name")} *
@@ -372,24 +475,62 @@ const WarehousePage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t("warehouse.address", "Address")} *
                   </label>
-                  <input
+                  
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={tempAddress}
+                      onChange={(e) => setTempAddress(e.target.value)}
+                      placeholder={t(
+                        "warehouse.enterAddress",
+                        "Enter address or select on map..."
+                      )}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSearchAddress();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSearchAddress}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center gap-2 whitespace-nowrap"
+                    >
+                      <MagnifyingGlassIcon className="w-4 h-4" />
+                      {t("common.search", "Search")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleGetCurrentLocation}
+                      disabled={isGettingLocation}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 whitespace-nowrap disabled:bg-gray-400"
+                      title={t("warehouse.currentLocation", "Use current location")}
+                    >
+                      <MapPinIcon className="w-4 h-4" />
+                      {isGettingLocation ? "..." : t("warehouse.myLocation", "My Location")}
+                    </button>
+                  </div>
+
+                  {/* <input
                     type="text"
                     required
                     readOnly
                     value={formData.address}
                     placeholder={t(
-                      "warehouse.selectOnMap",
-                      "Please select on the map..."
+                      "warehouse.addressWillAppear",
+                      "Selected address will appear here..."
                     )}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 mb-2 bg-gray-50 cursor-not-allowed"
-                  />
-                  
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none bg-gray-50 cursor-not-allowed text-sm mb-2"
+                  /> */}
+
                   {!isLoaded ? (
                     <div className="w-full h-[300px] flex items-center justify-center bg-gray-100 text-gray-500">
                       {t("common.loading", "Loading...")}
                     </div>
                   ) : loadError ? (
-                     <div className="w-full h-[300px] flex items-center justify-center bg-red-50 text-red-700">
+                    <div className="w-full h-[300px] flex items-center justify-center bg-red-50 text-red-700">
                       Error loading map.
                     </div>
                   ) : (
@@ -404,7 +545,6 @@ const WarehousePage = () => {
                   )}
                 </div>
 
-                {/* ... (Select "Manager") ... */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t("warehouse.manager", "Manager")}
@@ -426,8 +566,7 @@ const WarehousePage = () => {
                     ))}
                   </select>
                 </div>
-                
-                {/* ... (Buttons) ... */}
+
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
                     type="button"
