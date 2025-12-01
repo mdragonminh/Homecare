@@ -52,14 +52,15 @@ namespace HSP.API.Controllers
                 return StatusCode(500, new { message = "Đã có lỗi xảy ra khi lấy danh sách technician", error = ex.Message });
             }
         }
-       
+
         [HttpGet("technicians/{id}")]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter},{RoleNames.Technician}")]
-        public async Task<ActionResult<TechnicianProfileResponseDto>> GetTechnicianById(Guid id)
+        public async Task<ActionResult<TechnicianProfileResponseDto>> GetTechnicianById(string id)
         {
             try
             {
-                var result = await _technicianProfileService.GetTechnicianByIdAsync(id);
+                var technicianId = await _technicianProfileService.GetTechnicianIdByUserId(Guid.Parse(id));
+                var result = await _technicianProfileService.GetTechnicianByIdAsync(technicianId);
                 if (result == null)
                 {
                     return NotFound(new { message = "Không tìm thấy technician" });
