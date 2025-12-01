@@ -59,7 +59,8 @@ namespace HSP.API.Controllers
         {
             try
             {
-                var result = await _technicianProfileService.GetTechnicianByIdAsync(id);
+                var technicianId = await _technicianProfileService.GetTechnicianIdByUserId(id);
+                var result = await _technicianProfileService.GetTechnicianByIdAsync(technicianId);
                 if (result == null)
                 {
                     return NotFound(new { message = "Không tìm thấy technician" });
