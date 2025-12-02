@@ -52,7 +52,7 @@ namespace HSP.API.Controllers
                 return StatusCode(500, new { message = "Đã có lỗi xảy ra khi lấy danh sách technician", error = ex.Message });
             }
         }
-       
+
         [HttpGet("technicians/{id}")]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter},{RoleNames.Technician}")]
         public async Task<ActionResult<TechnicianProfileResponseDto>> GetTechnicianById(Guid id)
