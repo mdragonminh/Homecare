@@ -68,6 +68,7 @@ export function loadGoogleMapsAPI() {
     };
 
     script.onerror = (error) => {
+      
       isLoading = false;
       reject(new Error('Failed to load Google Maps API script'));
     };

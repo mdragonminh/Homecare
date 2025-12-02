@@ -365,22 +365,22 @@ export function useFindTechnician(loggedInUser) {
       const filteredTechnicians = searchResult.data
         .map((tech) => {
           const { latitude, longitude } = tech;
-          const calculatedDistance = calculateDistance(
-            coords.latitude,
-            coords.longitude,
-            latitude,
-            longitude
-          );
-
+          const calculatedDistanceInMeters = calculateDistance(
+        coords.latitude,
+        coords.longitude,
+        latitude,
+        longitude
+      );
+          const calculatedDistanceInKm = (calculatedDistanceInMeters / 1000).toFixed(2);
           return {
             ...tech, 
-            distance: calculatedDistance,
+            distance: calculatedDistanceInKm,
             lat: latitude, 
             lng: longitude, 
           };
         })
-        .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance))
-        .filter((tech) => parseFloat(tech.distance) <= radius); 
+        .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance)) 
+        .filter((tech) => parseFloat(tech.distance) <= radius);
 
       setTechnicians(filteredTechnicians);
       

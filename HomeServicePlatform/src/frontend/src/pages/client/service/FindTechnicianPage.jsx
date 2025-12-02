@@ -495,13 +495,13 @@ export function FindTechnicianPage({ loggedInUser }) {
                 lng={coords.longitude}
                 technicians={technicians}
                 isDraggable={!loggedInUser}
-                onMarkerDrag={handleMarkerDrag}
+                onMarkerDragEnd={handleMarkerDrag}
               />
               {!loggedInUser && (
                 <button
                   onClick={handleGetMyLocation}
                   disabled={isSearching || isGettingLocation || isMatching}
-                  className={`absolute bottom-4 right-4 z-10 w-10 h-10 rounded-lg bg-white shadow-md hover:shadow-lg transition-all flex items-center justify-center border border-gray-200 ${
+                  className={`absolute bottom-4 left-4 z-10 w-10 h-10 rounded-lg bg-white shadow-md hover:shadow-lg transition-all flex items-center justify-center border border-gray-200 ${
                     isGettingLocation ? "animate-pulse" : "hover:bg-gray-50"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                   title={t("ui.use_my_current_location", {

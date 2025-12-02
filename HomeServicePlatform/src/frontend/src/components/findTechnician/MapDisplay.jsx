@@ -1,164 +1,156 @@
-// fileName: MapDisplay.jsx
-
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useRef, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-
-
-const customMarkerIcon = new L.Icon({
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const technicianIcon = new L.Icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-/* eslint-disable react-refresh/only-export-components */
+// eslint-disable-next-line react-refresh/only-export-components
 export const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
+  const R = 6371000; 
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  
+  const a = 
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return (R * c).toFixed(2);
+  const distance = R * c; 
+  
+  return distance;
 };
 
-// ---------------------------------------------------------------------
-// 2. MAP DISPLAY COMPONENT
-// ---------------------------------------------------------------------
-
-const MapDisplay = ({ lat, lng, technicians, isDraggable, onMarkerDrag }) => {
+export default function MapDisplay({
+  lat,
+  lng,
+  technicians,
+  popupContent,
+  isDraggable = false, 
+  onMarkerDragEnd, 
+}) {
   const { t } = useTranslation();
-  const mapRef = useRef(null);
-  const mapInstance = useRef(null);
-  const markerInstance = useRef(null);
-  const technicianMarkers = useRef([]);
-  const defaultCoords = { lat: 21.0285, lng: 105.8542 }; // Hanoi
-  const popupContent = useMemo(() => {
-    if (!technicians || technicians.length === 0) return null;
-    const groupedTechs = technicians.reduce((acc, tech) => {
-      const key = `${tech.lat}_${tech.lng}`;
-      if (!acc[key]) {
-        acc[key] = { lat: tech.lat, lng: tech.lng, techs: [] };
-      }
-      acc[key].techs.push(tech);
-      return acc;
-    }, {});
 
-    return Object.values(groupedTechs).map(group => ({
-      lat: group.lat,
-      lng: group.lng,
-      content: group.techs
-        .map(tech => `<b>${tech.name}</b><br>${t("ui.technicians.distance_label", { distance: tech.distance })}`)
-        .join("<br><hr>")
-    }));
-  }, [technicians, t]);
+  const mapRef = useRef(null); 
+  const mapInstance = useRef(null); 
+  const userMarkerInstance = useRef(null); 
+  const technicianMarkers = useRef([]); 
+  const [isMapInit, setIsMapInit] = useState(false);
 
+  // Icon URLs
+  const technicianIconUrl = useMemo(() => 
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"
+  , []);
+  
+  const userIconUrl = useMemo(() => 
+    "http://maps.google.com/mapfiles/ms/icons/blue-dot.png" 
+  , []);
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || isMapInit || !window.google?.maps) return;
 
-    const initialLat = lat || defaultCoords.lat;
-    const initialLng = lng || defaultCoords.lng;
-
-    if (!mapInstance.current) {
-      // Khởi tạo bản đồ lần đầu
-      mapInstance.current = L.map(mapRef.current, {
-        center: [initialLat, initialLng],
-        zoom: 13,
-        layers: [
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-          }),
-        ],
-      });
-
-      
-      markerInstance.current = L.marker([initialLat, initialLng], {
-        icon: customMarkerIcon,
-        draggable: isDraggable, 
-      }).addTo(mapInstance.current);
-
-      
-      markerInstance.current.on("dragend", (e) => {
-        const { lat, lng } = e.target.getLatLng();
-        onMarkerDrag(lat, lng); 
-      });
-    }
-
-    if (markerInstance.current) {
-      if (isDraggable && !markerInstance.current.dragging.enabled()) {
-        markerInstance.current.dragging.enable();
-      } else if (!isDraggable && markerInstance.current.dragging.enabled()) {
-        markerInstance.current.dragging.disable();
+    const initialLat = lat || 21.0285;
+    const initialLng = lng || 105.8542;
+    const initialLocation = new window.google.maps.LatLng(initialLat, initialLng);
+    mapInstance.current = new window.google.maps.Map(mapRef.current, {
+      center: initialLocation,
+      zoom: 15,
+      mapTypeId: "roadmap",
+      disableDefaultUI: true,
+      zoomControl: true,
+      gestureHandling: "greedy",
+      streetViewControl: false,
+    });
+    userMarkerInstance.current = new window.google.maps.Marker({
+      position: initialLocation,
+      map: mapInstance.current,
+      title: t("ui.your_service_location", { defaultValue: "Vị trí dịch vụ của bạn" }),
+      draggable: false, 
+      icon: {
+          url: userIconUrl,
+          scaledSize: new window.google.maps.Size(32, 32),
       }
-    }
-
-
+    });
     
-    if (lat && lng) {
-      const newLatlng = L.latLng(lat, lng);
-      const currentCenter = mapInstance.current.getCenter();
-      const distance = L.latLng(currentCenter).distanceTo(newLatlng);
-      if (distance > 100) {
-        mapInstance.current.setView(newLatlng, 15);
+    setIsMapInit(true);
+
+    setTimeout(() => {
+        window.google.maps.event.trigger(mapInstance.current, 'resize');
+    }, 100);
+
+  }, []); 
+  useEffect(() => {
+    if (!userMarkerInstance.current) return;
+    userMarkerInstance.current.setDraggable(isDraggable);
+    let listener = null;
+    if (isDraggable && onMarkerDragEnd) {
+      listener = userMarkerInstance.current.addListener('dragend', () => {
+        const newPos = userMarkerInstance.current.getPosition();
+        onMarkerDragEnd(newPos.lat(), newPos.lng()); 
+      });
+    }
+    return () => {
+      if (listener) {
+        window.google.maps.event.removeListener(listener);
       }
+    };
+  }, [isDraggable, onMarkerDragEnd]);
+  useEffect(() => {
+    if (!isMapInit || !lat || !lng || !mapInstance.current || !userMarkerInstance.current) return;
 
-      markerInstance.current
-        .setLatLng(newLatlng)
-        .bindPopup(`<b>${t("ui.your_service_location", { defaultValue: "Vị trí dịch vụ của bạn" })}</b>`)
-        .openPopup();
-    }
-
+    const newPos = new window.google.maps.LatLng(lat, lng);
+    userMarkerInstance.current.setPosition(newPos);
+    const currentCenter = mapInstance.current.getCenter();
+    const distance = calculateDistance(currentCenter.lat(), currentCenter.lng(), lat, lng);
     
-    technicianMarkers.current.forEach((marker) => marker.remove());
+    if (distance > 100) {
+        mapInstance.current.setCenter(newPos);
+        mapInstance.current.setZoom(15);
+    }
+    technicianMarkers.current.forEach(marker => marker.setMap(null));
     technicianMarkers.current = [];
-    if (popupContent && lat && lng) {
-      const bounds = L.latLngBounds(L.latLng(lat, lng)); 
 
-      popupContent.forEach(({ lat: techLat, lng: techLng, content }) => {
-        const groupLatLng = L.latLng(techLat, techLng);
-        bounds.extend(groupLatLng);
+    const bounds = new window.google.maps.LatLngBounds();
+    bounds.extend(newPos); 
+    let hasTechnicians = false;
+    
+    technicians?.forEach(tech => { 
+        const { id, lat: techLat, lng: techLng } = tech; 
+        
+        if (techLat && techLng) {
+            hasTechnicians = true;
+            const techPos = new window.google.maps.LatLng(techLat, techLng);
+            bounds.extend(techPos);
 
-        const marker = L.marker([techLat, techLng], { icon: technicianIcon })
-          .addTo(mapInstance.current)
-          .bindPopup(content);
-        technicianMarkers.current.push(marker);
-      });
-      if (technicians?.length > 0) {
-        mapInstance.current.fitBounds(bounds, { padding: [50, 50] });
-      }
+            const marker = new window.google.maps.Marker({
+                position: techPos,
+                map: mapInstance.current,
+                title: tech.name || `Kỹ thuật viên ${id}`,
+                icon: {
+                    url: technicianIconUrl,
+                    scaledSize: new window.google.maps.Size(32, 32),
+                },
+            });
+
+            const techPopup = popupContent?.find(p => p.id === id); 
+            if (techPopup?.content) {
+               const infoWindow = new window.google.maps.InfoWindow({ content: techPopup.content });
+               marker.addListener('click', () => { infoWindow.open({ anchor: marker, map: mapInstance.current }); });
+            }
+
+            technicianMarkers.current.push(marker);
+        }
+    });
+    if (hasTechnicians) {
+        mapInstance.current.fitBounds(bounds, { padding: 50 });
     }
-  }, [lat, lng, technicians, popupContent, isDraggable, onMarkerDrag, t]);
+    
+  }, [lat, lng, technicians, popupContent, isMapInit, technicianIconUrl]);
 
   return (
     <div
       ref={mapRef}
-      // Đã sửa: Loại bỏ shadow-lg và border-2 border-gray-500
-      className="w-full h-full rounded-xl relative z-0 overflow-hidden transition-all duration-300" 
-      style={{ minHeight: "400px" }}
+      style={{ 
+        height: "100%", // ĐÃ ĐỔI TỪ "500px" SANG "100%"
+        width: "100%", 
+        borderRadius: "12px",
+        minHeight: '200px',
+      }}
+      className="map-container"
     />
   );
-};
-
-export default MapDisplay;
+}
