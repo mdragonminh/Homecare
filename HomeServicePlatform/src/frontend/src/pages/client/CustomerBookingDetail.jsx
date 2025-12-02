@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { bookingApi } from "../../services/bookingApi";
 import { toast } from "sonner";
 import {
   ArrowLeftIcon,
   StarIcon as StarSolid,
+  CheckCircleIcon,
 } from "@heroicons/react/24/solid";
 import { FeedbackModal } from "../../components/feedback/FeedbackModal";
 
@@ -40,12 +41,36 @@ const getStatusBadge = (status) => {
   return "bg-amber-50 text-amber-700 border-amber-200";
 };
 
+const formatDateTime = (value) => {
+  if (!value) return "Đang cập nhật";
+  const dateStr = String(value);
+  let date;
+  if (dateStr.includes("Z") || dateStr.includes("+") || dateStr.match(/-\d{2}:\d{2}$/)) {
+    date = new Date(dateStr);
+  } else {
+    date = new Date(dateStr.endsWith("Z") ? dateStr : `${dateStr}Z`);
+  }
+  return date.toLocaleString("vi-VN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Ho_Chi_Minh",
+  });
+};
+
+const formatCurrency = (value = 0) =>
+  new Intl.NumberFormat("vi-VN").format(value || 0);
+
 export default function CustomerBookingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const shouldOpenRating = location.state?.openRating;
 
   useEffect(() => {
     fetchBookingDetail();
@@ -76,6 +101,27 @@ export default function CustomerBookingDetail() {
     }
   };
 
+  const paymentInfo = getPaymentInfo(booking?.payments);
+
+  const customerFeedback = booking?.feedbacks?.find(
+    (f) => f.source === FeedbackSource.Customer
+  );
+
+  const canRateBooking =
+    !!booking &&
+    (booking.status === BookingStatus.Completed ||
+      booking.status === BookingStatus.Confirmed) &&
+    paymentInfo.isPaid &&
+    !customerFeedback;
+
+  useEffect(() => {
+    if (!shouldOpenRating) return;
+    if (!booking) return;
+    if (!canRateBooking) return;
+    setIsFeedbackModalOpen(true);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [booking, canRateBooking, navigate, location.pathname, shouldOpenRating]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -92,26 +138,26 @@ export default function CustomerBookingDetail() {
     );
   }
 
-  const paymentInfo = getPaymentInfo(booking.payments);
-
-  const customerFeedback = booking.feedbacks?.find(
-    (f) => f.source === FeedbackSource.Customer
-  );
-
-  const canRateBooking =
-    (booking.status === BookingStatus.Completed ||
-      booking.status === BookingStatus.Confirmed) &&
-    paymentInfo.isPaid &&
-    !customerFeedback;
-
   const primaryPayment =
     booking.payments && booking.payments.length > 0
       ? booking.payments[0]
       : null;
 
-  const displayPrice = primaryPayment
-    ? primaryPayment.amount
-    : booking.totalPrice;
+  const displayPrice =
+    primaryPayment?.amount ??
+    booking.totalPrice ??
+    0;
+  const formattedTotalPrice = formatCurrency(displayPrice);
+  const desiredDateText = formatDateTime(booking.desiredDate);
+  const completedDateText = booking.dateCompleted
+    ? formatDateTime(booking.dateCompleted)
+    : null;
+  const serviceItems = booking.items || [];
+  const hasServices = serviceItems.length > 0;
+  const showCompletionBanner = booking.status === BookingStatus.Completed;
+  const showPaymentButton = showCompletionBanner && !paymentInfo.isPaid;
+  const shortId = (value) =>
+    value ? String(value).substring(0, 8) : "N/A";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -156,6 +202,34 @@ export default function CustomerBookingDetail() {
           </div>
         )}
 
+        {showCompletionBanner && (
+          <div className="mb-6 border border-emerald-200 bg-emerald-50 rounded-xl p-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                <CheckCircleIcon className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-emerald-900">
+                  Kỹ thuật viên đã hoàn thành dịch vụ
+                </p>
+                <p className="text-sm text-emerald-800">
+                  {completedDateText
+                    ? `Hoàn thành lúc ${completedDateText}`
+                    : "Vui lòng xác nhận lại chất lượng trước khi thanh toán."}
+                </p>
+              </div>
+            </div>
+            {showPaymentButton && (
+              <button
+                onClick={() => navigate(`/payment/${booking.id}`)}
+                className="inline-flex items-center justify-center px-5 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+              >
+                Thanh toán ngay
+              </button>
+            )}
+          </div>
+        )}
+
         {customerFeedback && (
           <div className="mb-6 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -195,7 +269,12 @@ export default function CustomerBookingDetail() {
             <p className="text-xl font-semibold text-gray-900">
               {booking.technicianName || "Chưa có thông tin"}
             </p>
-            <p className="text-sm text-gray-600 mt-1">technician@example.com</p>
+            <p className="text-sm text-gray-600 mt-1">
+              {booking.technicianEmail || "Chưa cập nhật email"}
+            </p>
+            {booking.technicianPhone && (
+              <p className="text-sm text-gray-600">{booking.technicianPhone}</p>
+            )}
           </div>
 
           {/* Status Cards Grid */}
@@ -228,8 +307,77 @@ export default function CustomerBookingDetail() {
               >
                 {paymentInfo.statusText}
               </div>
+              {paymentInfo.isPaid && primaryPayment?.paidAt && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Đã thanh toán lúc {formatDateTime(primaryPayment.paidAt)}
+                </p>
+              )}
+              {showPaymentButton && (
+                <button
+                  onClick={() => navigate(`/payment/${booking.id}`)}
+                  className="mt-3 inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                >
+                  Thanh toán ngay
+                </button>
+              )}
             </div>
           </div>
+
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              Thông tin lịch hẹn
+            </h3>
+            <dl className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-gray-500">Mã booking</dt>
+                <dd className="font-mono text-gray-900">{booking.id}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-500">Thời gian hẹn</dt>
+                <dd className="text-gray-900">{desiredDateText}</dd>
+              </div>
+              {completedDateText && (
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Hoàn thành</dt>
+                  <dd className="text-gray-900">{completedDateText}</dd>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <dt className="text-gray-500">Trạng thái</dt>
+                <dd className="font-semibold text-gray-900">
+                  {BookingStatusLabels[booking.status] || "Không xác định"}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          {hasServices && (
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                Dịch vụ đã chọn
+              </h3>
+              <ul className="divide-y divide-gray-100">
+                {serviceItems.map((item) => (
+                  <li
+                    key={item.id}
+                    className="py-3 flex items-center justify-between"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {item.serviceName || "Dịch vụ"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        ID: {shortId(item.serviceId || item.id)}...
+                      </p>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {formatCurrency(item.price)} VNĐ
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Description Card */}
           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
@@ -247,7 +395,7 @@ export default function CustomerBookingDetail() {
               Tổng tiền
             </h3>
             <p className="text-4xl font-bold text-blue-600">
-              {displayPrice.toLocaleString("vi-VN")}
+              {formattedTotalPrice}
               <span className="text-lg font-normal text-gray-600 ml-2">
                 VNĐ
               </span>

@@ -195,34 +195,31 @@ const BookingDetailPage = () => {
     });
   };
 
-  const canCompleteBooking = (status) => {
-    return status === BookingStatus.InProgress;
-  };
+  const canCompleteBooking = (status) =>
+    status === BookingStatus.InProgress ||
+    status === BookingStatus.Confirmed ||
+    status === BookingStatus.TechnicianOnTheWay;
 
-  const canRejectBooking = (status) => {
-    return status === BookingStatus.Pending;
-  };
+  const canRejectBooking = (status) =>
+    status === BookingStatus.Pending || status === BookingStatus.Confirmed;
 
   const getAvailableStatuses = (currentStatus) => {
-    const statuses = [];
     switch (currentStatus) {
       case BookingStatus.Pending:
-        statuses.push(BookingStatus.Confirmed);
-        break;
+        return [BookingStatus.Confirmed, BookingStatus.Cancelled];
       case BookingStatus.Confirmed:
-        statuses.push(
+        return [
           BookingStatus.TechnicianOnTheWay,
-          BookingStatus.InProgress
-        );
-        break;
+          BookingStatus.InProgress,
+          BookingStatus.Cancelled,
+        ];
       case BookingStatus.TechnicianOnTheWay:
-        statuses.push(BookingStatus.InProgress);
-        break;
+        return [BookingStatus.InProgress, BookingStatus.Cancelled];
       case BookingStatus.InProgress:
-        statuses.push(BookingStatus.Completed);
-        break;
+        return [BookingStatus.Completed];
+      default:
+        return [];
     }
-    return statuses;
   };
 
   if (loading) {
