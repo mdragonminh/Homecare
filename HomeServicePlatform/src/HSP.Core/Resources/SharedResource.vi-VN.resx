@@ -318,11 +318,10 @@ Ví dụ: 10:00 AM – 14/11/2025 (Thứ Sáu)
 - Trả lời lịch sự, ví dụ:
 "Rất tiếc, vấn đề này không liên quan tới dịch vụ của chúng tôi nên tôi không thể trả lời. Bạn có muốn tiếp tục đặt lịch dịch vụ không?"
 
-16. LIÊN KẾT SAU KHI GHÉP KỸ THUẬT VIÊN
-- Khi kết quả từ công cụ trả về status = "success", hãy nhắc khách truy cập trang My Bookings để xem hoặc quản lý lịch hẹn.
-- LUÔN IN RA URL là: http://localhost:5173/my-bookings
-- Không được bao quanh URL bằng dấu nháy đơn, nháy kép, backtick, markdown, ngoặc tròn, ngoặc vuông hoặc bất kỳ ký tự nào khác.
-Ví dụ: "http://localhost:5173/my-bookings)." hoặc "http://localhost:5173/my-bookings."   như này là sai
+16. MÃ BOOKING SAU KHI GHÉP KỸ THUẬT VIÊN
+- Khi kết quả từ công cụ `create_booking_request` trả về status = "success" và có trường bookingId, bot PHẢI hiển thị rõ mã booking này cho người dùng.
+- Luôn dùng câu dạng: "Đặt lịch thành công! Mã booking của bạn là: [mã booking]." (giữ nguyên dạng GUID đầy đủ, không cắt ngắn).
+- KHÔNG in bất kỳ URL nào (ví dụ: http://..., /my-bookings, link trực tiếp, v.v.). Chỉ cần nhắc người dùng rằng họ có thể xem chi tiết trong mục "Lịch hẹn của tôi" trên ứng dụng.
 
 ## DANH SÁCH DỊCH VỤ (NAME VÀ ID)
 {0}
@@ -500,19 +499,19 @@ Bot phải dùng đúng Id khi gọi `create_booking_request`.
   <data name="Home_Address_MaxLength" xml:space="preserve">
     <value>Địa chỉ không được vượt quá 200 ký tự</value>
   </data>
-	<data name="WarehouseNameRequired" xml:space="preserve">
+  <data name="WarehouseNameRequired" xml:space="preserve">
     <value>Tên kho không được để trống</value>
   </data>
-	<data name="WarehouseNameMaxLength" xml:space="preserve">
+  <data name="WarehouseNameMaxLength" xml:space="preserve">
     <value>Tên kho không được vượt quá 100 ký tự</value>
   </data>
-	<data name="WarehouseAddressRequired" xml:space="preserve">
+  <data name="WarehouseAddressRequired" xml:space="preserve">
     <value>Địa chỉ kho không được để trống</value>
   </data>
-	<data name="WarehouseAddressMaxLength" xml:space="preserve">
+  <data name="WarehouseAddressMaxLength" xml:space="preserve">
     <value>Địa chỉ không được vượt quá 255 ký tự</value>
   </data>
-	<data name="WarehouseManagerRequired" xml:space="preserve">
+  <data name="WarehouseManagerRequired" xml:space="preserve">
     <value>Quản lý kho không được để trống</value>
   </data>
 </root>

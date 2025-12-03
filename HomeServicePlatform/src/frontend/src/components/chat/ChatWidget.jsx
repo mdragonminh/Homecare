@@ -224,7 +224,7 @@ export const ChatWidget = ({ onClose }) => {
       const bookingIdMatch = responseText.match(/\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/)
       const extractedBookingId = bookingIdMatch ? bookingIdMatch[0] : null
 
-      if (hasSuccessKeywords && !hasErrorKeywords) {
+      if ((hasSuccessKeywords && !hasErrorKeywords) || extractedBookingId) {
         setBookingId(extractedBookingId)
         setShowSuccessModal(true)
       }

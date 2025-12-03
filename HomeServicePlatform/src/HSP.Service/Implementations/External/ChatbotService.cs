@@ -27,6 +27,8 @@ namespace HSP.Service.Implementations.External
         private readonly IHomeService _homeService;
         private readonly OpenAISettingsDto _settings;
         private readonly string _myBookingsUrl;
+        // Lưu BookingId của lần gọi tool gần nhất (trong một request) để có thể chèn vào câu trả lời cuối cùng
+        private Guid? _lastBookingId;
 
         public ChatbotService(
                 IConfiguration configuration,
@@ -53,6 +55,7 @@ namespace HSP.Service.Implementations.External
             Guid conversationId = input.ConversationId ?? Guid.NewGuid();
             string customerIdString = customerId.ToString();
             DateTime turnTimestamp = DateTime.UtcNow;
+            _lastBookingId = null; // reset cho mỗi lượt chat
 
             var (systemPrompt, createBookingTool) = await PrepareChatContextAsync(customerId);
 
@@ -242,6 +245,15 @@ namespace HSP.Service.Implementations.External
             {
                 finalAssistantResponse = completion.Content[0].Text;
             }
+            // Nếu đã có BookingId (matching thành công), chèn thêm câu thông báo mã booking
+            if (_lastBookingId.HasValue && !string.IsNullOrWhiteSpace(finalAssistantResponse))
+            {
+                var bookingIdText = _lastBookingId.Value.ToString();
+                if (!finalAssistantResponse.Contains(bookingIdText, StringComparison.OrdinalIgnoreCase))
+                {
+                    finalAssistantResponse += $"\n\nMã booking của bạn là: {bookingIdText}.";
+                }
+            }
 
             DateTime newTimestamp = currentTimestamp.AddSeconds(1);
             newMessagesToSave.Add(new ChatMessageHistory
@@ -306,6 +318,9 @@ namespace HSP.Service.Implementations.External
                     object toolResultSummary;
                     if (matchResult.IsMatched)
                     {
+                        // Lưu BookingId để sau đó chèn vào câu trả lời cuối cùng cho user
+                        _lastBookingId = matchResult.BookingId;
+
                         toolResultSummary = new
                         {
                             status = "success",
