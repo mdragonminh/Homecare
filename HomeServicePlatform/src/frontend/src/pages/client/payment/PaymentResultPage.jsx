@@ -365,24 +365,48 @@ const PaymentResultPage = () => {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-4">
-          <button
-            onClick={() => navigate("/")}
-            className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-          >
-            Quay về trang chủ
-          </button>
-          {payment.status === PaymentStatus.Pending && payment.paymentMethod !== 0 && (
-            <button
-              onClick={() =>
-                navigate(`/payment/instructions/${paymentId}`, {
-                  state: { payment },
-                })
-              }
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Xem hướng dẫn thanh toán
-            </button>
+        <div className="flex flex-col md:flex-row gap-4">
+          {payment.status === PaymentStatus.Completed ? (
+            <>
+              <button
+                onClick={() =>
+                  navigate(`/my-bookings/${payment.bookingId}`, {
+                    state: { openRating: true },
+                  })
+                }
+                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Đánh giá dịch vụ
+              </button>
+              <button
+                onClick={() => navigate(`/my-bookings/${payment.bookingId}`)}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Xem chi tiết booking
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate("/")}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Quay về trang chủ
+              </button>
+              {payment.status === PaymentStatus.Pending &&
+                payment.paymentMethod !== 0 && (
+                  <button
+                    onClick={() =>
+                      navigate(`/payment/instructions/${paymentId}`, {
+                        state: { payment },
+                      })
+                    }
+                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  >
+                    Xem hướng dẫn thanh toán
+                  </button>
+                )}
+            </>
           )}
         </div>
       </div>

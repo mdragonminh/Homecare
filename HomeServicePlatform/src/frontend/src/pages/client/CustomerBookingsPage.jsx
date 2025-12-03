@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { bookingApi } from "../../services/bookingApi";
 import { paymentApi, getPaymentStatusText, PaymentStatus } from "../../services/paymentApi";
 import { createTicket } from "../../services/ticketApi";
+import { BookingStatus } from "../../constants/enums";
 
 const CustomerBookingsPage = () => {
   const { t } = useTranslation();
@@ -196,9 +197,10 @@ const CustomerBookingsPage = () => {
   };
 
   const canPayForBooking = (booking, payment) => {
-    const isConfirmed = booking.status === 1; 
-    const hasNoCompletedPayment = !payment || payment.status !== PaymentStatus.Completed;
-    return isConfirmed && hasNoCompletedPayment;
+    const isCompleted = booking.status === BookingStatus.Completed;
+    const hasNoCompletedPayment =
+      !payment || payment.status !== PaymentStatus.Completed;
+    return isCompleted && hasNoCompletedPayment;
   };
 
   return (
