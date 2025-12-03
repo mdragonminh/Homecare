@@ -426,7 +426,11 @@ export function FindTechnicianPage({ loggedInUser }) {
               <button
                 onClick={handleFindTechnician}
                 disabled={isSearching || isMatching}
-                className="w-11/12 max-w-md sm:flex-1 h-11 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                className={`${
+            loggedInUser 
+                ? "w-11/12 max-w-md sm:flex-1" // Giữ nguyên cho màn hình lớn khi có 2 nút
+                : "w-full" // Thay đổi để chiếm toàn bộ chiều rộng khi chỉ có 1 nút
+        } h-11 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm`}
               >
                 {isSearching ? (
                   <>

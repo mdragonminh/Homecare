@@ -228,7 +228,42 @@ export default function EditHomePage({ homeData, onClose, onSuccess }) {
       }
     );
   };
+  // Áp dụng cho cả AddHome và EditHomePage
+const handleGeocode = async (address) => {
+  if (!window.google?.maps || address.trim().length < 10) return; // Chỉ Geocode khi địa chỉ đủ dài
 
+  try {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
+    );
+    const data = await res.json();
+
+    if (data.results && data.results.length > 0) {
+      const location = data.results[0].geometry.location;
+      const newLat = location.lat;
+      const newLng = location.lng;
+
+      // Cập nhật tọa độ và vị trí marker
+      setFormData((prev) => ({
+        ...prev,
+        latitude: newLat,
+        longitude: newLng,
+      }));
+
+      const newPos = new window.google.maps.LatLng(newLat, newLng);
+      markerInstance.current.setPosition(newPos);
+      mapInstance.current.setCenter(newPos);
+      mapInstance.current.setZoom(16);
+
+      // Có thể thêm toast.info ở đây nếu cần, nhưng nên để silent
+    } else {
+      // Xử lý trường hợp không tìm thấy (thông báo người dùng kiểm tra lại)
+      console.log("Geocode manual failed for address:", address);
+    }
+  } catch (error) {
+    console.error("Geocoding error:", error);
+  }
+};
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast.error(t("address.error.validation_failed"));
@@ -388,6 +423,7 @@ export default function EditHomePage({ homeData, onClose, onSuccess }) {
                     type="text"
                     value={formData.address}
                     onChange={(e) => handleInputChange("address", e.target.value)}
+                    onBlur={(e) => handleGeocode(e.target.value)}
                     className={`w-full pl-4 pr-12 py-3 border-2 rounded-xl bg-slate-50/50 transition-all duration-300 text-base focus:outline-none focus:bg-white ${
                       errors.address
                         ? "border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
