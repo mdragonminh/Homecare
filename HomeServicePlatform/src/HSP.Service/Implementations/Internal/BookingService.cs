@@ -248,6 +248,13 @@ namespace HSP.Service.Implementations.Internal
                     PaidAt = p.PaidAt,
                     DateCreated = p.DateCreated
                 }).ToList(),
+                Feedbacks = booking.Feedbacks.Select(f => new BookingFeedbackResponseDto
+                {
+                    BookingId = f.BookingId,
+                    Rating = f.Rating,
+                    Comment = f.Comment,
+                    Source = f.Source
+                }).ToList(),
                 TotalPrice = totalPrice
             };
 

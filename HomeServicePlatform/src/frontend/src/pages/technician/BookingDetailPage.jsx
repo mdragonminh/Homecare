@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { bookingApi } from "../../services/bookingApi";
 import { equipmentApi } from "../../services/equipmentApi";
-import { BookingStatus, BookingStatusLabels } from "../../constants/enums";
+import { BookingStatus, BookingStatusLabels, FeedbackSource } from "../../constants/enums";
 import { toast } from "sonner";
 import {
   ArrowLeftIcon,
@@ -17,6 +17,7 @@ import {
   QrCodeIcon,
   ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
+import { FeedbackModal } from "../../components/feedback/FeedbackModal";
 
 const BookingDetailPage = () => {
   const { id } = useParams();
@@ -40,6 +41,8 @@ const BookingDetailPage = () => {
     isDanger: false,
     onConfirm: null
   });
+
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
   const formatCurrency = (value) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
@@ -147,18 +150,32 @@ const BookingDetailPage = () => {
   const onCompleteBookingClick = () => {
     openConfirm({
       title: "Xác nhận hoàn thành",
-      content: "Bạn đã hoàn thành công việc và muốn đóng booking này? Hành động này không thể hoàn tác.",
+      content: "Bạn đã hoàn thành công việc và muốn đóng booking này? Sau đó bạn sẽ được yêu cầu đánh giá khách hàng.",
       isDanger: false,
       onConfirm: async () => {
         try {
           await bookingApi.completeBooking(id);
           toast.success("Đã hoàn thành booking");
           fetchBookingDetail();
+          // Mở modal feedback sau khi hoàn thành
+          setIsFeedbackModalOpen(true);
         } catch {
           toast.error("Không thể hoàn thành booking");
         }
       }
     });
+  };
+
+  const handleFeedbackSubmit = async (rating, comment) => {
+    try {
+      await bookingApi.createFeedback(id, rating, comment);
+      toast.success("Đã gửi đánh giá thành công");
+      setIsFeedbackModalOpen(false);
+      fetchBookingDetail();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Không thể gửi đánh giá");
+      throw error; // Re-throw để FeedbackModal có thể xử lý
+    }
   };
 
   const onRejectBookingClick = () => {
@@ -199,6 +216,11 @@ const BookingDetailPage = () => {
   const canComplete = booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.InProgress;
   const canOpenChat = booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.InProgress;
   const canAddEquipment = booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.InProgress;
+
+  // Lấy feedbacks từ booking
+  const customerFeedback = booking.feedbacks?.find(f => f.source === FeedbackSource.Customer);
+  const technicianFeedback = booking.feedbacks?.find(f => f.source === FeedbackSource.Technician);
+  const needsFeedback = booking.status === BookingStatus.Completed && !technicianFeedback;
 
   return (
     <div className="p-6 max-w-7xl mx-auto relative">
@@ -327,6 +349,92 @@ const BookingDetailPage = () => {
                 <p className="text-gray-600 text-sm mt-1"><strong>Thời gian hẹn:</strong> {formatDate(booking.desiredDate)}</p>
              </div>
           </div>
+
+          {/* Feedbacks Section */}
+          {(customerFeedback || technicianFeedback || needsFeedback) && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h2 className="text-lg font-bold mb-4 border-b pb-2 flex items-center">
+                <StarIcon className="h-5 w-5 mr-2 text-yellow-500" />
+                Đánh giá và Phản hồi
+              </h2>
+              
+              <div className="space-y-4">
+                {/* Customer Feedback về Technician */}
+                {customerFeedback ? (
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-800">Đánh giá từ khách hàng về bạn</h3>
+                      <div className="flex items-center">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <StarIcon
+                            key={i}
+                            className={`h-5 w-5 ${
+                              i < customerFeedback.rating
+                                ? "text-yellow-400 fill-yellow-400"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                        <span className="ml-2 text-sm font-medium text-gray-700">
+                          {customerFeedback.rating}/5
+                        </span>
+                      </div>
+                    </div>
+                    {customerFeedback.comment && (
+                      <p className="text-gray-700 text-sm mt-2 italic">
+                        "{customerFeedback.comment}"
+                      </p>
+                    )}
+                  </div>
+                ) : booking.status === BookingStatus.Completed && (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center text-gray-500 text-sm">
+                    Khách hàng chưa đánh giá
+                  </div>
+                )}
+
+                {/* Technician Feedback về Customer */}
+                {technicianFeedback ? (
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-800">Đánh giá của bạn về khách hàng</h3>
+                      <div className="flex items-center">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <StarIcon
+                            key={i}
+                            className={`h-5 w-5 ${
+                              i < technicianFeedback.rating
+                                ? "text-yellow-400 fill-yellow-400"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                        <span className="ml-2 text-sm font-medium text-gray-700">
+                          {technicianFeedback.rating}/5
+                        </span>
+                      </div>
+                    </div>
+                    {technicianFeedback.comment && (
+                      <p className="text-gray-700 text-sm mt-2 italic">
+                        "{technicianFeedback.comment}"
+                      </p>
+                    )}
+                  </div>
+                ) : needsFeedback && (
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-gray-700 mb-2">
+                      Bạn chưa đánh giá khách hàng. Vui lòng đánh giá để hoàn tất booking.
+                    </p>
+                    <button
+                      onClick={() => setIsFeedbackModalOpen(true)}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded font-medium text-sm transition"
+                    >
+                      Đánh giá khách hàng
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3 pt-2">
@@ -482,6 +590,20 @@ const BookingDetailPage = () => {
           </div>
         </div>
       )}
+
+      {/* --- FEEDBACK MODAL --- */}
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        onSubmit={handleFeedbackSubmit}
+        title="Đánh giá khách hàng"
+        subtitle="Chia sẻ trải nghiệm của bạn về khách hàng"
+        ratingLabel="Bạn đánh giá khách hàng như thế nào?"
+        commentLabel="Nhận xét về khách hàng (tùy chọn)"
+        commentPlaceholder="Nhập nhận xét về khách hàng..."
+        submitButtonText="Gửi đánh giá"
+        maxCommentLength={1000}
+      />
     </div>
   );
 };
