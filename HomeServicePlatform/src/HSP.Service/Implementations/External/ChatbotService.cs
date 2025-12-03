@@ -1,6 +1,8 @@
 ﻿using HSP.Core.Dtos.ChatbotDto;
 using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Dtos.HomeDto;
 using HSP.Core.Dtos.ServiceRequestDto;
+using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Interfaces.External;
@@ -22,6 +24,7 @@ namespace HSP.Service.Implementations.External
         private readonly IServiceRequestService _serviceRequestService;
         private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
         private readonly IRepository<ChatMessageHistory, Guid> _historyRepository;
+        private readonly IHomeService _homeService;
         private readonly OpenAISettingsDto _settings;
         private readonly string _myBookingsUrl;
 
@@ -30,6 +33,7 @@ namespace HSP.Service.Implementations.External
                 IServiceRequestService serviceRequestService,
                 IRepository<Core.Entities.Service, Guid> serviceRepository,
                 IRepository<ChatMessageHistory, Guid> historyRepository,
+                IHomeService homeService,
                 IOptions<OpenAISettingsDto> options,
                 IUnitOfWork unitOfWork,
                 IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
@@ -37,6 +41,7 @@ namespace HSP.Service.Implementations.External
             _serviceRequestService = serviceRequestService;
             _serviceRepository = serviceRepository;
             _historyRepository = historyRepository;
+            _homeService = homeService;
             _settings = options.Value;
             _client = new ChatClient(_settings.Model, _settings.ApiKey);
             string? configuredMyBookingsUrl = configuration["UrlSettings:FrontendMyBookings"];
@@ -49,7 +54,7 @@ namespace HSP.Service.Implementations.External
             string customerIdString = customerId.ToString();
             DateTime turnTimestamp = DateTime.UtcNow;
 
-            var (systemPrompt, createBookingTool) = await PrepareChatContextAsync();
+            var (systemPrompt, createBookingTool) = await PrepareChatContextAsync(customerId);
 
             List<ChatMessage> messages = new List<ChatMessage> { systemPrompt };
             messages.AddRange(await LoadChatHistoryAsync(conversationId, customerId));
@@ -116,12 +121,35 @@ namespace HSP.Service.Implementations.External
             };
         }
 
-        private async Task<(SystemChatMessage, ChatTool)> PrepareChatContextAsync()
+        private async Task<(SystemChatMessage, ChatTool)> PrepareChatContextAsync(Guid customerId)
         {
             var availableServices = await _serviceRepository.GetAll()
                 .Select(s => new { s.Id, s.Name, s.Price })
                 .ToListAsync();
             var servicesJsonForPrompt = JsonSerializer.Serialize(availableServices);
+
+            // Lấy danh sách địa chỉ (homes) của khách hàng để đưa vào system prompt
+            var homeInput = new HomeInput { PageNumber = 1, PageSize = 100 };
+            PagedList<HomeDto> customerHomes;
+            try
+            {
+                customerHomes = await _homeService.GetHomesByCustomerIdAsync(homeInput, customerId);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading customer homes for chatbot. CustomerId={customerId}. Error={ex.Message}");
+                customerHomes = new PagedList<HomeDto>(new List<HomeDto>(), 0, 1, homeInput.PageSize);
+            }
+
+            var homesForPrompt = customerHomes.Items
+                .Select(h => new
+                {
+                    h.Id,
+                    h.Name,
+                    h.Address
+                })
+                .ToList();
+            var homesJson = JsonSerializer.Serialize(homesForPrompt);
 
             var toolProperties = new BookingToolProperties
             {
@@ -146,6 +174,16 @@ namespace HSP.Service.Implementations.External
 
             string systemPromptStr = _localizer["ChatbotSystemPrompt", servicesJsonForPrompt, _myBookingsUrl];
 
+            // Ngữ cảnh địa chỉ cho chatbot: giúp bot biết các địa chỉ đã lưu của khách hàng
+            string addressContext = "\n## CUSTOMER SAVED ADDRESSES CONTEXT\n" +
+                                    $"JSON list of customer's saved homes (Id, Name, Address):\n{homesJson}\n\n" +
+                                    "ADDRESS HANDLING RULES:\n" +
+                                    "- If the list is empty: you MUST ask the user to provide their full service address.\n" +
+                                    "- If there is EXACTLY 1 home: show that address and ask user to confirm using it.\n" +
+                                    "- If there are 2 or more homes: list them with numbers (1., 2., 3., ...) showing Name and Address, then ask the user to choose.\n" +
+                                    "- After the user chooses or confirms an address, ALWAYS repeat/confirm the final address before proceeding.\n" +
+                                    "- When calling `create_booking_request`, the `Address` field MUST be the full, valid address string that the user confirmed.\n";
+
             TimeZoneInfo vietnamZone;
             try { vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"); }
             catch (TimeZoneNotFoundException) { vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh"); }
@@ -155,7 +193,7 @@ namespace HSP.Service.Implementations.External
                                         $"Current Date (Hôm nay là): {vietnamTime:dddd, dd MMMM yyyy, HH:mm} (Vietnam Time, UTC+7)." +
                                         $"Use this as the 'current date' for all time-related inferences.";
 
-            systemPromptStr += currentDateContext;
+            systemPromptStr += addressContext + currentDateContext;
 
             return (new SystemChatMessage(systemPromptStr), createBookingTool);
         }
@@ -274,6 +312,7 @@ namespace HSP.Service.Implementations.External
                             message = matchResult.Message ?? "Đã tìm thấy kỹ thuật viên.",
                             technicianName = matchResult.TechnicianInfo?.Name,
                             distanceKm = matchResult.TechnicianInfo?.DistanceKm,
+                            bookingId = matchResult.BookingId,
                             myBookingsUrl = _myBookingsUrl
                         };
                     }

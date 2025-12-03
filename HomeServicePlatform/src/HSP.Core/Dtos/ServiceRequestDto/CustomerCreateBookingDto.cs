@@ -14,10 +14,11 @@ namespace HSP.Core.Dtos.ServiceRequestDto
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "DesireDateTimeIsRequired")]
 		public DateTime DesireDateTime { get; set; }
 	}
-	public class MatchedBookingResultDto
-	{
-		public bool IsMatched { get; set; }
-		public TechnicianResultDto TechnicianInfo { get; set; }
-		public string Message { get; set; }
-	}
+		public class MatchedBookingResultDto
+		{
+			public bool IsMatched { get; set; }
+			public TechnicianResultDto TechnicianInfo { get; set; }
+			public string Message { get; set; }
+			public Guid BookingId { get; set; }
+		}
 }

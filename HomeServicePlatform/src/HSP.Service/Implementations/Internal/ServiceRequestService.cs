@@ -235,6 +235,7 @@ namespace HSP.Service.Implementations.Internal
                         return new MatchedBookingResultDto
                         {
                             IsMatched = true,
+                            BookingId = booking.Id,
                             Message = "Đã ghép kỹ thuật viên thành công",
                             TechnicianInfo = new TechnicianResultDto
                             {
@@ -261,6 +262,7 @@ namespace HSP.Service.Implementations.Internal
             return new MatchedBookingResultDto
             {
                 IsMatched = false,
+                BookingId = booking.Id,
                 Message = "Không có kỹ thuật viên nào chấp nhận yêu cầu."
             };
         }

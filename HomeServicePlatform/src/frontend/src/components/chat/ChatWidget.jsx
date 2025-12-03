@@ -65,7 +65,7 @@ const ChatMessage = ({ message }) => {
   )
 }
 
-const BookingSuccessModal = ({ isOpen, onClose, onNavigate }) => {
+const BookingSuccessModal = ({ isOpen, onClose, onNavigate, bookingId }) => {
   if (!isOpen) return null
 
   return (
@@ -101,7 +101,15 @@ const BookingSuccessModal = ({ isOpen, onClose, onNavigate }) => {
         {/* Content */}
         <div className="px-6 py-6 space-y-4">
           <p className="text-gray-700 text-base leading-relaxed">
-            Lịch hẹn của bạn đã được tạo thành công. Bạn có thể xem và quản lý lịch hẹn trong trang My Bookings.
+            Lịch hẹn của bạn đã được tạo thành công.
+            {bookingId && (
+              <>
+                <br />
+                <span className="font-medium">Mã booking:</span> <span className="font-mono break-all">{bookingId}</span>
+              </>
+            )}
+            <br />
+            Bạn có thể xem và quản lý chi tiết lịch hẹn trong mục My Bookings.
           </p>
         </div>
 
@@ -134,6 +142,7 @@ export const ChatWidget = ({ onClose }) => {
   const [conversationId, setConversationId] = useState(null)
   const [isMinimized, setIsMinimized] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [bookingId, setBookingId] = useState(null)
 
   const messagesEndRef = useRef(null)
   const [isInitialized, setIsInitialized] = useState(false)
@@ -192,9 +201,31 @@ export const ChatWidget = ({ onClose }) => {
       const data = await chatbotApi.postMessage(payload)
       const assistantMessage = { sender: "assistant", text: data.response }
       setMessages((prev) => [...prev, assistantMessage])
-      
-      // Check if response contains my-bookings link (matching success)
-      if (data.response && data.response.includes("http://localhost:5173/my-bookings")) {
+
+      // Phân tích phản hồi để phát hiện booking thành công và trích xuất bookingId
+      const responseText = data.response || ""
+      const lowerText = responseText.toLowerCase()
+
+      const hasSuccessKeywords =
+        lowerText.includes("đặt lịch thành công") ||
+        lowerText.includes("đã ghép kỹ thuật viên thành công") ||
+        lowerText.includes("đã tìm thấy kỹ thuật viên") ||
+        lowerText.includes("booking was successful") ||
+        lowerText.includes("successfully")
+
+      const hasErrorKeywords =
+        lowerText.includes("lỗi") ||
+        lowerText.includes("thất bại") ||
+        lowerText.includes("không tìm thấy") ||
+        lowerText.includes("error") ||
+        lowerText.includes("failed")
+
+      // Tìm GUID (bookingId) trong phản hồi
+      const bookingIdMatch = responseText.match(/\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/)
+      const extractedBookingId = bookingIdMatch ? bookingIdMatch[0] : null
+
+      if (hasSuccessKeywords && !hasErrorKeywords) {
+        setBookingId(extractedBookingId)
         setShowSuccessModal(true)
       }
     } catch (error) {
@@ -321,11 +352,20 @@ export const ChatWidget = ({ onClose }) => {
       
       <BookingSuccessModal
         isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
+        onClose={() => {
+          setShowSuccessModal(false)
+          setBookingId(null)
+        }}
         onNavigate={() => {
           setShowSuccessModal(false)
-          navigate("/my-bookings")
+          if (bookingId) {
+            navigate(`/my-bookings/${bookingId}`)
+          } else {
+            navigate("/my-bookings")
+          }
+          setBookingId(null)
         }}
+        bookingId={bookingId}
       />
     </div>
   )
