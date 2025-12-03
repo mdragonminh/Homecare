@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react"; // Đã thêm useMemo
 import { chatApi } from "../../services/chatApi";
 import useChatSignalR from "../../hooks/useChatSignalR";
-import { Send, Search, MoreVertical } from "lucide-react";
+import { Send, Search, MoreVertical, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 
@@ -10,6 +10,9 @@ export default function TechnicianChat() {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  // START: LOGIC TÌM KIẾM MỚI
+  const [searchTerm, setSearchTerm] = useState("");
+  // END: LOGIC TÌM KIẾM MỚI
 
   const currentUserId = localStorage.getItem("userId")?.toLowerCase();
   const token = localStorage.getItem("jwtToken");
@@ -32,7 +35,12 @@ export default function TechnicianChat() {
   const loadConversations = async () => {
     try {
       const res = await chatApi.getUserConversations();
-      setConversations(res.data);
+      // Đảm bảo CustomerName và LastMessage có sẵn để tìm kiếm
+      setConversations(res.data.map(c => ({
+        ...c,
+        customerName: c.customerName || "Khách hàng",
+        lastMessageContent: c.lastMessage?.content || ""
+      })));
     } catch {
       toast.error("Không tải được danh sách hội thoại");
     }
@@ -103,10 +111,39 @@ export default function TechnicianChat() {
       .toUpperCase()
       .slice(0, 2);
 
+  // START: LOGIC TÌM KIẾM MỚI
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  // Sử dụng useMemo để tính toán danh sách hội thoại đã lọc
+  const filteredConversations = useMemo(() => {
+    if (!searchTerm) {
+      return conversations;
+    }
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+    return conversations.filter((c) => {
+      // Tìm kiếm theo tên khách hàng
+      const chatName = getOtherUserName(c).toLowerCase();
+      // Tìm kiếm theo nội dung tin nhắn cuối cùng
+      const lastMessage = c.lastMessageContent.toLowerCase();
+
+      return chatName.includes(lowerCaseSearchTerm) || lastMessage.includes(lowerCaseSearchTerm);
+    });
+  }, [conversations, searchTerm, currentUserId]);
+  // END: LOGIC TÌM KIẾM MỚI
+
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       {/* SIDEBAR */}
-      <div className="w-80 bg-white/95 backdrop-blur-xl border-r border-gray-200 flex flex-col">
+      <div 
+        className={`
+          ${selectedConversation ? 'hidden sm:flex' : 'flex'} 
+          w-full sm:w-80 bg-white/95 backdrop-blur-xl border-r border-gray-200 flex-col
+        `}
+      >
         <div className="p-4 border-b border-gray-200">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
             Hỗ trợ khách hàng
@@ -115,14 +152,19 @@ export default function TechnicianChat() {
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm khách hàng..."
+              placeholder="Tìm khách hàng hoặc tin nhắn..."
+              // START: KẾT NỐI INPUT TÌM KIẾM
+              value={searchTerm}
+              onChange={handleSearch}
+              // END: KẾT NỐI INPUT TÌM KIẾM
               className="w-full pl-10 pr-3 py-2 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 transition"
             />
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {conversations.map((c) => (
+          {/* START: HIỂN THỊ DANH SÁCH ĐÃ LỌC */}
+          {filteredConversations.map((c) => (
             <button
               key={c.id}
               onClick={() => setSelectedConversation(c)}
@@ -156,17 +198,35 @@ export default function TechnicianChat() {
               </div>
             </button>
           ))}
+          {/* END: HIỂN THỊ DANH SÁCH ĐÃ LỌC */}
+          {filteredConversations.length === 0 && searchTerm && (
+            <div className="p-4 text-center text-gray-500">
+              Không tìm thấy khách hàng nào phù hợp.
+            </div>
+          )}
         </div>
       </div>
 
-      {/* MAIN CHAT */}
-      <div className="flex-1 flex flex-col">
+      {/* MAIN CHAT - Phần này không thay đổi */}
+      <div 
+        className={`
+          flex-1 flex flex-col
+          ${selectedConversation ? 'flex' : 'hidden sm:flex'} 
+        `}
+      >
         {selectedConversation ? (
           <>
             {/* Header */}
             <div className="bg-white/95 backdrop-blur border-b border-gray-200 px-5 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                  {/* Nút quay lại chỉ hiện trên mobile */}
+                  <button 
+                    onClick={() => setSelectedConversation(null)} 
+                    className="sm:hidden p-2 -ml-2 mr-1 hover:bg-gray-100 rounded-full transition"
+                  >
+                    <ArrowLeft className="h-5 w-5 text-gray-600" />
+                  </button>
                   <div className="relative">
                     <div className="w-11 h-11 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm shadow">
                       {getInitials(getOtherUserName(selectedConversation))}

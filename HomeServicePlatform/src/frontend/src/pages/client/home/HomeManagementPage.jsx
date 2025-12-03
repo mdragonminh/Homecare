@@ -4,7 +4,7 @@ import {
   Search,
   Pencil,
   Trash2,
-  Home, 
+  Home,
   MapPin,
   ChevronLeft,
   ChevronRight,
@@ -77,7 +77,7 @@ export default function HomeManagementPage() {
         if (res && res.success) {
           const mappedHomes = (res.data.items || []).map((item) => ({
             ...item,
-            type: item.type ? item.type.toLowerCase() : "apartment", 
+            type: item.type ? item.type.toLowerCase() : "apartment",
           }));
 
           setHomes(mappedHomes);
@@ -145,13 +145,14 @@ export default function HomeManagementPage() {
       console.error("Error deleting home:", err);
       toast.error(t("error.delete_unknown"));
     } finally {
-      setIsFetching(false);
       setHomeToDelete(null);
+      setIsFetching(false);
     }
   };
 
   const renderPaginationButtons = () => {
     const pageNumbers = [];
+    // Giữ nguyên maxPagesToShow = 5, nhưng tăng kích thước nút
     const maxPagesToShow = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
@@ -169,15 +170,17 @@ export default function HomeManagementPage() {
         <button
           onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
           disabled={currentPage === 1}
-          className="p-1.5 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm w-8 h-8 flex items-center justify-center"
+          // Thay đổi kích thước nút: w-9 h-9 (lớn hơn, dễ chạm hơn)
+          className="p-1.5 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm w-9 h-9 flex items-center justify-center"
         >
-          <ChevronLeft size={14} />
+          <ChevronLeft size={16} />
         </button>
         {startPage > 1 && (
           <>
             <button
               onClick={() => setCurrentPage(1)}
-              className="w-8 h-8 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm"
+              // Thay đổi kích thước nút: w-9 h-9
+              className="w-9 h-9 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm"
             >
               1
             </button>
@@ -188,7 +191,8 @@ export default function HomeManagementPage() {
           <button
             key={page}
             onClick={() => setCurrentPage(page)}
-            className={`w-8 h-8 rounded-lg font-medium transition-all duration-200 shadow-sm ${
+            // Thay đổi kích thước nút: w-9 h-9
+            className={`w-9 h-9 rounded-lg font-medium transition-all duration-200 shadow-sm ${
               page === currentPage
                 ? "bg-gray-700 text-white border-gray-700"
                 : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-100"
@@ -204,7 +208,8 @@ export default function HomeManagementPage() {
             )}
             <button
               onClick={() => setCurrentPage(totalPages)}
-              className="w-8 h-8 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm"
+              // Thay đổi kích thước nút: w-9 h-9
+              className="w-9 h-9 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm"
             >
               {totalPages}
             </button>
@@ -213,9 +218,10 @@ export default function HomeManagementPage() {
         <button
           onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
           disabled={currentPage === totalPages}
-          className="p-1.5 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm w-8 h-8 flex items-center justify-center"
+          // Thay đổi kích thước nút: w-9 h-9
+          className="p-1.5 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm w-9 h-9 flex items-center justify-center"
         >
-          <ChevronRight size={14} />
+          <ChevronRight size={16} />
         </button>
       </nav>
     );
@@ -249,6 +255,7 @@ export default function HomeManagementPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        {/* HEADER VÀ QUAY LẠI */}
         <div className="mb-8 flex items-center">
           <button
             onClick={() => navigate(-1)}
@@ -262,33 +269,39 @@ export default function HomeManagementPage() {
           </h1>
         </div>
 
-        <div className="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6 w-full">
-          <div className="bg-white rounded-xl px-6 py-3 shadow-sm border border-gray-200 flex items-center justify-center h-12 min-w-[180px]">
-            <span className="text-lg font-semibold text-gray-900">
+        {/* CONTROLS (TOTAL COUNT, SEARCH, ADD) - Refactored for Mobile-First */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 mb-6 w-full">
+          {/* Total Items Count - Full width on mobile, auto on desktop */}
+          <div className="bg-white rounded-xl px-6 py-3 shadow-sm border border-gray-200 flex items-center justify-center w-full sm:w-auto flex-shrink-0">
+            <span className="text-base sm:text-lg font-semibold text-gray-900">
               {t("ui.showing")} {totalCount} {t("ui.homes")}
             </span>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 w-full lg:flex-1 items-center">
+
+          {/* Search Bar & Add Button - Stack on mobile, side-by-side on desktop */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:flex-1 items-stretch">
             {/* SEARCH INPUT */}
             <div className="relative flex-grow w-full sm:w-auto">
               <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                <Search className="text-gray-400" size={22} />
+                <Search className="text-gray-400" size={20} />
               </div>
               <input
                 placeholder={t("ui.search_by_name_or_address")}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white text-gray-900 h-12 text-sm"
+                // Điều chỉnh py-2.5 trên mobile
+                className="w-full pl-12 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white text-gray-900 h-11 sm:h-12 text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
-            {/* ADD NEW BUTTON */}
+            {/* ADD NEW BUTTON - Chiều rộng full trên mobile, ẩn text trên mobile */}
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold shadow-md h-12 w-full sm:w-36 flex-shrink-0"
+              // Thay đổi p-2.5 trên mobile, px-4 py-3 trên desktop
+              className="flex items-center justify-center gap-2 p-2.5 sm:px-4 sm:py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold shadow-md h-11 sm:h-12 w-full sm:w-36 flex-shrink-0"
             >
               <Plus size={20} />
-              <span>{t("ui.add_new")}</span>
+              <span className="hidden sm:inline">{t("ui.add_new")}</span>
             </button>
           </div>
         </div>
@@ -307,22 +320,19 @@ export default function HomeManagementPage() {
               {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
-                  className="animate-pulse p-6 flex justify-between items-start gap-4"
+                  className="animate-pulse p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start gap-4"
                 >
-                  {/* ... (Skeleton unchanged) ... */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 bg-gray-200 rounded-xl flex-shrink-0"></div> {/* Icon placeholder */}
-                      <div className="h-6 bg-gray-200 rounded w-48"></div> {/* Name placeholder */}
+                  <div className="flex-1 min-w-0 flex items-start gap-4">
+                    <div className="w-10 h-10 bg-gray-200 rounded-xl flex-shrink-0 mt-0.5"></div>
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <div className="h-6 bg-gray-200 rounded w-48 mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-full max-w-lg"></div>
                     </div>
-                    <div className="h-4 bg-gray-200 rounded w-full max-w-lg mb-2 ml-14"></div> {/* Address placeholder */}
                   </div>
-                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                    <div className="w-32 h-9 bg-gray-200 rounded-xl"></div>
-                    <div className="flex gap-4">
-                      <div className="w-12 h-4 bg-gray-200 rounded"></div>
-                      <div className="w-12 h-4 bg-gray-200 rounded"></div>
-                    </div>
+                  <div className="flex items-center justify-end gap-3 flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+                    <div className="h-8 w-24 bg-gray-200 rounded-xl"></div>
+                    <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                    <div className="h-8 w-12 bg-gray-200 rounded"></div>
                   </div>
                 </div>
               ))}
@@ -349,64 +359,91 @@ export default function HomeManagementPage() {
               </button>
             </div>
           ) : (
-            /* RENDER HOME CARDS (REDESIGNED) */
+            /* RENDER HOME CARDS - Refactored for Mobile-First */
             <div className="divide-y divide-gray-100">
               {homes.map((home) => (
                 <div
                   key={home.id}
-                  className="p-6 transition-all duration-200 hover:bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                  className="p-4 sm:p-6 transition-all duration-200 hover:bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
                 >
-                  
-                  {/* HOME INFO BLOCK (Icon + Name + Address) */}
-                  <div className="flex items-start flex-1 min-w-0 gap-4">
+                  {/* HOME INFO BLOCK (Icon + Name) */}
+                  <div className="flex items-start flex-1 min-w-0 gap-4 w-full">
                     {/* PROMIMENT ICON */}
                     <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0">
                       <Home size={20} />
                     </div>
-                    
+
                     <div className="flex flex-col flex-1 min-w-0">
                       {/* NAME */}
-                      <div className="text-xl font-bold text-gray-900 truncate leading-snug">
+                      <div className="text-lg sm:text-xl font-bold text-gray-900 truncate leading-snug">
                         {home.name || t("ui.property_title")}
                       </div>
-                      
-                      {/* ADDRESS */}
-                      <div className="flex items-start gap-2 text-sm text-gray-600 mt-2">
-                        <MapPin size={16} className="text-gray-400 flex-shrink-0 mt-0.5" />
-                        <span className="break-words font-medium">{home.address}</span>
+
+                      {/* ADDRESS - Chỉ hiển thị trên DESKTOP (sm:) */}
+                      <div className="hidden sm:flex items-start gap-2 text-sm text-gray-600 mt-2">
+                        <MapPin
+                          size={16}
+                          className="text-gray-400 flex-shrink-0 mt-0.5"
+                        />
+                        <span className="break-words font-medium">
+                          {home.address}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* ACTION BUTTONS BLOCK */}
-                  <div className="flex flex-col items-start sm:items-end gap-3 flex-shrink-0 w-full sm:w-auto mt-4 sm:mt-0">
-                    <button
-                      onClick={() => navigate(`/home-items/${home.id}`)}
-                      title={t("ui.manage_rooms_devices")}
-                      className="px-4 py-2 text-sm border border-blue-400 text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-200 font-semibold shadow-sm flex items-center gap-1 w-full sm:w-auto"
-                    >
-                      <Settings size={16} />
-                      {t("ui.manage_rooms")}
-                    </button>
+                  {/* NEW: ADDRESS BLOCK - Chỉ hiển thị trên MOBILE (dưới sm:) */}
+                  <div className="w-full sm:hidden">
+                    <div className="flex items-start gap-2 text-sm text-gray-600">
+                      <MapPin
+                        size={16}
+                        className="text-gray-400 flex-shrink-0 mt-0.5"
+                      />
+                      <span className="break-words font-medium w-full">
+                        {home.address}
+                      </span>
+                    </div>
+                  </div>
 
-                    <div className="flex gap-4 items-center justify-end w-full sm:w-auto">
+                  {/* ACTION BUTTONS BLOCK - Tối ưu cho mobile: Justify-between chia đều 2 nhóm */}
+                  <div className="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0 w-full sm:w-auto mt-4 sm:mt-0">
+                    {/* Nút phụ: Edit/Delete - Đặt bên trái cho mobile */}
+                    <div className="flex items-center gap-3">
                       <button
                         onClick={() => setHomeToEdit(home)}
                         title={t("ui.edit_address")}
                         className="text-amber-600 hover:text-amber-700 font-medium transition-colors text-sm py-1 h-8 flex items-center"
                       >
+                        <Pencil size={18} className="sm:hidden mr-1" />
                         {t("ui.edit")}
                       </button>
-                      <span className="text-gray-300 hidden sm:inline">|</span>
-                      {/* Xóa/Delete */}
+
+                      <span className="text-gray-300">|</span>
+
                       <button
                         onClick={() => setHomeToDelete(home.id)}
                         title={t("ui.delete")}
                         className="text-red-600 hover:text-red-700 font-medium transition-colors text-sm py-1 h-8 flex items-center"
                       >
+                        <Trash2 size={18} className="sm:hidden mr-1" />
                         {t("ui.delete")}
                       </button>
                     </div>
+
+                    {/* Nút "Thiết bị" - Nút chính, đặt bên phải */}
+                    <button
+                      onClick={() => navigate(`/home-items/${home.id}`)}
+                      title={t("ui.manage_rooms_devices")}
+                      // Thay đổi padding cho mobile (p-2.5 vs px-4 py-2)
+                      className="px-3 py-2 sm:px-4 sm:py-2 text-sm border border-blue-400 text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-200 font-semibold shadow-sm flex items-center gap-1 flex-shrink-0"
+                    >
+                      <Settings size={16} />
+                      {/* Hiển thị "Quản lý phòng" trên desktop, "Phòng" trên mobile */}
+                      <span className="hidden sm:inline">
+                        {t("ui.manage_rooms")}
+                      </span>
+                      <span className="inline sm:hidden">{t("ui.manage_rooms_devices")}</span>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -417,10 +454,14 @@ export default function HomeManagementPage() {
         {totalPages > 1 && renderPaginationButtons()}
       </div>
 
-      {/* DELETE CONFIRM MODAL */}
+      {/* DELETE CONFIRM MODAL - Refactored for Mobile (Slide up from bottom) */}
       {homeToDelete && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full">
+        // items-end trên mobile để modal trượt lên từ dưới, sm:items-center để căn giữa trên desktop
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div
+            // rounded-t-2xl trên mobile, w-full, không dùng max-w-md trên mobile
+            className="bg-white p-6 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-none sm:max-w-md"
+          >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
                 <Trash2 className="w-6 h-6 text-red-600" />
@@ -436,6 +477,7 @@ export default function HomeManagementPage() {
               <button
                 onClick={() => setHomeToDelete(null)}
                 className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium"
+                disabled={isFetching}
               >
                 {t("ui.cancel")}
               </button>

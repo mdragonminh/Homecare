@@ -1,3 +1,5 @@
+// File: serviceApi.jsx
+
 import axiosClient from "../config/axiosClient";
 
 const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
@@ -25,13 +27,14 @@ export const serviceApi = {
     }
   },
 
-  getNearbyTechnicians: async (address, maxDistanceKm, serviceIds = []) => {
+  // ĐÃ SỬA: Loại bỏ tham số maxDistanceKm
+  getNearbyTechnicians: async (address, serviceIds = []) => {
     try {
       if (!address || address.trim() === "") throw new Error("Thiếu địa chỉ!");
 
       const params = new URLSearchParams({
         Address: address,
-        MaxDistanceKm: maxDistanceKm || 10,
+        // Đã loại bỏ MaxDistanceKm theo yêu cầu mới nhất của BE
       });
       if (serviceIds && Array.isArray(serviceIds) && serviceIds.length > 0) {
         serviceIds.forEach(id => {
@@ -58,7 +61,8 @@ export const serviceApi = {
     }
   },
 
-  createAndMatchBooking: async (address, serviceIds, customerId, distanceKm = 0,desiredDateTime) => {
+  // ĐÃ SỬA: Loại bỏ tham số distanceKm và sửa tên trường desiredDateTime
+  createAndMatchBooking: async (address, serviceIds, customerId, desiredDateTime) => {
     try {
     
       if (!address || address.trim() === "") {
@@ -72,9 +76,10 @@ export const serviceApi = {
       if (!customerId) {
         throw new Error("Thiếu thông tin khách hàng (customerId).");
       }
-      if (!desiredDateTime) {
-          throw new Error("Thiếu thông tin ngày giờ yêu cầu (desiredDateTime).");
-      }
+      
+      // desiredDateTime không bắt buộc. Giá trị null/undefined sẽ được BE xử lý (sử dụng thời gian hiện tại của BE).
+      // Logic mặc định đã được xử lý ở useFindTechnician.jsx
+      
       const url = "/ServiceRequest/create-and-match-booking";
       
       
@@ -82,8 +87,9 @@ export const serviceApi = {
         address: address.trim(),
         serviceIds: serviceIds, 
         customerId: customerId,
-        distanceKm: Number(distanceKm) || 0,
-        desireDateTime: desiredDateTime
+        // Đã loại bỏ distanceKm
+        // Đã sửa tên trường từ desireDateTime thành desiredDateTime
+        desireDateTime: desiredDateTime 
       };
 
       if (ENABLE_DEBUG) {
