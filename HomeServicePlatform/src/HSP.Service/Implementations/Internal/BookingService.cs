@@ -173,7 +173,10 @@ namespace HSP.Service.Implementations.Internal
                 ? booking.Feedbacks.Where(f => f.Source == FeedbackSource.Technician).ToList()
                 : new List<BookingFeedback>();
             var address = await _geocodingService.GetAddressForCoordinatesAsync(booking.Latitude, booking.Longitude);
-
+            var bookingItems = await _bookingItemRepository.GetAll(i => i.Service)
+               .Where(i => i.BookingId == bookingId && !i.IsDeleted)
+               .ToListAsync();
+            var totalPrice = bookingItems.Sum(i => i.Price);
             var dto = new BookingDetailDto
             {
                 Id = booking.Id,
@@ -204,16 +207,22 @@ namespace HSP.Service.Implementations.Internal
                 Items = booking.Items.Select(i => new BookingItemDto
                 {
                     ServiceId = i.ServiceId,
-                    ServiceName = i.Service?.Name
+                    ServiceName = i.Service?.Name,
+                    Price = i.Price
                 }).ToList(),
 
                 Payments = booking.Payments.Select(p => new PaymentDto
                 {
                     Id = p.Id,
+                    BookingId = p.BookingId,
                     Amount = p.Amount,
+                    PaymentMethod = p.PaymentMethod,
                     Status = p.Status,
+                    TransactionId = p.TransactionId,
+                    PaidAt = p.PaidAt,
                     DateCreated = p.DateCreated
                 }).ToList(),
+                TotalPrice = totalPrice
             };
 
             return dto;

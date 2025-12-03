@@ -325,7 +325,8 @@ namespace HSP.Service.Implementations.Internal
 		{
 			return false;
 		}
-	}		private string? ExtractPaymentCode(string content)
+	}		
+		private string? ExtractPaymentCode(string content)
 		{
 			if (string.IsNullOrEmpty(content))
 				return null;

@@ -98,7 +98,7 @@ const BookingDetailPage = () => {
     (!booking.technicianId ||
       booking.technicianId === "00000000-0000-0000-0000-000000000000");
 
-  const canComplete = booking.status === BookingStatus.InProgress;
+  const canComplete = booking.status === BookingStatus.Confirmed;
 
   // ⭐ Cho phép mở chat nếu booking đã được nhận
   const canOpenChat =
