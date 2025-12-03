@@ -273,5 +273,59 @@ namespace HSP.API.Controllers
                 return StatusCode(500);
             }
         }
+
+        [HttpPost("{id}/equipments")]
+        [Authorize]
+        public async Task<IActionResult> AddEquipmentToBooking(Guid id, [FromBody] AddBookingEquipmentDto input)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out Guid userGuid))
+                    return Unauthorized();
+
+                var result = await _bookingService.AddEquipmentToBookingAsync(id, input, userGuid);
+
+                return Ok(new { message = "Đã thêm thiết bị vào booking thành công" });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(); 
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống", details = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}/equipments/{bookingEquipmentId}")]
+        [Authorize]
+        public async Task<IActionResult> RemoveEquipment(Guid id, Guid bookingEquipmentId)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out Guid userGuid))
+                    return Unauthorized();
+
+                await _bookingService.RemoveEquipmentFromBookingAsync(id, bookingEquipmentId, userGuid);
+                return Ok(new { message = "Đã xóa thiết bị khỏi đơn hàng" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

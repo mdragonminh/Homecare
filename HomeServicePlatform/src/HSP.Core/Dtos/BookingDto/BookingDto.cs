@@ -1,7 +1,8 @@
+﻿using HSP.Core.Dtos.CustomerProfileDto;
 using HSP.Core.Dtos.ServiceDto;
 using HSP.Core.Dtos.TechnicianProfileDto;
-using HSP.Core.Dtos.CustomerProfileDto;
 using HSP.Core.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Core.Dtos.BookingDto
 {
@@ -58,6 +59,7 @@ namespace HSP.Core.Dtos.BookingDto
         public double? CustomerAverageRating { get; set; }
         public int? CustomerRatingCount { get; set; }
         public List<BookingItemDto>? Items { get; set; }
+        public List<BookingEquipmentDto> Equipments { get; set; } = new List<BookingEquipmentDto>();
         public ICollection<PaymentDto.PaymentDto> Payments { get; set; } = new List<PaymentDto.PaymentDto>();
     }
 
@@ -83,5 +85,23 @@ namespace HSP.Core.Dtos.BookingDto
         public Guid BookingId { get; set; }
         public string Token { get; set; } = null!;
     }
+    public class AddBookingEquipmentDto
+    {
+        [Required]
+        public Guid EquipmentId { get; set; }
 
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Số lượng phải lớn hơn 0")]
+        public int Quantity { get; set; }
+    }
+
+    public class BookingEquipmentDto
+    {
+        public Guid Id { get; set; } 
+        public Guid EquipmentId { get; set; } 
+        public string EquipmentName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; } 
+        public decimal TotalPrice { get; set; } 
+    }
 }

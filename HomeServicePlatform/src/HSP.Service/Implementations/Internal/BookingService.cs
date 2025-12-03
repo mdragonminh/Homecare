@@ -23,6 +23,8 @@ namespace HSP.Service.Implementations.Internal
         private readonly IRepository<BookingItem, Guid> _bookingItemRepository;
         private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
         private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
+        private readonly IRepository<Equipment, Guid> _equipmentRepository;
+        private readonly IRepository<BookingEquipment, Guid> _bookingEquipmentRepository;
         private readonly IRepository<ChatConversation, Guid> _conversationRepository;
         private readonly IGeocodingService _geocodingService;
         private readonly IUserRepository _userRepository;
@@ -39,7 +41,9 @@ namespace HSP.Service.Implementations.Internal
                 IRepository<ChatConversation, Guid> conversationRepository,
                 IUnitOfWork unitOfWork,
                 IStringLocalizer<SharedResource> localizer,
-                IEmailService emailService) : base(unitOfWork, localizer)
+                IEmailService emailService, 
+                IRepository<Equipment, Guid> equipmentRepository,
+                IRepository<BookingEquipment, Guid> bookingEquipmentRepository) : base(unitOfWork, localizer)
         {
             _bookingRepository = bookingRepository;
             _bookingItemRepository = bookingItemRepository;
@@ -50,6 +54,8 @@ namespace HSP.Service.Implementations.Internal
             _geocodingService = geocodingService;
             _conversationRepository = conversationRepository;
             _emailService = emailService;
+            _equipmentRepository = equipmentRepository;
+            _bookingEquipmentRepository = bookingEquipmentRepository;
         }
 
         public async Task<PagedList<BookingDto>> GetAllBookingsAsync(BookingInput input)
@@ -162,6 +168,7 @@ namespace HSP.Service.Implementations.Internal
                .Include(b => b.Customer)
                .Include(b => b.Technician).ThenInclude(t => t.User)
                .Include(b => b.Items).ThenInclude(i => i.Service)
+               .Include(b => b.Equipments).ThenInclude(e => e.Equipment)
                .Include(b => b.Payments)
                .Include(b => b.Feedbacks)
                .FirstOrDefaultAsync(b => b.Id == bookingId);
@@ -176,7 +183,14 @@ namespace HSP.Service.Implementations.Internal
             var bookingItems = await _bookingItemRepository.GetAll(i => i.Service)
                .Where(i => i.BookingId == bookingId && !i.IsDeleted)
                .ToListAsync();
-            var totalPrice = bookingItems.Sum(i => i.Price);
+            var servicePrice = booking.Items.Where(i => !i.IsDeleted).Sum(i => i.Price);
+
+            var equipmentPrice = booking.Equipments
+                .Where(e => !e.IsDeleted) 
+                .Sum(e => e.Quantity * e.UnitPrice);
+
+            var totalPrice = servicePrice + equipmentPrice;
+
             var dto = new BookingDetailDto
             {
                 Id = booking.Id,
@@ -210,6 +224,18 @@ namespace HSP.Service.Implementations.Internal
                     ServiceName = i.Service?.Name,
                     Price = i.Price
                 }).ToList(),
+
+                Equipments = booking.Equipments
+                    .Where(e => !e.IsDeleted) 
+                    .Select(e => new BookingEquipmentDto
+                    {
+                        Id = e.Id,
+                        EquipmentId = e.EquipmentId,
+                        EquipmentName = e.Equipment.Name, 
+                        Quantity = e.Quantity,
+                        UnitPrice = e.UnitPrice,
+                        TotalPrice = e.Quantity * e.UnitPrice
+                    }).ToList(),
 
                 Payments = booking.Payments.Select(p => new PaymentDto
                 {
@@ -463,6 +489,123 @@ namespace HSP.Service.Implementations.Internal
                 $"reject_{bookingId}_{technician.Id}",
                 "rejected");
             return true;
+        }
+
+        public async Task<bool> AddEquipmentToBookingAsync(Guid bookingId, AddBookingEquipmentDto input, Guid userId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            if (booking == null)
+                throw new KeyNotFoundException("Booking không tồn tại");
+
+            var technicianProfile = await _technicianRepository.GetAll(t => t.User)
+                    .FirstOrDefaultAsync(t => t.User.Id.ToString() == userId.ToString());
+
+            if (technicianProfile == null || booking.TechnicianId != technicianProfile.Id)
+                throw new UnauthorizedAccessException("Bạn không phải kỹ thuật viên của booking này");
+
+            if (booking.Status != BookingStatus.InProgress && booking.Status != BookingStatus.Confirmed)
+                throw new InvalidOperationException("Chỉ có thể thêm thiết bị khi đang thực hiện công việc");
+
+            using (var transaction = await _unitOfWork.BeginTransactionAsync())
+            {
+                try
+                {
+                    var equipment = await _equipmentRepository.GetByIdAsync(input.EquipmentId);
+                    if (equipment == null)
+                        throw new KeyNotFoundException("Thiết bị không tồn tại");
+
+                    if (equipment.Quantity < input.Quantity)
+                        throw new InvalidOperationException($"Kho không đủ hàng. Chỉ còn {equipment.Quantity} {equipment.UnitOfMeasure}");
+
+                    var existingItem = await _bookingEquipmentRepository.GetAll()
+                        .FirstOrDefaultAsync(be => be.BookingId == bookingId &&
+                                                 be.EquipmentId == input.EquipmentId &&
+                                                 !be.IsDeleted);
+
+                    if (existingItem != null)
+                    {
+                        existingItem.Quantity += input.Quantity;
+
+                        existingItem.UnitPrice = equipment.UnitPrice;
+
+                        _bookingEquipmentRepository.Update(existingItem);
+                    }
+                    else
+                    {
+                        var bookingEquipment = new BookingEquipment
+                        {
+                            BookingId = bookingId,
+                            EquipmentId = input.EquipmentId,
+                            Quantity = input.Quantity,
+                            UnitPrice = equipment.UnitPrice,
+                            IsDeleted = false
+                        };
+                        await _bookingEquipmentRepository.AddAsync(bookingEquipment);
+                    }
+
+                    equipment.Quantity -= input.Quantity;
+                    _equipmentRepository.Update(equipment);
+
+                    booking.DateModified = DateTime.UtcNow;
+                    _bookingRepository.Update(booking);
+
+                    await _unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return true;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+        }
+
+        public async Task<bool> RemoveEquipmentFromBookingAsync(Guid bookingId, Guid bookingEquipmentId, Guid userId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            if (booking == null) throw new KeyNotFoundException("Booking không tồn tại");
+
+            var technicianProfile = await _technicianRepository.GetAll(t => t.User)
+                    .FirstOrDefaultAsync(t => t.User.Id.ToString() == userId.ToString());
+
+            if (technicianProfile == null || booking.TechnicianId != technicianProfile.Id)
+                throw new UnauthorizedAccessException("Bạn không có quyền chỉnh sửa booking này");
+
+            if (booking.Status != BookingStatus.InProgress && booking.Status != BookingStatus.Confirmed)
+                throw new InvalidOperationException("Không thể xóa thiết bị ở trạng thái này");
+
+            using (var transaction = await _unitOfWork.BeginTransactionAsync())
+            {
+                try
+                {
+                    var bookingEquipment = await _bookingEquipmentRepository.GetByIdAsync(bookingEquipmentId);
+                    if (bookingEquipment == null) throw new KeyNotFoundException("Không tìm thấy thiết bị trong đơn này");
+
+                    var equipment = await _equipmentRepository.GetByIdAsync(bookingEquipment.EquipmentId);
+                    if (equipment != null)
+                    {
+                        equipment.Quantity += bookingEquipment.Quantity;
+                        _equipmentRepository.Update(equipment);
+                    }
+
+                    bookingEquipment.IsDeleted = true;
+                    _bookingEquipmentRepository.Update(bookingEquipment);
+
+                    booking.DateModified = DateTime.UtcNow;
+                    _bookingRepository.Update(booking);
+
+                    await _unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
         }
     }
 }

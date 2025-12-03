@@ -26,6 +26,7 @@ namespace HSP.DAL.Data
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<BookingItem> BookingItems { get; set; }
         public DbSet<BookingFeedback> BookingFeedbacks { get; set; }
+        public DbSet<BookingEquipment> BookingEquipment { get; set; }
         public DbSet<BookingCancellation> BookingCancellations { get; set; }
         public DbSet<Warehouse> Warehouses { get; set; }
         public DbSet<Equipment> Equipments { get; set; }

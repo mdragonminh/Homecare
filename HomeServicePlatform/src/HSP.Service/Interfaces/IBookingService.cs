@@ -12,5 +12,7 @@ namespace HSP.Service.Interfaces
 		Task<bool> CancelBookingAsync(CancelBookingDto input, string userId);
 		Task<bool> TechnicianRejectAsync(Guid bookingId, Guid technicianUserId);
         Task<BookingAcceptResultDto> AcceptBookingAsync(Guid userId, AcceptBookingDto input);
-	}
+        Task<bool> AddEquipmentToBookingAsync(Guid bookingId, AddBookingEquipmentDto input, Guid userId);
+        Task<bool> RemoveEquipmentFromBookingAsync(Guid bookingId, Guid bookingEquipmentId, Guid userId);
+    }
 }
