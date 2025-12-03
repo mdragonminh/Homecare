@@ -8,6 +8,7 @@ import {
   ArrowLeftIcon,
   MapPinIcon,
   PhoneIcon,
+  StarIcon,
   ChatBubbleLeftRightIcon,
   WrenchScrewdriverIcon,
   PlusCircleIcon,
@@ -125,7 +126,7 @@ const BookingDetailPage = () => {
       }
     });
   };
-
+  
   const onRemoveEquipmentClick = (bookingEquipmentId) => {
     openConfirm({
       title: "Xóa thiết bị",
@@ -201,12 +202,10 @@ const BookingDetailPage = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto relative">
-      {/* Back Button */}
       <button onClick={() => navigate("/technician/bookings")} className="text-gray-500 hover:text-gray-700 inline-flex mb-4 items-center">
         <ArrowLeftIcon className="h-4 w-4 mr-1" /> Quay lại
       </button>
 
-      {/* Header & Status */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-3">
@@ -230,6 +229,23 @@ const BookingDetailPage = () => {
               <div>
                 <p className="text-gray-500 text-sm">Họ tên</p>
                 <p className="font-medium">{booking.customerName}</p>
+                
+                <div className="flex items-center mt-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <StarIcon
+                        key={i}
+                        className={`h-4 w-4 ${
+                            i < (booking.customerAverageRating || 0) 
+                            ? "text-yellow-400 fill-yellow-400" 
+                            : "text-gray-300"
+                        }`}
+                        />
+                    ))}
+                    <span className="ml-2 text-sm text-gray-500">
+                        ({booking.customerRatingCount || 0} đánh giá)
+                    </span>
+                </div>
+
               </div>
               <div>
                 <p className="text-gray-500 text-sm">Số điện thoại</p>
