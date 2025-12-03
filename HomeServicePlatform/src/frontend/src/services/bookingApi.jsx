@@ -179,4 +179,14 @@ export const bookingApi = {
       };
     }
   },
+
+  addEquipment: async (id, data) => {
+    const response = await axiosClient.post(`/booking/${id}/equipments`, data);
+    return response.data;
+  },
+
+  removeEquipment: async (bookingId, bookingEquipmentId) => {
+    const response = await axiosClient.delete(`/booking/${bookingId}/equipments/${bookingEquipmentId}`);
+    return response.data;
+},
 };

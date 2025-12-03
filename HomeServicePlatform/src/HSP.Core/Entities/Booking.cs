@@ -33,6 +33,7 @@ namespace HSP.Core.Entities
         public DateTime DateModified { get; set; }
         public ICollection<BookingFeedback> Feedbacks { get; set; } = new List<BookingFeedback>();
         public ICollection<BookingItem> Items { get; set; } = new List<BookingItem>();
+        public ICollection<BookingEquipment> Equipments { get; set; } = new List<BookingEquipment>();
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     }
 }

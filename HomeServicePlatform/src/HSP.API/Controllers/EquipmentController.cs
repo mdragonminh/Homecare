@@ -23,7 +23,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager},{RoleNames.Supporter}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager},{RoleNames.Supporter},{RoleNames.Technician}")]
         public async Task<IActionResult> GetEquipments(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
@@ -45,7 +45,7 @@ namespace HSP.API.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager},{RoleNames.Supporter}")]
+        [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.EquipmentManager},{RoleNames.Supporter},{RoleNames.Technician}")]
         public async Task<IActionResult> GetEquipment(Guid id)
         {
             try
