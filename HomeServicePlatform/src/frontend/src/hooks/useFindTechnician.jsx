@@ -1,10 +1,24 @@
-
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { homeApi } from "../services/homeApi.jsx";
 import { serviceApi } from "../services/serviceApi.jsx";
 import { calculateDistance } from "../components/findTechnician/MapDisplay.jsx";
 import { loadGoogleMapsAPI } from "../utils/googleMapsLoader";
+const getInitialDateTime = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+
+  return {
+    date: `${year}-${month}-${day}`,
+    time: `${hours}:${minutes}`,
+  };
+};
+
 // ---------------------------------------------------------------------
 // CUSTOM HOOK: useFindTechnician
 // ---------------------------------------------------------------------
@@ -13,7 +27,6 @@ export function useFindTechnician(loggedInUser) {
   const { t } = useTranslation();
   const [homes, setHomes] = useState([]);
   const [selectedHomeId, setSelectedHomeId] = useState(null);
-  const [searchRadius, setSearchRadius] = useState(10);
   const [addressInput, setAddressInput] = useState("");
   const [coords, setCoords] = useState({ latitude: null, longitude: null });
   const [technicians, setTechnicians] = useState(null);
@@ -29,9 +42,19 @@ export function useFindTechnician(loggedInUser) {
   const [serviceSearchInput, setServiceSearchInput] = useState("");
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [isMatching, setIsMatching] = useState(false);
-  const [preferredDate, setPreferredDate] = useState(""); // Định dạng 'YYYY-MM-DD'
-  const [preferredTime, setPreferredTime] = useState("");
+  const initialDateTime = getInitialDateTime();
+  const [preferredDate, _setPreferredDate] = useState(initialDateTime.date); // Định dạng 'YYYY-MM-DD'
+  const [preferredTime, _setPreferredTime] = useState(initialDateTime.time);
+  const [isUserSetDateTime, setIsUserSetDateTime] = useState(false);
   const autocompleteRef = useRef(null);
+  const setPreferredDate = useCallback((date) => {
+    _setPreferredDate(date);
+    setIsUserSetDateTime(true);
+  }, []);
+  const setPreferredTime = useCallback((time) => {
+    _setPreferredTime(time);
+    setIsUserSetDateTime(true);
+  }, []);
 
   const currentHomeData = useMemo(() => {
     return homes.find((home) => home.id === selectedHomeId);
@@ -62,104 +85,154 @@ export function useFindTechnician(loggedInUser) {
       }
     });
   }, []);
+  const validatePreferredDateTime = useCallback(() => {
+    if (!preferredDate || !preferredTime) {
+      return {
+        isValid: false,
+        message: t("validation.missing_date_time", {
+          defaultValue: "Vui lòng chọn ngày và giờ.",
+        }),
+      };
+    }
+    const selectedDateTime = new Date(`${preferredDate}T${preferredTime}:00`);
+    const now = new Date();
+    const twoMinutesAgo = new Date(now.getTime() - 120 * 1000);
+
+    if (selectedDateTime.getTime() < twoMinutesAgo.getTime()) {
+      return {
+        isValid: false,
+        message: t("validation.past_date_time", {
+          defaultValue: "Ngày giờ đã chọn phải là thời điểm trong tương lai.",
+        }),
+      };
+    }
+
+    return { isValid: true, message: null };
+  }, [preferredDate, preferredTime, t]);
 
   const handleCreateAndMatchBooking = useCallback(async () => {
-    if (!addressInput || selectedServiceIds.length === 0 || !loggedInUser?.userId) {
+    if (!addressInput || !loggedInUser?.userId) {
       setStatusMessage({
-        text: t("validation.missing_address_service_or_login", {
-          defaultValue: "Vui lòng đảm bảo bạn đã đăng nhập, đã chọn địa chỉ và chọn ít nhất một dịch vụ.",
+        text: t("validation.missing_address_or_login", {
+          defaultValue: "Vui lòng đảm bảo bạn đã đăng nhập và đã chọn địa chỉ.",
         }),
         type: "error",
       });
       return;
     }
-    if (!preferredDate) {
+    if (selectedServiceIds.length === 0) {
       setStatusMessage({
-        text: t("validation.preferred_date_required", {
-          defaultValue: "Vui lòng chọn Ngày mong muốn để tạo yêu cầu.",
+        text: t("validation.service_required", {
+          defaultValue: "Vui lòng chọn ít nhất một dịch vụ để tạo yêu cầu.",
         }),
         type: "error",
       });
       return;
     }
-    if (!preferredTime) {
+
+    const validationResult = validatePreferredDateTime();
+    if (!validationResult.isValid) {
       setStatusMessage({
-        text: t("validation.preferred_time_required", {
-          defaultValue: "Vui lòng chọn Giờ mong muốn để tạo yêu cầu.",
-        }),
+        text: validationResult.message,
         type: "error",
       });
       return;
     }
-    const localDateTime = new Date(`${preferredDate}T${preferredTime}:00`);
-    const preferredDateTime = localDateTime.toISOString();
+
+    // Bắt đầu quá trình matching
     setIsMatching(true);
     setStatusMessage({
       text: t("ui.matching_technician_process", {
-        defaultValue: "Đang tạo yêu cầu và tìm kiếm kỹ thuật viên phù hợp...",
+        defaultValue: "Đang tạo yêu cầu và ghép nối kỹ thuật viên...",
+      }),
+      type: "searching",
+    });
+    let preferredDateTime = null;
+    if (preferredDate && preferredTime) {
+      const vietnamDateTime = new Date(
+        `${preferredDate}T${preferredTime}:00+07:00`
+      );
+      if (!isUserSetDateTime) {
+        const newTime = vietnamDateTime.getTime() + 10 * 60 * 1000;
+        vietnamDateTime.setTime(newTime);
+      }
+      preferredDateTime = vietnamDateTime.toISOString();
+
+      console.log("Frontend gửi desireDateTime:", preferredDateTime);
+    }
+    setIsMatching(true);
+    setStatusMessage({
+      text: t("ui.matching_technician_process", {
+        defaultValue: "Đang tạo yêu cầu và ghép nối kỹ thuật viên...",
       }),
       type: "searching",
     });
 
-    const radius = parseFloat(searchRadius);
-    const matchResult = await serviceApi.createAndMatchBooking(
-      addressInput,
-      selectedServiceIds,
-      loggedInUser.userId,
-      radius,
-      preferredDateTime
-    );
+    try {
+      const matchResult = await serviceApi.createAndMatchBooking(
+        addressInput,
+        selectedServiceIds,
+        loggedInUser.userId,
+        preferredDateTime
+      );
 
-    setIsMatching(false);
+      if (matchResult.success) {
+        const responseData = matchResult.data;
 
-    if (matchResult.success) {
-      const responseData = matchResult.data;
-      if (responseData && responseData.isMatched === true) {
-           setStatusMessage({
-               text: t("success.match_booking_success", {
-                   defaultValue: "Đã tạo yêu cầu thành công và ghép nối với kỹ thuật viên.",
-               }),
-               type: "success",
-           });
-      } 
-      
-      else if (responseData && responseData.isMatched === false) {
-           setStatusMessage({
-               text: t("error.no_technician_accepted_match", {
-                   defaultValue: "Yêu cầu đã được tạo, NHƯNG không có kỹ thuật viên nào chấp nhận yêu cầu của bạn. Vui lòng thử lại sau.",
-               }),
-               type: "error", 
-           });
+        if (responseData?.isMatched === true) {
+          setStatusMessage({
+            text: t("success.match_booking_success", {
+              defaultValue: "Đã ghép nối thành công với kỹ thuật viên!",
+            }),
+            type: "success",
+          });
+        } else if (responseData?.isMatched === false) {
+          setStatusMessage({
+            text: t("error.no_technician_accepted_match", {
+              defaultValue:
+                "Yêu cầu đã được tạo nhưng chưa có kỹ thuật viên nhận. Vui lòng thử lại sau.",
+            }),
+            type: "error",
+          });
+        } else {
+          setStatusMessage({
+            text: t("success.request_created_pending_match", {
+              defaultValue:
+                "Yêu cầu đã được tạo thành công. Đang chờ kỹ thuật viên xác nhận...",
+            }),
+            type: "success",
+          });
+        }
+      } else {
+        setStatusMessage({
+          text:
+            matchResult.message ||
+            t("error.match_booking_failed", {
+              defaultValue: "Ghép nối thất bại.",
+            }),
+          type: "error",
+        });
       }
-      else {
-           setStatusMessage({
-               text: t("success.request_created_pending_match", {
-                   defaultValue: "Đã tạo yêu cầu thành công. Chờ kỹ thuật viên chấp nhận/xác nhận.",
-               }),
-               type: "success",
-           });
-      }
-
-    } else {
+    } catch (err) {
+      console.error("Match booking error:", err);
       setStatusMessage({
-        text:
-          matchResult.message ||
-          t("error.match_booking_failed", {
-            defaultValue: "Lỗi khi tạo yêu cầu và ghép nối.",
-          }),
+        text: t("error.unexpected_error", {
+          defaultValue: "Đã có lỗi xảy ra. Vui lòng thử lại.",
+        }),
         type: "error",
       });
+    } finally {
+      setIsMatching(false);
     }
   }, [
     addressInput,
     selectedServiceIds,
     loggedInUser,
-    searchRadius,
     preferredDate,
     preferredTime,
+    isUserSetDateTime,
     t,
   ]);
-
   const handleGetMyLocation = () => {
     if (!("geolocation" in navigator)) {
       setStatusMessage({
@@ -302,8 +375,7 @@ export function useFindTechnician(loggedInUser) {
 
     setSelectedHomeId(newHomeId);
     setTechnicians(null);
-    setSelectedServiceIds([]);
-    setServiceSearchInput("");
+    // Đã loại bỏ việc reset dịch vụ
 
     if (newHome && newHome.latitude && newHome.longitude) {
       setAddressInput(newHome.address);
@@ -321,6 +393,7 @@ export function useFindTechnician(loggedInUser) {
       });
     }
   };
+
   const handleFindTechnician = useCallback(async () => {
     if (!coords.latitude || !coords.longitude) {
       setStatusMessage({
@@ -332,73 +405,71 @@ export function useFindTechnician(loggedInUser) {
     if (selectedServiceIds.length === 0) {
       setStatusMessage({
         text: t("validation.service_required", {
-           defaultValue: "Vui lòng chọn ít nhất một dịch vụ để tìm kiếm.",
+          defaultValue: "Vui lòng chọn ít nhất một dịch vụ để tìm kiếm.",
         }),
         type: "error",
       });
       return;
     }
-    const radius = parseFloat(searchRadius);
-    if (isNaN(radius) || radius <= 0) {
-      setStatusMessage({
-        text: t("validation.search_radius_invalid", { 
-           defaultValue: "Vui lòng nhập bán kính tìm kiếm hợp lệ (phải lớn hơn 0).",
-        }), 
-        type: "error",
-      });
-      return;
-    }
+
+    const radiusForDisplay = 50;
+
     setIsSearching(true);
     setTechnicians([]);
     setStatusMessage({
-      text: t("ui.searching_technicians", { address: addressInput, radius }),
+      text: t("ui.searching_technicians", {
+        address: addressInput,
+        radius: radiusForDisplay,
+      }),
       type: "searching",
     });
+
     const searchResult = await serviceApi.getNearbyTechnicians(
       addressInput,
-      radius,
-      selectedServiceIds.map(String) 
+      selectedServiceIds.map(String)
     );
+
     setIsSearching(false);
 
     if (searchResult.success) {
-      const filteredTechnicians = searchResult.data
+      const techniciansResult = searchResult.data
         .map((tech) => {
           const { latitude, longitude } = tech;
           const calculatedDistanceInMeters = calculateDistance(
-        coords.latitude,
-        coords.longitude,
-        latitude,
-        longitude
-      );
-          const calculatedDistanceInKm = (calculatedDistanceInMeters / 1000).toFixed(2);
+            coords.latitude,
+            coords.longitude,
+            latitude,
+            longitude
+          );
+          const calculatedDistanceInKm = (
+            calculatedDistanceInMeters / 1000
+          ).toFixed(2);
           return {
-            ...tech, 
+            ...tech,
             distance: calculatedDistanceInKm,
-            lat: latitude, 
-            lng: longitude, 
+            lat: latitude,
+            lng: longitude,
           };
         })
-        .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance)) 
-        .filter((tech) => parseFloat(tech.distance) <= radius);
+        .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
 
-      setTechnicians(filteredTechnicians);
-      
-      const count = filteredTechnicians.length;
+      setTechnicians(techniciansResult);
+
+      const count = techniciansResult.length;
 
       if (count === 0) {
-         setStatusMessage({
+        setStatusMessage({
           text: t("ui.no_technicians_found", {
-            defaultValue: "Không tìm thấy kỹ thuật viên phù hợp trong bán kính.",
+            defaultValue: "Không tìm thấy kỹ thuật viên phù hợp.",
           }),
           type: "warning",
         });
       } else {
-         setStatusMessage({
+        setStatusMessage({
           text: t("success.technician_found", {
             count: count,
-            radius,
-            defaultValue: `Đã tìm thấy ${count} kỹ thuật viên trong bán kính ${radius} km.`,
+            radius: radiusForDisplay,
+            defaultValue: `Đã tìm thấy ${count} kỹ thuật viên.`,
           }),
           type: "success",
         });
@@ -410,14 +481,7 @@ export function useFindTechnician(loggedInUser) {
         type: "error",
       });
     }
-  }, [
-    addressInput,
-    coords.latitude,
-    coords.longitude,
-    searchRadius,
-    selectedServiceIds, 
-    t,
-  ]);
+  }, [addressInput, coords.latitude, coords.longitude, selectedServiceIds, t]);
 
   const reloadHomeData = () => {
     setIsAddHomeModalOpen(false);
@@ -512,53 +576,74 @@ export function useFindTechnician(loggedInUser) {
   }, [loadUserHomes, loadServices]);
 
   useEffect(() => {
-  let isMounted = true;
+    let isMounted = true;
 
-  async function initAutocomplete() {
-    try {
-      // Đợi Google Maps API load xong
-      await loadGoogleMapsAPI();
-      
-      if (!isMounted) return;
+    async function initAutocomplete() {
+      try {
+        await loadGoogleMapsAPI();
 
-      const input = document.getElementById("address-input");
-      
-      if (input && !autocompleteRef.current) {
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(
-          input,
-          {
-            types: ["address"],
-            componentRestrictions: { country: "VN" },
-          }
-        );
+        if (!isMounted) return;
 
-        autocompleteRef.current.addListener("place_changed", () => {
-          const place = autocompleteRef.current.getPlace();
-          if (place.geometry) {
-            setAddressInput(place.formatted_address);
-            setCoords({
-              latitude: place.geometry.location.lat(),
-              longitude: place.geometry.location.lng(),
-            });
-            setStatusMessage({
-              text: t("success.geocode_success"),
-              type: "success"
-            });
-          }
-        });
+        const input = document.getElementById("address-input");
+
+        if (input && !autocompleteRef.current) {
+          autocompleteRef.current = new window.google.maps.places.Autocomplete(
+            input,
+            {
+              types: ["address"],
+              componentRestrictions: { country: "VN" },
+            }
+          );
+
+          autocompleteRef.current.addListener("place_changed", () => {
+            const place = autocompleteRef.current.getPlace();
+            if (place.geometry) {
+              setAddressInput(place.formatted_address);
+              setCoords({
+                latitude: place.geometry.location.lat(),
+                longitude: place.geometry.location.lng(),
+              });
+              setStatusMessage({
+                text: t("success.geocode_success"),
+                type: "success",
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Autocomplete initialization error:", error);
       }
-    } catch (error) {
-      console.error("Autocomplete initialization error:", error);
     }
-  }
 
-  initAutocomplete();
+    initAutocomplete();
 
-  return () => {
-    isMounted = false;
-  };
-}, [t]);
+    return () => {
+      isMounted = false;
+    };
+  }, [t]);
+ useEffect(() => {
+    if (!loggedInUser || isUserSetDateTime) return;
 
+    const updateCurrentDateTime = () => {
+      const now = new Date();
+      // ********** SỬA Ở ĐÂY **********
+      // Lấy các thành phần ngày/tháng/năm theo múi giờ địa phương
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      
+      const date = `${year}-${month}-${day}`; // Định dạng YYYY-MM-DD
+      const time = now.toTimeString().slice(0, 5); // HH:MM (24h format)
+      // **********************************
+
+      _setPreferredDate(date);
+      _setPreferredTime(time);
+    };
+    updateCurrentDateTime();
+    const intervalId = setInterval(updateCurrentDateTime, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isUserSetDateTime, loggedInUser]);
   // ---------------------------------------------------------------------
   // RETURN VALUES
   // ---------------------------------------------------------------------
@@ -567,7 +652,6 @@ export function useFindTechnician(loggedInUser) {
     // State
     homes,
     selectedHomeId,
-    searchRadius,
     addressInput,
     coords,
     technicians,
@@ -582,21 +666,20 @@ export function useFindTechnician(loggedInUser) {
     isServiceDropdownOpen,
     isMatching,
     serviceSearchInput,
-    preferredDate, 
+    preferredDate,
     preferredTime,
     currentHomeData,
     filteredServices,
     selectedServiceNames,
 
     // Setters
-    setSelectedHomeId, 
-    setSearchRadius,
+    setSelectedHomeId,
     setAddressInput,
     setIsAddHomeModalOpen,
     setIsEditHomeModalOpen,
     setIsServiceDropdownOpen,
     setServiceSearchInput,
-    setPreferredDate, // THÊM
+    setPreferredDate,
     setPreferredTime,
 
     handleAddressSelection,
@@ -608,5 +691,6 @@ export function useFindTechnician(loggedInUser) {
     reloadHomeData,
     handleMarkerDrag,
     handleGeocode,
+    validatePreferredDateTime,
   };
 }
