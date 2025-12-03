@@ -47,7 +47,7 @@ export function FindTechnicianPage({ loggedInUser }) {
   const {
     homes,
     selectedHomeId,
-    searchRadius,
+    // ĐÃ LOẠI BỎ: searchRadius,
     addressInput,
     coords,
     technicians,
@@ -67,7 +67,7 @@ export function FindTechnicianPage({ loggedInUser }) {
     selectedServiceNames,
     preferredDate,
     preferredTime,
-    setSearchRadius,
+    // ĐÃ LOẠI BỎ: setSearchRadius,
     setAddressInput,
     setIsAddHomeModalOpen,
     setIsEditHomeModalOpen,
@@ -83,6 +83,7 @@ export function FindTechnicianPage({ loggedInUser }) {
     reloadHomeData,
     handleMarkerDrag,
     handleGeocode,
+    
   } = useFindTechnician(loggedInUser);
 
   const renderStatusMessage = (messageObj) => {
@@ -352,37 +353,12 @@ export function FindTechnicianPage({ loggedInUser }) {
               )}
             </div>
 
-            {/* Search Radius and Date/Time */}
+            {/* Date/Time (ĐÃ BỎ Ô BÁN KÍNH) */}
             <div
               className={`grid gap-3 ${
-                loggedInUser ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1"
+                loggedInUser ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
               }`}
             >
-              <div>
-                <label
-                  htmlFor="search-radius"
-                  className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2"
-                >
-                  <Globe className="h-4 w-4 text-gray-600" />
-                  {t("ui.search_radius_label")}
-                </label>
-                <div className="relative">
-                  <input
-                    id="search-radius"
-                    type="number"
-                    min="1"
-                    value={searchRadius}
-                    onChange={(e) => setSearchRadius(e.target.value)}
-                    className="w-full h-10 px-3 pr-12 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder={t("form.placeholder.search_radius")}
-                    disabled={isSearching || isMatching}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium text-xs">
-                    {t("ui.search_radius_unit")}
-                  </span>
-                </div>
-              </div>
-
               {loggedInUser && (
                 <div>
                   <label
@@ -421,7 +397,10 @@ export function FindTechnicianPage({ loggedInUser }) {
                   />
                 </div>
               )}
+              
+              {/* VỊ TRÍ CỦA INPUT BÁN KÍNH ĐÃ BỊ XÓA BỎ */}
             </div>
+            
             {!loggedInUser && (
               <div>
                 <label
@@ -443,11 +422,11 @@ export function FindTechnicianPage({ loggedInUser }) {
               </div>
             )}
             {renderStatusMessage(statusMessage)}
-            <div className="flex gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2 items-center sm:items-stretch">
               <button
                 onClick={handleFindTechnician}
                 disabled={isSearching || isMatching}
-                className="flex-1 h-11 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                className="w-11/12 max-w-md sm:flex-1 h-11 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
               >
                 {isSearching ? (
                   <>
@@ -457,7 +436,12 @@ export function FindTechnicianPage({ loggedInUser }) {
                 ) : (
                   <>
                     <Search className="h-4 w-4" />
-                    {t("ui.find_technicians_button", { radius: searchRadius })}
+                    {t("ui.find_technicians_button", { 
+                      // Đã loại bỏ radius: searchRadius 
+                    })} 
+                    {t("ui.find_technicians_button_default", {
+                      defaultValue: ""
+                    })}
                   </>
                 )}
               </button>
@@ -466,7 +450,7 @@ export function FindTechnicianPage({ loggedInUser }) {
                 <button
                   onClick={handleCreateAndMatchBooking}
                   disabled={isMatching || isSearching}
-                  className="flex-1 h-11 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                  className="w-11/12 max-w-md sm:flex-1 h-11 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
                 >
                   {isMatching ? (
                     <>
@@ -486,7 +470,7 @@ export function FindTechnicianPage({ loggedInUser }) {
             </div>
           </div>
         </div>
-        <div className="lg:w-1/2 flex relative min-h-[450px]">
+        <div className="lg:w-1/2 flex relative lg:min-h-[450px]">
           <div className="w-full h-full rounded-xl shadow-lg">
             {" "}
             <div className="w-full h-full rounded-[10px] overflow-hidden relative">
@@ -519,7 +503,7 @@ export function FindTechnicianPage({ loggedInUser }) {
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 max-h-[500px] overflow-y-auto">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 overflow-y-auto">
         <div className="pb-3 border-b border-gray-200 mb-4">
           <h3 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
             <ChevronsDown className="h-5 w-5 text-gray-600" />
@@ -540,7 +524,7 @@ export function FindTechnicianPage({ loggedInUser }) {
           <div className="text-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
             <XCircle className="h-10 w-10 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-600 font-medium text-sm">
-              {t("ui.no_technicians_found", { radius: searchRadius })}
+              {t("ui.no_technicians_found")}
             </p>
           </div>
         )}
@@ -619,8 +603,10 @@ export function FindTechnicianPage({ loggedInUser }) {
       {/* Matching Overlay */}
       {isMatching && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-white bg-opacity-70 backdrop-blur-sm"></div>{" "}
-          <div className="relative bg-white px-8 py-6 rounded-xl shadow-2xl border border-gray-200 flex flex-col items-center gap-3">
+          {/* Hiệu ứng mờ tối (Dimmed) */}
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300"></div>{" "}
+          
+          <div className="relative bg-white px-8 py-6 rounded-xl shadow-2xl border border-gray-200 flex flex-col items-center gap-4 animate-fadeIn">
             <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
             <p className="text-base font-semibold text-gray-800">
               {t("ui.matching_technician_process", {

@@ -171,8 +171,8 @@ function TechnicianRegister({ loggedInUser }) {
                   <label className="block text-sm font-semibold text-gray-900 mb-3 ml-1">
                     {t("technician_register.personal_info.avatar_required")}
                   </label>
-                  <div className="flex items-start gap-6">
-                    <div className="flex flex-col flex-shrink-0 w-48">
+                  <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+                    <div className="flex flex-col flex-shrink-0 w-48 mb-6 md:mb-0">
                       {/* Avatar Upload Circle */}
                       <div className="relative w-48 h-48">
                         {formData.avatarFile ? (
@@ -185,7 +185,7 @@ function TechnicianRegister({ loggedInUser }) {
                               alt="Avatar Preview"
                               className="w-full h-full object-cover rounded-full border-4 border-gray-200 shadow-sm"
                             />
-                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity space-x-2">
+                           <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center transition-opacity space-x-2 opacity-100">
                               <button
                                 type="button"
                                 onClick={() =>
@@ -256,7 +256,7 @@ function TechnicianRegister({ loggedInUser }) {
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 flex flex-col justify-start gap-4 h-48">
+                    <div className="flex-1 flex flex-col justify-start gap-4 h-auto md:h-48 w-full">
                       {/* Full Name */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-900 mb-2 ml-1">
@@ -436,7 +436,7 @@ function TechnicianRegister({ loggedInUser }) {
                       *
                     </label>
 
-                    <div className="relative border-2 border-dashed rounded-lg flex items-center justify-center w-96 h-50 mx-auto">
+                   <div className="relative border-2 border-dashed rounded-lg flex items-center justify-center w-full max-w-sm mx-auto h-48 md:h-56">
                       {loading ? (
                         <div className="flex items-center text-blue-600 p-4">
                           {/* Icon: Loader2 */}
@@ -462,7 +462,7 @@ function TechnicianRegister({ loggedInUser }) {
                           )}
 
                           {/* Action Overlay */}
-                          <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity space-x-2">
+                          <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center transition-opacity space-x-2 opacity-100">
                             <button
                               type="button"
                               onClick={() =>

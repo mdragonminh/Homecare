@@ -25,6 +25,9 @@ import AddHomeItemModal from "./AddHomeItemModal";
 import HomeItemEditModal from "./HomeItemEditModal";
 import HomeItemDetailsModal from "./HomeItemDetailsModal";
 
+// Kích thước trang mặc định
+const pageSize = 6;
+
 export default function HomeItemsInterface() {
   const { homeId } = useParams();
   const navigate = useNavigate();
@@ -42,8 +45,6 @@ export default function HomeItemsInterface() {
   const [itemToEditId, setItemToEditId] = useState(null);
   const [itemToViewId, setItemToViewId] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
-
-  const pageSize = 6;
 
   const fetchHomeItems = useCallback(
     async (page, search) => {
@@ -77,7 +78,7 @@ export default function HomeItemsInterface() {
         setLoading(false);
       }
     },
-    [homeId, pageSize]
+    [homeId]
   );
 
   useEffect(() => {
@@ -145,7 +146,8 @@ export default function HomeItemsInterface() {
 
   const renderPaginationButtons = () => {
     const pageNumbers = [];
-    const maxPagesToShow = 5;
+    // Giảm số trang hiển thị trên mobile
+    const maxPagesToShow = window.innerWidth < 640 ? 3 : 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
@@ -243,15 +245,16 @@ export default function HomeItemsInterface() {
       {[...Array(pageSize)].map((_, i) => (
         <div
           key={i}
-          className="bg-white p-6 rounded-xl border border-blue-200 animate-pulse flex items-center gap-6"
+          // Thay đổi: p-4 trên mobile, flex-col trên mobile
+          className="bg-white p-4 sm:p-6 rounded-xl border border-blue-200 animate-pulse flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6"
         >
-          <div className="w-14 h-14 bg-blue-100 rounded-xl"></div>
-          <div className="flex-1">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 rounded-xl flex-shrink-0"></div>
+          <div className="flex-1 w-full">
             <div className="h-5 bg-blue-100 rounded w-1/3 mb-2"></div>
             <div className="h-4 bg-blue-100 rounded w-2/3 mb-1"></div>
             <div className="h-3 bg-blue-100 rounded w-1/4"></div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-end">
             <div className="h-8 w-8 bg-blue-100 rounded-lg"></div>
             <div className="h-8 w-8 bg-blue-100 rounded-lg"></div>
             <div className="h-8 w-8 bg-blue-100 rounded-lg"></div>
@@ -263,8 +266,8 @@ export default function HomeItemsInterface() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center p-6 bg-white rounded-xl shadow-md border border-blue-200">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <div className="text-center p-6 bg-white rounded-xl shadow-md border border-blue-200 w-full max-w-sm">
           <h3 className="text-xl font-semibold text-red-600 mb-4">
             {t("error.error_occurred")}: {error}
           </h3>
@@ -282,8 +285,9 @@ export default function HomeItemsInterface() {
   return (
     <div className="min-h-screen bg-white">
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-8 flex items-center gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8 flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
             className="p-1.5 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-all duration-200 shadow-sm"
@@ -295,48 +299,62 @@ export default function HomeItemsInterface() {
             {t("ui.manage_items")}
           </h1>
         </div>
-        <div className="flex items-stretch gap-4 mb-8">
-          <div className="bg-white px-6 rounded-2xl border border-gray-200 flex items-center justify-center flex-shrink-0">
-            <p className="text-xm text-gray-500 whitespace-nowrap">
+        
+        {/* Search and Add controls - Responsive Layout */}
+        <div className="flex flex-col sm:flex-row items-stretch gap-4 mb-6 sm:mb-8">
+          {/* Total Items Count - Responsive display */}
+          <div className="bg-white px-4 py-3 sm:px-6 sm:py-0 rounded-xl border border-gray-200 flex items-center justify-center flex-shrink-0">
+            <p className="text-sm sm:text-xm text-gray-500 whitespace-nowrap">
               {t("ui.total_items") || "Hiện thị"}:{" "}
               <span className="font-bold text-gray-900 ml-1">{totalCount}</span>
             </p>
           </div>
-          <div className="relative flex-1">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-              size={20}
-            />
-            <input
-              placeholder={
-                t("ui.search_item_placeholder") ||
-                "Tìm kiếm theo tên hoặc địa chỉ..."
-              }
-              className="w-full h-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white text-gray-900"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          
+          {/* Search Bar & Add Button */}
+          <div className="flex flex-1 items-center gap-3">
+            <div className="relative flex-1">
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                size={20}
+              />
+              <input
+                placeholder={
+                  t("ui.search_item_placeholder") ||
+                  "Tìm kiếm theo tên hoặc địa chỉ..."
+                }
+                // Thay đổi: py-2.5 trên mobile
+                className="w-full h-full pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white text-gray-900"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            {/* Add Button - Hiển thị icon trên mobile, icon + text trên desktop */}
+            <button
+              onClick={() => setShowAddModal(true)}
+              // Thay đổi: p-2.5 trên mobile, px-6 py-3 trên desktop
+              className="flex items-center justify-center gap-2 p-2.5 sm:px-6 sm:py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200 font-medium flex-shrink-0 whitespace-nowrap"
+              title={t("ui.add_item")}
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline">{t("ui.add_item") || "Thêm mới"}</span>
+            </button>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200 font-medium flex-shrink-0 whitespace-nowrap"
-            title={t("ui.add_item")}
-          >
-            <Plus size={20} />
-            <span>{t("ui.add_item") || "Thêm mới"}</span>
-          </button>
         </div>
+
         {loading && totalCount === 0 ? (
           renderSkeleton()
         ) : items.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center hover:shadow-md transition-all duration-200">
-            <div className="w-20 h-20 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-8 sm:p-12 text-center hover:shadow-md transition-all duration-200">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
               <Package size={32} />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
               {t("ui.no_items_found")}
             </h3>
-            <p className="text-gray-600 mb-6">{t("ui.add_first_item_hint")}</p>
+            <p className="text-sm text-gray-600 mb-4 sm:mb-6">
+              {t("ui.add_first_item_hint")}
+            </p>
             <button
               onClick={() => setShowAddModal(true)}
               className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm"
@@ -348,22 +366,28 @@ export default function HomeItemsInterface() {
           <>
             <div className="space-y-4">
               {items.map((item, index) => (
+                // Item Card - Responsive Layout
                 <div
                   key={item.id}
-                  className="bg-white p-6 rounded-xl border border-gray-200 flex items-center gap-6 hover:shadow-md transition-all duration-200"
+                  // Thay đổi: p-4 trên mobile, flex-col trên mobile
+                  className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 hover:shadow-md transition-all duration-200"
                 >
+                  {/* Icon */}
                   <div
-                    className={`w-14 h-14 rounded-xl flex items-center justify-center border ${getItemColor(
+                    // Thay đổi: kích thước icon nhỏ hơn trên mobile
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center border flex-shrink-0 ${getItemColor(
                       index
                     )}`}
                   >
                     {getItemIcon(item.type)}
                   </div>
+                  {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 text-lg mb-2 truncate">
+                    {/* Thay đổi: text-base trên mobile */}
+                    <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-1 truncate">
                       {item.name}
                     </h3>
-                    <div className="flex flex-wrap items-center gap-3 text-sm mb-2">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm mb-0">
                       <span className="inline-flex items-center gap-1.5 text-gray-700 bg-gray-100 px-3 py-1 rounded-lg font-medium">
                         <Tag size={14} />
                         {t(
@@ -384,7 +408,8 @@ export default function HomeItemsInterface() {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  {/* Actions - Căn chỉnh sang phải trên mobile */}
+                  <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 justify-end">
                     <button
                       onClick={() => handleViewItem(item.id)}
                       className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
@@ -415,7 +440,7 @@ export default function HomeItemsInterface() {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modals - Giữ nguyên, giả định các Modals con đã responsive hoặc dùng thư viện */}
       {showAddModal && (
         <AddHomeItemModal
           homeId={homeId}
@@ -436,9 +461,15 @@ export default function HomeItemsInterface() {
           onClose={() => setItemToViewId(null)}
         />
       )}
+      
+      {/* Delete Confirmation Modal - Responsive changes */}
       {itemToDelete && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-md w-full">
+        // Thay đổi: items-end trên mobile để modal trượt lên từ dưới
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div 
+            // Thay đổi: rounded-t-2xl trên mobile, w-full, không dùng max-w-md trên mobile
+            className="bg-white p-6 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-none sm:max-w-md"
+          >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6 text-red-600" />
