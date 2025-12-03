@@ -32,7 +32,23 @@ export const systemSettingApi = {
       return { success: false, message: err.response?.data?.message || "Lấy cài đặt thất bại" };
     }
   },
+  getRegistry: async () => {
+    try {
+      const res = await axiosClient.get(`${BASE_URL}/registry`);
+      return { success: true, data: res.data };
+    } catch {
+      return { success: false, message: "Không lấy được registry" };
+    }
+  },
 
+  createSetting: async (data) => {
+    try {
+      const res = await axiosClient.post(`${BASE_URL}`, data);
+      return { success: true, data: res.data };
+    } catch (err) {
+      return { success: false, message: err.response?.data || "Tạo cài đặt thất bại" };
+    }
+  },
   updateSettingByKey: async (key, data) => {
     try {
       const res = await axiosClient.put(`${BASE_URL}/key/${key}`, data);

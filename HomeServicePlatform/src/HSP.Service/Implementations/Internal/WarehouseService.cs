@@ -47,7 +47,7 @@ namespace HSP.Service.Implementations.Internal
             {
                 PageNumber = page,
                 PageSize = pageSize,
-                OrderBy = "DateCreated descending" 
+                OrderBy = "DateCreated descending"
             };
 
             var dtoQuery = query.Select(w => new WarehouseListDto
@@ -106,17 +106,12 @@ namespace HSP.Service.Implementations.Internal
                 throw new ArgumentException("Warehouse name already exists");
             }
 
-            // Validate manager if provided
-            if (input.ManagerId.HasValue)
+            // Bạn có thể cân nhắc dùng _accountManagementService.GetAccountByIdAsync ở đây
+            var managerUser = await _userRepository.FindByIdAsync(input.ManagerId);
+            if (managerUser == null)
             {
-                // Bạn có thể cân nhắc dùng _accountManagementService.GetAccountByIdAsync ở đây
-                var managerUser = await _userRepository.FindByIdAsync(input.ManagerId.Value);
-                if (managerUser == null)
-                {
-                    throw new ArgumentException("Manager not found");
-                }
+                throw new ArgumentException("Manager not found");
             }
-
             var warehouse = new Warehouse
             {
                 Id = Guid.NewGuid(),
@@ -134,8 +129,7 @@ namespace HSP.Service.Implementations.Internal
             await _unitOfWork.SaveChangesAsync();
 
             // Return DTO
-            var manager = input.ManagerId.HasValue ?
-                await _userRepository.FindByIdAsync(input.ManagerId.Value) : null;
+            var manager = await _userRepository.FindByIdAsync(input.ManagerId);
 
             return new WarehouseDto
             {
@@ -165,13 +159,10 @@ namespace HSP.Service.Implementations.Internal
             }
 
             // Validate manager if provided
-            if (input.ManagerId.HasValue)
+            var managerUser2 = await _userRepository.FindByIdAsync(input.ManagerId);
+            if (managerUser2 == null)
             {
-                var managerUser2 = await _userRepository.FindByIdAsync(input.ManagerId.Value);
-                if (managerUser2 == null)
-                {
-                    throw new ArgumentException("Manager not found");
-                }
+                throw new ArgumentException("Manager not found");
             }
 
             warehouse.Name = input.Name;
@@ -184,8 +175,8 @@ namespace HSP.Service.Implementations.Internal
             await _unitOfWork.SaveChangesAsync();
 
             // Get manager name for response
-            var managerName = input.ManagerId.HasValue ?
-                (await _userRepository.FindByIdAsync(input.ManagerId.Value))?.FullName : null;
+            var managerName = 
+                (await _userRepository.FindByIdAsync(input.ManagerId))?.FullName;
 
             var equipmentCount = await _equipmentRepository.GetAll()
                 .CountAsync(e => e.WarehouseId == id && !e.IsDeleted);

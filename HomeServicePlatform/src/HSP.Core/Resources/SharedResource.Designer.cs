@@ -19,12 +19,11 @@ namespace HSP.Core.Resources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public partial class SharedResource
-    {
-
+    public partial class SharedResource {
+        
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
@@ -901,6 +900,51 @@ namespace HSP.Core.Resources {
         public static string UserNotFound {
             get {
                 return ResourceManager.GetString("UserNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Address cannot exceed 255 characters.
+        /// </summary>
+        public static string WarehouseAddressMaxLength {
+            get {
+                return ResourceManager.GetString("WarehouseAddressMaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Warehouse address is required.
+        /// </summary>
+        public static string WarehouseAddressRequired {
+            get {
+                return ResourceManager.GetString("WarehouseAddressRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Manager is required.
+        /// </summary>
+        public static string WarehouseManagerRequired {
+            get {
+                return ResourceManager.GetString("WarehouseManagerRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Name cannot exceed 100 characters.
+        /// </summary>
+        public static string WarehouseNameMaxLength {
+            get {
+                return ResourceManager.GetString("WarehouseNameMaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Warehouse name is required.
+        /// </summary>
+        public static string WarehouseNameRequired {
+            get {
+                return ResourceManager.GetString("WarehouseNameRequired", resourceCulture);
             }
         }
     }

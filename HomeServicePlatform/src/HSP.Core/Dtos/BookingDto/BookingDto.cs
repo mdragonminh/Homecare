@@ -11,7 +11,7 @@ namespace HSP.Core.Dtos.BookingDto
         public Guid CustomerProfileId { get; set; }
         public Guid? TechnicianId { get; set; }
         public Guid ServiceId { get; set; }
-        public DateTime DesiredDate { get; set; }
+        public DateTime? DesiredDate { get; set; }
         public string? ProblemDescription { get; set; }
         public BookingStatus Status { get; set; }
         public DateTime? DateCompleted { get; set; }
@@ -53,11 +53,11 @@ namespace HSP.Core.Dtos.BookingDto
         public string? TechnicianEmail { get; set; }
         public string? TechnicianPhone { get; set; }
         public string? ServiceName { get; set; }
+        public string? Address { get; set; }
         public decimal? ServiceBasePrice { get; set; }
         public double? CustomerAverageRating { get; set; }
         public int? CustomerRatingCount { get; set; }
         public List<BookingItemDto>? Items { get; set; }
-        public decimal TotalPrice { get; set; }
         public ICollection<PaymentDto.PaymentDto> Payments { get; set; } = new List<PaymentDto.PaymentDto>();
     }
 
@@ -78,4 +78,10 @@ namespace HSP.Core.Dtos.BookingDto
         public int CompletedBookings { get; set; }
         public int CancelledBookings { get; set; }
     }
+    public class AcceptBookingDto
+    {
+        public Guid BookingId { get; set; }
+        public string Token { get; set; } = null!;
+    }
+
 }

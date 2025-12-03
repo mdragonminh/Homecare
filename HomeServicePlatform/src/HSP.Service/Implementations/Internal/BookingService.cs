@@ -11,7 +11,9 @@ using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using Microsoft.VisualBasic;
 using System;
+using System.Linq.Dynamic.Core.Tokenizer;
 
 namespace HSP.Service.Implementations.Internal
 {
@@ -22,6 +24,7 @@ namespace HSP.Service.Implementations.Internal
         private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
         private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
         private readonly IRepository<ChatConversation, Guid> _conversationRepository;
+        private readonly IGeocodingService _geocodingService;
         private readonly IUserRepository _userRepository;
         private readonly IRedisCacheService _redisCacheService;
         private readonly IEmailService _emailService;
@@ -30,6 +33,7 @@ namespace HSP.Service.Implementations.Internal
                 IRepository<BookingItem, Guid> bookingItemRepository,
                 IRepository<TechnicianProfile, Guid> technicianRepository,
                 IRepository<Core.Entities.Service, Guid> serviceRepository,
+                IGeocodingService geocodingService,
                 IUserRepository userRepository,
                 IRedisCacheService redisCacheService,
                 IRepository<ChatConversation, Guid> conversationRepository,
@@ -43,6 +47,7 @@ namespace HSP.Service.Implementations.Internal
             _serviceRepository = serviceRepository;
             _userRepository = userRepository;
             _redisCacheService = redisCacheService;
+            _geocodingService = geocodingService;
             _conversationRepository = conversationRepository;
             _emailService = emailService;
         }
@@ -132,7 +137,7 @@ namespace HSP.Service.Implementations.Internal
                     BookingId = f.BookingId,
                     Rating = f.Rating,
                     Comment = f.Comment,
-                    Source = f.Source 
+                    Source = f.Source
                 }).ToList(),
                 Cancellation = b.Cancellation != null ? new BookingCancellationResponseDto
                 {
@@ -153,97 +158,65 @@ namespace HSP.Service.Implementations.Internal
 
         public async Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId)
         {
-            var booking = await _bookingRepository.GetAll(
-                    b => b.Customer,
-                    b => b.Payments,
-                    b => b.Feedbacks
-            ).FirstOrDefaultAsync(b => b.Id == bookingId);
+            var booking = await _bookingRepository.GetAll()
+               .Include(b => b.Customer)
+               .Include(b => b.Technician).ThenInclude(t => t.User)
+               .Include(b => b.Items).ThenInclude(i => i.Service)
+               .Include(b => b.Payments)
+               .Include(b => b.Feedbacks)
+               .FirstOrDefaultAsync(b => b.Id == bookingId);
 
             if (booking == null)
-                return null;
+                throw new KeyNotFoundException("Không tìm thấy booking");
 
-            // Load technician separately if exists
-            TechnicianProfile? technician = null;
-            if (booking.TechnicianId.HasValue)
-            {
-                technician = await _technicianRepository.GetAll(t => t.User)
-                        .FirstOrDefaultAsync(t => t.Id == booking.TechnicianId.Value);
-            }
+            var customerFeedbacks = booking.Customer != null
+                ? booking.Feedbacks.Where(f => f.Source == FeedbackSource.Technician).ToList()
+                : new List<BookingFeedback>();
+            var address = await _geocodingService.GetAddressForCoordinatesAsync(booking.Latitude, booking.Longitude);
 
-            // Load booking items with services
-            var bookingItems = await _bookingItemRepository.GetAll(i => i.Service)
-                .Where(i => i.BookingId == bookingId && !i.IsDeleted)
-                .ToListAsync();
-
-            // Calculate total price from items
-            var totalPrice = bookingItems.Sum(i => i.Price);
-
-            var customerRatings = await _bookingRepository.GetAll()
-                .Where(b => b.CustomerId == booking.CustomerId && b.Id != bookingId) 
-                .SelectMany(b => b.Feedbacks)
-                .Where(f => f.Source == FeedbackSource.Technician) 
-                .Select(f => f.Rating)
-                .ToListAsync();
-
-            double? avgRating = null;
-            if (customerRatings.Any())
-            {
-                avgRating = Math.Round(customerRatings.Average(), 1); 
-            }
-
-            return new BookingDetailDto
+            var dto = new BookingDetailDto
             {
                 Id = booking.Id,
-                CustomerProfileId = booking.CustomerId,
-                TechnicianId = booking.TechnicianId,
-                DesiredDate = booking.DesiredDate.Value,
-                ProblemDescription = booking.ProblemDescription,
                 Status = booking.Status,
-                DateCompleted = booking.DateCompleted,
+                DesiredDate = booking.DesiredDate,
                 DateCreated = booking.DateCreated,
                 DateModified = booking.DateModified,
-                CustomerName = booking.Customer?.FullName ?? booking.Customer?.UserName,
+                DateCompleted = booking.DateCompleted,
+                ProblemDescription = booking.ProblemDescription,
+
+                Address = address ?? string.Empty,
+
+                CustomerName = booking.Customer?.FullName,
                 CustomerEmail = booking.Customer?.Email,
                 CustomerPhone = booking.Customer?.PhoneNumber,
-                TechnicianName = technician?.User?.UserName,
-                TechnicianEmail = technician?.User?.Email,
-                TechnicianPhone = technician?.User?.PhoneNumber,
-                CustomerAverageRating = avgRating,
-                CustomerRatingCount = customerRatings.Count,
-                Items = bookingItems.Select(i => new BookingItemDto
+
+                CustomerAverageRating = customerFeedbacks.Any()
+                    ? customerFeedbacks.Average(f => f.Rating)
+                    : 0,
+
+                CustomerRatingCount = customerFeedbacks.Count,
+
+                TechnicianId = booking.TechnicianId,
+                TechnicianName = booking.Technician?.User?.FullName,
+                TechnicianEmail = booking.Technician?.User?.Email,
+                TechnicianPhone = booking.Technician?.User?.PhoneNumber,
+
+                Items = booking.Items.Select(i => new BookingItemDto
                 {
-                    Id = i.Id,
                     ServiceId = i.ServiceId,
-                    ServiceName = i.Service?.Name,
-                    Price = i.Price
+                    ServiceName = i.Service?.Name
                 }).ToList(),
-                TotalPrice = totalPrice,
-                Feedbacks = booking.Feedbacks.Select(f => new BookingFeedbackResponseDto
-                {
-                    BookingId = f.BookingId,
-                    Rating = f.Rating,
-                    Comment = f.Comment,
-                    Source = f.Source 
-                }).ToList(),
-                Cancellation = booking.Cancellation != null ? new BookingCancellationResponseDto
-                {
-                    BookingId = booking.Cancellation.BookingId,
-                    Reason = booking.Cancellation.Reason,
-                    CancelledBy = booking.Cancellation.CancelledBy,
-                    CancelledAt = booking.Cancellation.CancelledAt
-                } : null,
+
                 Payments = booking.Payments.Select(p => new PaymentDto
                 {
                     Id = p.Id,
-                    BookingId = p.BookingId,
                     Amount = p.Amount,
-                    PaymentMethod = p.PaymentMethod,
                     Status = p.Status,
-                    TransactionId = p.TransactionId,
-                    PaidAt = p.PaidAt,
                     DateCreated = p.DateCreated
-                }).OrderByDescending(p => p.DateCreated).ToList()
+                }).ToList(),
             };
+
+            return dto;
         }
         public async Task<bool> UpdateBookingStatusAsync(UpdateBookingStatusDto input, string technicianUserId)
         {
@@ -391,74 +364,6 @@ namespace HSP.Service.Implementations.Internal
             </html>";
         }
 
-        public async Task<BookingAcceptResultDto> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, List<Guid> ServiceIds,
-            string token, DateTime desiredDate)
-        {
-            var waiting = await _redisCacheService.GetAsync<string>($"waiting_{token}");
-            if (string.IsNullOrEmpty(waiting))
-                return new BookingAcceptResultDto { IsSuccess = false, Message = "Link đã hết hạn hoặc đã được sử dụng." };
-            var technician = await _technicianRepository.GetAll()
-                .Include(t => t.User)
-                .Include(x=>x.Services)
-                .FirstOrDefaultAsync(t => t.Id == technicianId);
-            if (technician?.User == null)
-                return new BookingAcceptResultDto { IsSuccess = false, Message = "Không tìm thấy kỹ thuật viên." };
-            var storedTechId = await _redisCacheService.GetAsync<Guid>($"accept_{token}");
-            if (storedTechId == Guid.Empty || storedTechId != technicianId)
-                return new BookingAcceptResultDto { IsSuccess = false, Message = "Token không hợp lệ hoặc kỹ thuật viên không khớp." };
-            using (var transaction = await _unitOfWork.BeginTransactionAsync())
-            {
-                try
-                {
-                    await _redisCacheService.RemoveAsync($"waiting_{token}");
-                    await _redisCacheService.SetAsync($"accepted_{token}", technician.Id, TimeSpan.FromSeconds(60));
-
-                    var customer = await _userRepository.FindByIdAsync(customerId);
-                    if (customer == null)
-                        return new BookingAcceptResultDto { IsSuccess = false, Message = "Dữ liệu khách hàng không hợp lệ." };
-                    var technicianAvailableServiceIds = technician.Services.Select(s => s.Id).ToList();
-                    var services = await _serviceRepository.GetAll()
-                        .Where(x => ServiceIds.Contains(x.Id) && technicianAvailableServiceIds.Contains(x.Id))
-                        .ToListAsync();
-                    if (services == null || !services.Any())
-                        return new BookingAcceptResultDto { IsSuccess = false, Message = "Không tìm thấy dịch vụ hợp lệ." };
-                    var newBooking = new Booking
-                    {
-                        CustomerId = customer.Id,
-                        TechnicianId = technician.Id,
-                        DesiredDate = desiredDate,
-                        DateCreated = DateTime.UtcNow,
-                        Status = BookingStatus.Pending
-                    };
-                    var bookingItems = services.Select(s => new BookingItem
-                    {
-                        Booking = newBooking,
-                        ServiceId = s.Id,
-                        Price = s.Price,
-                    }).ToList();
-                    await _bookingRepository.AddAsync(newBooking);
-                    await _bookingItemRepository.AddRangeAsync(bookingItems);
-                    await _unitOfWork.SaveChangesAsync();
-                    var conversation = new ChatConversation
-                    {
-                        BookingId = newBooking.Id,
-                        CustomerId = customer.Id,
-                        TechnicianId = technician.Id,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    await _conversationRepository.AddAsync(conversation);
-                    await _unitOfWork.SaveChangesAsync();
-                    await transaction.CommitAsync();
-                    return new BookingAcceptResultDto { IsSuccess = true, Message = "Xác nhận thành công!" };
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            }
-        }
-
         private DateTime ConvertUtcToVietnamTime(DateTime utcDateTime)
         {
             if (utcDateTime.Kind != DateTimeKind.Utc)
@@ -487,6 +392,68 @@ namespace HSP.Service.Implementations.Internal
             }
 
             return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, vietnamZone);
+        }
+
+        public async Task<BookingAcceptResultDto> AcceptBookingAsync(Guid userId, AcceptBookingDto input)
+        {
+            var waiting = await _redisCacheService.GetAsync<string>($"waiting_{input.Token}");
+            Console.WriteLine($"Redis waiting_{input.Token}: {waiting}");
+            if (string.IsNullOrEmpty(waiting))
+                return new BookingAcceptResultDto { IsSuccess = false, Message = "Link đã hết hạn hoặc đã sử dụng." };
+
+            var allowedTech = await _redisCacheService.GetAsync<Guid>($"accept_{input.Token}");
+            var technician = await _technicianRepository.GetAll()
+                     .FirstOrDefaultAsync(t => t.UserId == userId);
+            if (allowedTech == Guid.Empty || allowedTech != technician.Id)
+                return new BookingAcceptResultDto { IsSuccess = false, Message = "Bạn không phải kỹ thuật viên được mời." };
+
+            var booking = await _bookingRepository.GetByIdAsync(input.BookingId);
+            if (booking == null)
+                return new BookingAcceptResultDto { IsSuccess = false, Message = "Booking không tồn tại." };
+
+            if (booking.Status != BookingStatus.Pending)
+                return new BookingAcceptResultDto { IsSuccess = false, Message = "Booking đã được xử lý." };
+            using (var transaction = await _unitOfWork.BeginTransactionAsync())
+            {
+                booking.TechnicianId = technician.Id;
+                booking.Status = BookingStatus.Confirmed;
+                booking.DateModified = DateTime.UtcNow;
+                await _unitOfWork.SaveChangesAsync();
+                var conversation = new ChatConversation
+                {
+                    BookingId = booking.Id,
+                    CustomerId = booking.CustomerId,
+                    TechnicianId = technician.Id,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _conversationRepository.AddAsync(conversation);
+                await _unitOfWork.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            await _redisCacheService.SetAsync($"accepted_{input.Token}", technician.Id, TimeSpan.FromSeconds(60));
+
+            await _redisCacheService.RemoveAsync($"waiting_{input.Token}");
+            await _redisCacheService.RemoveAsync($"accept_{input.Token}");
+
+            return new BookingAcceptResultDto
+            {
+                IsSuccess = true,
+                Message = "Bạn đã nhận booking thành công."
+            };
+        }
+
+        public async Task<bool> TechnicianRejectAsync(Guid bookingId, Guid technicianUserId)
+        {
+            var technician = await _technicianRepository.GetAll()
+                 .FirstOrDefaultAsync(t => t.UserId == technicianUserId);
+
+            if (technician == null)
+                throw new Exception("Kỹ thuật viên không tồn tại");
+
+            await _redisCacheService.SetAsync(
+                $"reject_{bookingId}_{technician.Id}",
+                "rejected");
+            return true;
         }
     }
 }

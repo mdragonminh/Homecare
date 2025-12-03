@@ -1,4 +1,5 @@
-﻿using HSP.Core.Dtos.ServiceDto;
+﻿using HSP.Core.Constants.SystemSettings;
+using HSP.Core.Dtos.ServiceDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Interfaces.DataAccess;
 using HSP.Core.Resources;
@@ -27,7 +28,7 @@ namespace HSP.Service.Implementations.Internal
 				throw new ArgumentNullException(nameof(input), _localizer["InputCannotBeNull"]);
 			}
 			
-			var basePrice = await _systemSettingService.GetSettingValueAsDecimalAsync("DefaultServiceBasePrice", 100000);
+			var basePrice = await _systemSettingService.GetValueAsync<decimal>(SystemSettingRegistry.Keys.DefaultServiceBasePrice);
 			var servicePrice = input.Price ?? basePrice;
 			
 			if (servicePrice < basePrice)
@@ -94,9 +95,9 @@ namespace HSP.Service.Implementations.Internal
 			{
 				throw new KeyNotFoundException(_localizer["HomeService_NotFound"]);
 			}
-			
-			var basePrice = await _systemSettingService.GetSettingValueAsDecimalAsync("DefaultServiceBasePrice", 100000);
-			if (input.Price < basePrice)
+
+            var basePrice = await _systemSettingService.GetValueAsync<decimal>(SystemSettingRegistry.Keys.DefaultServiceBasePrice);
+            if (input.Price < basePrice)
 			{
 				throw new InvalidOperationException(string.Format(_localizer["ServicePrice_LessThanBase"], input.Price, basePrice));
 			}

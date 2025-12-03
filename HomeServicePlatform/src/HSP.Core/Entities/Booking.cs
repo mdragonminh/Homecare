@@ -13,12 +13,18 @@ namespace HSP.Core.Entities
         public AppUser Customer { get; set; } = null!;
         public Guid? TechnicianId { get; set; }
         [ForeignKey("TechnicianId")]
-        public TechnicianProfile? Technician { get; set; } = null!;
+        public TechnicianProfile? Technician { get; set; }
         public DateTime? DesiredDate { get; set; }
         [MaxLength(1000)]
         public string? ProblemDescription { get; set; }
         public BookingStatus Status { get; set; } = BookingStatus.Pending;
         public DateTime? DateCompleted { get; set; }
+        [Required]
+        [Range(-90, 90)]
+        public double Latitude { get; set; }
+        [Required]
+        [Range(-180, 180)]
+        public double Longitude { get; set; }
         public BookingCancellation? Cancellation { get; set; }
         [NotMapped]
         public ICollection<FileRelation> Files { get; set; } = new List<FileRelation>();

@@ -10,6 +10,7 @@ namespace HSP.Service.Interfaces
 		Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId);
 		Task<bool> UpdateBookingStatusAsync(UpdateBookingStatusDto input, string technicianUserId);
 		Task<bool> CancelBookingAsync(CancelBookingDto input, string userId);
-		Task<BookingAcceptResultDto> AcceptBookingEmailAsync(Guid customerId, Guid technicianId, List<Guid> ServiceIds, string token, DateTime desiredDate);
+		Task<bool> TechnicianRejectAsync(Guid bookingId, Guid technicianUserId);
+        Task<BookingAcceptResultDto> AcceptBookingAsync(Guid userId, AcceptBookingDto input);
 	}
 }

@@ -17,5 +17,6 @@ namespace HSP.Core.Dtos.SystemSettingDto
 		public string? Group { get; set; }
 
 		public bool IsSensitive { get; set; } = false;
-	}
+		public Guid? CreatedBy { get; set; }
+    }
 }

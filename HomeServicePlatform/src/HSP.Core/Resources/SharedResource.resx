@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- 
+	<!-- 
     Microsoft ResX Schema 
     
     Version 2.0
@@ -59,167 +59,167 @@
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
-  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
-    <xsd:element name="root" msdata:IsDataSet="true">
-      <xsd:complexType>
-        <xsd:choice maxOccurs="unbounded">
-          <xsd:element name="metadata">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" />
-              </xsd:sequence>
-              <xsd:attribute name="name" use="required" type="xsd:string" />
-              <xsd:attribute name="type" type="xsd:string" />
-              <xsd:attribute name="mimetype" type="xsd:string" />
-              <xsd:attribute ref="xml:space" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="assembly">
-            <xsd:complexType>
-              <xsd:attribute name="alias" type="xsd:string" />
-              <xsd:attribute name="name" type="xsd:string" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="data">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
-              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
-              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
-              <xsd:attribute ref="xml:space" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="resheader">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" />
-            </xsd:complexType>
-          </xsd:element>
-        </xsd:choice>
-      </xsd:complexType>
-    </xsd:element>
-  </xsd:schema>
-  <resheader name="resmimetype">
-    <value>text/microsoft-resx</value>
-  </resheader>
-  <resheader name="version">
-    <value>2.0</value>
-  </resheader>
-  <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </resheader>
-  <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </resheader>
-  <data name="AddToRoleFailed" xml:space="preserve">
+	<xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+		<xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+		<xsd:element name="root" msdata:IsDataSet="true">
+			<xsd:complexType>
+				<xsd:choice maxOccurs="unbounded">
+					<xsd:element name="metadata">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" />
+							</xsd:sequence>
+							<xsd:attribute name="name" use="required" type="xsd:string" />
+							<xsd:attribute name="type" type="xsd:string" />
+							<xsd:attribute name="mimetype" type="xsd:string" />
+							<xsd:attribute ref="xml:space" />
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="assembly">
+						<xsd:complexType>
+							<xsd:attribute name="alias" type="xsd:string" />
+							<xsd:attribute name="name" type="xsd:string" />
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="data">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+								<xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+							</xsd:sequence>
+							<xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+							<xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+							<xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+							<xsd:attribute ref="xml:space" />
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="resheader">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+							</xsd:sequence>
+							<xsd:attribute name="name" type="xsd:string" use="required" />
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:choice>
+			</xsd:complexType>
+		</xsd:element>
+	</xsd:schema>
+	<resheader name="resmimetype">
+		<value>text/microsoft-resx</value>
+	</resheader>
+	<resheader name="version">
+		<value>2.0</value>
+	</resheader>
+	<resheader name="reader">
+		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<resheader name="writer">
+		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</resheader>
+	<data name="AddToRoleFailed" xml:space="preserve">
     <value>Add to role failed</value>
   </data>
-  <data name="CannotFindOrCreateUser" xml:space="preserve">
+	<data name="CannotFindOrCreateUser" xml:space="preserve">
     <value>Cannot find or create user</value>
   </data>
-  <data name="ConfirmPasswordIsRequired" xml:space="preserve">
+	<data name="ConfirmPasswordIsRequired" xml:space="preserve">
     <value>The Confirm password field is required</value>
   </data>
-  <data name="EmailIsRequired" xml:space="preserve">
+	<data name="EmailIsRequired" xml:space="preserve">
     <value>The Email field is required</value>
   </data>
-  <data name="EmailNotFoundFromProvider" xml:space="preserve">
+	<data name="EmailNotFoundFromProvider" xml:space="preserve">
     <value>Email not found from provider</value>
   </data>
-  <data name="ErrorLoadingGoogleLogin" xml:space="preserve">
+	<data name="ErrorLoadingGoogleLogin" xml:space="preserve">
     <value>Error loading google login</value>
   </data>
-  <data name="ExperienceYearsIsRequired" xml:space="preserve">
+	<data name="ExperienceYearsIsRequired" xml:space="preserve">
     <value>The ExperienceYears field is required</value>
   </data>
-  <data name="ExperienceYearsRange" xml:space="preserve">
+	<data name="ExperienceYearsRange" xml:space="preserve">
     <value>Experience years must be between 0 and 50</value>
   </data>
-  <data name="FullNameIsRequired" xml:space="preserve">
+	<data name="FullNameIsRequired" xml:space="preserve">
     <value>The Full name field is required</value>
   </data>
-  <data name="FullNameMaxLength" xml:space="preserve">
+	<data name="FullNameMaxLength" xml:space="preserve">
     <value>Full name must not exceed 100 characters</value>
   </data>
-  <data name="GoogleLinkFailed" xml:space="preserve">
+	<data name="GoogleLinkFailed" xml:space="preserve">
     <value>Google link failed</value>
   </data>
-  <data name="InputCannotBeNull" xml:space="preserve">
+	<data name="InputCannotBeNull" xml:space="preserve">
     <value>Input cannot be null</value>
   </data>
-  <data name="InvalidEmailFormat" xml:space="preserve">
+	<data name="InvalidEmailFormat" xml:space="preserve">
     <value>The Email field is not a valid email address</value>
   </data>
-  <data name="InvalidEmailOrPassword" xml:space="preserve">
+	<data name="InvalidEmailOrPassword" xml:space="preserve">
     <value>Invalid email or password</value>
   </data>
-  <data name="InvalidPassword" xml:space="preserve">
+	<data name="InvalidPassword" xml:space="preserve">
     <value>Invalid password</value>
   </data>
-  <data name="PasswordIsRequired" xml:space="preserve">
+	<data name="PasswordIsRequired" xml:space="preserve">
     <value>The Password field is required</value>
   </data>
-  <data name="PasswordLengthError" xml:space="preserve">
+	<data name="PasswordLengthError" xml:space="preserve">
     <value>The password must be at least 8 and at max 100 characters long</value>
   </data>
-  <data name="PasswordsDoNotMatch" xml:space="preserve">
+	<data name="PasswordsDoNotMatch" xml:space="preserve">
     <value>Password and Confirm Password do not match</value>
   </data>
-  <data name="SkillSetIsRequired" xml:space="preserve">
+	<data name="SkillSetIsRequired" xml:space="preserve">
     <value>The SkillSet field is required</value>
   </data>
-  <data name="UserCreationFailed" xml:space="preserve">
+	<data name="UserCreationFailed" xml:space="preserve">
     <value>User creation failed</value>
   </data>
-  <data name="UserNotFound" xml:space="preserve">
+	<data name="UserNotFound" xml:space="preserve">
     <value>User not found</value>
   </data>
-  <data name="CurrentPasswordIncorrect" xml:space="preserve">
+	<data name="CurrentPasswordIncorrect" xml:space="preserve">
     <value>Current password is incorrect</value>
   </data>
-  <data name="PasswordChangeFailed" xml:space="preserve">
+	<data name="PasswordChangeFailed" xml:space="preserve">
     <value>Password change failed</value>
   </data>
-  <data name="PasswordChangeSuccess" xml:space="preserve">
+	<data name="PasswordChangeSuccess" xml:space="preserve">
     <value>Password changed successfully</value>
   </data>
-  <data name="EmailAlreadyExists" xml:space="preserve">
+	<data name="EmailAlreadyExists" xml:space="preserve">
     <value>Email already exist</value>
   </data>
-  <data name="UsernameAlreadyExists" xml:space="preserve">
+	<data name="UsernameAlreadyExists" xml:space="preserve">
     <value>Username already exist</value>
   </data>
-  <data name="EmailNotConfirmed" xml:space="preserve">
+	<data name="EmailNotConfirmed" xml:space="preserve">
     <value>Email not confirmed</value>
   </data>
-  <data name="AccountInactive" xml:space="preserve">
+	<data name="AccountInactive" xml:space="preserve">
     <value>Your account has been deactivated. Please contact support for assistance.</value>
   </data>
-  <data name="Pleasecheckyouremailforpasswordresetinstructions" xml:space="preserve">
+	<data name="Pleasecheckyouremailforpasswordresetinstructions" xml:space="preserve">
     <value>Please check your email for password reset instructions</value>
   </data>
-  <data name="PhoneNumberIsRequired" xml:space="preserve">
+	<data name="PhoneNumberIsRequired" xml:space="preserve">
     <value>The Phone Number field is required</value>
   </data>
-  <data name="InvalidPhoneNumberFormat" xml:space="preserve">
+	<data name="InvalidPhoneNumberFormat" xml:space="preserve">
     <value>Invalid phone number format</value>
   </data>
-  <data name="PhoneNumberMaxLength" xml:space="preserve">
+	<data name="PhoneNumberMaxLength" xml:space="preserve">
     <value>Phone number cannot exceed more than 10 numbers</value>
   </data>
-  <data name="EmailOrPhoneIsRequired" xml:space="preserve">
+	<data name="EmailOrPhoneIsRequired" xml:space="preserve">
     <value>The Email or Phone Number field is required</value>
   </data>
-  <data name="NoAvailableTechniciansFound" xml:space="preserve">
+	<data name="NoAvailableTechniciansFound" xml:space="preserve">
     <value>No available technician found </value>
   </data>
-  <data name="ChatbotSystemPrompt" xml:space="preserve">
+	<data name="ChatbotSystemPrompt" xml:space="preserve">
     <value>YOU ARE THE VIRTUAL ASSISTANT OF HOME SERVICE PLATFORM.
 
 ## ROLE AND RULES
@@ -325,175 +325,191 @@ Example: 10:00 AM – 14/11/2025 (Friday)
 The bot must use the correct Id when calling `create_booking_request`.
 </value>
   </data>
-  <data name="ChatbotToolDescription" xml:space="preserve">
+	<data name="ChatbotToolDescription" xml:space="preserve">
     <value>Create a new service request (booking) for the user. Only call this when you have ALL 3 pieces of info: Address, DesireDateTime, and ServiceIds.</value>
   </data>
-  <data name="NoAvailableTechnicianFound" xml:space="preserve">
+	<data name="NoAvailableTechnicianFound" xml:space="preserve">
     <value>No available technician found</value>
   </data>
-  <data name="ServiceIsCurrentlyInUse" xml:space="preserve">
+	<data name="ServiceIsCurrentlyInUse" xml:space="preserve">
     <value>Service is currently in use</value>
   </data>
-  <data name="CannotSelectPastDate" xml:space="preserve">
+	<data name="CannotSelectPastDate" xml:space="preserve">
     <value>Cannot select past date</value>
   </data>
-  <data name="InvalidFileUpload" xml:space="preserve">
+	<data name="InvalidFileUpload" xml:space="preserve">
     <value>Invalid file upload</value>
   </data>
-  <data name="UnsupportedFileType" xml:space="preserve">
+	<data name="UnsupportedFileType" xml:space="preserve">
     <value>Unsupported file type: {0}</value>
   </data>
-  <data name="FileTooLarge" xml:space="preserve">
+	<data name="FileTooLarge" xml:space="preserve">
     <value>File too large</value>
   </data>
-  <data name="ObjectTypeNotFound" xml:space="preserve">
+	<data name="ObjectTypeNotFound" xml:space="preserve">
     <value>ObjectType '{0}' not found</value>
   </data>
-  <data name="FileNotFound" xml:space="preserve">
+	<data name="FileNotFound" xml:space="preserve">
     <value>File not found</value>
   </data>
-  <data name="ConfirmEmail_Success" xml:space="preserve">
+	<data name="ConfirmEmail_Success" xml:space="preserve">
     <value>Email confirmed</value>
   </data>
-  <data name="ConfirmEmail_InvalidToken" xml:space="preserve">
+	<data name="ConfirmEmail_InvalidToken" xml:space="preserve">
     <value>Invalid token</value>
   </data>
-  <data name="ConfirmEmail_TokenExpired" xml:space="preserve">
+	<data name="ConfirmEmail_TokenExpired" xml:space="preserve">
     <value>Token expired</value>
   </data>
-  <data name="ConfirmEmail_Failed" xml:space="preserve">
+	<data name="ConfirmEmail_Failed" xml:space="preserve">
     <value>Email confirmation failed</value>
   </data>
-  <data name="InvalidEmailOrPhone" xml:space="preserve">
+	<data name="InvalidEmailOrPhone" xml:space="preserve">
     <value>Invalid email or phone</value>
   </data>
-  <data name="InvalidEmail" xml:space="preserve">
+	<data name="InvalidEmail" xml:space="preserve">
     <value>Invalid email</value>
   </data>
-  <data name="CitizenIdRequired" xml:space="preserve">
+	<data name="CitizenIdRequired" xml:space="preserve">
     <value>Citizen ID is required</value>
   </data>
-  <data name="LegalDocumentInvalid" xml:space="preserve">
+	<data name="LegalDocumentInvalid" xml:space="preserve">
     <value>Legal document is invalid or not yours</value>
   </data>
-  <data name="CertificateMismatch" xml:space="preserve">
+	<data name="CertificateMismatch" xml:space="preserve">
     <value>Certificate does not match services: {0}</value>
   </data>
-  <data name="UserAlreadyHasPassword" xml:space="preserve">
+	<data name="UserAlreadyHasPassword" xml:space="preserve">
     <value>User already has a password</value>
   </data>
-  <data name="AddPasswordFailed" xml:space="preserve">
+	<data name="AddPasswordFailed" xml:space="preserve">
     <value>Add password failed</value>
   </data>
-  <data name="PasswordResetFailed" xml:space="preserve">
+	<data name="PasswordResetFailed" xml:space="preserve">
     <value>Password reset failed</value>
   </data>
-  <data name="PasswordResetSubject" xml:space="preserve">
+	<data name="PasswordResetSubject" xml:space="preserve">
     <value>Password reset request</value>
   </data>
-  <data name="EmailConfirmationSubject" xml:space="preserve">
+	<data name="EmailConfirmationSubject" xml:space="preserve">
     <value>Please confirm your email</value>
   </data>
-  <data name="HomeItems_AccessDenied" xml:space="preserve">
+	<data name="HomeItems_AccessDenied" xml:space="preserve">
     <value>User does not have access to these home items.</value>
   </data>
-  <data name="HomeItem_NotFoundOrNoPermission" xml:space="preserve">
+	<data name="HomeItem_NotFoundOrNoPermission" xml:space="preserve">
     <value>Home item not found or you do not have permission to perform this action.</value>
   </data>
-  <data name="Coordinates_NotFound" xml:space="preserve">
+	<data name="Coordinates_NotFound" xml:space="preserve">
     <value>Could not find coordinates for the provided address.</value>
   </data>
-  <data name="Home_NotFoundOrNoPermission" xml:space="preserve">
+	<data name="Home_NotFoundOrNoPermission" xml:space="preserve">
     <value>Home not found or you do not have permission to perform this action.</value>
   </data>
-  <data name="ServicePrice_LessThanBase" xml:space="preserve">
+	<data name="ServicePrice_LessThanBase" xml:space="preserve">
     <value>Service price ({0:N0} VND) cannot be less than the base price ({1:N0} VND)</value>
   </data>
-  <data name="HomeService_NotFound" xml:space="preserve">
+	<data name="HomeService_NotFound" xml:space="preserve">
     <value>Service not found</value>
   </data>
-  <data name="TechnicianNotFound" xml:space="preserve">
+	<data name="TechnicianNotFound" xml:space="preserve">
     <value>Technician not found or not approved</value>
   </data>
-  <data name="ServiceIdsIsRequired" xml:space="preserve">
+	<data name="ServiceIdsIsRequired" xml:space="preserve">
     <value>The ServiceIds field is required</value>
   </data>
-  <data name="AddressIsRequired" xml:space="preserve">
+	<data name="AddressIsRequired" xml:space="preserve">
     <value>The Address field is required</value>
   </data>
-  <data name="LegalDocumentIsRequired" xml:space="preserve">
+	<data name="LegalDocumentIsRequired" xml:space="preserve">
     <value>The Legal Document field is required</value>
   </data>
-  <data name="CitizenIdMaxLength" xml:space="preserve">
+	<data name="CitizenIdMaxLength" xml:space="preserve">
     <value>Citizen ID must not exceed 12 characters</value>
   </data>
-  <data name="UserIdRequired" xml:space="preserve">
+	<data name="UserIdRequired" xml:space="preserve">
     <value>UserId is required</value>
   </data>
-  <data name="FileIsRequired" xml:space="preserve">
+	<data name="FileIsRequired" xml:space="preserve">
     <value>File is required</value>
   </data>
-  <data name="ObjectTypeNameIsRequired" xml:space="preserve">
+	<data name="ObjectTypeNameIsRequired" xml:space="preserve">
     <value>Object type name is required</value>
   </data>
-  <data name="CustomerIdIsRequired" xml:space="preserve">
+	<data name="CustomerIdIsRequired" xml:space="preserve">
     <value>The CustomerId field is required</value>
   </data>
-  <data name="DesireDateTimeIsRequired" xml:space="preserve">
+	<data name="DesireDateTimeIsRequired" xml:space="preserve">
     <value>The DesireDateTime field is required</value>
   </data>
-  <data name="ServiceNameRequired" xml:space="preserve">
+	<data name="ServiceNameRequired" xml:space="preserve">
     <value>Service name is required</value>
   </data>
-  <data name="ServiceNameMaxLength" xml:space="preserve">
+	<data name="ServiceNameMaxLength" xml:space="preserve">
     <value>Service name must not exceed 100 characters</value>
   </data>
-  <data name="ServicePriceRequired" xml:space="preserve">
+	<data name="ServicePriceRequired" xml:space="preserve">
     <value>Service price is required</value>
   </data>
-  <data name="ServicePriceRange" xml:space="preserve">
+	<data name="ServicePriceRange" xml:space="preserve">
     <value>Service price must be a non-negative number</value>
   </data>
-  <data name="ServiceDescriptionMaxLength" xml:space="preserve">
+	<data name="ServiceDescriptionMaxLength" xml:space="preserve">
     <value>Service description must not exceed 500 characters</value>
   </data>
-  <data name="HomeItem_Name_Required" xml:space="preserve">
+	<data name="HomeItem_Name_Required" xml:space="preserve">
     <value>Item name is required</value>
   </data>
-  <data name="HomeItem_Name_MaxLength" xml:space="preserve">
+	<data name="HomeItem_Name_MaxLength" xml:space="preserve">
     <value>Item name must not exceed 100 characters</value>
   </data>
-  <data name="HomeItem_Brand_MaxLength" xml:space="preserve">
+	<data name="HomeItem_Brand_MaxLength" xml:space="preserve">
     <value>Brand must not exceed 100 characters</value>
   </data>
-  <data name="HomeItem_Type_Required" xml:space="preserve">
+	<data name="HomeItem_Type_Required" xml:space="preserve">
     <value>Item type is required</value>
   </data>
-  <data name="HomeItem_Type_MaxLength" xml:space="preserve">
+	<data name="HomeItem_Type_MaxLength" xml:space="preserve">
     <value>Item type must not exceed 50 characters</value>
   </data>
-  <data name="HomeItem_ModelNumber_MaxLength" xml:space="preserve">
+	<data name="HomeItem_ModelNumber_MaxLength" xml:space="preserve">
     <value>Model number must not exceed 100 characters</value>
   </data>
-  <data name="HomeItem_SerialNumber_MaxLength" xml:space="preserve">
+	<data name="HomeItem_SerialNumber_MaxLength" xml:space="preserve">
     <value>Serial number must not exceed 100 characters</value>
   </data>
-  <data name="HomeItem_Notes_MaxLength" xml:space="preserve">
+	<data name="HomeItem_Notes_MaxLength" xml:space="preserve">
     <value>Notes must not exceed 1000 characters</value>
   </data>
-  <data name="HomeItem_HomeId_Required" xml:space="preserve">
+	<data name="HomeItem_HomeId_Required" xml:space="preserve">
     <value>Please select a home for the item</value>
   </data>
-  <data name="Home_Name_Required" xml:space="preserve">
+	<data name="Home_Name_Required" xml:space="preserve">
     <value>Home name is required</value>
   </data>
-  <data name="Home_Name_MaxLength" xml:space="preserve">
+	<data name="Home_Name_MaxLength" xml:space="preserve">
     <value>Home name must not exceed 100 characters</value>
   </data>
-  <data name="Home_Address_Required" xml:space="preserve">
+	<data name="Home_Address_Required" xml:space="preserve">
     <value>Home address is required</value>
   </data>
-  <data name="Home_Address_MaxLength" xml:space="preserve">
+	<data name="Home_Address_MaxLength" xml:space="preserve">
     <value>Home address must not exceed 200 characters</value>
   </data>
+	<data name="WarehouseNameRequired" xml:space="preserve">
+    <value>Warehouse name is required</value>
+  </data>
+	<data name="WarehouseNameMaxLength" xml:space="preserve">
+    <value>Name cannot exceed 100 characters</value>
+  </data>
+	<data name="WarehouseAddressRequired" xml:space="preserve">
+    <value>Warehouse address is required</value>
+  </data>
+	<data name="WarehouseAddressMaxLength" xml:space="preserve">
+    <value>Address cannot exceed 255 characters</value>
+  </data>
+	<data name="WarehouseManagerRequired" xml:space="preserve">
+    <value>Manager is required</value>
+  </data>
+
 </root>

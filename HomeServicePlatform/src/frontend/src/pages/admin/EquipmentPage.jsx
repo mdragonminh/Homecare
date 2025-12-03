@@ -49,7 +49,7 @@ const EquipmentPage = () => {
   };
 
   const [formData, setFormData] = useState(initialFormData);
-
+  const [errors, setErrors] = useState({});
   const [quantityData, setQuantityData] = useState({
     quantity: 0,
     notes: "",
@@ -148,9 +148,47 @@ const EquipmentPage = () => {
     setQuantityEquipment(null);
     setQuantityData({ quantity: 0, notes: "" });
   };
+  const validateEquipmentForm = () => {
+    const newErrors = {};
 
+    if (!formData.name || formData.name.trim() === "") {
+      newErrors.Name = "Tên thiết bị không được để trống";
+    }
+
+    if (!formData.equipmentCode || formData.equipmentCode.trim() === "") {
+      newErrors.EquipmentCode = "Mã thiết bị không được để trống";
+    }
+
+    if (!formData.warehouseId || formData.warehouseId.trim() === "") {
+      newErrors.WarehouseId = "Vui lòng chọn kho";
+    }
+
+    if (formData.quantity < 0) {
+      newErrors.Quantity = "Số lượng không thể nhỏ hơn 0";
+    }
+
+    if (formData.unitPrice < 0) {
+      newErrors.UnitPrice = "Giá bán không thể nhỏ hơn 0";
+    }
+
+    if (formData.costPrice < 0) {
+      newErrors.CostPrice = "Giá nhập không thể nhỏ hơn 0";
+    }
+
+    if (formData.warrantyDurationMonths < 0) {
+      newErrors.Warranty = "Số tháng bảo hành không thể nhỏ hơn 0";
+    }
+
+    return newErrors;
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({});
+    const validationErrors = validateEquipmentForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
     try {
       if (editingEquipment) {
         await warehouseApi.updateEquipment(editingEquipment.id, formData);
@@ -163,7 +201,6 @@ const EquipmentPage = () => {
       closeModal();
       fetchEquipments();
     } catch (error) {
-      console.error("Error saving equipment:", error);
       toast.error(error.response?.data?.message || "Failed to save equipment");
     }
   };
@@ -312,13 +349,12 @@ const EquipmentPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`inline-flex px-5 py-2 text-xs font-semibold rounded-full mb-2 ${
-                        equipment.quantity > 0
-                          ? equipment.quantity > 10
-                            ? "bg-green-200 text-green-800"
-                            : "bg-yellow-200 text-yellow-800"
-                          : "bg-red-200 text-red-800"
-                      }`}
+                      className={`inline-flex px-5 py-2 text-xs font-semibold rounded-full mb-2 ${equipment.quantity > 0
+                        ? equipment.quantity > 10
+                          ? "bg-green-200 text-green-800"
+                          : "bg-yellow-200 text-yellow-800"
+                        : "bg-red-200 text-red-800"
+                        }`}
                     >
                       {equipment.quantity}
                     </span>
@@ -402,11 +438,10 @@ const EquipmentPage = () => {
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          page === pagination.currentPage
-                            ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
-                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                        }`}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${page === pagination.currentPage
+                          ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
+                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                          }`}
                       >
                         {page}
                       </button>
@@ -440,13 +475,17 @@ const EquipmentPage = () => {
                       </label>
                       <input
                         type="text"
-                        required
-                        value={formData.name}
+                        value={formData.equipmentCode}
                         onChange={(e) =>
-                          setFormData({ ...formData, name: e.target.value })
+                          setFormData({ ...formData, equipmentCode: e.target.value })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md ${errors.EquipmentCode ? "border-red-500 bg-red-50" : "border-gray-300"
+                          }`}
                       />
+                      {errors.EquipmentCode && (
+                        <p className="text-red-500 text-sm mt-1">{errors.EquipmentCode}</p>
+                      )}
+
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -518,25 +557,22 @@ const EquipmentPage = () => {
                         {t("equipment.warehouse", "Warehouse")} *
                       </label>
                       <select
-                        required
                         value={formData.warehouseId}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            warehouseId: e.target.value,
-                          })
+                          setFormData({ ...formData, warehouseId: e.target.value })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md ${errors.WarehouseId ? "border-red-500 bg-red-50" : "border-gray-300"
+                          }`}
                       >
-                        <option value="">
-                          {t("equipment.selectWarehouse", "Select Warehouse")}
-                        </option>
-                        {warehouses.map((warehouse) => (
-                          <option key={warehouse.id} value={warehouse.id}>
-                            {warehouse.name}
-                          </option>
+                        <option value="">-- Chọn kho --</option>
+                        {warehouses.map(w => (
+                          <option key={w.id} value={w.id}>{w.name}</option>
                         ))}
                       </select>
+
+                      {errors.WarehouseId && (
+                        <p className="text-red-500 text-sm mt-1">{errors.WarehouseId}</p>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

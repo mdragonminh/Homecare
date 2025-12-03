@@ -150,7 +150,7 @@ namespace HSP.Service.Implementations.Internal
                 Avatar = avatar,
 				CitizenId = technician.CitizenId,
 				RejectionReason = technician.RejectionReason,
-				Address = technician.Address
+				Address = technician.Address ?? string.Empty
             };
         }
 
@@ -376,7 +376,7 @@ namespace HSP.Service.Implementations.Internal
             
             <div style='background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1890ff;'>
                 <h3 style='color: #1890ff; margin: 0 0 10px 0;'>💡 Bước tiếp theo:</h3>
-                <p style='margin: 0;'>Bạn có thể cập nhật lại hồ sơ và đăng ký lại. Hãy đảm bảo cung cấp đầy đủ thông tin để tăng cơ hội được duyệt.</p>
+                <p style='margin: 0;'>Bạn có thể cập nhật lại hồ sơ và đăng ký lại trong phần quản lý tài khoản khi đăng nhập. Hãy đảm bảo cung cấp đầy đủ thông tin để tăng cơ hội được duyệt.</p>
             </div>
             
             <div style='text-align: center;'>

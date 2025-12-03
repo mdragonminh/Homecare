@@ -1,11 +1,14 @@
 ﻿using HSP.API.Extensions;
 using HSP.API.Hubs;
 using HSP.Core.Constans;
+using HSP.Core.Constants.SystemSettings;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.DAL.Interfaces;
 using HSP.Service.Extensions;
+using HSP.Service.Interfaces;
+using Microsoft.AspNetCore.Identity;
 
 namespace HSP.API
 {
@@ -68,12 +71,28 @@ namespace HSP.API
             });
 
             builder.Services.AddDALServices(builder.Configuration);
+            
+
             builder.Services.AddServiceServices();
             builder.Services.AddUserAuthentication(builder.Configuration);
 
             builder.Services.AddSignalR();
 
             var app = builder.Build();
+            await using (var scope = app.Services.CreateAsyncScope())
+            {
+                var settingService = scope.ServiceProvider.GetRequiredService<ISystemSettingService>();
+
+                int minutes = await settingService.GetValueAsync<int>(
+                    SystemSettingRegistry.Keys.EmailTokenLifespanMinutes
+                );
+
+                var options = scope.ServiceProvider
+                    .GetRequiredService<Microsoft.Extensions.Options.IOptions<DataProtectionTokenProviderOptions>>()
+                    .Value;
+
+                options.TokenLifespan = TimeSpan.FromMinutes(minutes);
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

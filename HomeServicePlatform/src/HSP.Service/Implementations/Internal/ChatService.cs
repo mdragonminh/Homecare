@@ -1,3 +1,4 @@
+using HSP.Core.Constants;
 using HSP.Core.Dtos.ChatDto;
 using HSP.Core.Entities;
 using HSP.Core.Interfaces.DataAccess;
@@ -44,7 +45,6 @@ namespace HSP.Service.Implementations.Internal
                 throw new ValidationException("Booking chưa có kỹ thuật nhận.");
             var newConv = new ChatConversation
             {
-                Id = Guid.NewGuid(),
                 BookingId = input.BookingId,
                 CustomerId = booking.CustomerId,
                 TechnicianId = booking.TechnicianId!.Value,
@@ -107,7 +107,6 @@ namespace HSP.Service.Implementations.Internal
                 {
                     message = new ChatMessage
                     {
-                        Id = Guid.NewGuid(),
                         ConversationId = input.ConversationId,
                         SenderId = userId,
                         Content = input.Content,
@@ -118,11 +117,23 @@ namespace HSP.Service.Implementations.Internal
 
                     if (input.Attachments?.Any() == true)
                     {
+                        if (input.Attachments.Count() > 1)
+                            throw new ValidationException("Chỉ được gửi tối đa 1 file mỗi tin nhắn.");
                         foreach (var file in input.Attachments)
                         {
+                            if (string.IsNullOrWhiteSpace(file.FileUrl))
+                                throw new ValidationException("FileUrl không hợp lệ");
+                            if (string.IsNullOrWhiteSpace(file.FileName))
+                                throw new ValidationException("FileName không hợp lệ");
+                            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                            if (!FileConstants.AllowedImageExtensions
+                                .Concat(FileConstants.AllowedDocumentExtensions)
+                                .Contains(extension))
+                                throw new ValidationException($"File '{file.FileName}' không được hỗ trợ.");
+                            if (file.FileSize > FileConstants.MaxFileSize)
+                                throw new ValidationException($"File '{file.FileName}' vượt quá kích thước cho phép.");
                             await _attachmentRepository.AddAsync(new ChatAttachment
                             {
-                                Id = Guid.NewGuid(),
                                 MessageId = message.Id,
                                 FileName = file.FileName,
                                 FileUrl = file.FileUrl,

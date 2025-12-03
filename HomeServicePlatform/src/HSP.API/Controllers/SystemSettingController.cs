@@ -1,6 +1,7 @@
 using HSP.API.Extensions;
 using HSP.API.Filters;
 using HSP.Core.Constans;
+using HSP.Core.Constants.SystemSettings;
 using HSP.Core.Dtos.SystemSettingDto;
 using HSP.Core.Enums;
 using HSP.Service.Interfaces;
@@ -65,8 +66,38 @@ namespace HSP.API.Controllers
 				return StatusCode(500, ex.Message);
 			}
 		}
+        [HttpGet("registry")]
+        public IActionResult GetRegistry()
+        {
+            return Ok(SystemSettingRegistry.All.Values);
+        }
+        [HttpPost]
+		public async Task<IActionResult> CreateSetting([FromBody] CreateSystemSettingDto input)
+		{
+			if (!ModelState.IsValid)
+				return BadRequest(ModelState);
+			try
+			{
+				var userId = User.GetUserId();
+				input.CreatedBy = userId;
+                var createdSetting = await _systemSettingService.CreateSystemSettingAsync(input);
+				return Ok(createdSetting);
+			}
+			catch (ArgumentNullException ex)
+			{
+				return BadRequest(ex.Message);
+            }
+			catch(InvalidOperationException ex)
+			{
+				return Conflict(ex.Message);
+            }
+            catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+        }
 
-		[HttpPut("key/{key}")]
+        [HttpPut("key/{key}")]
 		[AuditLog(AuditAction.Update, "SystemSetting")]
 		public async Task<IActionResult> UpdateSettingByKey([FromRoute] string key, [FromBody] UpdateSystemSettingDto input)
 		{

@@ -11,7 +11,6 @@ namespace HSP.Core.Dtos.ServiceRequestDto
 		public List<Guid> ServiceIds { get; set; }
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "CustomerIdIsRequired")]
 		public string CustomerId { get; set; }
-		public double DistanceKm { get; set; } = 50;
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "DesireDateTimeIsRequired")]
 		public DateTime DesireDateTime { get; set; }
 	}

@@ -10,10 +10,10 @@ namespace HSP.Core.Entities
 		[Required, MaxLength(100)]
 		public string Name { get; set; } = null!;
 
-		[MaxLength(255)]
-		public string? Address { get; set; }
-
-		public Guid? ManagerId { get; set; }
+		[Required, MaxLength(255)]
+		public string Address { get; set; }
+		[Required]
+		public Guid ManagerId { get; set; }
 		[ForeignKey("ManagerId")]
 		public AppUser? Manager { get; set; }
 

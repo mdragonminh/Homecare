@@ -116,6 +116,19 @@ export const bookingApi = {
     const response = await axiosClient.get(`/booking/${id}`);
     return response.data;
   },
+  acceptBooking: async ({ bookingId, token }) => {
+    const payload = {
+      bookingId: bookingId,
+      token: token,
+    };
+
+    const response = await axiosClient.post(`/booking/accept`, payload);
+    return response.data;
+  },
+  technicianReject: async (bookingId) => {
+    const response = await axiosClient.post(`/booking/${bookingId}/technician-reject`);
+    return response.data;
+  },
 
   // Complete booking
   completeBooking: async (id) => {

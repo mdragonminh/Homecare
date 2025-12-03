@@ -1,3 +1,4 @@
+﻿using HSP.Core.Resources;
 using System.ComponentModel.DataAnnotations;
 
 namespace HSP.Core.Dtos.WarehouseDto
@@ -16,26 +17,26 @@ namespace HSP.Core.Dtos.WarehouseDto
 
     public class CreateWarehouseDto
     {
-        [Required(ErrorMessage = "Warehouse name is required")]
-        [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
+        [Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "WarehouseNameRequired")]
+        [StringLength(100,ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "WarehouseNameMaxLength")]
         public string Name { get; set; } = string.Empty;
-
-        [StringLength(255, ErrorMessage = "Address cannot exceed 255 characters")]
-        public string? Address { get; set; }
-
-        public Guid? ManagerId { get; set; }
+        [Required(ErrorMessageResourceType = typeof(SharedResource),ErrorMessageResourceName = "WarehouseAddressRequired")]
+        [StringLength(255,ErrorMessageResourceType = typeof(SharedResource),ErrorMessageResourceName = "WarehouseAddressMaxLength")]
+        public string Address { get; set; } = string.Empty;
+        [Required(ErrorMessageResourceType = typeof(SharedResource),ErrorMessageResourceName = "WarehouseManagerRequired")]
+        public Guid ManagerId { get; set; }
     }
 
     public class UpdateWarehouseDto
     {
-        [Required(ErrorMessage = "Warehouse name is required")]
-        [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
+        [Required(ErrorMessageResourceType = typeof(SharedResource),ErrorMessageResourceName = "WarehouseNameRequired")]
+        [StringLength(100, ErrorMessageResourceType = typeof(SharedResource),ErrorMessageResourceName = "WarehouseNameMaxLength")]
         public string Name { get; set; } = string.Empty;
-
-        [StringLength(255, ErrorMessage = "Address cannot exceed 255 characters")]
-        public string? Address { get; set; }
-
-        public Guid? ManagerId { get; set; }
+        [Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "WarehouseAddressRequired")]
+        [StringLength(255,ErrorMessageResourceType = typeof(SharedResource),ErrorMessageResourceName = "WarehouseAddressMaxLength")]
+        public string Address { get; set; } = string.Empty;
+        [Required(ErrorMessageResourceType = typeof(SharedResource),ErrorMessageResourceName = "WarehouseManagerRequired")]
+        public Guid ManagerId { get; set; }
     }
 
     public class WarehouseListDto

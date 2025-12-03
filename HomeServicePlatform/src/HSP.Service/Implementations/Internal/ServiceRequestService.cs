@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Constans;
+using HSP.Core.Constants.SystemSettings;
 using HSP.Core.Dtos.ConfigurationDto;
 using HSP.Core.Dtos.MapDto;
 using HSP.Core.Dtos.ServiceRequestDto;
@@ -23,6 +24,9 @@ namespace HSP.Service.Implementations.Internal
     {
         private readonly IGeocodingService _geocodingService;
         private readonly IRepository<TechnicianProfile, Guid> _technicianRepository;
+        private readonly IRepository<Booking, Guid> _bookingRepository;
+        private readonly IRepository<BookingItem, Guid> _bookingItemRepository;
+        private readonly IRepository<Core.Entities.Service, Guid> _serviceRepository;
         private readonly IEmailService _emailService;
         private readonly IEmailTemplateService _emailTemplateService;
         private readonly IUserRepository _userRepository;
@@ -31,6 +35,9 @@ namespace HSP.Service.Implementations.Internal
         private readonly ISystemSettingService _systemSettingService;
         public ServiceRequestService(IGeocodingService geocodingService,
             IRepository<TechnicianProfile, Guid> technicianRepository,
+            IRepository<Booking, Guid> bookingRepository,
+            IRepository<BookingItem, Guid> bookingItemRepository,
+            IRepository<Core.Entities.Service, Guid> serviceRepository,
             IEmailService emailService,
             IEmailTemplateService emailTemplateService,
             IUserRepository userRepository,
@@ -41,6 +48,9 @@ namespace HSP.Service.Implementations.Internal
         {
             _geocodingService = geocodingService;
             _technicianRepository = technicianRepository;
+            _bookingRepository = bookingRepository;
+            _bookingItemRepository = bookingItemRepository;
+            _serviceRepository = serviceRepository;
             _emailService = emailService;
             _emailTemplateService = emailTemplateService;
             _userRepository = userRepository;
@@ -76,38 +86,85 @@ namespace HSP.Service.Implementations.Internal
             {
                 throw new InvalidOperationException("customer is null");
             }
-            var (minLat, maxLat, minLon, maxLon) = GetBoundingBox(coordinates.Latitude, coordinates.Longitude, input.DistanceKm);
-            var potentialTechnicians = await _technicianRepository.GetAll()
-                    .Include(t => t.User)
-                    .Include(t => t.Services)
-                    .Include(t => t.Bookings)
-                    .Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
-                    .Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
-                    .Where(t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
-                    .Where(t => !t.Bookings.Any(b =>
-                    b.Status == BookingStatus.InProgress
-                    || b.Status == BookingStatus.Pending
-                    || b.Status == BookingStatus.TechnicianOnTheWay
-                    || b.Status == BookingStatus.Confirmed))
+            Booking booking;
+            using (var transaction = await _unitOfWork.BeginTransactionAsync())
+            {
+                booking = new Booking
+                {
+                    CustomerId = customer.Id,
+                    Latitude = coordinates.Latitude,
+                    Longitude = coordinates.Longitude,
+                    DesiredDate = desired,
+                    Status = BookingStatus.Pending,
+                    DateCreated = DateTime.UtcNow
+                };
+
+                await _bookingRepository.AddAsync(booking);
+                await _unitOfWork.SaveChangesAsync();
+
+                var services = await _serviceRepository.GetAll()
+                    .Where(s => input.ServiceIds.Contains(s.Id))
                     .ToListAsync();
 
-            var sorted = potentialTechnicians
-                .Select(t => (
+                if (!services.Any())
+                    throw new Exception("Không tìm thấy dịch vụ");
 
-                    Technician: t,
-                    Distance: CalculateDistance(coordinates.Latitude, coordinates.Longitude, t.Latitude, t.Longitude)
-                ))
-                .Where(t => t.Distance <= input.DistanceKm)
-                .OrderBy(t => t.Distance)
-                .ToList();
-            if (!sorted.Any())
-            {
-                throw new InvalidOperationException(_localizer["NoAvailableTechniciansFound"]);
+                var items = services.Select(s => new BookingItem
+                {
+                    BookingId = booking.Id,
+                    ServiceId = s.Id,
+                    Price = s.Price
+                }).ToList();
+                await _bookingItemRepository.AddRangeAsync(items);
+                await _unitOfWork.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
 
-            var matchResult = await NotifyTechniciansAndAwaitResponseAsync(sorted, customer, input, desired);
-            return matchResult;
+            var technicians = await GetSortedTechniciansAsync(input.ServiceIds, coordinates);
+            if (!technicians.Any())
+                throw new InvalidOperationException(_localizer["NoAvailableTechniciansFound"]);
+            var result = await NotifyTechniciansAndAwaitResponseAsync(booking, technicians, customer.FullName);
+            return result;
         }
+        private async Task<List<(TechnicianProfile Technician, double Distance, double Rating)>> GetSortedTechniciansAsync(IEnumerable<Guid> serviceIds, CoordinatesDto customerPos)
+        {
+            var searchRadiusKm = await _systemSettingService.GetValueAsync<int>(
+                SystemSettingRegistry.Keys.TechnicianSearchRadiusKm);
+            var (minLat, maxLat, minLon, maxLon) = GetBoundingBox(customerPos.Latitude, customerPos.Longitude, searchRadiusKm);
+            var potential = await _technicianRepository.GetAll()
+                .Include(t => t.User)
+                .Include(t => t.Services)
+                .Include(t => t.Bookings).ThenInclude(b => b.Feedbacks)
+                .Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
+                 .Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
+                .Where(t => serviceIds.All(id => t.Services.Any(s => s.Id == id)))
+                .Where(t => !t.Bookings.Any(b =>
+                    b.Status == BookingStatus.InProgress ||
+                    b.Status == BookingStatus.Pending ||
+                    b.Status == BookingStatus.TechnicianOnTheWay ||
+                    b.Status == BookingStatus.Confirmed))
+                .ToListAsync();
+
+            return potential
+                .Select(t =>
+                {
+                    var distance = CalculateDistance(customerPos.Latitude, customerPos.Longitude, t.Latitude, t.Longitude);
+
+                    var feedbacks = t.Bookings
+                        .SelectMany(b => b.Feedbacks)
+                        .Where(f => f.Source == FeedbackSource.Customer)
+                        .ToList();
+
+                    var rating = feedbacks.Any() ? feedbacks.Average(f => f.Rating) : 0;
+
+                    return (t, distance, rating);
+                })
+                .Where(x => x.distance <= searchRadiusKm)
+                .OrderBy(x => x.distance)
+                .ThenByDescending(x => x.rating)
+                .ToList();
+        }
+
         private DateTime NormalizeToUtc(DateTime dt)
         {
             if (dt.Kind == DateTimeKind.Utc)
@@ -119,62 +176,66 @@ namespace HSP.Service.Implementations.Internal
             dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
             return dt.ToUniversalTime();
         }
-
-        private DateTime ConvertUtcToVietnamTime(DateTime utcDateTime)
-        {
-            if (utcDateTime.Kind != DateTimeKind.Utc)
-            {
-                utcDateTime = DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc);
-            }
-
-            TimeZoneInfo vietnamZone;
-            try
-            {
-                // Try Windows timezone ID first
-                vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-            }
-            catch (TimeZoneNotFoundException)
-            {
-                try
-                {
-                    // Try Linux/Mac timezone ID
-                    vietnamZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
-                }
-                catch (TimeZoneNotFoundException)
-                {
-                    // Fallback: manually add 7 hours (Vietnam is UTC+7)
-                    return utcDateTime.AddHours(7);
-                }
-            }
-
-            return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, vietnamZone);
-        }
         private async Task<MatchedBookingResultDto> NotifyTechniciansAndAwaitResponseAsync(
-            List<(TechnicianProfile Technician, double Distance)> sortedTechnicians,
-            AppUser customer,
-            CustomerCreateBookingDto input,
-            DateTime normalizedUtcDate)
+            Booking booking,
+            List<(TechnicianProfile Technician, double Distance, double Rating)> sortedTechnicians,
+            string customerName)
         {
-            var technicianResponseTimeoutSeconds = await _systemSettingService.GetSettingValueAsIntAsync("TechnicianResponseTimeoutSeconds", 10);
-            var redisExpirationSeconds = await _systemSettingService.GetSettingValueAsIntAsync("TechnicianInvitationExpirationSeconds", 15);
+            var responseTimeout = await _systemSettingService.GetValueAsync<int>(
+                SystemSettingRegistry.Keys.TechnicianResponseTimeoutSeconds);
+
+            var redisExpiration = await _systemSettingService.GetValueAsync<int>(
+                SystemSettingRegistry.Keys.TechnicianInvitationExpirationSeconds);
 
             foreach (var tech in sortedTechnicians)
             {
-                var token = Guid.NewGuid().ToString("N");
-                await _redisCacheService.SetAsync($"waiting_{token}", "waiting", TimeSpan.FromSeconds(redisExpirationSeconds));
-                await _redisCacheService.SetAsync($"accept_{token}", tech.Technician.Id, TimeSpan.FromSeconds(redisExpirationSeconds));
-                await SendInvitationEmailAsync(tech, customer, input, token, normalizedUtcDate);
+                var rejectedBefore = await _redisCacheService.GetAsync<string>(
+                    $"reject_{booking.Id}_{tech.Technician.Id}");
+
+                if (rejectedBefore != null)
+                    continue;
+
+                string token = Guid.NewGuid().ToString("N");
+
+                await _redisCacheService.SetAsync($"waiting_{token}", "waiting",
+                    TimeSpan.FromSeconds(redisExpiration));
+
+                await _redisCacheService.SetAsync($"accept_{token}", tech.Technician.Id,
+                    TimeSpan.FromSeconds(redisExpiration));
+
+                await SendInvitationEmailAsync(tech.Technician, customerName, booking, token);
 
                 var stopwatch = Stopwatch.StartNew();
-                while (stopwatch.Elapsed < TimeSpan.FromSeconds(technicianResponseTimeoutSeconds))
+
+                while (stopwatch.Elapsed < TimeSpan.FromSeconds(responseTimeout))
                 {
-                    var acceptedTechId = await GetAcceptedTechnicianAsync(token);
-                    if (acceptedTechId.HasValue)
+                    var rejected = await _redisCacheService.GetAsync<string>(
+                        $"reject_{booking.Id}_{tech.Technician.Id}");
+
+                    if (rejected != null)
                     {
+                        await _redisCacheService.RemoveAsync($"waiting_{token}");
+                        await _redisCacheService.RemoveAsync($"accept_{token}");
+                        break;
+                    }
+
+                    var acceptedTechId = await _redisCacheService.GetAsync<Guid>($"accepted_{token}");
+
+                    if (acceptedTechId != Guid.Empty)
+                    {
+                        booking.TechnicianId = acceptedTechId;
+                        booking.Status = BookingStatus.Confirmed;
+                        booking.DateModified = DateTime.UtcNow;
+                        await _unitOfWork.SaveChangesAsync();
+
+                        await _redisCacheService.RemoveAsync($"waiting_{token}");
+                        await _redisCacheService.RemoveAsync($"accept_{token}");
+                        await _redisCacheService.RemoveAsync($"accepted_{token}");
+
                         return new MatchedBookingResultDto
                         {
                             IsMatched = true,
-                            Message = _localizer["SuccessfullyMatchedTechnician"],
+                            Message = "Đã ghép kỹ thuật viên thành công",
                             TechnicianInfo = new TechnicianResultDto
                             {
                                 Id = tech.Technician.Id,
@@ -185,56 +246,48 @@ namespace HSP.Service.Implementations.Internal
                             }
                         };
                     }
+
                     await Task.Delay(1000);
                 }
+
+                await _redisCacheService.RemoveAsync($"waiting_{token}");
+                await _redisCacheService.RemoveAsync($"accept_{token}");
             }
+
+            booking.Status = BookingStatus.Cancelled;
+            booking.DateModified = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync();
+
             return new MatchedBookingResultDto
             {
                 IsMatched = false,
-                Message = _localizer["NoTechnicianAcceptedRequest"]
+                Message = "Không có kỹ thuật viên nào chấp nhận yêu cầu."
             };
         }
 
-        private async Task SendInvitationEmailAsync(
-            (TechnicianProfile Technician, double Distance) tech,
-            AppUser customer,
-            CustomerCreateBookingDto input,
-            string token,
-            DateTime normalizedUtcDate)
+        private async Task SendInvitationEmailAsync(TechnicianProfile tech, string customerName, Booking booking, string token)
         {
-            string encodedToken = WebUtility.UrlEncode(token);
-            string baseUrl = _urlSettings.BaseUrl;
-            string serviceIdsQuery = string.Join("&serviceIds=", input.ServiceIds.Select(id => id.ToString()));
-            
-            // Convert UTC to Vietnam timezone for display in email
-            DateTime vietnamTime = ConvertUtcToVietnamTime(normalizedUtcDate);
-            
-            string acceptUrl = $"{baseUrl}/api/booking/accept" +
-                                                     $"?customerId={customer.Id}" +
-                                                     $"&technicianId={tech.Technician.Id}" +
-                                                     $"&token={encodedToken}" +
-                                                     $"&ServiceIds={serviceIdsQuery}" +
-                                                     $"&desiredDate={normalizedUtcDate:o}";
-            string declineUrl = $"{baseUrl}/api/booking/cancel" +
-                                                            $"?technicianId={tech.Technician.Id}&token={token}";
-            var emailModel = new TechnicianInvitationDto
+            string encoded = WebUtility.UrlEncode(token);
+            string detailUrl = $"{_urlSettings.Frontend}/technician/bookings/{booking.Id}?token={encoded}";
+
+            var model = new TechnicianInvitationDto
             {
-                TechnicianName = tech.Technician.User.FullName,
-                CustomerName = customer.FullName,
-                ServiceName = "Dịch vụ yêu cầu",
-                DistanceKm = Math.Round(tech.Distance, 2),
-                AcceptUrl = acceptUrl,
-                DeclineUrl = declineUrl,
-                DesiredDate = vietnamTime
+                TechnicianName = tech.User.FullName,
+                CustomerName = customerName,
+                BookingDetailUrl = detailUrl
             };
-            string htmlBody = await _emailTemplateService.RenderAsync("/Views/Emails/TechnicianInvitation.cshtml", emailModel);
-            var email = new EmailDto
+
+            string html = await _emailTemplateService.RenderAsync(
+                "/Views/Emails/TechnicianInvitation.cshtml",
+                model
+            );
+
+            await _emailService.SendEmailAsync(new EmailDto
             {
-                ToEmail = tech.Technician?.User?.Email ?? string.Empty,
-                Subject = $"Yêu cầu dịch vụ mới gần bạn lúc {DateTime.Now:HH:mm:ss}",
-                HtmlBody = htmlBody
-            };
-            await _emailService.SendEmailAsync(email);
+                ToEmail = tech.User.Email,
+                Subject = "Bạn có yêu cầu dịch vụ mới",
+                HtmlBody = html
+            });
         }
 
         private (double minLat, double maxLat, double minLon, double maxLon) GetBoundingBox(double lat, double lon, double distanceKm)
@@ -254,11 +307,11 @@ namespace HSP.Service.Implementations.Internal
             ? await _geocodingService.GetCoordinatesForAddressAsync(input.Address)
                     ?? throw new Exception(_localizer["CannotFoundcoordinates."])
             : throw new ArgumentException(_localizer["MustHaveAddress"]);
-
+            var searchRadiusKm = await _systemSettingService.GetValueAsync<int>(SystemSettingRegistry.Keys.TechnicianSearchRadiusKm);
             var allTechnicians = await _technicianRepository.GetAll()
                 .Include(x => x.User)
                 .Include(x => x.Bookings)
-                    .ThenInclude(b => b.Feedbacks) 
+                    .ThenInclude(b => b.Feedbacks)
                 .Where(x => x.ApprovalStatus == TechnicianApprovalStatus.Approved)
                 .WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
                 .Where(x => !x.Bookings.Any(b =>
@@ -269,17 +322,36 @@ namespace HSP.Service.Implementations.Internal
                 .ToListAsync();
 
             var filtered = allTechnicians
-                             .Select(t => new
+                             .Select(t =>
                              {
-                                 Technician = t,
-                                 Distance = CalculateDistance(coordinates.Latitude, coordinates.Longitude, t.Latitude, t.Longitude)
+                                 var feedbacks = t.Bookings
+                                     .SelectMany(b => b.Feedbacks)
+                                     .Where(f => f.Source == FeedbackSource.Customer)
+                                     .ToList();
+
+                                 var rating = feedbacks.Any()
+                                     ? feedbacks.Average(f => f.Rating)
+                                     : 0;
+
+                                 return (
+                                     Technician: t,
+                                     Distance: CalculateDistance(
+                                         coordinates.Latitude,
+                                         coordinates.Longitude,
+                                         t.Latitude,
+                                         t.Longitude
+                                     ),
+                                     Rating: rating
+                                 );
                              })
-                             .Where(x => x.Distance <= input.MaxDistanceKm)
+                             .Where(x => x.Distance <= searchRadiusKm)
                              .OrderBy(x => x.Distance)
-                             .Select(x => {
+                              .ThenByDescending(x => x.Rating)
+                             .Select(x =>
+                             {
                                  var customerFeedbacks = x.Technician.Bookings
                                      .SelectMany(b => b.Feedbacks)
-                                     .Where(f => f.Source == FeedbackSource.Customer) 
+                                     .Where(f => f.Source == FeedbackSource.Customer)
                                      .ToList();
 
                                  return new TechnicianResultDto
@@ -289,7 +361,7 @@ namespace HSP.Service.Implementations.Internal
                                      Rating = customerFeedbacks.Any()
                                          ? Math.Round(customerFeedbacks.Average(f => f.Rating), 1)
                                          : 0,
-                                     RatingCount = customerFeedbacks.Count, 
+                                     RatingCount = customerFeedbacks.Count,
                                      DistanceKm = Math.Round(x.Distance, 2),
                                      Latitude = x.Technician.Latitude,
                                      Longitude = x.Technician.Longitude

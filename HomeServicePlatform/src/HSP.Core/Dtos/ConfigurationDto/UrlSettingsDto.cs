@@ -7,5 +7,6 @@
 		public string FrontendLoginFailed { get; set; }
 		public string FrontendResetPassword { get; set; }
 		public string FrontendMyBookings { get; set; }
-	}
+        public string Frontend { get; set; }
+    }
 }

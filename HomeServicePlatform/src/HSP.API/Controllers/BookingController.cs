@@ -1,3 +1,4 @@
+using HSP.API.Extensions;
 using HSP.API.Filters;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.BookingDto;
@@ -108,9 +109,6 @@ namespace HSP.API.Controllers
 			}
 		}
 
-		/// <summary>
-		/// Xem chi tiết booking
-		/// </summary>
 		[HttpGet("{id}")]
 		public async Task<IActionResult> GetBookingDetail(Guid id)
 		{
@@ -119,30 +117,7 @@ namespace HSP.API.Controllers
 				var result = await _bookingService.GetBookingDetailAsync(id);
 				if (result == null)
 					return NotFound(new { message = "Booking not found" });
-
-				// Kiểm tra quyền truy cập: admin và operator có quyền xem tất cả
-				var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-				if (userRole == RoleNames.Admin || userRole == RoleNames.Operator)
-					return Ok(result);
-
-				// Kiểm tra quyền truy cập: chỉ customer hoặc technician liên quan mới được xem
-				var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-				if (string.IsNullOrEmpty(userId))
-					return Unauthorized();
-
-				// Kiểm tra nếu là customer của booking này (CustomerId trong Booking là UserId của AppUser)
-				if (Guid.TryParse(userId, out Guid userGuid) && result.CustomerProfileId == userGuid)
-					return Ok(result);
-
-				// Kiểm tra nếu là technician được gán cho booking này
-				var technicianProfile = await _technicianRepository.GetAll()
-						.FirstOrDefaultAsync(t => t.UserId.ToString() == userId);
-
-				if (technicianProfile != null && result.TechnicianId == technicianProfile.Id)
-					return Ok(result);
-
-				// Không phải customer cũng không phải technician của booking này
-				return StatusCode(403, new { message = "You can only view your own bookings" });
+				return Ok(result);
 			}
 			catch (Exception ex)
 			{
@@ -181,9 +156,6 @@ namespace HSP.API.Controllers
 			}
 		}
 
-		/// <summary>
-		/// Từ chối/hủy booking
-		/// </summary>
 		[HttpPost("{id}/cancel")]
 		[AuditLog(AuditAction.Update, "Booking")]
 		public async Task<IActionResult> CancelBooking(Guid id, [FromBody] RejectBookingDto input)
@@ -211,11 +183,18 @@ namespace HSP.API.Controllers
 				return BadRequest(new { message = ex.Message });
 			}
 		}
+        [HttpPost("{id}/technician-reject")]
+        public async Task<IActionResult> TechnicianReject(Guid id)
+        {
+            var technicianUserId = User.GetUserId();
+            var result = await _bookingService.TechnicianRejectAsync(id, technicianUserId);
+            return Ok(result);
+        }
 
-		/// <summary>
-		/// Cập nhật trạng thái booking
-		/// </summary>
-		[HttpPut("{id}/status")]
+        /// <summary>
+        /// Cập nhật trạng thái booking
+        /// </summary>
+        [HttpPut("{id}/status")]
 		[AuditLog(AuditAction.Update, "Booking")]
 		public async Task<IActionResult> UpdateBookingStatus(Guid id, [FromBody] UpdateBookingStatusDto input)
 		{
@@ -238,34 +217,25 @@ namespace HSP.API.Controllers
 			}
 		}
 
-		[HttpGet("accept")]
-		public async Task<IActionResult> AcceptBookingEmail(
-						[FromQuery] Guid customerId,
-						[FromQuery] Guid technicianId,
-						[FromQuery] string token,
-						[FromQuery] List<Guid> ServiceIds,
-						[FromQuery] DateTime desiredDate)
-		{
-			try
-			{
-				var result = await _bookingService.AcceptBookingEmailAsync(customerId, technicianId, ServiceIds, token, desiredDate);
+        [HttpPost("accept")]
+        public async Task<IActionResult> AcceptBooking([FromBody] AcceptBookingDto input)
+        {
+            try
+            {
+                var userId = User.GetUserId();
 
-				if (result.IsSuccess)
-				{
-					var html = await RazorTemplateEngine.RenderAsync("/Views/Bookings/BookingAccepted.cshtml");
-					return new ContentResult { Content = html, ContentType = "text/html" };
-				}
-				else
-				{
-					var html = await RazorTemplateEngine.RenderAsync("/Views/Bookings/BookingError.cshtml", new { Message = result.Message });
-					return new ContentResult { Content = html, ContentType = "text/html" };
-				}
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(new { message = ex.Message });
-			}
-		}
+                var result = await _bookingService.AcceptBookingAsync(userId, input);
+
+                if (!result.IsSuccess)
+                    return BadRequest(new { message = result.Message });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
 
         [Authorize]
         [HttpPost("{bookingId}/feedback")]
