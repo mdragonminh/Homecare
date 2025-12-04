@@ -35,7 +35,9 @@ namespace HSP.API.Controllers
                 if (page < 1) page = 1;
                 if (pageSize < 1 || pageSize > 100) pageSize = 10;
 
-                var result = await _equipmentService.GetEquipmentsAsync(page, pageSize, searchTerm, warehouseId);
+                bool isTechnician = User.IsInRole(RoleNames.Technician);
+
+                var result = await _equipmentService.GetEquipmentsAsync(page, pageSize, searchTerm, warehouseId, isTechnician);
                 return Ok(result);
             }
             catch (Exception ex)
