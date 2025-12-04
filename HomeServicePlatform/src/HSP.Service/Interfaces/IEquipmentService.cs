@@ -5,7 +5,7 @@ namespace HSP.Service.Interfaces
 {
     public interface IEquipmentService
     {
-        Task<PagedList<EquipmentListDto>> GetEquipmentsAsync(int page = 1, int pageSize = 10, string? searchTerm = null, Guid? warehouseId = null);
+        Task<PagedList<EquipmentListDto>> GetEquipmentsAsync(int page = 1, int pageSize = 10, string? searchTerm = null, Guid? warehouseId = null, bool isTech = false);
         Task<EquipmentDto?> GetEquipmentByIdAsync(Guid id);
         Task<EquipmentDto> CreateEquipmentAsync(CreateEquipmentDto input, Guid createdBy);
         Task<EquipmentDto> UpdateEquipmentAsync(Guid id, UpdateEquipmentDto input, Guid modifiedBy);

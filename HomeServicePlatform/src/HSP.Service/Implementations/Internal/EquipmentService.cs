@@ -24,9 +24,14 @@ namespace HSP.Service.Implementations.Internal
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<PagedList<EquipmentListDto>> GetEquipmentsAsync(int page = 1, int pageSize = 10, string? searchTerm = null, Guid? warehouseId = null)
+        public async Task<PagedList<EquipmentListDto>> GetEquipmentsAsync(int page = 1, int pageSize = 10, string? searchTerm = null, Guid? warehouseId = null, bool isTech = false)
         {
             var query = _equipmentRepository.GetAll(e => e.Warehouse);
+
+            if (isTech)
+            {
+                query = query.Where(e => e.IsActive);
+            }
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
