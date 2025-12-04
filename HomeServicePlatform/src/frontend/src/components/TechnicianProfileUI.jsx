@@ -17,11 +17,13 @@ import {
   Trash2,
   AlertTriangle,
 } from "lucide-react";
+import { toast } from "sonner";
 import ChangePasswordModal from "./ChangePasswordModal";
 import DeleteAvatarModal from "./DeleteAvatarModal";
 import TechnicianDetails from "./TechnicianDetails";
 import { Footer } from "./Footer";
 import { renderApprovalStatus } from "../hooks/useTechnicianProfile";
+import { useRef, useCallback, useState } from "react";
 const ApprovalStatusDisplay = ({ status }) => {
   const { text, classes } = renderApprovalStatus(status);
   return <span className={classes}>{text}</span>;
@@ -43,34 +45,24 @@ const RejectionReasonCard = ({ profile, t }) => {
   if (profile?.approvalStatus !== 2 || !profile?.rejectionReason) return null;
 
   return (
-    // Bỏ bố cục flex để toàn bộ nội dung có thể căn giữa
-   <div className="mt-6 bg-white rounded-2xl p-6 shadow-xl">
-      
-      {/* 1. Icon cảnh báo - Căn giữa, làm nổi bật */}
+    <div className="mt-6 bg-white rounded-2xl p-6 shadow-xl">
       <div className="flex justify-center mb-5">
         <div className="bg-red-200 p-4 rounded-full border-4 border-red-300 shadow-lg">
           <AlertTriangle className="w-6 h-6 text-red-700" />
         </div>
       </div>
-
-      {/* 2. Tiêu đề - Căn giữa, lớn và rõ ràng */}
       <h3 className="text-xl font-extrabold text-red-800 text-center mb-6 tracking-tight">
         Hồ sơ của bạn đã bị từ chối
       </h3>
-
-      {/* 3. Khối lý do từ chối - Đẹp, Cân đối, Căn giữa */}
       <div className="bg-white rounded-xl px-6 py-5 border border-red-300 shadow-inner max-w-lg mx-auto">
         <p className="text-red-700 text-base font-bold text-center whitespace-pre-wrap">
           {profile.rejectionReason}
         </p>
       </div>
-
-      {/* 4. Thông báo hướng dẫn - Cân đối, rõ ràng */}
       <p className="text-sm text-red-700 mt-6 font-semibold text-center pt-4 border-t border-red-200">
-        Vui lòng chỉnh sửa thông tin, tải lại chứng chỉ hợp lệ và gửi
-        lại hồ sơ để được duyệt.
+        Vui lòng chỉnh sửa thông tin, tải lại chứng chỉ hợp lệ và gửi lại hồ sơ
+        để được duyệt.
       </p>
-
     </div>
   );
 };
@@ -129,6 +121,40 @@ const TechnicianProfileUI = ({
   setShowChangePasswordModal,
   setShowDeleteAvatarModal,
 }) => {
+  const detailsRef = useRef(null);
+  const [isDetailsEditing, setIsDetailsEditing] = useState(false);
+  const combinedHandleSave = async () => {
+    let hasDetailsChanges = detailsRef.current && detailsRef.current.isEditing;
+    let hasProfileChanges = editingField !== null;
+
+    // Validation trước khi lưu
+    if (hasDetailsChanges && !detailsRef.current.isFormValid()) {
+      toast.error("Vui lòng kiểm tra các trường bị lỗi");
+      return;
+    }
+
+    try {
+      if (hasDetailsChanges) {
+        await detailsRef.current.handleDetailsSave();
+      }
+      if (hasProfileChanges) {
+        await handleSaveProfile();
+      }
+
+      setIsDetailsEditing(false);
+      toast.success("Cập nhật thông tin thành công!");
+    } catch (error) {
+      toast.error(error.message || "Có lỗi xảy ra khi lưu thông tin");
+      console.error("Save error:", error);
+    }
+  };
+  const combinedHandleCancel = useCallback(() => {
+    handleCancelEdit();
+    setIsDetailsEditing(false);
+    if (detailsRef.current) {
+      detailsRef.current.cancelEdit();
+    }
+  }, [handleCancelEdit]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
       {/* Header */}
@@ -491,25 +517,59 @@ const TechnicianProfileUI = ({
                       t={t}
                       getFileUrl={getAvatarUrl}
                       onUpdateSuccess={fetchProfile}
+                      ref={detailsRef}
+                      setIsDetailsEditing={setIsDetailsEditing}
                     />
 
                     {/* Action Buttons */}
-                    {editingField && (
+                    {(editingField !== null || isDetailsEditing) && (
                       <div className="flex gap-3 mt-6">
                         <button
-                          onClick={handleSaveProfile}
+                          onClick={combinedHandleSave}
                           className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 group"
                         >
                           <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           {t("ui.save")}
                         </button>
                         <button
-                          onClick={handleCancelEdit}
+                          onClick={combinedHandleCancel}
                           className="flex items-center justify-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 group"
                         >
                           <X className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           {t("ui.cancel")}
                         </button>
+                      </div>
+                    )}
+                    {/* === NÚT GỬI LẠI HỒ SƠ (CHỈ HIỆN KHI BỊ REJECT) === */}
+                    {profile.approvalStatus === 2 && (
+                      <div className="mt-8 p-6 bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl border-2 border-orange-200 shadow-lg">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="bg-orange-100 p-3 rounded-full">
+                              <AlertTriangle className="w-6 h-6 text-orange-600" />
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-bold text-gray-800 mb-1">
+                                Hồ sơ của bạn đã bị từ chối
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                Vui lòng chỉnh sửa thông tin theo yêu cầu và gửi
+                                lại hồ sơ để được duyệt
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              // TODO: Thêm logic gọi API gửi lại hồ sơ ở đây
+                              toast.info("Chức năng đang được phát triển");
+                            }}
+                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-xl whitespace-nowrap"
+                          >
+                            <RefreshCw className="w-5 h-5" />
+                            Gửi lại hồ sơ
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
