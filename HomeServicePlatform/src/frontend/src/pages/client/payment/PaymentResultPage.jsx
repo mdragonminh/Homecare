@@ -157,7 +157,20 @@ const PaymentResultPage = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString("vi-VN");
+    if (!dateString) return "";
+    const iso = dateString.endsWith("Z") ? dateString : `${dateString}Z`;
+    const dateUtc = new Date(iso);
+    if (Number.isNaN(dateUtc.getTime())) return dateString;
+
+    return dateUtc.toLocaleString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
   };
 
   if (loading) {

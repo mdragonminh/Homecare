@@ -294,7 +294,7 @@ export default function CustomerBookingDetail() {
                 Trạng thái Booking
               </h3>
               <div
-                className={`inline-block px-4 py-2 rounded-lg border font-semibold text-sm ${getStatusBadge(
+                className={`inline-flex px-4 py-2 rounded-lg border font-semibold text-sm ${getStatusBadge(
                   booking.status
                 )}`}
               >
@@ -307,28 +307,33 @@ export default function CustomerBookingDetail() {
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
                 Trạng thái Thanh toán
               </h3>
-              <div
-                className={`inline-block px-4 py-2 rounded-lg border font-semibold text-sm ${
-                  paymentInfo.isPaid
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-amber-50 text-amber-700 border-amber-200"
-                }`}
-              >
-                {paymentInfo.statusText}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div
+                    className={`inline-flex px-4 py-2 rounded-lg border font-semibold text-sm ${
+                      paymentInfo.isPaid
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {paymentInfo.statusText}
+                  </div>
+                  {paymentInfo.isPaid && primaryPayment?.paidAt && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Đã thanh toán lúc {formatDateTime(primaryPayment.paidAt)}
+                    </p>
+                  )}
+                </div>
+
+                {/* {showPaymentButton && (
+                  <button
+                    onClick={() => navigate(`/payment/${booking.id}`)}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors sm:ml-4"
+                  >
+                    Thanh toán ngay
+                  </button>
+                )} */}
               </div>
-              {paymentInfo.isPaid && primaryPayment?.paidAt && (
-                <p className="text-xs text-gray-500 mt-2">
-                  Đã thanh toán lúc {formatDateTime(primaryPayment.paidAt)}
-                </p>
-              )}
-              {showPaymentButton && (
-                <button
-                  onClick={() => navigate(`/payment/${booking.id}`)}
-                  className="mt-3 inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-                >
-                  Thanh toán ngay
-                </button>
-              )}
             </div>
           </div>
 
