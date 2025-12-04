@@ -140,19 +140,19 @@ export const ContactPage = ({ loggedInUser }) => {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1
-            className="text-5xl lg:text-6xl font-bold text-white leading-tight mb-6 animate-fade-in-up"
+            className="text-3xl sm:text-4xl lg:text-6xl font-bold text-white leading-tight mb-6 animate-fade-in-up"
             style={{ animationFillMode: "backwards" }}
           >
             {t("contact.hero.title")}
           </h1>
           <p
-            className="text-xl lg:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed animate-fade-in-up"
+            className="text-base sm:text-lg lg:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed animate-fade-in-up"
             style={{ animationFillMode: "backwards", animationDelay: "200ms" }}
           >
             {t("contact.hero.subtitle")}
           </p>
           <div
-            className="flex items-center justify-center gap-8 text-white/80 animate-fade-in-up"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-white/80 animate-fade-in-up"
             style={{ animationFillMode: "backwards", animationDelay: "400ms" }}
           >
             <div className="flex items-center gap-2">
@@ -176,13 +176,13 @@ export const ContactPage = ({ loggedInUser }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2
-              className="text-4xl font-bold text-gray-900 mb-4 animate-fade-in-up"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 animate-fade-in-up"
               style={{ animationFillMode: "backwards" }}
             >
               {t("contact.contact_info.title")}
             </h2>
             <p
-              className="text-xl text-gray-600 max-w-3xl mx-auto animate-fade-in-up"
+              className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto animate-fade-in-up"
               style={{ animationFillMode: "backwards", animationDelay: "200ms" }}
             >
               {t("contact.contact_info.subtitle")}
@@ -226,7 +226,7 @@ export const ContactPage = ({ loggedInUser }) => {
             style={{ animationFillMode: "backwards" }}
           >
             {/* Contact Form */}
-            <div className="bg-white p-8 rounded-2xl shadow-xl">
+            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl">
               <h3 className="text-3xl font-bold text-gray-900 mb-6">
                 {t("contact.contact_form.title")}
               </h3>

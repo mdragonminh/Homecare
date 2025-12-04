@@ -160,14 +160,14 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
                 </span>
               </div>
 
-              <h1 className="text-6xl lg:text-7xl font-bold leading-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight">
                 {t('about.hero.title')}{" "}
                 <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
                   {t('app.name')}
                 </span>
               </h1>
 
-              <p className="text-xl lg:text-2xl text-blue-100 leading-relaxed max-w-2xl">
+              <p className="text-base sm:text-lg lg:text-2xl text-blue-100 leading-relaxed max-w-2xl">
                 {t('about.hero.subtitle')}
               </p>
 
@@ -188,7 +188,7 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-3xl blur-2xl"></div>
 
-              <div className="relative grid grid-cols-2 gap-6">
+              <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {[
                   { label: "Khách Hàng", value: "customers", icon: Users },
                   {
@@ -229,10 +229,10 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
-            <h2 className="text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
               {t('about.mission_vision.title')}
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto">
               {t('about.mission_vision.subtitle')}
             </p>
           </div>
@@ -296,10 +296,10 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
       <section className="py-24 bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
-            <h2 className="text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
               {t('about.core_values.title', 'Giá Trị Cốt Lõi')}
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto">
               {t('about.core_values.subtitle', 'Những nguyên tắc kinh doanh của chúng tôi')}
             </p>
           </div>
@@ -445,10 +445,10 @@ export const AboutPage = ({ loggedInUser, onShowLogin, onShowRegister }) => {
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="space-y-8">
             <div className="space-y-6">
-              <h2 className="text-5xl lg:text-6xl font-bold text-white leading-tight">
+              <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-white leading-tight">
                 {t('about.cta.title')}
               </h2>
-              <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto leading-relaxed">
                 {t('about.cta.subtitle')}
               </p>
             </div>
