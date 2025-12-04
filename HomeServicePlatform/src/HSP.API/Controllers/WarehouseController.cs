@@ -186,14 +186,9 @@ namespace HSP.API.Controllers
         {
             try
             {
-                var operators = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.Operator);
                 var eqManagers = await _accountManagementService.GetAccountsByRoleAsync(RoleNames.EquipmentManager);
 
-                var allManagers = operators.Concat(eqManagers)
-                                           .GroupBy(a => a.Id)
-                                           .Select(g => g.First());
-
-                return Ok(allManagers);
+                return Ok(eqManagers);
             }
             catch (Exception ex)
             {
