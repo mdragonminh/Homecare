@@ -26,7 +26,7 @@ const TechnicianProfile = ({
     avatarPreview,
     uploadingAvatar,
     showDeleteAvatarModal,
-
+    showResendConfirmModal,
     // Handlers
     fetchProfile,
     handleChangePassword,
@@ -43,6 +43,9 @@ const TechnicianProfile = ({
     getAvatarUrl,
     setShowChangePasswordModal,
     setShowDeleteAvatarModal,
+    handleResendApplication,
+    handleConfirmResend,       // <== THÊM: Hàm xử lý submit (API call)
+    setShowResendConfirmModal,
   } = useTechnicianProfile({ onProfileUpdate, t });
   return (
     <TechnicianProfileUI
@@ -61,6 +64,7 @@ const TechnicianProfile = ({
       avatarPreview={avatarPreview}
       uploadingAvatar={uploadingAvatar}
       showDeleteAvatarModal={showDeleteAvatarModal}
+      showResendConfirmModal={showResendConfirmModal}
       // Handlers
       fetchProfile={fetchProfile}
       handleChangePassword={handleChangePassword}
@@ -77,6 +81,9 @@ const TechnicianProfile = ({
       getAvatarUrl={getAvatarUrl}
       setShowChangePasswordModal={setShowChangePasswordModal}
       setShowDeleteAvatarModal={setShowDeleteAvatarModal}
+      handleResendApplication={handleResendApplication}
+      handleConfirmResend={handleConfirmResend}       // <== TRUYỀN PROP
+      setShowResendConfirmModal={setShowResendConfirmModal}
       loggedInUser={loggedInUser}
       onLogout={onLogout}
     />

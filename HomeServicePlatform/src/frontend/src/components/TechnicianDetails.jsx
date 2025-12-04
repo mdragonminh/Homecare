@@ -23,7 +23,7 @@ const CITIES = ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Cần Thơ", "H�
 // ----------------------------------------------------
 // Component con: FilePreviewModal (Giữ nguyên)
 // ----------------------------------------------------
-const FilePreviewModal = ({ isOpen, onClose, fileUrl, fileName }) => {
+const FilePreviewModal = ({ isOpen, onClose, fileUrl, fileName ,}) => {
   const [scale, setScale] = useState(1);
   const [rotate, setRotate] = useState(0);
 
@@ -186,7 +186,7 @@ const ComplexSectionEditor = ({ label, icon: Icon, fieldName, error, children, v
       </div>
     );
 };
-const TechnicianDetails = forwardRef(({ profile, getFileUrl, onUpdateSuccess ,setIsDetailsEditing}, ref) => {
+const TechnicianDetails = forwardRef(({ profile, getFileUrl, onUpdateSuccess ,setIsDetailsEditing,}, ref) => {
   const [previewFile, setPreviewFile] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [loadingServices, setLoadingServices] = useState(false);

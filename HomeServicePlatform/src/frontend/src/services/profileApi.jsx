@@ -423,3 +423,27 @@ export const technicianApi = {
     }
   },
 };
+export const resendTechnicianApplication = async () => {
+  try {
+    const response = await axiosClient.put(`/TechnicianManagement/resubmit`);
+
+    if (ENABLE_DEBUG)
+      console.log("Resend technician application success:", response.data);
+
+    return {
+      success: true,
+      data: response.data,
+      message: "Yêu cầu gửi lại hồ sơ thành công.",
+    };
+  } catch (error) {
+    if (ENABLE_DEBUG)
+      console.error("Resend technician application error:", error);
+
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        "Không thể gửi lại hồ sơ. Vui lòng thử lại.",
+    };
+  }
+};
