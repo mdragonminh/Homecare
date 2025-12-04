@@ -135,6 +135,19 @@ namespace HSP.DAL.Data
                    .HasForeignKey<BookingCancellation>(c => c.BookingId)
                    .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Entity<BookingEquipment>()
+                   .ToTable("BookingEquipment");
+            builder.Entity<BookingEquipment>()
+                   .HasOne(be => be.Booking)
+                   .WithMany(b => b.Equipments)
+                   .HasForeignKey(be => be.BookingId)
+                   .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<BookingEquipment>()
+                   .HasOne(be => be.Equipment)
+                   .WithMany()
+                   .HasForeignKey(be => be.EquipmentId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<Payment>(entity =>
             {
                 entity.HasOne(p => p.Booking)

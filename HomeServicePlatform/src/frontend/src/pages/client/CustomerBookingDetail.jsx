@@ -147,7 +147,7 @@ export default function CustomerBookingDetail() {
     primaryPayment?.amount ??
     booking.totalPrice ??
     0;
-  const formattedTotalPrice = formatCurrency(displayPrice);
+  
   const desiredDateText = formatDateTime(booking.desiredDate);
   const completedDateText = booking.dateCompleted
     ? formatDateTime(booking.dateCompleted)
@@ -158,6 +158,15 @@ export default function CustomerBookingDetail() {
   const showPaymentButton = showCompletionBanner && !paymentInfo.isPaid;
   const shortId = (value) =>
     value ? String(value).substring(0, 8) : "N/A";
+
+  // Calculate total costs
+  const serviceTotalPrice = serviceItems.reduce((sum, item) => sum + item.price, 0);
+  const equipmentTotalPrice = (booking.equipments || []).reduce(
+    (sum, eq) => sum + eq.totalPrice,
+    0
+  );
+  const totalPrice = serviceTotalPrice + equipmentTotalPrice;
+  const formattedTotalPrice = formatCurrency(totalPrice);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -384,22 +393,106 @@ export default function CustomerBookingDetail() {
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
               Mô tả dịch vụ
             </h3>
-            <p className="text-gray-700 leading-relaxed">
-              {booking.problemDescription || "Không có mô tả"}
-            </p>
+            {hasServices ? (
+              <ul className="space-y-4">
+                {serviceItems.map((item) => (
+                  <li key={item.id} className="border-l-4 border-blue-400 pl-4">
+                    <p className="font-semibold text-gray-900 mb-1">
+                      {item.serviceName || "Dịch vụ"}
+                    </p>
+                    <p className="text-gray-700 text-sm leading-relaxed">
+                      {item.description || "Không có mô tả cho dịch vụ này"}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-700 leading-relaxed">
+                {booking.problemDescription || "Không có mô tả"}
+              </p>
+            )}
           </div>
+
+          {/* Equipment Card */}
+          {booking.equipments && booking.equipments.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                Thiết bị sử dụng
+              </h3>
+              <ul className="divide-y divide-gray-100">
+                {booking.equipments.map((equipment) => (
+                  <li
+                    key={equipment.id}
+                    className="py-3 flex items-center justify-between"
+                  >
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">
+                        {equipment.equipmentName}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-xs text-gray-500">
+                          Số lượng: {equipment.quantity}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Đơn giá: {formatCurrency(equipment.unitPrice)} VNĐ
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {formatCurrency(equipment.totalPrice)} VNĐ
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 pt-3 border-t border-gray-200 flex justify-between items-center">
+                <p className="text-sm font-medium text-gray-600">
+                  Tổng tiền thiết bị
+                </p>
+                <p className="text-lg font-bold text-gray-900">
+                  {formatCurrency(
+                    booking.equipments.reduce(
+                      (sum, eq) => sum + eq.totalPrice,
+                      0
+                    )
+                  )}{" "}
+                  VNĐ
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Price Card */}
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6 shadow-sm">
-            <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-              Tổng tiền
+            <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-4">
+              Chi tiết thanh toán
             </h3>
-            <p className="text-4xl font-bold text-blue-600">
-              {formattedTotalPrice}
-              <span className="text-lg font-normal text-gray-600 ml-2">
-                VNĐ
-              </span>
-            </p>
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-700">Tiền dịch vụ</span>
+                <span className="font-semibold text-gray-900">
+                  {formatCurrency(serviceTotalPrice)} VNĐ
+                </span>
+              </div>
+              {equipmentTotalPrice > 0 && (
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-700">Tiền thiết bị</span>
+                  <span className="font-semibold text-gray-900">
+                    {formatCurrency(equipmentTotalPrice)} VNĐ
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="pt-3 border-t border-blue-300">
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-medium text-gray-700">Tổng tiền</h3>
+                <p className="text-3xl font-bold text-blue-600">
+                  {formattedTotalPrice}
+                  <span className="text-base font-normal text-gray-600 ml-2">
+                    VNĐ
+                  </span>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

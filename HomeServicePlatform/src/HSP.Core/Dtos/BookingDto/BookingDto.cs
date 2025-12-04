@@ -26,6 +26,8 @@ namespace HSP.Core.Dtos.BookingDto
         public HomeServiceDto? Service { get; set; }
         public BookingCancellationResponseDto? Cancellation { get; set; }
         public ICollection<BookingFeedbackResponseDto> Feedbacks { get; set; } = new List<BookingFeedbackResponseDto>();
+        public List<BookingItemDto>? Items { get; set; }
+        public List<BookingEquipmentDto> Equipments { get; set; } = new List<BookingEquipmentDto>();
     }
 
     public class BookingFeedbackResponseDto
@@ -68,6 +70,7 @@ namespace HSP.Core.Dtos.BookingDto
         public Guid Id { get; set; }
         public Guid ServiceId { get; set; }
         public string? ServiceName { get; set; }
+        public string? Description { get; set; }
         public decimal Price { get; set; }
     }
 

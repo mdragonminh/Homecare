@@ -41,8 +41,10 @@ const PaymentPage = () => {
 
       if (result) {
         setBooking(result);
-        // Set default amount based on booking services
-        const totalAmount = result.totalPrice || 0;
+        // Calculate total amount from services and equipment
+        const serviceTotal = (result.items || []).reduce((sum, item) => sum + item.price, 0);
+        const equipmentTotal = (result.equipments || []).reduce((sum, eq) => sum + eq.totalPrice, 0);
+        const totalAmount = serviceTotal + equipmentTotal;
         setAmount(totalAmount);
         setDescription(`Thanh toán cho booking ${bookingId}`);
       } else {
@@ -215,6 +217,28 @@ const PaymentPage = () => {
                       <div key={item.id || index} className="flex justify-between pl-4">
                         <span className="text-gray-700">{item.serviceName || 'Dịch vụ'}</span>
                         <span className="text-gray-900">{item.price.toLocaleString("vi-VN")} VNĐ</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Equipment List */}
+              {booking.equipments && booking.equipments.length > 0 && (
+                <div className="pt-3 border-t border-gray-200 mt-3">
+                  <span className="text-gray-600 font-medium mb-2 block">
+                    Thiết bị:
+                  </span>
+                  <div className="space-y-1">
+                    {booking.equipments.map((equipment, index) => (
+                      <div key={equipment.id || index} className="pl-4">
+                        <div className="flex justify-between">
+                          <span className="text-gray-700">{equipment.equipmentName}</span>
+                          <span className="text-gray-900">{equipment.totalPrice.toLocaleString("vi-VN")} VNĐ</span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Số lượng: {equipment.quantity} × {equipment.unitPrice.toLocaleString("vi-VN")} VNĐ
+                        </div>
                       </div>
                     ))}
                   </div>

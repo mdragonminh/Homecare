@@ -295,14 +295,15 @@ const CustomerBookingsPage = () => {
                             {formatDate(booking.desiredDate)}
                           </span>
                         </div>
-                        {booking.totalPrice && (
-                          <div className="flex items-center text-gray-600">
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            <span className="text-sm font-semibold">
-                              {formatAmount(booking.totalPrice)} VNĐ
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex items-center text-gray-600">
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          <span className="text-sm font-semibold">
+                            {formatAmount(
+                              (booking.items || []).reduce((sum, item) => sum + item.price, 0) +
+                              (booking.equipments || []).reduce((sum, eq) => sum + eq.totalPrice, 0)
+                            )} VNĐ
+                          </span>
+                        </div>
                       </div>
 
                       {payment && (
