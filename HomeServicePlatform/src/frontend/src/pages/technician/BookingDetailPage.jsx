@@ -252,20 +252,39 @@ const BookingDetailPage = () => {
                 <p className="text-gray-500 text-sm">Họ tên</p>
                 <p className="font-medium">{booking.customerName}</p>
                 
-                <div className="flex items-center mt-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                        <StarIcon
-                        key={i}
-                        className={`h-4 w-4 ${
-                            i < (booking.customerAverageRating || 0) 
-                            ? "text-yellow-400 fill-yellow-400" 
-                            : "text-gray-300"
-                        }`}
-                        />
-                    ))}
-                    <span className="ml-2 text-sm text-gray-500">
-                        ({booking.customerRatingCount || 0} đánh giá)
-                    </span>
+                {/* Rating trung bình của customer từ các booking đã hoàn thành */}
+                <div className="flex items-center mt-2">
+                    <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, i) => {
+                          const rating = booking.customerAverageRating || 0;
+                          return (
+                            <StarIcon
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i < Math.floor(rating)
+                                  ? "text-yellow-400 fill-yellow-400" 
+                                  : i < rating
+                                  ? "text-yellow-400 fill-yellow-400 opacity-50"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          );
+                        })}
+                    </div>
+                    {booking.customerAverageRating > 0 ? (
+                      <>
+                        <span className="ml-2 text-sm font-semibold text-gray-700">
+                          {booking.customerAverageRating.toFixed(1)}/5
+                        </span>
+                        <span className="ml-2 text-sm text-gray-500">
+                          ({booking.customerRatingCount || 0} đánh giá)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="ml-2 text-sm text-gray-500 italic">
+                        Chưa có đánh giá
+                      </span>
+                    )}
                 </div>
 
               </div>

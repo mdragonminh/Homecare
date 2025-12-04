@@ -176,9 +176,19 @@ namespace HSP.Service.Implementations.Internal
             if (booking == null)
                 throw new KeyNotFoundException("Không tìm thấy booking");
 
-            var customerFeedbacks = booking.Customer != null
-                ? booking.Feedbacks.Where(f => f.Source == FeedbackSource.Technician).ToList()
+            // Lấy tất cả feedbacks từ technician về customer từ tất cả các booking đã hoàn thành
+            // Để technician có thể thấy rating của customer khi quyết định nhận booking
+            var customerFeedbacks = booking.CustomerId != null
+                ? await _bookingRepository.GetAll()
+                    .Include(b => b.Feedbacks)
+                    .Where(b => b.CustomerId == booking.CustomerId 
+                        && b.Status == BookingStatus.Completed
+                        && b.Feedbacks.Any(f => f.Source == FeedbackSource.Technician))
+                    .SelectMany(b => b.Feedbacks)
+                    .Where(f => f.Source == FeedbackSource.Technician)
+                    .ToListAsync()
                 : new List<BookingFeedback>();
+            
             var address = await _geocodingService.GetAddressForCoordinatesAsync(booking.Latitude, booking.Longitude);
             var bookingItems = await _bookingItemRepository.GetAll(i => i.Service)
                .Where(i => i.BookingId == bookingId && !i.IsDeleted)
