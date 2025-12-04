@@ -15,5 +15,6 @@ namespace HSP.Service.Interfaces
         Task<bool> RejectTechnicianWithNotificationAsync(Guid technicianProfileId, string rejectedBy, string rejectionReason);
         Task<bool> UpdateTechnicianProfileAsync(Guid userId, UpdateTechnicianProfileDto input);
         Task<IEnumerable<FeaturedTechnicianDto>> GetFeaturedTechniciansAsync(int count = 4);
+        Task<bool> ResendTechnicianApplication(Guid userId);
     }
 }

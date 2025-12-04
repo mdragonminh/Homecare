@@ -659,5 +659,20 @@ namespace HSP.Service.Implementations.Internal
 
             return result;
         }
+        public async Task<bool> ResendTechnicianApplication(Guid userId)
+        {
+            var profile = await _technicianProfileRepository.GetAll()
+                .FirstOrDefaultAsync(x => x.UserId == userId);
+            if (profile == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy hồ sơ người gửi");
+            }
+            if (profile.ApprovalStatus != TechnicianApprovalStatus.Rejected)
+                throw new Exception("Không thể gửi duyệt ở trạng thái hiện tại");
+            profile.ApprovalStatus = TechnicianApprovalStatus.Pending;
+            profile.DateModified = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync();
+            return true;
+        }
     }
 }

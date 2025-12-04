@@ -85,6 +85,25 @@ namespace HSP.API.Controllers
                 return StatusCode(500, new {message = "Đã có lỗi xảy ra", error = ex.Message });
             }
         }
+        [HttpPut("resubmit")]
+        [Authorize(Roles = RoleNames.Technician)]
+        public async Task<IActionResult> ResendTechnicianApplication()
+        {
+            try
+            {
+                var userId = User.GetUserId();
+                var result = await _technicianProfileService.ResendTechnicianApplication(userId);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return StatusCode(500, new { message = "Đã có lỗi xảy ra", error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Đã có lỗi xảy ra", error = ex.Message });
+            }
+        }
 
         [HttpPost("technicians/{id}/approve")]
         [Authorize(Roles = $"{RoleNames.Admin},{RoleNames.Operator},{RoleNames.Supporter}")]
