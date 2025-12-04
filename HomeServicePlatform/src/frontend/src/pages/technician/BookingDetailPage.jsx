@@ -18,6 +18,7 @@ import {
   ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
 import { FeedbackModal } from "../../components/feedback/FeedbackModal";
+import { PaymentStatus } from "../../services/paymentApi";
 
 const BookingDetailPage = () => {
   const { id } = useParams();
@@ -150,15 +151,13 @@ const BookingDetailPage = () => {
   const onCompleteBookingClick = () => {
     openConfirm({
       title: "Xác nhận hoàn thành",
-      content: "Bạn đã hoàn thành công việc và muốn đóng booking này? Sau đó bạn sẽ được yêu cầu đánh giá khách hàng.",
+      content: "Bạn đã hoàn thành công việc và muốn đóng booking này? Sau khi khách thanh toán thành công, bạn sẽ có thể đánh giá khách hàng.",
       isDanger: false,
       onConfirm: async () => {
         try {
           await bookingApi.completeBooking(id);
-          toast.success("Đã hoàn thành booking");
+          toast.success("Đã hoàn thành booking. Vui lòng chờ khách thanh toán để đánh giá.");
           fetchBookingDetail();
-          // Mở modal feedback sau khi hoàn thành
-          setIsFeedbackModalOpen(true);
         } catch {
           toast.error("Không thể hoàn thành booking");
         }
@@ -217,10 +216,13 @@ const BookingDetailPage = () => {
   const canOpenChat = booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.InProgress;
   const canAddEquipment = booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.InProgress;
 
+  const paymentCompleted = booking.payments?.some(payment => payment.status === PaymentStatus.Completed) || false;
+  const waitingForPayment = booking.status === BookingStatus.Completed && !paymentCompleted;
+
   // Lấy feedbacks từ booking
   const customerFeedback = booking.feedbacks?.find(f => f.source === FeedbackSource.Customer);
   const technicianFeedback = booking.feedbacks?.find(f => f.source === FeedbackSource.Technician);
-  const needsFeedback = booking.status === BookingStatus.Completed && !technicianFeedback;
+  const canGiveFeedback = booking.status === BookingStatus.Completed && paymentCompleted && !technicianFeedback;
 
   return (
     <div className="p-6 max-w-7xl mx-auto relative">
@@ -370,7 +372,7 @@ const BookingDetailPage = () => {
           </div>
 
           {/* Feedbacks Section */}
-          {(customerFeedback || technicianFeedback || needsFeedback) && (
+          {(customerFeedback || technicianFeedback || canGiveFeedback || waitingForPayment) && (
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
               <h2 className="text-lg font-bold mb-4 border-b pb-2 flex items-center">
                 <StarIcon className="h-5 w-5 mr-2 text-yellow-500" />
@@ -438,10 +440,16 @@ const BookingDetailPage = () => {
                       </p>
                     )}
                   </div>
-                ) : needsFeedback && (
+                ) : waitingForPayment ? (
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-gray-700">
+                      Khách hàng chưa hoàn tất thanh toán. Bạn có thể đánh giá sau khi thanh toán thành công.
+                    </p>
+                  </div>
+                ) : canGiveFeedback && (
                   <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                     <p className="text-sm text-gray-700 mb-2">
-                      Bạn chưa đánh giá khách hàng. Vui lòng đánh giá để hoàn tất booking.
+                      Khách hàng đã thanh toán. Vui lòng đánh giá để hoàn tất booking.
                     </p>
                     <button
                       onClick={() => setIsFeedbackModalOpen(true)}
