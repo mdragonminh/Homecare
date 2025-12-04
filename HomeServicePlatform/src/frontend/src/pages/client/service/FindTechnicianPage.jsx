@@ -1,7 +1,8 @@
 // fileName: FindTechnicianPage.jsx
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useFindTechnician } from "../../../hooks/useFindTechnician.jsx";
 import {
   Loader2,
@@ -21,6 +22,10 @@ import {
   Wrench,
   Locate,
   Eye,
+  CalendarClock,
+  UserRound,
+  ListChecks,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import MapDisplay from "../../../components/findTechnician/MapDisplay.jsx";
@@ -30,6 +35,7 @@ import TechnicianDetailModal from "../../../components/client/TechnicianDetailMo
 
 export function FindTechnicianPage({ loggedInUser }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [technicianDetailModalVisible, setTechnicianDetailModalVisible] =
     useState(false);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState(null);
@@ -67,6 +73,7 @@ export function FindTechnicianPage({ loggedInUser }) {
     selectedServiceNames,
     preferredDate,
     preferredTime,
+    matchSuccessInfo,
     // ĐÃ LOẠI BỎ: setSearchRadius,
     setAddressInput,
     setIsAddHomeModalOpen,
@@ -83,8 +90,34 @@ export function FindTechnicianPage({ loggedInUser }) {
     reloadHomeData,
     handleMarkerDrag,
     handleGeocode,
+    setMatchSuccessInfo,
     
   } = useFindTechnician(loggedInUser);
+
+  const appointmentLabel = useMemo(() => {
+    if (!matchSuccessInfo?.scheduledAt) return null;
+    const date = new Date(matchSuccessInfo.scheduledAt);
+    if (Number.isNaN(date.getTime())) return matchSuccessInfo.scheduledAt;
+    return date.toLocaleString("vi-VN", {
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour12: false,
+    });
+  }, [matchSuccessInfo]);
+
+  const handleCloseMatchModal = () => setMatchSuccessInfo(null);
+  const handleViewBooking = () => {
+    if (!matchSuccessInfo?.bookingId) {
+      handleCloseMatchModal();
+      return;
+    }
+    navigate(`/my-bookings/${matchSuccessInfo.bookingId}`);
+    setMatchSuccessInfo(null);
+  };
 
   const renderStatusMessage = (messageObj) => {
     if (!messageObj) return null;
@@ -617,6 +650,107 @@ export function FindTechnicianPage({ loggedInUser }) {
                 defaultValue: "Đang ghép nối kỹ thuật viên...",
               })}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Match Success Modal */}
+      {matchSuccessInfo && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
+          <div className="relative z-50 w-[90%] max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-gray-100">
+            <div className="flex items-center gap-3 mb-4">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-lg font-semibold text-gray-900">
+                  {t("success.match_booking_success", {
+                    defaultValue: "Ghép nối thành công!",
+                  })}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {matchSuccessInfo.message ||
+                    t("ui.view_booking_details_prompt", {
+                      defaultValue:
+                        "Kiểm tra chi tiết lịch hẹn của bạn trong phần Đặt lịch.",
+                    })}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-xl bg-gray-50 p-4 border border-gray-100">
+              <div className="flex items-start gap-3">
+                <UserRound className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    {t("technicians.name", { defaultValue: "Kỹ thuật viên" })}
+                  </p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {matchSuccessInfo.technicianName ||
+                      t("ui.updating", { defaultValue: "Đang cập nhật" })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <ListChecks className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    {t("services.title", { defaultValue: "Dịch vụ" })}
+                  </p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {matchSuccessInfo.services?.length
+                      ? matchSuccessInfo.services.join(", ")
+                      : t("ui.updating", { defaultValue: "Đang cập nhật" })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <CalendarClock className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    {t("ui.appointment_time", {
+                      defaultValue: "Thời gian hẹn",
+                    })}
+                  </p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {appointmentLabel ||
+                      t("ui.soonest_time", { defaultValue: "Sớm nhất có thể" })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    {t("ui.address", { defaultValue: "Địa chỉ" })}
+                  </p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {matchSuccessInfo.address ||
+                      t("ui.updating", { defaultValue: "Đang cập nhật" })}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleCloseMatchModal}
+                className="flex-1 rounded-xl border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 transition"
+              >
+                {t("ui.view_later", { defaultValue: "Để sau" })}
+              </button>
+              <button
+                onClick={handleViewBooking}
+                className="flex-1 rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 transition flex items-center justify-center gap-2"
+              >
+                {t("ui.go_to_booking", {
+                  defaultValue: "Xem đặt lịch",
+                })}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}

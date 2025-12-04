@@ -42,6 +42,7 @@ export function useFindTechnician(loggedInUser) {
   const [serviceSearchInput, setServiceSearchInput] = useState("");
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [isMatching, setIsMatching] = useState(false);
+  const [matchSuccessInfo, setMatchSuccessInfo] = useState(null);
   const initialDateTime = getInitialDateTime();
   const [preferredDate, _setPreferredDate] = useState(initialDateTime.date); // Định dạng 'YYYY-MM-DD'
   const [preferredTime, _setPreferredTime] = useState(initialDateTime.time);
@@ -111,6 +112,7 @@ export function useFindTechnician(loggedInUser) {
   }, [preferredDate, preferredTime, t]);
 
   const handleCreateAndMatchBooking = useCallback(async () => {
+    setMatchSuccessInfo(null);
     if (!addressInput || !loggedInUser?.userId) {
       setStatusMessage({
         text: t("validation.missing_address_or_login", {
@@ -186,6 +188,18 @@ export function useFindTechnician(loggedInUser) {
             }),
             type: "success",
           });
+          const scheduledAtValue =
+            preferredDate && preferredTime
+              ? `${preferredDate}T${preferredTime}:00`
+              : null;
+          setMatchSuccessInfo({
+            bookingId: responseData.bookingId,
+            technicianName: responseData?.technicianInfo?.name || "",
+            services: [...selectedServiceNames],
+            scheduledAt: scheduledAtValue,
+            address: addressInput,
+            message: responseData?.message,
+          });
         } else if (responseData?.isMatched === false) {
           setStatusMessage({
             text: t("error.no_technician_accepted_match", {
@@ -232,6 +246,7 @@ export function useFindTechnician(loggedInUser) {
     preferredTime,
     isUserSetDateTime,
     t,
+    selectedServiceNames,
   ]);
   const handleGetMyLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -671,6 +686,7 @@ export function useFindTechnician(loggedInUser) {
     currentHomeData,
     filteredServices,
     selectedServiceNames,
+    matchSuccessInfo,
 
     // Setters
     setSelectedHomeId,
@@ -692,5 +708,6 @@ export function useFindTechnician(loggedInUser) {
     handleMarkerDrag,
     handleGeocode,
     validatePreferredDateTime,
+    setMatchSuccessInfo,
   };
 }

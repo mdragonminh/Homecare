@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { MapPin, CalendarClock, UserRound, ListChecks, ArrowRight, Loader2 } from "lucide-react"
 import { chatbotApi } from "../../services/chatbotApi"
+import { bookingApi } from "../../services/bookingApi"
 import { toast } from "sonner"
 import { PaperAirplaneIcon, XMarkIcon, MinusIcon, PlusIcon, CheckCircleIcon } from "@heroicons/react/24/solid"
 import { useTranslation } from "react-i18next"
@@ -65,8 +67,29 @@ const ChatMessage = ({ message }) => {
   )
 }
 
-const BookingSuccessModal = ({ isOpen, onClose, onNavigate, bookingId }) => {
-  if (!isOpen) return null
+const formatAppointmentLabel = (isoString) => {
+  if (!isoString) return null
+  const date = new Date(isoString)
+  if (Number.isNaN(date.getTime())) return isoString
+  return date.toLocaleString("vi-VN", {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour12: false,
+  })
+}
+
+const BookingSuccessModal = ({ isOpen, onClose, onNavigate, matchInfo, t }) => {
+  if (!isOpen || !matchInfo) return null
+
+  const appointmentLabel = formatAppointmentLabel(matchInfo.scheduledAt)
+  const serviceLabel =
+    matchInfo.services && matchInfo.services.length > 0
+      ? matchInfo.services.join(", ")
+      : t("ui.updating", { defaultValue: "Đang cập nhật" })
 
   return (
     <div
@@ -100,17 +123,84 @@ const BookingSuccessModal = ({ isOpen, onClose, onNavigate, bookingId }) => {
 
         {/* Content */}
         <div className="px-6 py-6 space-y-4">
-          <p className="text-gray-700 text-base leading-relaxed">
-            Lịch hẹn của bạn đã được tạo thành công.
-            {bookingId && (
-              <>
-                <br />
-                <span className="font-medium">Mã booking:</span> <span className="font-mono break-all">{bookingId}</span>
-              </>
+          <div className="flex items-start gap-2 text-gray-700 text-base leading-relaxed">
+            {matchInfo.isLoading && (
+              <Loader2 className="h-5 w-5 text-blue-500 animate-spin mt-1" />
             )}
-            <br />
-            Bạn có thể xem và quản lý chi tiết lịch hẹn trong mục My Bookings.
-          </p>
+            <p>
+              {matchInfo.message ||
+                t("success.match_booking_success", {
+                  defaultValue: "Đã ghép nối thành công với kỹ thuật viên!",
+                })}
+            </p>
+          </div>
+
+          <div className="space-y-3 rounded-xl bg-gray-50 p-4 border border-gray-100">
+            <div className="flex items-start gap-3">
+              <UserRound className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  {t("technicians.name", { defaultValue: "Kỹ thuật viên" })}
+                </p>
+                <p className="text-base font-semibold text-gray-900">
+                  {matchInfo.technicianName ||
+                    t("ui.updating", { defaultValue: "Đang cập nhật" })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <ListChecks className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  {t("services.title", { defaultValue: "Dịch vụ" })}
+                </p>
+                <p className="text-base font-semibold text-gray-900">
+                  {serviceLabel}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <CalendarClock className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  {t("ui.appointment_time", { defaultValue: "Thời gian hẹn" })}
+                </p>
+                <p className="text-base font-semibold text-gray-900">
+                  {appointmentLabel ||
+                    t("ui.soonest_time", { defaultValue: "Sớm nhất có thể" })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <MapPin className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  {t("ui.address", { defaultValue: "Địa chỉ" })}
+                </p>
+                <p className="text-base font-semibold text-gray-900">
+                  {matchInfo.address ||
+                    t("ui.updating", { defaultValue: "Đang cập nhật" })}
+                </p>
+              </div>
+            </div>
+
+            {matchInfo.bookingId && (
+              <div className="flex items-start gap-3">
+                <ListChecks className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Booking ID
+                  </p>
+                  <p className="font-mono text-sm break-all text-gray-900">
+                    {matchInfo.bookingId}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
@@ -123,9 +213,10 @@ const BookingSuccessModal = ({ isOpen, onClose, onNavigate, bookingId }) => {
           </button>
           <button
             onClick={onNavigate}
-            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-medium shadow-md"
+            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-md flex items-center justify-center gap-2"
           >
             Xem lịch hẹn
+            <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -142,7 +233,7 @@ export const ChatWidget = ({ onClose }) => {
   const [conversationId, setConversationId] = useState(null)
   const [isMinimized, setIsMinimized] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [bookingId, setBookingId] = useState(null)
+  const [matchDetails, setMatchDetails] = useState(null)
 
   const messagesEndRef = useRef(null)
   const [isInitialized, setIsInitialized] = useState(false)
@@ -186,6 +277,42 @@ export const ChatWidget = ({ onClose }) => {
     }
   }, [isInitialized])
 
+  const baseMatchDetails = (bookingId) => ({
+    bookingId: bookingId || null,
+    technicianName: null,
+    services: [],
+    scheduledAt: null,
+    address: null,
+    isLoading: !!bookingId,
+    message: t("success.match_booking_success", {
+      defaultValue: "Đã ghép nối thành công với kỹ thuật viên!",
+    }),
+  })
+
+  const hydrateMatchDetails = async (bookingId) => {
+    try {
+      const booking = await bookingApi.getBookingDetail(bookingId)
+      setMatchDetails((prev) => ({
+        ...(prev || {}),
+        isLoading: false,
+        bookingId,
+        technicianName: booking?.technicianName || prev?.technicianName || null,
+        services:
+          booking?.items?.map((item) => item.serviceName).filter(Boolean) ||
+          prev?.services ||
+          [],
+        scheduledAt: booking?.desiredDate || prev?.scheduledAt || null,
+        address: booking?.address || prev?.address || null,
+      }))
+    } catch (error) {
+      console.error("Không thể tải chi tiết booking:", error)
+      setMatchDetails((prev) => ({
+        ...(prev || {}),
+        isLoading: false,
+      }))
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     const messageText = currentMessage.trim()
@@ -225,8 +352,13 @@ export const ChatWidget = ({ onClose }) => {
       const extractedBookingId = bookingIdMatch ? bookingIdMatch[0] : null
 
       if ((hasSuccessKeywords && !hasErrorKeywords) || extractedBookingId) {
-        setBookingId(extractedBookingId)
+        const fallback = baseMatchDetails(extractedBookingId)
+        setMatchDetails(fallback)
         setShowSuccessModal(true)
+
+        if (extractedBookingId) {
+          hydrateMatchDetails(extractedBookingId)
+        }
       }
     } catch (error) {
       console.error("Error posting message:", error)
@@ -352,20 +484,21 @@ export const ChatWidget = ({ onClose }) => {
       
       <BookingSuccessModal
         isOpen={showSuccessModal}
+        matchInfo={matchDetails}
+        t={t}
         onClose={() => {
           setShowSuccessModal(false)
-          setBookingId(null)
+          setMatchDetails(null)
         }}
         onNavigate={() => {
           setShowSuccessModal(false)
-          if (bookingId) {
-            navigate(`/my-bookings/${bookingId}`)
+          if (matchDetails?.bookingId) {
+            navigate(`/my-bookings/${matchDetails.bookingId}`)
           } else {
             navigate("/my-bookings")
           }
-          setBookingId(null)
+          setMatchDetails(null)
         }}
-        bookingId={bookingId}
       />
     </div>
   )
