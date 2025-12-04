@@ -28,6 +28,64 @@ const ApprovalStatusDisplay = ({ status }) => {
   const { text, classes } = renderApprovalStatus(status);
   return <span className={classes}>{text}</span>;
 };
+const ResendApplicationModal = ({ isOpen, onClose, onConfirm, loading }) => {
+  if (!isOpen) return null;
+
+  return (
+    // Backdrop: Dùng 'bg-gray-700/30 backdrop-blur-sm' để tạo hiệu ứng mờ
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-700/30 backdrop-blur-sm transition-opacity duration-300"
+      onClick={onClose} 
+    >
+      {/* Modal Content */}
+      <div 
+        className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4 transform transition-all duration-300 scale-100 opacity-100"
+        onClick={(e) => e.stopPropagation()} 
+      >
+        <div className="flex flex-col items-center">
+          <AlertTriangle className="w-12 h-12 text-orange-500 mb-4" />
+          
+          <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">
+            Xác nhận Gửi lại Hồ sơ
+          </h3>
+          
+          <p className="text-gray-600 mb-6 text-center">
+            Bạn có chắc chắn muốn gửi lại hồ sơ này? Hồ sơ sẽ được chuyển sang trạng thái "Đang Chờ Duyệt" và cần thời gian để xem xét lại.
+          </p>
+
+          {/* Cập nhật: Loại bỏ justify-end và thêm flex-1, justify-center vào các nút */}
+          <div className="flex gap-3 w-full"> 
+            {/* Nút Hủy */}
+            <button
+              onClick={onClose}
+              className="flex-1 flex items-center justify-center px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+              disabled={loading}
+            >
+              Hủy
+            </button>
+            
+            {/* Nút Xác nhận */}
+            <button
+              onClick={onConfirm}
+              // Thêm flex-1 và justify-center
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 font-semibold text-white rounded-lg transition-all duration-300 ${
+                loading 
+                  ? 'bg-orange-400 cursor-not-allowed' 
+                  : 'bg-orange-500 hover:bg-orange-600'
+              }`}
+              disabled={loading}
+            >
+              {loading && (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              )}
+              {loading ? 'Đang Gửi...' : 'Xác nhận Gửi lại'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 const LoadingContent = ({ t }) => (
   <div className="flex items-center justify-center py-32">
     <div className="text-center">
@@ -103,7 +161,7 @@ const TechnicianProfileUI = ({
   avatarPreview,
   uploadingAvatar,
   showDeleteAvatarModal,
-
+showResendConfirmModal,
   // Handlers
   fetchProfile,
   handleChangePassword,
@@ -120,6 +178,9 @@ const TechnicianProfileUI = ({
   getAvatarUrl,
   setShowChangePasswordModal,
   setShowDeleteAvatarModal,
+  handleResendApplication, // Giờ là hàm mở modal
+  handleConfirmResend, // Hàm xử lý submit API
+  setShowResendConfirmModal,
 }) => {
   const detailsRef = useRef(null);
   const [isDetailsEditing, setIsDetailsEditing] = useState(false);
@@ -140,7 +201,7 @@ const TechnicianProfileUI = ({
       if (hasProfileChanges) {
         await handleSaveProfile();
       }
-
+      await fetchProfile();
       setIsDetailsEditing(false);
       toast.success("Cập nhật thông tin thành công!");
     } catch (error) {
@@ -560,10 +621,7 @@ const TechnicianProfileUI = ({
                           </div>
 
                           <button
-                            onClick={() => {
-                              // TODO: Thêm logic gọi API gửi lại hồ sơ ở đây
-                              toast.info("Chức năng đang được phát triển");
-                            }}
+                            onClick={handleResendApplication}
                             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-xl whitespace-nowrap"
                           >
                             <RefreshCw className="w-5 h-5" />
@@ -572,12 +630,14 @@ const TechnicianProfileUI = ({
                         </div>
                       </div>
                     )}
+                    
                   </div>
                 </div>
               )}
             </div>
           </div>
         )}
+        
       </main>
 
       {/* Change Password Modal */}
@@ -593,6 +653,13 @@ const TechnicianProfileUI = ({
         onClose={() => setShowDeleteAvatarModal(false)}
         onConfirm={handleDeleteAvatar}
         loading={uploadingAvatar}
+      />
+      <ResendApplicationModal
+        isOpen={showResendConfirmModal}
+        onClose={() => setShowResendConfirmModal(false)} // Setter để đóng modal
+        onConfirm={handleConfirmResend} // Hàm xử lý submit API
+        loading={uploadingAvatar} 
+        t={t}
       />
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { profileApi, technicianApi } from "../services/profileApi";
+import { profileApi, technicianApi, resendTechnicianApplication } from "../services/profileApi";
 import { jwtDecode } from "jwt-decode";
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
@@ -68,7 +68,7 @@ export const useTechnicianProfile = ({ onProfileUpdate, t }) => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showDeleteAvatarModal, setShowDeleteAvatarModal] = useState(false);
-
+const [showResendConfirmModal, setShowResendConfirmModal] = useState(false);
   // ------------------------------------------
   // 3. VALIDATION FUNCTIONS
   // ------------------------------------------
@@ -219,7 +219,35 @@ export const useTechnicianProfile = ({ onProfileUpdate, t }) => {
       setLoading(false);
     }
   }, [t]);
+  
+const handleResendApplication = useCallback(() => {
+    // Mở modal xác nhận
+    setShowResendConfirmModal(true);
+}, []);
 
+const handleConfirmResend = useCallback(async () => {
+    toast.loading(t("ui.resending_application") || "Đang gửi lại hồ sơ...", { id: "resend-app" });
+    setUploadingAvatar(true); // Dùng lại state này cho loading indicator
+
+    try {
+        const result = await resendTechnicianApplication(); //
+
+        toast.dismiss("resend-app");
+
+        if (result.success) {
+            toast.success("Hồ sơ đã được gửi lại thành công! Vui lòng đợi phê duyệt.");
+            fetchProfile(); //
+            setShowResendConfirmModal(false); // Đóng modal sau khi thành công
+        } else {
+            toast.error(result.message || "Gửi lại hồ sơ thất bại.");
+        }
+    } catch (error) {
+        toast.dismiss("resend-app");
+        toast.error(error.message || "Gửi lại hồ sơ thất bại.");
+    } finally {
+        setUploadingAvatar(false);
+    }
+}, [fetchProfile, t]);
   // ------------------------------------------
   // 5. EFFECT HOOKS
   // ------------------------------------------
@@ -530,7 +558,7 @@ export const useTechnicianProfile = ({ onProfileUpdate, t }) => {
     avatarPreview,
     uploadingAvatar,
     showDeleteAvatarModal,
-
+    showResendConfirmModal,
     // Handlers & Functions
     fetchProfile,
     handleChangePassword,
@@ -549,5 +577,8 @@ export const useTechnicianProfile = ({ onProfileUpdate, t }) => {
     setShowDeleteAvatarModal,
     setActiveTab,
     formatDate,
+    handleResendApplication, // Giờ là hàm mở modal
+    handleConfirmResend, // Hàm xử lý submit API
+    setShowResendConfirmModal,
   };
 };

@@ -60,6 +60,7 @@ export default function OperatorTechniciansPage() {
           response.data.items?.map((tech, index) => ({
             key: tech.id || index,
             id: tech.id,
+            userId: tech.userId,
             name: tech.fullName || tech.name,
             email: tech.email,
             phone: tech.phoneNumber || tech.phone,
@@ -118,7 +119,7 @@ export default function OperatorTechniciansPage() {
   const handleViewDetails = async (technician) => {
     // Nếu cần thông tin chi tiết hơn, gọi API getTechnicianById
     try {
-      const response = await technicianApi.getTechnicianById(technician.id);
+      const response = await technicianApi.getTechnicianById(technician.userId);
       if (response.success) {
         // response.data đã là dữ liệu đầy đủ, chứa:
         // { id, fullName, email, experienceYears, services: [...], certificateFiles: [...] }
