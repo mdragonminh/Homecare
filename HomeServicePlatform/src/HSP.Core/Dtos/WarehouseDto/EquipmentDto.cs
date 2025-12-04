@@ -115,6 +115,7 @@ namespace HSP.Core.Dtos.WarehouseDto
         public string? Brand { get; set; }
         public string? ModelNumber { get; set; }
         public decimal UnitPrice { get; set; }
+        public decimal CostPrice { get; set; }
         public bool IsActive { get; set; }
     }
 

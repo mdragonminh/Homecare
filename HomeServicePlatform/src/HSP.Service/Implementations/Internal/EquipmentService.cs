@@ -57,6 +57,7 @@ namespace HSP.Service.Implementations.Internal
                 Brand = e.Brand,
                 ModelNumber = e.ModelNumber,
                 UnitPrice = e.UnitPrice,
+                CostPrice = e.CostPrice,
                 IsActive = e.IsActive
             });
 
@@ -281,6 +282,7 @@ namespace HSP.Service.Implementations.Internal
                     Brand = e.Brand,
                     ModelNumber = e.ModelNumber,
                     UnitPrice = e.UnitPrice,
+                    CostPrice = e.CostPrice,
                     IsActive = e.IsActive
                 })
                 .ToListAsync();

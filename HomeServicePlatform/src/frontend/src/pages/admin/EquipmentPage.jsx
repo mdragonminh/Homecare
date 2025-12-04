@@ -49,11 +49,91 @@ const EquipmentPage = () => {
   };
 
   const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState({});
+
   const [quantityData, setQuantityData] = useState({
     quantity: 0,
     notes: "",
   });
+
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Validate name
+    if (!formData.name || formData.name.trim().length === 0) {
+      newErrors.name = "Không được để trống tên thiết bị";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Tên thiết bị phải có ít nhất 2 ký tự";
+    }
+
+    // Validate equipment code
+    if (!formData.equipmentCode || formData.equipmentCode.trim().length === 0) {
+      newErrors.equipmentCode = "Không được để trống mã thiết bị";
+    } else if (formData.equipmentCode.trim().length < 2) {
+      newErrors.equipmentCode = "Mã thiết bị phải có ít nhất 2 ký tự";
+    }
+
+    // Validate brand
+    if (!formData.brand || formData.brand.trim().length === 0) {
+      newErrors.brand = t("equipment.validation.brandRequired", "Không được để trống nhãn hiệu");
+    } else if (formData.brand.trim().length < 2) {
+      newErrors.brand = t("equipment.validation.brandMinLength", "Nhãn hiệu phải có ít nhất 2 ký tự");
+    }
+
+    // Validate model number
+    if (!formData.modelNumber || formData.modelNumber.trim().length === 0) {
+      newErrors.modelNumber = t("equipment.validation.modelRequired", "Không được để trống số Model");
+    } else if (formData.modelNumber.trim().length < 2) {
+      newErrors.modelNumber = t("equipment.validation.modelMinLength", "Số Model phải có ít nhất 2 ký tự");
+    }
+
+    // Validate quantity
+    if (formData.quantity < 0) {
+      newErrors.quantity = "Số lượng không được âm";
+    }
+    if (formData.quantity > 999999) {
+      newErrors.quantity = "Số lượng quá lớn";
+    }
+
+    // Validate unit price
+    if (formData.unitPrice == 0) {
+      newErrors.unitPrice = "Giá bán phải lớn hơn 0";
+    }
+    if (formData.unitPrice > 999999999999) {
+      newErrors.unitPrice = "Giá bán quá lớn";
+    }
+
+    // Validate cost price
+    if (formData.costPrice == 0) {
+      newErrors.costPrice = "Giá nhập phải lớn hơn 0";
+    }
+    if (formData.costPrice > 999999999999) {
+      newErrors.costPrice = "Giá nhập quá lớn";
+    }
+    if (formData.costPrice > formData.unitPrice && formData.unitPrice > 0) {
+      newErrors.costPrice = "Giá nhập không được cao hơn giá bán";
+    }
+
+    // Validate warranty
+    if (formData.warrantyDurationMonths < 0) {
+      newErrors.warrantyDurationMonths = "Thời gian bảo hành không được âm";
+    }
+    if (formData.warrantyDurationMonths > 600) {
+      newErrors.warrantyDurationMonths = "Thời gian bảo hành quá dài (tối đa 600 tháng)";
+    }
+
+    // Validate description
+    if (formData.description && formData.description.trim().length > 0 && formData.description.trim().length < 10) {
+      newErrors.description = "Mô tả phải có ít nhất 10 ký tự";
+    }
+    if (formData.description && formData.description.length > 1000) {
+      newErrors.description = "Mô tả không được vượt quá 1000 ký tự";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   useEffect(() => {
     fetchEquipments();
@@ -109,6 +189,7 @@ const EquipmentPage = () => {
   const openCreateModal = () => {
     setEditingEquipment(null);
     setFormData(initialFormData);
+    setErrors({});
     setShowModal(true);
   };
 
@@ -128,6 +209,7 @@ const EquipmentPage = () => {
       warrantyDurationMonths: equipment.warrantyDurationMonths || 0,
       isActive: equipment.isActive,
     });
+    setErrors({});
     setShowModal(true);
   };
 
@@ -141,6 +223,7 @@ const EquipmentPage = () => {
     setShowModal(false);
     setEditingEquipment(null);
     setFormData(initialFormData);
+    setErrors({});
   };
 
   const closeQuantityModal = () => {
@@ -148,59 +231,28 @@ const EquipmentPage = () => {
     setQuantityEquipment(null);
     setQuantityData({ quantity: 0, notes: "" });
   };
-  const validateEquipmentForm = () => {
-    const newErrors = {};
 
-    if (!formData.name || formData.name.trim() === "") {
-      newErrors.Name = "Tên thiết bị không được để trống";
-    }
-
-    if (!formData.equipmentCode || formData.equipmentCode.trim() === "") {
-      newErrors.EquipmentCode = "Mã thiết bị không được để trống";
-    }
-
-    if (!formData.warehouseId || formData.warehouseId.trim() === "") {
-      newErrors.WarehouseId = "Vui lòng chọn kho";
-    }
-
-    if (formData.quantity < 0) {
-      newErrors.Quantity = "Số lượng không thể nhỏ hơn 0";
-    }
-
-    if (formData.unitPrice < 0) {
-      newErrors.UnitPrice = "Giá bán không thể nhỏ hơn 0";
-    }
-
-    if (formData.costPrice < 0) {
-      newErrors.CostPrice = "Giá nhập không thể nhỏ hơn 0";
-    }
-
-    if (formData.warrantyDurationMonths < 0) {
-      newErrors.Warranty = "Số tháng bảo hành không thể nhỏ hơn 0";
-    }
-
-    return newErrors;
-  };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors({});
-    const validationErrors = validateEquipmentForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+
+    if (!validateForm()) {
+      toast.error("Vui lòng sửa các lỗi trước khi lưu");
       return;
     }
+
     try {
       if (editingEquipment) {
         await warehouseApi.updateEquipment(editingEquipment.id, formData);
-        toast.success("Equipment updated successfully");
+        toast.success("Cập nhật thiết bị thành công");
       } else {
         await warehouseApi.createEquipment(formData);
-        toast.success("Equipment created successfully");
+        toast.success("Tạo thiết bị thành công");
       }
 
       closeModal();
       fetchEquipments();
     } catch (error) {
+      console.error("Error saving equipment:", error);
       toast.error(error.response?.data?.message || "Failed to save equipment");
     }
   };
@@ -211,7 +263,7 @@ const EquipmentPage = () => {
       await warehouseApi.updateEquipmentQuantity(quantityEquipment.id, {
         quantity: quantityData.quantity,
       });
-      toast.success("Equipment quantity updated successfully");
+      toast.success("Cập nhật số lượng thiết bị thành công");
       closeQuantityModal();
       fetchEquipments();
     } catch (error) {
@@ -223,12 +275,12 @@ const EquipmentPage = () => {
   const handleDelete = async (equipment) => {
     if (
       window.confirm(
-        `Are you sure you want to delete equipment "${equipment.name}"?`
+        `Bạn có chắc muốn xóa thiết bị này "${equipment.name}"?`
       )
     ) {
       try {
         await warehouseApi.deleteEquipment(equipment.id);
-        toast.success("Equipment deleted successfully");
+        toast.success("Xóa thiết bị thành công");
         fetchEquipments();
       } catch (error) {
         console.error("Error deleting equipment:", error);
@@ -475,17 +527,17 @@ const EquipmentPage = () => {
                       </label>
                       <input
                         type="text"
-                        value={formData.equipmentCode}
-                        onChange={(e) =>
-                          setFormData({ ...formData, equipmentCode: e.target.value })
-                        }
-                        className={`w-full px-3 py-2 border rounded-md ${errors.EquipmentCode ? "border-red-500 bg-red-50" : "border-gray-300"
+                        value={formData.name}
+                        onChange={(e) => {
+                          setFormData({ ...formData, name: e.target.value });
+                          if (errors.name) setErrors({ ...errors, name: null });
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${errors.name ? "border-red-500" : "border-gray-300"
                           }`}
                       />
-                      {errors.EquipmentCode && (
-                        <p className="text-red-500 text-sm mt-1">{errors.EquipmentCode}</p>
+                      {errors.name && (
+                        <p className="mt-1 text-sm text-red-600">{errors.name}</p>
                       )}
-
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -493,16 +545,20 @@ const EquipmentPage = () => {
                       </label>
                       <input
                         type="text"
-                        required
                         value={formData.equipmentCode}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setFormData({
                             ...formData,
                             equipmentCode: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          });
+                          if (errors.equipmentCode) setErrors({ ...errors, equipmentCode: null });
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${errors.equipmentCode ? "border-red-500" : "border-gray-300"
+                          }`}
                       />
+                      {errors.equipmentCode && (
+                        <p className="mt-1 text-sm text-red-600">{errors.equipmentCode}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -511,11 +567,16 @@ const EquipmentPage = () => {
                       <input
                         type="text"
                         value={formData.brand}
-                        onChange={(e) =>
-                          setFormData({ ...formData, brand: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => {
+                          setFormData({ ...formData, brand: e.target.value });
+                          if (errors.brand) setErrors({ ...errors, brand: null });
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${errors.brand ? "border-red-500" : "border-gray-300"
+                          }`}
                       />
+                      {errors.brand && (
+                        <p className="mt-1 text-sm text-red-600">{errors.brand}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -524,14 +585,16 @@ const EquipmentPage = () => {
                       <input
                         type="text"
                         value={formData.modelNumber}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            modelNumber: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => {
+                          setFormData({ ...formData, modelNumber: e.target.value });
+                          if (errors.modelNumber) setErrors({ ...errors, modelNumber: null });
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${errors.modelNumber ? "border-red-500" : "border-gray-300"
+                          }`}
                       />
+                      {errors.modelNumber && (
+                        <p className="mt-1 text-sm text-red-600">{errors.modelNumber}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -540,14 +603,19 @@ const EquipmentPage = () => {
                       <textarea
                         rows={3}
                         value={formData.description}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            description: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => {
+                          setFormData({ ...formData, description: e.target.value });
+                          if (errors.description) setErrors({ ...errors, description: null });
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${errors.description ? "border-red-500" : "border-gray-300"
+                          }`}
                       />
+                      {errors.description && (
+                        <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+                      )}
+                      <p className="mt-1 text-xs text-gray-500">
+                        {formData.description.length}/1000 ký tự
+                      </p>
                     </div>
                   </div>
 
@@ -557,22 +625,25 @@ const EquipmentPage = () => {
                         {t("equipment.warehouse", "Warehouse")} *
                       </label>
                       <select
+                        required
                         value={formData.warehouseId}
                         onChange={(e) =>
-                          setFormData({ ...formData, warehouseId: e.target.value })
+                          setFormData({
+                            ...formData,
+                            warehouseId: e.target.value,
+                          })
                         }
-                        className={`w-full px-3 py-2 border rounded-md ${errors.WarehouseId ? "border-red-500 bg-red-50" : "border-gray-300"
-                          }`}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="">-- Chọn kho --</option>
-                        {warehouses.map(w => (
-                          <option key={w.id} value={w.id}>{w.name}</option>
+                        <option value="">
+                          {t("equipment.selectWarehouse", "Select Warehouse")}
+                        </option>
+                        {warehouses.map((warehouse) => (
+                          <option key={warehouse.id} value={warehouse.id}>
+                            {warehouse.name}
+                          </option>
                         ))}
                       </select>
-
-                      {errors.WarehouseId && (
-                        <p className="text-red-500 text-sm mt-1">{errors.WarehouseId}</p>
-                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -601,55 +672,64 @@ const EquipmentPage = () => {
                           type="number"
                           required
                           min="0"
+                          max="999999"
                           value={formData.quantity}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              quantity: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          onChange={(e) => {
+                            setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 });
+                            if (errors.quantity) setErrors({ ...errors, quantity: null });
+                          }}
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${errors.quantity ? "border-red-500" : "border-gray-300"
+                            }`}
                         />
+                        {errors.quantity && (
+                          <p className="mt-1 text-sm text-red-600">{errors.quantity}</p>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {t("equipment.unitPrice", "Unit Price")} *
+                          Giá bán *
                         </label>
                         <input
                           type="number"
                           required
                           min="0"
+                          max="999999999999"
                           step="1000"
                           value={formData.unitPrice}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              unitPrice: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          onChange={(e) => {
+                            setFormData({ ...formData, unitPrice: parseFloat(e.target.value) || 0 });
+                            if (errors.unitPrice) setErrors({ ...errors, unitPrice: null });
+                          }}
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${errors.unitPrice ? "border-red-500" : "border-gray-300"
+                            }`}
                         />
+                        {errors.unitPrice && (
+                          <p className="mt-1 text-sm text-red-600">{errors.unitPrice}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {t("equipment.costPrice", "Cost Price")} *
+                          Giá nhập *
                         </label>
                         <input
                           type="number"
                           required
                           min="0"
+                          max="999999999999"
                           step="1000"
                           value={formData.costPrice}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              costPrice: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          onChange={(e) => {
+                            setFormData({ ...formData, costPrice: parseFloat(e.target.value) || 0 });
+                            if (errors.costPrice) setErrors({ ...errors, costPrice: null });
+                          }}
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${errors.costPrice ? "border-red-500" : "border-gray-300"
+                            }`}
                         />
+                        {errors.costPrice && (
+                          <p className="mt-1 text-sm text-red-600">{errors.costPrice}</p>
+                        )}
                       </div>
                     </div>
                     <div>
@@ -664,16 +744,18 @@ const EquipmentPage = () => {
                         type="number"
                         required
                         min="0"
+                        max="600"
                         value={formData.warrantyDurationMonths}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            warrantyDurationMonths:
-                              parseInt(e.target.value) || 0,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => {
+                          setFormData({ ...formData, warrantyDurationMonths: parseInt(e.target.value) || 0 });
+                          if (errors.warrantyDurationMonths) setErrors({ ...errors, warrantyDurationMonths: null });
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${errors.warrantyDurationMonths ? "border-red-500" : "border-gray-300"
+                          }`}
                       />
+                      {errors.warrantyDurationMonths && (
+                        <p className="mt-1 text-sm text-red-600">{errors.warrantyDurationMonths}</p>
+                      )}
                     </div>
                     <div>
                       <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
