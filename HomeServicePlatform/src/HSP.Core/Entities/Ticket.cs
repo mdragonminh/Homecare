@@ -27,6 +27,8 @@ namespace HSP.Core.Entities
         [MaxLength(500)]
         public string? IssueDescription { get; set; }
 
+        public bool IsRefundRequested { get; set; } = false;
+
         public TicketStatus Status { get; set; } = TicketStatus.NotAccepted;
 
         public DateTime? StartedAt { get; set; }
