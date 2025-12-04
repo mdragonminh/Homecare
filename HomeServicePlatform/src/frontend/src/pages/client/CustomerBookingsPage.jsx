@@ -40,6 +40,7 @@ const CustomerBookingsPage = () => {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [selectedBookingForTicket, setSelectedBookingForTicket] = useState(null);
   const [issueDescription, setIssueDescription] = useState("");
+  const [isRefundRequested, setIsRefundRequested] = useState(false);
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
 
   useEffect(() => {
@@ -112,6 +113,7 @@ const CustomerBookingsPage = () => {
   const openTicketModal = (booking) => {
     setSelectedBookingForTicket(booking);
     setIssueDescription("");
+    setIsRefundRequested(false);
     setIsTicketModalOpen(true);
   };
 
@@ -119,6 +121,7 @@ const CustomerBookingsPage = () => {
     setIsTicketModalOpen(false);
     setSelectedBookingForTicket(null);
     setIssueDescription("");
+    setIsRefundRequested(false);
   };
 
   const handleSubmitTicket = async (e) => {
@@ -132,7 +135,8 @@ const CustomerBookingsPage = () => {
     try {
       const response = await createTicket({
         bookingId: selectedBookingForTicket.id,
-        issueDescription: issueDescription
+        issueDescription: issueDescription,
+        isRefundRequested: isRefundRequested
       });
 
       if (response.success) {
@@ -291,14 +295,15 @@ const CustomerBookingsPage = () => {
                             {formatDate(booking.desiredDate)}
                           </span>
                         </div>
-                        {booking.totalPrice && (
-                          <div className="flex items-center text-gray-600">
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            <span className="text-sm font-semibold">
-                              {formatAmount(booking.totalPrice)} VNĐ
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex items-center text-gray-600">
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          <span className="text-sm font-semibold">
+                            {formatAmount(
+                              (booking.items || []).reduce((sum, item) => sum + item.price, 0) +
+                              (booking.equipments || []).reduce((sum, eq) => sum + eq.totalPrice, 0)
+                            )} VNĐ
+                          </span>
+                        </div>
                       </div>
 
                       {payment && (
@@ -328,13 +333,16 @@ const CustomerBookingsPage = () => {
 
                     {/* Actions Column */}
                     <div className="flex flex-col gap-2 lg:w-48">
-                      <button
-                        onClick={() => openTicketModal(booking)}
-                        className="flex items-center justify-center px-4 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
-                      >
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        Báo cáo sự cố
-                      </button>
+                      {/* Show report button only for Confirmed (1) or Completed (4) status */}
+                      {(booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.Completed) && (
+                        <button
+                          onClick={() => openTicketModal(booking)}
+                          className="flex items-center justify-center px-4 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
+                        >
+                          <AlertTriangle className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                          <span className="leading-tight">Báo cáo sự cố / Hoàn tiền</span>
+                        </button>
+                      )}
 
                       <button
                         onClick={() => handleViewDetails(booking.id)}
@@ -419,7 +427,7 @@ const CustomerBookingsPage = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-orange-500" />
-                    Báo cáo sự cố / Khiếu nại
+                    Báo cáo sự cố / Khiếu nại / Hoàn tiền
                   </h3>
                   <button
                     type="button"
@@ -449,6 +457,23 @@ const CustomerBookingsPage = () => {
                     required
                   />
                 </div>
+
+                {/* Show refund checkbox only if payment is completed */}
+                {bookingPayments[selectedBookingForTicket.id]?.status === PaymentStatus.Completed && (
+                  <div className="mb-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isRefundRequested}
+                        onChange={(e) => setIsRefundRequested(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        Yêu cầu hoàn tiền
+                      </span>
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div className="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end gap-3">

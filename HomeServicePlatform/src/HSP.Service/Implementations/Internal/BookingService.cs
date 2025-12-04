@@ -152,9 +152,33 @@ namespace HSP.Service.Implementations.Internal
                     CancelledBy = b.Cancellation.CancelledBy,
                     CancelledAt = b.Cancellation.CancelledAt
                 } : null,
+                Items = _bookingItemRepository.GetAll()
+                            .Where(item => item.BookingId == b.Id && !item.IsDeleted)
+                            .Select(i => new BookingItemDto
+                            {
+                                Id = i.Id,
+                                ServiceId = i.ServiceId,
+                                ServiceName = i.Service.Name,
+                                Description = i.Service.Description,
+                                Price = i.Price
+                            }).ToList(),
+                Equipments = _bookingEquipmentRepository.GetAll()
+                            .Where(e => e.BookingId == b.Id && !e.IsDeleted)
+                            .Select(e => new BookingEquipmentDto
+                            {
+                                Id = e.Id,
+                                EquipmentId = e.EquipmentId,
+                                EquipmentName = e.Equipment.Name,
+                                Quantity = e.Quantity,
+                                UnitPrice = e.UnitPrice,
+                                TotalPrice = e.Quantity * e.UnitPrice
+                            }).ToList(),
                 TotalPrice = _bookingItemRepository.GetAll()
                                 .Where(item => item.BookingId == b.Id && !item.IsDeleted)
-                                .Sum(item => item.Price)
+                                .Sum(item => item.Price) +
+                            _bookingEquipmentRepository.GetAll()
+                                .Where(e => e.BookingId == b.Id && !e.IsDeleted)
+                                .Sum(e => e.Quantity * e.UnitPrice)
             });
 
             var pagedResult = await dtoQuery.ToPagedListAsync(input);
@@ -232,6 +256,7 @@ namespace HSP.Service.Implementations.Internal
                 {
                     ServiceId = i.ServiceId,
                     ServiceName = i.Service?.Name,
+                    Description = i.Service?.Description,
                     Price = i.Price
                 }).ToList(),
 
