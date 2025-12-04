@@ -390,7 +390,6 @@ export const useTechnicianProfile = ({ onProfileUpdate, t }) => {
         }
 
         setEditingField(null);
-        toast.success(t("success.profile_updated"));
       } else if (fieldToUpdate === "email") {
         if (editForm.email !== profile.email) {
           const emailResult = await profileApi.requestEmailChange(

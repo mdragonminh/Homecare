@@ -14,12 +14,10 @@ import {
   Trash2,
   Edit,
 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import axiosClient from "../config/axiosClient";
 import { serviceApi } from "../services/serviceApi";
 import { toast } from "sonner";
-
-// Mock data cho địa chỉ
 const CITIES = ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Cần Thơ", "Hải Phòng"];
 
 // ----------------------------------------------------
@@ -44,18 +42,18 @@ const FilePreviewModal = ({ isOpen, onClose, fileUrl, fileName }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex justify-center items-start pt-4 pb-4 md:items-center md:pt-0 md:pb-0 bg-black/40"
       onClick={onClose}
     >
       <div className="absolute inset-0 backdrop-blur-sm" />
       <div
-        className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col"
+        className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 max-h-full md:max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between bg-gray-800 text-white px-5 py-3">
-          <div className="flex items-center gap-3">
-            <FileText className="w-5 h-5" />
-            <span className="text-sm font-medium truncate max-w-md">{fileName}</span>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <FileText className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm font-medium truncate max-w-full">{fileName}</span>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded transition">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,7 +186,7 @@ const ComplexSectionEditor = ({ label, icon: Icon, fieldName, error, children, v
       </div>
     );
 };
-const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
+const TechnicianDetails = forwardRef(({ profile, getFileUrl, onUpdateSuccess ,setIsDetailsEditing}, ref) => {
   const [previewFile, setPreviewFile] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [loadingServices, setLoadingServices] = useState(false);
@@ -205,7 +203,12 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
 
   const [errors, setErrors] = useState({});
   const [originalForm, setOriginalForm] = useState(null);
-
+useImperativeHandle(ref, () => ({
+    handleDetailsSave: handleSave, 
+    handleDetailsCancel: handleCancel, 
+    isEditing: !!editingField, 
+    isFormValid: validate,
+  }));
   const clearError = useCallback((fieldName) => {
     setErrors((prevErrors) => {
       if (!prevErrors[fieldName]) return prevErrors;
@@ -243,21 +246,23 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
     }
   }, []);
 
-  const handleEditField = useCallback((fieldName) => {
+ const handleEditField = useCallback((fieldName) => {
     if (fieldName === 'services') {
       fetchServices();
     }
-    setEditingField(fieldName);
+    setEditingField(fieldName); 
+    setIsDetailsEditing(true);
     setErrors({});
-  }, [fetchServices]);
+  }, [fetchServices]); 
 
   const handleCancel = useCallback(() => {
     if (originalForm) {
         setForm(originalForm);
     }
     setEditingField(null);
+    setIsDetailsEditing(false);
     setErrors({});
-  }, [originalForm]);
+  }, [originalForm, setIsDetailsEditing]);
 
   const validate = useCallback(() => {
     const newErrors = {};
@@ -292,16 +297,6 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
 
     try {
       const formData = new FormData();
-      
-      formData.append("CitizenId", form.citizenId);
-      formData.append("Address", form.address);
-      formData.append("ExperienceYears", form.experienceYears.toString());
-      
-      form.selectedServiceIds.forEach((id) => {
-        formData.append("Services", id);
-      });
-
-      // Xử lý LegalDocument
       if (form.legalDocumentFile) {
         let legalFile = form.legalDocumentFile instanceof File
           ? form.legalDocumentFile
@@ -309,9 +304,10 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
               .then(r => r.blob())
               .then(blob => new File([blob], form.legalDocumentFile.fileName, { type: blob.type }));
         formData.append("LegalDocument", legalFile);
+      } else {
+          // LƯU Ý: Nếu legalDocumentFile là bắt buộc, bạn nên xử lý lỗi ở đây
+          // hoặc dựa vào hàm validate đã có.
       }
-
-      // Xử lý Certificates
       for (const file of form.certificateFiles) {
         let certFile = file instanceof File
           ? file
@@ -320,15 +316,23 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
               .then(blob => new File([blob], file.fileName, { type: blob.type }));
         formData.append("Certificates", certFile);
       }
-
-      await axiosClient.put(`/TechnicianManagement`, formData, {
+      const urlSearchParams = new URLSearchParams({
+          CitizenId: form.citizenId,
+          Address: form.address,
+          ExperienceYears: form.experienceYears.toString(),
+      });
+     form.selectedServiceIds.forEach((id, index) => {
+    formData.append(`Services[${index}].Id`, id); 
+});
+      const finalUrl = `/TechnicianManagement?${urlSearchParams.toString()}`;
+      await axiosClient.put(finalUrl, formData, {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
         },
       });
-
-      toast.success("Cập nhật thông tin kỹ thuật viên thành công!");
+      setOriginalForm({...form});
       setEditingField(null);
+      setIsDetailsEditing(false);
       onUpdateSuccess?.(); 
     } catch (err) {
       console.error("Full error:", err);
@@ -458,9 +462,20 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
         handleEditField={handleEditField}
         viewContent={
           <div className="flex flex-wrap gap-2">
-            {profile.services?.length > 0 ? profile.services.map((s) => (
-              <span key={s.id} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{s.name}</span>
-            )) : <p className="text-sm text-yellow-800">Chưa có dịch vụ nào.</p>}
+           {form.selectedServiceIds.length > 0 ? (
+                form.selectedServiceIds.map((id) => {
+                    // Tìm đối tượng dịch vụ (cần tìm trong profile hoặc allServices)
+                    const service = profile.services?.find(s => s.id === id) || allServices.find(s => s.id === id);
+                    
+                    return service ? (
+                        <span key={id} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                            {service.name}
+                        </span>
+                    ) : null;
+                })
+            ) : (
+                <p className="text-sm text-yellow-800">Chưa có dịch vụ nào.</p>
+            )}
           </div>
         }
       >
@@ -527,7 +542,6 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
           />
           <div className="space-y-2">
             {form.certificateFiles.map((file, index) => (
-              // ✅ Sửa viền cho Chế độ Chỉnh sửa (Edit Mode) Chứng chỉ
               <div key={index} className="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg">
                 <span className="text-sm truncate">{file.fileName || file.name}</span>
                 <div className="flex gap-2">
@@ -558,7 +572,6 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
               <button
                 key={doc.id}
                 onClick={() => handlePreview(doc)}
-                // ✅ Sửa viền cho Chế độ Xem (View Mode) Tài liệu pháp lý
                 className="w-full flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg hover:bg-indigo-50"
               >
                 <span className="text-sm truncate">{doc.fileName}</span>
@@ -594,25 +607,6 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
         </div>
       </ComplexSectionEditor>
 
-      {/* Nút Lưu và Hủy nằm ở cuối form (GLOBAL) */}
-      {editingField && (
-        <div className="flex justify-end gap-3 pt-6 mt-6"> 
-          <button
-            onClick={handleSave}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-all duration-200 group"
-          >
-            <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-            Lưu thay đổi
-          </button>
-          <button
-            onClick={handleCancel}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 group"
-          >
-            <X className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-            Hủy
-          </button>
-        </div>
-      )}
 
       <FilePreviewModal
         isOpen={!!previewFile}
@@ -622,6 +616,6 @@ const TechnicianDetails = ({ profile, getFileUrl, onUpdateSuccess }) => {
       />
     </div>
   );
-};
+});
 
 export default TechnicianDetails;
