@@ -101,29 +101,31 @@ const BookingSuccessModal = ({ isOpen, onClose, onNavigate, matchInfo, t }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-full">
-                <CheckCircleIcon className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">Đặt lịch thành công!</h2>
-                <p className="text-blue-100 text-sm mt-1">Kỹ thuật viên đã được tìm thấy</p>
-              </div>
+        <div className="px-6 pt-6 pb-3 flex items-start justify-between gap-3">
+          <div className="flex gap-3">
+            <div className="mt-1 h-7 w-7 rounded-full bg-emerald-50 flex items-center justify-center">
+              <CheckCircleIcon className="h-5 w-5 text-emerald-500" />
             </div>
-            <button
-              onClick={onClose}
-              className="text-blue-100 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
-            >
-              <XMarkIcon className="h-5 w-5" />
-            </button>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">
+                Yêu cầu đặt lịch thành công! Một kỹ thuật viên sẽ liên hệ với bạn sớm.
+              </h2>
+              <p className="text-xs text-emerald-600 mt-1">
+                Đã ghép kỹ thuật viên thành công
+              </p>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6 space-y-4">
-          <div className="flex items-start gap-2 text-gray-700 text-base leading-relaxed">
+        <div className="px-6 pb-6 space-y-4">
+          <div className="flex items-start gap-2 text-gray-700 text-sm leading-relaxed">
             {matchInfo.isLoading && (
               <Loader2 className="h-5 w-5 text-blue-500 animate-spin mt-1" />
             )}
@@ -135,7 +137,7 @@ const BookingSuccessModal = ({ isOpen, onClose, onNavigate, matchInfo, t }) => {
             </p>
           </div>
 
-          <div className="space-y-3 rounded-xl bg-gray-50 p-4 border border-gray-100">
+          <div className="space-y-3 rounded-2xl bg-gray-50 p-4 border border-gray-100">
             <div className="flex items-start gap-3">
               <UserRound className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
@@ -189,33 +191,33 @@ const BookingSuccessModal = ({ isOpen, onClose, onNavigate, matchInfo, t }) => {
 
             {matchInfo.bookingId && (
               <div className="flex items-start gap-3">
-                <ListChecks className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div>
+                {/* <ListChecks className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" /> */}
+                {/* <div>
                   <p className="text-xs uppercase tracking-wide text-gray-500">
                     Booking ID
                   </p>
                   <p className="font-mono text-sm break-all text-gray-900">
                     {matchInfo.bookingId}
                   </p>
-                </div>
+                </div> */}
               </div>
             )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors font-medium"
           >
-            Đóng
+            Để sau
           </button>
           <button
             onClick={onNavigate}
             className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-md flex items-center justify-center gap-2"
           >
-            Xem lịch hẹn
+            Xem Chi tiết
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>

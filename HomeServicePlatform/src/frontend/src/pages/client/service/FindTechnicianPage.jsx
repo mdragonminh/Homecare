@@ -746,7 +746,7 @@ export function FindTechnicianPage({ loggedInUser }) {
                 className="flex-1 rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 transition flex items-center justify-center gap-2"
               >
                 {t("ui.go_to_booking", {
-                  defaultValue: "Xem đặt lịch",
+                  defaultValue: "Xem Chi tiết",
                 })}
                 <ArrowRight className="h-4 w-4" />
               </button>
