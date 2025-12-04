@@ -544,10 +544,7 @@ const TicketManagementPage = () => {
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Ngày cập nhật</p>
                       <p className="text-sm text-gray-900">{formatDate(selectedTicketDetails.bookingDetail.dateModified)}</p>
                     </div>
-                    <div className="md:col-span-2">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Mô tả vấn đề</p>
-                      <p className="text-sm text-gray-900">{selectedTicketDetails.bookingDetail.problemDescription || "N/A"}</p>
-                    </div>
+
                     <div className="md:col-span-2">
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1 flex items-center">
                         <MapPin className="w-4 h-4 mr-1" />
