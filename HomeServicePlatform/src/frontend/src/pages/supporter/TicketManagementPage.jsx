@@ -576,7 +576,7 @@ const TicketManagementPage = () => {
                         </p>
                         <p className="text-sm text-gray-900">{selectedTicketDetails.bookingDetail.customer.phoneNumber || "N/A"}</p>
                       </div>
-                      <div>
+                      {/* <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Đánh giá</p>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center">
@@ -591,7 +591,7 @@ const TicketManagementPage = () => {
                             ({selectedTicketDetails.bookingDetail.customer.totalReviews} đánh giá)
                           </span>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 )}
@@ -614,7 +614,7 @@ const TicketManagementPage = () => {
                         </p>
                         <p className="text-sm text-gray-900">{selectedTicketDetails.bookingDetail.technician.phoneNumber || "N/A"}</p>
                       </div>
-                      <div>
+                      {/* <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Đánh giá</p>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center">
@@ -629,7 +629,7 @@ const TicketManagementPage = () => {
                             ({selectedTicketDetails.bookingDetail.technician.totalReviews} đánh giá)
                           </span>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 )}
