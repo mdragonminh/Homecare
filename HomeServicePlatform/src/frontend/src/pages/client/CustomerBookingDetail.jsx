@@ -351,12 +351,12 @@ export default function CustomerBookingDetail() {
                   <dd className="text-gray-900">{completedDateText}</dd>
                 </div>
               )}
-              <div className="flex justify-between">
+              {/* <div className="flex justify-between">
                 <dt className="text-gray-500">Trạng thái</dt>
                 <dd className="font-semibold text-gray-900">
                   {BookingStatusLabels[booking.status] || "Không xác định"}
                 </dd>
-              </div>
+              </div> */}
             </dl>
           </div>
 
