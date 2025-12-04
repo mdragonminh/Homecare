@@ -21,6 +21,7 @@ namespace HSP.Service.Implementations.Internal
         private readonly IUserRepository _userRepository;
         private readonly IRepository<Equipment, Guid> _equipmentRepository;
         private readonly IRepository<TechnicianProfile, Guid> _technicianProfileRepository;
+        private readonly IRepository<BookingFeedback, Guid> _feedbackRepository;
 
         public TicketService(
             IRepository<Ticket, Guid> ticketRepository,
@@ -29,6 +30,7 @@ namespace HSP.Service.Implementations.Internal
             IUserRepository userRepository,
             IRepository<Equipment, Guid> equipmentRepository,
             IRepository<TechnicianProfile, Guid> technicianProfileRepository,
+            IRepository<BookingFeedback, Guid> feedbackRepository,
             IUnitOfWork unitOfWork,
             IStringLocalizer<SharedResource> localizer
             ) : base(unitOfWork, localizer)
@@ -39,6 +41,7 @@ namespace HSP.Service.Implementations.Internal
             _userRepository = userRepository;
             _equipmentRepository = equipmentRepository;
             _technicianProfileRepository = technicianProfileRepository;
+            _feedbackRepository = feedbackRepository;
         }
 
         public async Task<PagedList<TicketDto>> GetTicketsAsync(Guid userId, string userRole, PaginationParams paginationParams)
@@ -47,6 +50,18 @@ namespace HSP.Service.Implementations.Internal
                 .Where(t => t.IsDeleted == false)
                 .Include(t => t.Customer)
                 .Include(t => t.Booking)
+                    .ThenInclude(b => b.Customer)
+                .Include(t => t.Booking)
+                    .ThenInclude(b => b.Technician)
+                        .ThenInclude(tp => tp.User)
+                .Include(t => t.Booking)
+                    .ThenInclude(b => b.Items)
+                        .ThenInclude(bi => bi.Service)
+                .Include(t => t.Booking)
+                    .ThenInclude(b => b.Equipments)
+                        .ThenInclude(be => be.Equipment)
+                .Include(t => t.Booking)
+                    .ThenInclude(b => b.Payments)
                 .Include(t => t.Technician)
                     .ThenInclude(tech => tech.User)
                 .AsQueryable();
@@ -67,6 +82,49 @@ namespace HSP.Service.Implementations.Internal
 
             var pagedTickets = await ticketsQuery.ToPagedListAsync(paginationParams);
 
+            // Get all customer and technician IDs for rating calculation
+            var customerIds = pagedTickets.Items
+                .Where(t => t.Booking?.CustomerId != null)
+                .Select(t => t.Booking.CustomerId)
+                .Distinct()
+                .ToList();
+
+            var technicianIds = pagedTickets.Items
+                .Where(t => t.Booking?.TechnicianId != null)
+                .Select(t => t.Booking.TechnicianId!.Value)
+                .Distinct()
+                .ToList();
+
+            // Calculate ratings for customers (from their bookings)
+            var customerRatings = await _bookingRepository.GetAll()
+                .Where(b => customerIds.Contains(b.CustomerId))
+                .Include(b => b.Feedbacks)
+                .GroupBy(b => b.CustomerId)
+                .Select(g => new
+                {
+                    CustomerId = g.Key,
+                    AverageRating = g.SelectMany(b => b.Feedbacks).Any() 
+                        ? g.SelectMany(b => b.Feedbacks).Average(f => (double)f.Rating) 
+                        : 0,
+                    TotalReviews = g.SelectMany(b => b.Feedbacks).Count()
+                })
+                .ToDictionaryAsync(x => x.CustomerId);
+
+            // Calculate ratings for technicians (from their bookings)
+            var technicianRatings = await _bookingRepository.GetAll()
+                .Where(b => b.TechnicianId != null && technicianIds.Contains(b.TechnicianId.Value))
+                .Include(b => b.Feedbacks)
+                .GroupBy(b => b.TechnicianId!.Value)
+                .Select(g => new
+                {
+                    TechnicianId = g.Key,
+                    AverageRating = g.SelectMany(b => b.Feedbacks).Any() 
+                        ? g.SelectMany(b => b.Feedbacks).Average(f => (double)f.Rating) 
+                        : 0,
+                    TotalReviews = g.SelectMany(b => b.Feedbacks).Count()
+                })
+                .ToDictionaryAsync(x => x.TechnicianId);
+
             var ticketsDto = pagedTickets.Items.Select(t => new TicketDto
             {
                 Id = t.Id,
@@ -75,12 +133,68 @@ namespace HSP.Service.Implementations.Internal
                 SupporterId = t.SupporterId,
                 TechnicianId = t.TechnicianId,
                 IssueDescription = t.IssueDescription,
+                IsRefundRequested = t.IsRefundRequested,
                 Status = t.Status.ToString(),
                 DateCreated = t.DateCreated,
                 StartedAt = t.StartedAt,
                 CompletedAt = t.CompletedAt,
                 CustomerName = t.Customer?.FullName ?? "Unknown",
                 TechnicianName = t.Technician?.User?.FullName ?? "Not assigned",
+                BookingDetail = t.Booking != null ? new BookingDetailDto
+                {
+                    Id = t.Booking.Id,
+                    DesiredDate = t.Booking.DesiredDate,
+                    ProblemDescription = t.Booking.ProblemDescription,
+                    Status = t.Booking.Status.ToString(),
+                    DateCreated = t.Booking.DateCreated,
+                    DateModified = t.Booking.DateModified,
+                    Latitude = t.Booking.Latitude,
+                    Longitude = t.Booking.Longitude,
+                    Customer = t.Booking.Customer != null ? new CustomerInfoDto
+                    {
+                        FullName = t.Booking.Customer.FullName,
+                        PhoneNumber = t.Booking.Customer.PhoneNumber,
+                        AverageRating = customerRatings.ContainsKey(t.Booking.CustomerId) 
+                            ? customerRatings[t.Booking.CustomerId].AverageRating 
+                            : 0,
+                        TotalReviews = customerRatings.ContainsKey(t.Booking.CustomerId) 
+                            ? customerRatings[t.Booking.CustomerId].TotalReviews 
+                            : 0
+                    } : null,
+                    Technician = t.Booking.Technician?.User != null ? new TechnicianInfoDto
+                    {
+                        FullName = t.Booking.Technician.User.FullName,
+                        PhoneNumber = t.Booking.Technician.User.PhoneNumber,
+                        AverageRating = t.Booking.TechnicianId.HasValue && technicianRatings.ContainsKey(t.Booking.TechnicianId.Value) 
+                            ? technicianRatings[t.Booking.TechnicianId.Value].AverageRating 
+                            : 0,
+                        TotalReviews = t.Booking.TechnicianId.HasValue && technicianRatings.ContainsKey(t.Booking.TechnicianId.Value) 
+                            ? technicianRatings[t.Booking.TechnicianId.Value].TotalReviews 
+                            : 0
+                    } : null,
+                    Services = t.Booking.Items?.Select(bi => new ServiceItemDto
+                    {
+                        Name = bi.Service?.Name ?? "Unknown",
+                        Price = bi.Price
+                    }).ToList() ?? new List<ServiceItemDto>(),
+                    Equipments = t.Booking.Equipments?.Select(be => new EquipmentItemDto
+                    {
+                        Name = be.Equipment?.Name ?? "Unknown",
+                        Quantity = be.Quantity,
+                        UnitPrice = be.UnitPrice
+                    }).ToList() ?? new List<EquipmentItemDto>()
+                } : null,
+                PaymentDetail = t.Booking?.Payments?.FirstOrDefault() != null ? new PaymentDetailDto
+                {
+                    Id = t.Booking.Payments.First().Id,
+                    Amount = t.Booking.Payments.First().Amount,
+                    PaymentMethod = (int)t.Booking.Payments.First().PaymentMethod,
+                    Status = (int)t.Booking.Payments.First().Status,
+                    TransactionId = t.Booking.Payments.First().TransactionId,
+                    PaidAt = t.Booking.Payments.First().PaidAt,
+                    DateCreated = t.Booking.Payments.First().DateCreated,
+                    Description = t.Booking.Payments.First().Description
+                } : null
             }).ToList();
 
             return new PagedList<TicketDto>(
@@ -224,7 +338,11 @@ namespace HSP.Service.Implementations.Internal
                 throw new UnauthorizedAccessException("User ID không hợp lệ.");
             }
 
-            var booking = await _bookingRepository.GetByIdAsync(createDto.BookingId);
+            var booking = await _bookingRepository.GetAll()
+                .Include(b => b.Customer)
+                .Include(b => b.Technician)
+                .FirstOrDefaultAsync(b => b.Id == createDto.BookingId);
+                
             if (booking == null)
             {
                 throw new KeyNotFoundException("Không tìm thấy Booking.");
@@ -241,12 +359,17 @@ namespace HSP.Service.Implementations.Internal
                 throw new InvalidOperationException("Booking này đã có ticket đang được xử lý.");
             }
 
+            // Auto-assign technician from booking
+            Guid? technicianId = booking.TechnicianId;
+
             var newTicket = new Ticket
             {
                 Id = Guid.NewGuid(),
                 BookingId = createDto.BookingId,
                 CustomerId = customerGuid,
+                TechnicianId = technicianId,
                 IssueDescription = createDto.IssueDescription,
+                IsRefundRequested = createDto.IsRefundRequested,
                 Status = TicketStatus.NotAccepted,
                 SupporterId = null,
                 DateCreated = DateTime.UtcNow,
@@ -257,15 +380,34 @@ namespace HSP.Service.Implementations.Internal
             await _ticketRepository.AddAsync(newTicket);
             await _unitOfWork.SaveChangesAsync();
 
+            // Send notification email to technician if assigned
+            if (technicianId.HasValue && booking.Technician != null)
+            {
+                var techUser = await _userRepository.FindByIdAsync(booking.Technician.UserId);
+                if (techUser != null && !string.IsNullOrEmpty(techUser.Email))
+                {
+                    var emailDto = new Dtos.EmailDto.EmailDto
+                    {
+                        ToEmail = techUser.Email,
+                        Subject = $"Bạn có ticket mới #{newTicket.Id}",
+                        HtmlBody = $"<p>Ticket #{newTicket.Id} với mô tả '{newTicket.IssueDescription}' đã được tạo cho booking của bạn.</p>"
+                    };
+                    await _emailService.SendEmailAsync(emailDto);
+                }
+            }
+
             return new TicketDto
             {
                 Id = newTicket.Id,
                 BookingId = newTicket.BookingId,
                 CustomerId = newTicket.CustomerId,
+                TechnicianId = newTicket.TechnicianId,
                 IssueDescription = newTicket.IssueDescription,
+                IsRefundRequested = newTicket.IsRefundRequested,
                 Status = newTicket.Status.ToString(),
                 DateCreated = newTicket.DateCreated,
-                CustomerName = booking.Customer?.FullName ?? "N/A"
+                CustomerName = booking.Customer?.FullName ?? "N/A",
+                TechnicianName = booking.Technician?.User?.FullName ?? "Not assigned"
             };
         }
     }
