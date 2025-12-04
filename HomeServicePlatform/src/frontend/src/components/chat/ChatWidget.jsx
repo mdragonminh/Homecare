@@ -69,9 +69,15 @@ const ChatMessage = ({ message }) => {
 
 const formatAppointmentLabel = (isoString) => {
   if (!isoString) return null
-  const date = new Date(isoString)
-  if (Number.isNaN(date.getTime())) return isoString
-  return date.toLocaleString("vi-VN", {
+
+  // desiredDate được BE lưu ở UTC (ví dụ: 2025-12-04T14:26:00 là 14:26 UTC)
+  // Để hiển thị đúng giờ Việt Nam (UTC+7), ta parse như UTC rồi format theo timeZone Asia/Ho_Chi_Minh.
+  const utcIso = isoString.endsWith("Z") ? isoString : `${isoString}Z`
+  const dateUtc = new Date(utcIso)
+  if (Number.isNaN(dateUtc.getTime())) return isoString
+
+  return dateUtc.toLocaleString("vi-VN", {
+    timeZone: "Asia/Ho_Chi_Minh",
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",

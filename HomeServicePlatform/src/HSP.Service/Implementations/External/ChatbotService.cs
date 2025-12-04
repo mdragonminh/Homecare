@@ -304,12 +304,22 @@ namespace HSP.Service.Implementations.External
                     using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
                     var gptArgs = argumentsJson.RootElement.Deserialize<GptBookingArgs>();
 
+                    // Chuẩn hóa thời gian mong muốn sang UTC
+                    DateTime desiredUtc = gptArgs.DesireDateTime.UtcDateTime;
+                    DateTime nowUtc = DateTime.UtcNow;
+
+                    // Nếu DesireDateTime mà GPT trả về quá gần hiện tại (hoặc trước hiện tại),
+                    // coi như user đang "đặt ngay" => dùng thời gian hiện tại + 10 phút.
+                    // Điều này tránh lệch múi giờ và đảm bảo luôn đặt trước tối thiểu 10 phút.
+                    if (desiredUtc <= nowUtc.AddMinutes(5))
+                    {
+                        desiredUtc = nowUtc.AddMinutes(10);
+                    }
+
                     var bookingDto = new CustomerCreateBookingDto
                     {
                         Address = gptArgs.Address,
-                        //DesireDateTime = gptArgs.DesireDateTime.ToUniversalTime().DateTime,
-                        //DesireDateTime = gptArgs.DesireDateTime,
-                        DesireDateTime = gptArgs.DesireDateTime.UtcDateTime,
+                        DesireDateTime = desiredUtc,
                         ServiceIds = gptArgs.ServiceIds.Select(Guid.Parse).ToList(),
                         CustomerId = customerIdString
                     };

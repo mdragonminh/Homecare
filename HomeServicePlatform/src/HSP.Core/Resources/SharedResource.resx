@@ -254,6 +254,10 @@ The bot MUST ask again if any piece is missing, or if DesireDateTime has not bee
 - If the hour is missing, the bot requests clarification:  
 “Please provide a specific time, for example: tomorrow at 9 AM or next Tuesday at 2 PM.”  
 - The bot must infer full date (day/month/year) based on today’s date.  
+- If the user uses phrases like “book now”, “as soon as possible”, “right now” and does NOT specify an exact time, the bot must interpret this as “book the service immediately” and:  
+  - Take the current time (Vietnam time) and add 10 minutes.  
+  - Use that time as DesireDateTime.  
+  - Always clearly confirm with the user, for example: “You want to book NOW, with expected time at 08:58 PM – 14/11/2025 (Thursday), correct?”  
 - The bot must confirm with the user:  
 “You want to book for **10:00 AM – 14/11/2025 (Friday)**, correct?”
 

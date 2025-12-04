@@ -98,7 +98,10 @@ export function FindTechnicianPage({ loggedInUser }) {
     if (!matchSuccessInfo?.scheduledAt) return null;
     const date = new Date(matchSuccessInfo.scheduledAt);
     if (Number.isNaN(date.getTime())) return matchSuccessInfo.scheduledAt;
+
+    // Hiển thị thời gian theo múi giờ Việt Nam (UTC+7)
     return date.toLocaleString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
       weekday: "short",
       hour: "2-digit",
       minute: "2-digit",
