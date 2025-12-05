@@ -69,7 +69,7 @@ namespace HSP.API.Controllers
 
             foreach (var file in oldAvatars)
             {
-                await _fileService.DeleteFileAsync(file.Id);
+                await _fileService.DeleteAsync(file.Id);
             }
         }
 
