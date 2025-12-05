@@ -325,11 +325,6 @@ namespace HSP.Service.Implementations.Internal
             booking.Status = input.Status;
             booking.DateModified = DateTime.UtcNow;
 
-            if (input.Status == BookingStatus.Completed)
-            {
-                booking.DateCompleted = DateTime.UtcNow;
-            }
-
             _bookingRepository.Update(booking);
             await _unitOfWork.SaveChangesAsync();
 
