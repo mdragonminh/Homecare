@@ -297,10 +297,8 @@ namespace HSP.Service.Implementations.Internal
         }
         public async Task<bool> UpdateBookingStatusAsync(UpdateBookingStatusDto input, string technicianUserId)
         {
-            //var booking = await _bookingRepository.GetByIdAsync(input.BookingId);
-            var booking = await _bookingRepository.GetAll()
-                .Include(x => x.Payments)
-                    .FirstOrDefaultAsync(b => b.Id == input.BookingId);
+            var booking = await _bookingRepository.GetByIdAsync(input.BookingId);
+
             if (booking == null)
                 return false;
 
@@ -310,18 +308,7 @@ namespace HSP.Service.Implementations.Internal
 
             if (technicianProfile == null || booking.TechnicianId != technicianProfile.Id)
                 return false;
-            if (input.Status == BookingStatus.Completed)
-            {
-                bool allPaymentsCompleted = booking.Payments != null &&
-                                            booking.Payments.All(p => p.Status == PaymentStatus.Completed);
-
-                if (!allPaymentsCompleted)
-                {
-                    throw new Exception("Không thể hoàn tất booking vì vẫn còn thanh toán chưa hoàn thành.");
-                }
-
-                booking.DateCompleted = DateTime.UtcNow;
-            }
+            
             booking.Status = input.Status;
             booking.DateModified = DateTime.UtcNow;
 
