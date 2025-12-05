@@ -80,6 +80,12 @@ namespace HSP.DAL.Data
 						Id = Guid.NewGuid(),
 						Name = "User",
 						Description = "Avatar người dùng"
+					},
+					new ObjectType
+					{
+						Id = Guid.NewGuid(),
+						Name = "booking",
+						Description = "Ảnh booking check in check out"
 					}
 				};
 
