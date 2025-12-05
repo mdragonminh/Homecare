@@ -21,11 +21,12 @@ namespace HSP.Service.Implementations.Internal
         private readonly IRepository<Booking, Guid> _bookingRepository;
         private readonly ISePayService _sePayService;
         private readonly SePayConfigurationDto _sePayConfig;
-
+        private readonly IRepository<ChatConversation, Guid> _chatConversation;
         public PaymentService(
             IRepository<Payment, Guid> paymentRepository,
             IRepository<Booking, Guid> bookingRepository,
             ISePayService sePayService,
+            IRepository<ChatConversation,Guid> chatConversation,
             IOptions<SePayConfigurationDto> sePayConfig,
             IUnitOfWork unitOfWork,
             IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
@@ -34,6 +35,7 @@ namespace HSP.Service.Implementations.Internal
             _bookingRepository = bookingRepository;
             _sePayService = sePayService;
             _sePayConfig = sePayConfig.Value;
+            _chatConversation = chatConversation;
         }
 
         public async Task<PaymentResponseDto> CreatePaymentAsync(CreatePaymentDto input, string userId)
@@ -460,6 +462,12 @@ namespace HSP.Service.Implementations.Internal
                     booking.Status = BookingStatus.Completed;
                     booking.DateModified = DateTime.UtcNow;
                     _bookingRepository.Update(booking);
+                }
+                var isClosed = await _chatConversation.GetAll().FirstOrDefaultAsync(x => x.BookingId == booking.Id);
+                if (isClosed != null)
+                {
+                    isClosed.IsClosed = true;
+                    await _unitOfWork.SaveChangesAsync();
                 }
             }
 
