@@ -41,7 +41,7 @@ namespace HSP.Service.Implementations.Internal
                 IRepository<ChatConversation, Guid> conversationRepository,
                 IUnitOfWork unitOfWork,
                 IStringLocalizer<SharedResource> localizer,
-                IEmailService emailService, 
+                IEmailService emailService,
                 IRepository<Equipment, Guid> equipmentRepository,
                 IRepository<BookingEquipment, Guid> bookingEquipmentRepository) : base(unitOfWork, localizer)
         {
@@ -205,14 +205,14 @@ namespace HSP.Service.Implementations.Internal
             var customerFeedbacks = booking.CustomerId != null
                 ? await _bookingRepository.GetAll()
                     .Include(b => b.Feedbacks)
-                    .Where(b => b.CustomerId == booking.CustomerId 
+                    .Where(b => b.CustomerId == booking.CustomerId
                         && b.Status == BookingStatus.Completed
                         && b.Feedbacks.Any(f => f.Source == FeedbackSource.Technician))
                     .SelectMany(b => b.Feedbacks)
                     .Where(f => f.Source == FeedbackSource.Technician)
                     .ToListAsync()
                 : new List<BookingFeedback>();
-            
+
             var address = await _geocodingService.GetAddressForCoordinatesAsync(booking.Latitude, booking.Longitude);
             var bookingItems = await _bookingItemRepository.GetAll(i => i.Service)
                .Where(i => i.BookingId == bookingId && !i.IsDeleted)
@@ -220,7 +220,7 @@ namespace HSP.Service.Implementations.Internal
             var servicePrice = booking.Items.Where(i => !i.IsDeleted).Sum(i => i.Price);
 
             var equipmentPrice = booking.Equipments
-                .Where(e => !e.IsDeleted) 
+                .Where(e => !e.IsDeleted)
                 .Sum(e => e.Quantity * e.UnitPrice);
 
             var totalPrice = servicePrice + equipmentPrice;
@@ -261,12 +261,12 @@ namespace HSP.Service.Implementations.Internal
                 }).ToList(),
 
                 Equipments = booking.Equipments
-                    .Where(e => !e.IsDeleted) 
+                    .Where(e => !e.IsDeleted)
                     .Select(e => new BookingEquipmentDto
                     {
                         Id = e.Id,
                         EquipmentId = e.EquipmentId,
-                        EquipmentName = e.Equipment.Name, 
+                        EquipmentName = e.Equipment.Name,
                         Quantity = e.Quantity,
                         UnitPrice = e.UnitPrice,
                         TotalPrice = e.Quantity * e.UnitPrice
@@ -297,7 +297,10 @@ namespace HSP.Service.Implementations.Internal
         }
         public async Task<bool> UpdateBookingStatusAsync(UpdateBookingStatusDto input, string technicianUserId)
         {
-            var booking = await _bookingRepository.GetByIdAsync(input.BookingId);
+            //var booking = await _bookingRepository.GetByIdAsync(input.BookingId);
+            var booking = await _bookingRepository.GetAll()
+                .Include(x => x.Payments)
+                    .FirstOrDefaultAsync(b => b.Id == input.BookingId);
             if (booking == null)
                 return false;
 
@@ -307,14 +310,20 @@ namespace HSP.Service.Implementations.Internal
 
             if (technicianProfile == null || booking.TechnicianId != technicianProfile.Id)
                 return false;
-
-            booking.Status = input.Status;
-            booking.DateModified = DateTime.UtcNow;
-
             if (input.Status == BookingStatus.Completed)
             {
+                bool allPaymentsCompleted = booking.Payments != null &&
+                                            booking.Payments.All(p => p.Status == PaymentStatus.Completed);
+
+                if (!allPaymentsCompleted)
+                {
+                    throw new Exception("Không thể hoàn tất booking vì vẫn còn thanh toán chưa hoàn thành.");
+                }
+
                 booking.DateCompleted = DateTime.UtcNow;
             }
+            booking.Status = input.Status;
+            booking.DateModified = DateTime.UtcNow;
 
             _bookingRepository.Update(booking);
             await _unitOfWork.SaveChangesAsync();

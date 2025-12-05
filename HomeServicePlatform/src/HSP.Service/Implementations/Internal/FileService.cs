@@ -180,19 +180,5 @@ namespace HSP.Service.Implementations.Internal
             }
             return contentType;
         }
-
-        public async Task DeleteFileAsync(Guid fileId)
-        {
-            var fileEntity = await _fileRepository.GetByIdAsync(fileId)
-            ?? throw new Exception("File not found");
-
-            var filePath = Path.Combine(_environment.WebRootPath, fileEntity.FilePath);
-
-            _fileRepository.HardDelete(fileEntity);
-            await _unitOfWork.SaveChangesAsync();
-
-            if (System.IO.File.Exists(filePath))
-                System.IO.File.Delete(filePath);
-        }
     }
 }
