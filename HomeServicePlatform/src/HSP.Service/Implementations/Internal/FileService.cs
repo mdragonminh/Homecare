@@ -108,8 +108,7 @@ namespace HSP.Service.Implementations.Internal
         {
             var objectType = await _objectTypeRepository.GetAll().FirstOrDefaultAsync(x => x.Name == input.objectTypeName)
                     ?? throw new Exception(_localizer["ObjectTypeNotFound", input.objectTypeName]);
-
-            return await _fileRelationRepository.GetAll()
+            var result = await _fileRelationRepository.GetAll()
                     .Include(fr => fr.File)
                     .Where(fr => fr.ObjectId == input.objectId && fr.ObjectTypeId == objectType.Id && fr.RelationType.Equals(input.relationType))
                     .Select(fr => new FileDto
@@ -121,6 +120,7 @@ namespace HSP.Service.Implementations.Internal
                         FileSize = fr.File.FileSize
                     })
                     .ToListAsync();
+            return result;
         }
 
         public async Task DeleteAsync(Guid fileId)

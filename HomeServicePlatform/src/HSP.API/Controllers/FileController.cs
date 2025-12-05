@@ -31,10 +31,21 @@ namespace HSP.API.Controllers
                 input.UserId = UserId;
                 if (User.GetUserRole() == RoleNames.Technician)
                 {
-                    input.ObjectId = await _technicianProfileService.GetTechnicianIdByUserId(UserId);
+                   
+                    if (input.RelationType == FileConstants.CheckInProof ||
+                        input.RelationType == FileConstants.CheckOutProof)
+                    {
+                      
+                    }
+                    else
+                    {
+                        
+                        input.ObjectId = await _technicianProfileService.GetTechnicianIdByUserId(UserId);
+                    }
                 }
                 else
                 {
+                   
                     input.ObjectId = UserId;
                 }
 

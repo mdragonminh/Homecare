@@ -1,13 +1,17 @@
+// CustomerBookingDetail.jsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react"; // Thêm useCallback
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { bookingApi } from "../../services/bookingApi";
 import { toast } from "sonner";
+import { getFileMetadata } from "../../services/fileApi";
+import { EyeIcon } from "@heroicons/react/24/outline";
 import {
   ArrowLeftIcon,
   StarIcon as StarSolid,
   CheckCircleIcon,
+  CameraIcon // Thêm CameraIcon nếu cần thiết cho tiêu đề
 } from "@heroicons/react/24/solid";
 import { FeedbackModal } from "../../components/feedback/FeedbackModal";
 
@@ -17,6 +21,46 @@ import {
   FeedbackSource,
 } from "../../constants/enums";
 import { PaymentStatus, getPaymentStatusText } from "../../services/paymentApi";
+
+// --- START: CUSTOM COMPONENTS (ImageViewerModal) ---
+
+/**
+ * Component Modal đơn giản để xem ảnh kích thước lớn.
+ */
+const FILE_BASE_URL = import.meta.env.VITE_API_URL.replace(/\/api$/, '');
+const ImageViewerModal = ({ isOpen, onClose, imageUrl, title }) => {
+  if (!isOpen || !imageUrl) return null;
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden transform transition-all animate-fade-in-scale-up">
+        <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+          <h3 className="text-xl font-bold text-gray-800 truncate">{title}</h3>
+          <button 
+            onClick={onClose} 
+            className="text-gray-500 hover:text-gray-700 p-2 transition-colors rounded-full"
+            title="Đóng"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-2 flex justify-center items-center w-full h-full">
+          <img 
+            src={imageUrl} 
+            alt={title} 
+            // Giữ ảnh nằm trong khung hình và không bị kéo dãn
+            className="max-w-full max-h-[80vh] h-auto object-contain rounded-lg" 
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- END: CUSTOM COMPONENTS ---
+
 
 const getPaymentInfo = (payments) => {
   if (!payments || payments.length === 0) {
@@ -64,37 +108,139 @@ const formatCurrency = (value = 0) =>
   new Intl.NumberFormat("vi-VN").format(value || 0);
 
 export default function CustomerBookingDetail() {
-  const { id } = useParams();
+  // Lấy ID từ URL
+  const { id } = useParams(); 
   const navigate = useNavigate();
   const location = useLocation();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  
+  // XÓA DÒNG NÀY: const { bookingId } = useParams(); // <-- DÒNG BỊ LỖI
+  
+  // --- STATES CHO PHOTO PROOF ---
+  const [checkInProof, setCheckInProof] = useState(null); // Metadata ảnh Check-in
+  const [checkOutProof, setCheckOutProof] = useState(null); // Metadata ảnh Check-out
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState('');
+  const [currentImageTitle, setCurrentImageTitle] = useState('');
+  // ------------------------------------
+
   const shouldOpenRating = location.state?.openRating;
 
-  useEffect(() => {
-    fetchBookingDetail();
-  }, [id]);
+const fetchFileMetadata = async (bookingId, relationType) => { 
+    if (!bookingId || !relationType) return null; 
+    const objectTypeName = 'booking'; 
+    
+    try {
+      const metadataResult = await getFileMetadata({ 
+        objectTypeName, 
+        objectId: bookingId, 
+        relationType, 
+      });
+      
+      // 💡 BƯỚC DEBUG: Log kết quả thô để xác định tên trường
+      console.log(`[File API Success] Dữ liệu thô cho ${relationType}:`, metadataResult); 
+      
+      // 1. Logic trích xuất đơn giản (vẫn giữ nguyên)
+      const fileData = Array.isArray(metadataResult) && metadataResult.length > 0
+          ? metadataResult[0]
+          : null;
 
-  const fetchBookingDetail = async () => {
+      // 2. 💡 SỬA: Ưu tiên kiểm tra 'filePath' (camelCase)
+      if (fileData && (fileData.url || fileData.fullUrl || fileData.filePath || fileData.FilePath)) { 
+        console.log(`[File Data Found] ${relationType}:`, fileData); // Log object metadata đã trích xuất
+        return fileData; 
+      }
+      
+      // Nếu không có dữ liệu hoặc không có đường dẫn
+      return null;
+    } catch (error) {
+       console.error(`Lỗi khi lấy file ${relationType} cho booking ${bookingId}:`, error);
+       return null; 
+    }
+};
+  
+  // Dùng useCallback để tránh lỗi linting và tối ưu hiệu suất
+  const fetchBookingDetail = useCallback(async (bookingId) => {
+    // 🚨 BƯỚC SỬA LỖI: Kiểm tra bookingId
+    if (!bookingId) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
-      const data = await bookingApi.getBookingDetail(id);
+      const data = await bookingApi.getBookingDetail(bookingId); // Dùng bookingId
       setBooking(data);
+      
+      // GỌI API ĐỂ LẤY THÔNG TIN ẢNH (ASYNC)
+      // Truyền bookingId vào fetchFileMetadata
+      const checkInMeta = await fetchFileMetadata(bookingId, 'CheckInProof');
+      const checkOutMeta = await fetchFileMetadata(bookingId, 'CheckOutProof');
+      
+      setCheckInProof(checkInMeta);
+      setCheckOutProof(checkOutMeta);
+
     } catch (error) {
       toast.error("Không thể tải chi tiết booking.");
-      navigate("/my-bookings");
+      // Chỉ chuyển hướng nếu lỗi nghiêm trọng, không phải lỗi file metadata
+      // navigate("/my-bookings"); 
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Thêm dependencies nếu cần (hiện tại không cần vì dùng bookingId từ tham số)
+
+
+  useEffect(() => {
+    if (id) {
+        fetchBookingDetail(id); // Truyền 'id' từ useParams vào hàm
+    }
+  }, [id, fetchBookingDetail]); // Dependency là 'id' và hàm fetchBookingDetail
+
+  // --- HÀM XỬ LÝ MỞ MODAL ẢNH ---
+ const openImageViewer = (fileMetadata) => {
+    // 1. Ưu tiên các trường URL đầy đủ (url, fullUrl)
+    let imageUrl = fileMetadata.fullUrl || fileMetadata.url; 
+    
+    // 2. Nếu không có URL đầy đủ, kiểm tra FilePath/filePath và tạo URL
+    const relativePath = fileMetadata.filePath || fileMetadata.FilePath; // Kiểm tra cả 2 case
+    
+    if (!imageUrl && relativePath) {
+        let path = relativePath;
+        
+        // Đảm bảo path bắt đầu bằng '/' nhưng không bị trùng (Base URL không có / cuối cùng)
+        if (path.startsWith('/')) {
+            path = path.substring(1); // Loại bỏ '/' đầu tiên
+        }
+        
+        // Tạo Full URL bằng cách nối Base URL và Path
+        // Nếu API/Server yêu cầu phải có một tiền tố (ví dụ: '/file-storage/'), bạn cần thêm vào đây.
+        // Giả sử FilePath là đường dẫn từ gốc server (VD: 'uploads/2025/photo.jpg')
+        imageUrl = `${FILE_BASE_URL}/${path}`; 
+    }
+    
+    // 💡 BƯỚC DEBUG CỰC KỲ QUAN TRỌNG
+    console.log("Final Image URL:", imageUrl); 
+    
+    if (!imageUrl) {
+        toast.error("Không tìm thấy đường dẫn ảnh để hiển thị.");
+        return; // Thoát khỏi hàm nếu URL vẫn không hợp lệ
+    }
+    
+    // 3. Gán state và mở modal
+    setCurrentImageUrl(imageUrl);
+    setCurrentImageTitle(fileMetadata.fileName || "Ảnh đính kèm"); // Dùng fileName thay vì title
+    setIsImageViewerOpen(true); // <-- Đây là dòng mở modal
+};
+  // --------------------------------
 
   const handleFeedbackSubmit = async (rating, comment) => {
     try {
       await bookingApi.createFeedback(booking.id, rating, comment);
       toast.success("Cảm ơn bạn đã đánh giá!");
       setIsFeedbackModalOpen(false);
-      fetchBookingDetail();
+      fetchBookingDetail(booking.id); // Gọi lại fetchDetail sau khi đánh giá
     } catch (error) {
       const message = error.response?.data?.message || "Đã xảy ra lỗi";
       toast.error(message);
@@ -268,23 +414,94 @@ export default function CustomerBookingDetail() {
             )}
           </div>
         )}
+        
+        {/* --- PHẦN MỚI: HIỂN THỊ HÌNH ẢNH MINH CHỨNG (Proof Photos) --- */}
+        {(checkInProof || checkOutProof) && (
+          <div className="mb-6 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-3 flex items-center">
+              <CameraIcon className="w-5 h-5 mr-2 text-gray-600"/> Ảnh minh chứng công việc
+            </h3>
+            <div className="space-y-4">
+              
+              {/* Ảnh Check-in */}
+              {checkInProof && (
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <div className="flex items-center">
+                    <CheckCircleIcon className="w-6 h-6 text-blue-600 mr-3" />
+                    <p className="font-medium text-blue-800">Ảnh **Check-in** tại địa điểm</p>
+                  </div>
+                  <button
+                    onClick={() => openImageViewer(checkInProof)} // Truyền metadata vào
+                    className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors flex items-center justify-center shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    title="Xem ảnh Check-in"
+                  >
+                    <EyeIcon className="w-6 h-6" />
+                  </button>
+                </div>
+              )}
+              
+              {/* Ảnh Check-out (Hoàn thành) */}
+              {checkOutProof && (
+                <div className="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-200">
+                  <div className="flex items-center">
+                    <CheckCircleIcon className="w-6 h-6 text-green-600 mr-3" />
+                    <p className="font-medium text-green-800">Ảnh **Hoàn thành** công việc</p>
+                  </div>
+                  <button
+                    onClick={() => openImageViewer(checkOutProof)} // Truyền metadata vào
+                    className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full transition-colors flex items-center justify-center shadow-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    title="Xem ảnh Hoàn thành"
+                  >
+                    <EyeIcon className="w-6 h-6" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {/* --- KẾT THÚC PHẦN ẢNH MINH CHỨNG --- */}
+
 
         <div className="grid grid-cols-1 gap-4">
           {/* Technician Card */}
           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Technician
-            </h3>
-            <p className="text-xl font-semibold text-gray-900">
-              {booking.technicianName || "Chưa có thông tin"}
-            </p>
-            <p className="text-sm text-gray-600 mt-1">
-              {booking.technicianEmail || "Chưa cập nhật email"}
-            </p>
-            {booking.technicianPhone && (
-              <p className="text-sm text-gray-600">{booking.technicianPhone}</p>
-            )}
-          </div>
+  
+  {/* Container chính sử dụng Flexbox để căn chỉnh thông tin và nút */}
+  <div className="flex justify-between items-start">
+    
+    {/* Phần chứa thông tin Kỹ thuật viên (Phần bên trái) */}
+    <div className="flex-grow"> 
+      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+        Technician
+      </h3>
+      <p className="text-xl font-semibold text-gray-900">
+        {booking.technicianName || "Chưa có thông tin"}
+      </p>
+      <p className="text-sm text-gray-600 mt-1">
+        {booking.technicianEmail || "Chưa cập nhật email"}
+      </p>
+      {booking.technicianPhone && (
+        <p className="text-sm text-gray-600">{booking.technicianPhone}</p>
+      )}
+    </div>
+
+    {/* Phần chứa nút Chat (Phần bên phải) */}
+    <div className="ml-4 flex-shrink-0"> 
+      <button
+        // Mở tab mới
+        onClick={() => window.open(`/chat`, '_blank')}
+        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 whitespace-nowrap"
+        title="Chat với Kỹ thuật viên (Mở tab mới)"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-1">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.772 9.772 0 01-6.75-2.884l-.88.66A.75.75 0 013 18.25V18a10.5 10.5 0 01-2.25-6c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+        </svg>
+        Chat
+      </button>
+    </div>
+    
+  </div>
+</div>
 
           {/* Status Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -324,15 +541,6 @@ export default function CustomerBookingDetail() {
                     </p>
                   )}
                 </div>
-
-                {/* {showPaymentButton && (
-                  <button
-                    onClick={() => navigate(`/payment/${booking.id}`)}
-                    className="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors sm:ml-4"
-                  >
-                    Thanh toán ngay
-                  </button>
-                )} */}
               </div>
             </div>
           </div>
@@ -356,12 +564,6 @@ export default function CustomerBookingDetail() {
                   <dd className="text-gray-900">{completedDateText}</dd>
                 </div>
               )}
-              {/* <div className="flex justify-between">
-                <dt className="text-gray-500">Trạng thái</dt>
-                <dd className="font-semibold text-gray-900">
-                  {BookingStatusLabels[booking.status] || "Không xác định"}
-                </dd>
-              </div> */}
             </dl>
           </div>
 
@@ -506,6 +708,14 @@ export default function CustomerBookingDetail() {
         isOpen={isFeedbackModalOpen}
         onClose={() => setIsFeedbackModalOpen(false)}
         onSubmit={handleFeedbackSubmit}
+      />
+      
+      {/* --- RENDER IMAGE VIEWER MODAL --- */}
+      <ImageViewerModal
+        isOpen={isImageViewerOpen}
+        onClose={() => setIsImageViewerOpen(false)}
+        imageUrl={currentImageUrl}
+        title={currentImageTitle}
       />
     </div>
   );

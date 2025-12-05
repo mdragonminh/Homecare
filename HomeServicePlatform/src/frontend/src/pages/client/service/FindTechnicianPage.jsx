@@ -33,6 +33,48 @@ import AddHomeModal from "../home/AddHome.jsx";
 import EditHomeModal from "../home/EditHomePage.jsx";
 import TechnicianDetailModal from "../../../components/client/TechnicianDetailModal.jsx";
 
+// --- START: CUSTOM STYLES / COMPONENTS FOR REDESIGN ---
+
+// Tái sử dụng để có hiệu ứng nút đẹp hơn
+const PrimaryButton = ({ children, onClick, disabled, className = "", icon: Icon }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className={`w-full h-12 bg-blue-600 text-white font-semibold text-base rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl ${className}`}
+  >
+    {Icon && (
+      <Icon className={`h-5 w-5 ${disabled ? 'animate-spin' : ''}`} />
+    )}
+    {children}
+  </button>
+);
+
+const SuccessButton = ({ children, onClick, disabled, className = "", icon: Icon }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className={`w-full h-12 bg-green-600 text-white font-semibold text-base rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl ${className}`}
+  >
+    {Icon && (
+      <Icon className={`h-5 w-5 ${disabled ? 'animate-spin' : ''}`} />
+    )}
+    {children}
+  </button>
+);
+
+// Tái sử dụng cho input/select
+const InputField = ({ children, label, id,  }) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-2">
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+// --- END: CUSTOM STYLES / COMPONENTS FOR REDESIGN ---
+
+
 export function FindTechnicianPage({ loggedInUser }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -138,25 +180,29 @@ export function FindTechnicianPage({ loggedInUser }) {
       type = messageObj.type || null;
     }
 
-    let icon, colorClass;
+    let icon, colorClass, ringClass;
 
     if (type === "success") {
       icon = <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0" />;
-      colorClass = "text-green-700 bg-green-50 border-green-200";
+      colorClass = "text-green-800 bg-green-100 border-green-300";
+      ringClass = "ring-green-400";
     } else if (type === "error") {
       icon = <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0" />;
-      colorClass = "text-red-700 bg-red-50 border-red-200";
+      colorClass = "text-red-800 bg-red-100 border-red-300";
+      ringClass = "ring-red-400";
     } else if (type === "searching") {
       icon = <Loader2 className="h-5 w-5 mr-2 animate-spin flex-shrink-0" />;
-      colorClass = "text-blue-700 bg-blue-50 border-blue-200";
+      colorClass = "text-blue-800 bg-blue-100 border-blue-300";
+      ringClass = "ring-blue-400";
     } else {
       icon = <MapPin className="h-5 w-5 mr-2 flex-shrink-0" />;
-      colorClass = "text-gray-700 bg-gray-50 border-gray-200";
+      colorClass = "text-gray-800 bg-gray-100 border-gray-300";
+      ringClass = "ring-gray-400";
     }
 
     return (
       <div
-        className={`flex items-center p-3 mt-4 text-sm border rounded-lg ${colorClass}`}
+        className={`flex items-center p-4 mt-4 text-sm border-2 rounded-xl ${colorClass} transition-all duration-300 ring-1 ${ringClass}`}
       >
         {icon}
         <span className="font-medium">{message}</span>
@@ -166,8 +212,8 @@ export function FindTechnicianPage({ loggedInUser }) {
 
   if (isLoading) {
     return (
-      <div className="p-8 max-w-7xl mx-auto text-center pt-24 min-h-screen">
-        <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
+      <div className="p-8 max-w-7xl mx-auto text-center pt-24 min-h-screen bg-white">
+        <Loader2 className="h-16 w-16 text-blue-600 animate-spin mx-auto mb-6" />
         <p className="text-xl font-medium text-gray-700">
           {t("ui.loading_data")}
         </p>
@@ -176,7 +222,7 @@ export function FindTechnicianPage({ loggedInUser }) {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-screen-2xl mx-auto pt-10 min-h-screen bg-gray-50">
+    <div className="p-4 md:p-8 max-w-screen-2xl mx-auto pt-10 min-h-screen bg-gray-50">
       {/* Modals */}
       {loggedInUser && isAddHomeModalOpen && (
         <AddHomeModal
@@ -194,97 +240,95 @@ export function FindTechnicianPage({ loggedInUser }) {
       )}
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <Search className="h-7 w-7 text-blue-600" />
+      <div className="mb-8">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 flex items-center gap-3">
+          <Search className="h-8 w-8 text-blue-600" />
           {t("ui.search_technicians_title")}
         </h1>
+        <p className="text-gray-500 mt-1.5">{t("ui.search_technicians_subtitle", { defaultValue: "Tìm kiếm kỹ thuật viên phù hợp cho ngôi nhà của bạn."})}</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 mb-6">
-        <div className="lg:w-1/2 flex flex-col">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4 flex-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Cột Form/Control */}
+        <div className="flex flex-col">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-xl p-6 md:p-8 space-y-6 flex-1">
+            
             {/* Section Title */}
-            <div className="pb-3 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-gray-600" />
+            <div className="pb-4 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-indigo-500" />
                 {t("ui.confirm_address_and_range")}
               </h2>
             </div>
 
             {/* Address Selection */}
             {loggedInUser && homes.length > 0 ? (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    {t("ui.select_service_address")}
-                  </label>
-                  <div className="flex gap-2">
-                    <select
-                      value={selectedHomeId || ""}
-                      onChange={handleAddressSelection}
-                      className="flex-1 h-10 px-3 text-sm border border-gray-300 rounded-lg bg-white text-gray-900 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all cursor-pointer"
-                      disabled={isMatching}
-                    >
-                      <option value="" disabled>
-                        {t("ui.select_service_needed")}
+              <InputField label={t("ui.select_service_address")} id="address-select">
+                <div className="flex gap-3">
+                  <select
+                    id="address-select"
+                    value={selectedHomeId || ""}
+                    onChange={handleAddressSelection}
+                    className="flex-1 h-12 px-4 text-base border border-gray-300 rounded-xl bg-white text-gray-900 transition-all focus:ring-4 focus:ring-blue-100 focus:border-blue-500 appearance-none cursor-pointer pr-10 min-w-0"
+                    disabled={isMatching}
+                  >
+                    <option value="" disabled>
+                      {t("ui.select_service_needed")}
+                    </option>
+                    {homes.map((home) => (
+                      <option key={home.id} value={home.id}>
+                        {home.name} ({home.address.substring(0, 30)}...)
                       </option>
-                      {homes.map((home) => (
-                        <option key={home.id} value={home.id}>
-                          {home.name} ({home.address.substring(0, 30)}...)
-                        </option>
-                      ))}
-                    </select>
+                    ))}
+                  </select>
 
-                    {currentHomeData && (
-                      <button
-                        onClick={() => setIsEditHomeModalOpen(true)}
-                        className="w-10 h-10 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all flex items-center justify-center"
-                        title={t("ui.edit_address")}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setIsAddHomeModalOpen(true)}
-                      className="w-10 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all flex items-center justify-center shadow-sm"
-                      title={t("ui.add_new")}
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setIsEditHomeModalOpen(true)}
+                    disabled={!currentHomeData}
+                    className="w-12 h-12 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 hover:border-gray-400 transition-all flex items-center justify-center shadow-sm disabled:opacity-50 flex-shrink-0"
+                    title={t("ui.edit_address")}
+                  >
+                    <Edit className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => setIsAddHomeModalOpen(true)}
+                    className="w-12 h-12 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all flex items-center justify-center shadow-md hover:shadow-lg flex-shrink-0"
+                    title={t("ui.add_new")}
+                  >
+                    <PlusCircle className="h-5 w-5" />
+                  </button>
+                </div>
 
-                  {currentHomeData && (
-                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-start gap-2 text-sm text-gray-700">
-                        <Home className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <span>
-                          <span className="font-semibold">
-                            {currentHomeData.name}:
-                          </span>{" "}
-                          {currentHomeData.address}
-                        </span>
+                {currentHomeData && (
+                  <div className="mt-3 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+                    <div className="flex items-start gap-3 text-sm text-gray-800">
+                      <Home className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">
+                          {currentHomeData.name}:
+                        </span>{" "}
+                        {currentHomeData.address}
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                )}
+              </InputField>
             ) : loggedInUser ? (
-              <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                <p className="text-gray-600 text-sm mb-3">
+              <div className="text-center p-8 border-2 border-dashed border-indigo-300 rounded-xl bg-indigo-50">
+                <p className="text-gray-700 font-medium mb-4">
                   {t("ui.no_properties_found")}
                 </p>
                 <button
                   onClick={() => setIsAddHomeModalOpen(true)}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all shadow-sm flex items-center gap-1.5 mx-auto"
+                  className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-all shadow-md flex items-center gap-1.5 mx-auto"
                 >
                   <PlusCircle className="h-4 w-4" />
                   {t("ui.add_new")}
                 </button>
               </div>
             ) : (
-              <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                <p className="text-gray-600 text-sm">
+              <div className="text-center p-8 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+                <p className="text-gray-600 text-base">
                   {t("ui.enter_address_to_search", {
                     defaultValue: "Vui lòng đăng nhập để sử dụng dịch vụ.",
                   })}
@@ -293,17 +337,18 @@ export function FindTechnicianPage({ loggedInUser }) {
             )}
 
             {/* Service Selection */}
-            <div className="relative">
-              <label
-                htmlFor="service-search-input"
-                className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2"
-              >
-                <Wrench className="h-4 w-4 text-gray-600" />
-                {t("ui.select_service_label", {
-                  defaultValue: "Tìm kiếm hoặc Chọn Dịch vụ",
-                })}
-              </label>
-              <div className="relative">
+           <InputField 
+              label={
+                <span className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5 text-indigo-500" />
+                  {t("ui.select_service_label", {
+                    defaultValue: "Tìm kiếm hoặc Chọn Dịch vụ",
+                  })}
+                </span>
+              } 
+              id="service-search-input"
+            >
+              <div className="relative"> {/* Dòng 280: Đây là container relative */}
                 <input
                   id="service-search-input"
                   type="text"
@@ -316,37 +361,72 @@ export function FindTechnicianPage({ loggedInUser }) {
                   onBlur={() =>
                     setTimeout(() => setIsServiceDropdownOpen(false), 200)
                   }
-                  className="w-full h-10 px-3 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full h-12 px-4 text-base border border-gray-300 rounded-xl transition-all focus:ring-4 focus:ring-blue-100 focus:border-blue-500 pr-12"
                   disabled={isSearching || isServicesLoading || isMatching}
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                   {isServicesLoading ? (
-                    <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                    <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
                   ) : (
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-5 w-5" />
                   )}
                 </div>
-              </div>
+
+                {/* KHỐI UL ĐÃ ĐƯỢC DI CHUYỂN VÀO BÊN TRONG DIV.RELATIVE VÀ THÊM top-full mt-1 */}
+                {isServiceDropdownOpen && !isServicesLoading && (
+                  <ul className="absolute z-20 w-full bg-white border border-gray-300 rounded-xl shadow-2xl max-h-72 overflow-y-auto top-full mt-1">
+                    {filteredServices.map((service) => {
+                      const isSelected = selectedServiceIds.includes(service.id);
+                      return (
+                        <li
+                          key={service.id}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleServiceSelection(service.id);
+                          }}
+                         className={`p-3 text-base cursor-pointer transition-colors flex items-center justify-between ${
+                            isSelected
+                              ? "bg-blue-100 text-blue-800 font-semibold hover:bg-blue-200" // ĐÃ SỬA TẠI ĐÂY
+                              : "text-gray-800 hover:bg-gray-50"
+                          }`}
+                        >
+                          {service.name}
+                          {isSelected && (
+                            <Check className="h-5 w-5" />
+                          )}
+                        </li>
+                      );
+                    })}
+                    {filteredServices.length === 0 && serviceSearchInput && (
+                      <li className="p-3 text-gray-500 text-base text-center">
+                        {t("ui.no_results_found", {
+                          defaultValue: "Không tìm thấy kết quả",
+                        })}
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </div> {/* Kết thúc div.relative */}
 
               {selectedServiceIds.length > 0 && (
-                <div className="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex flex-wrap gap-1.5">
+                <div className="mt-3 p-3 bg-blue-100 border border-blue-300 rounded-xl">
+                  <div className="flex flex-wrap gap-2">
                     {selectedServiceNames.map((name, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center text-xs px-2.5 py-1 bg-blue-600 text-white rounded-md"
+                        className="inline-flex items-center text-sm px-3 py-1.5 bg-blue-600 text-white rounded-full font-medium shadow-sm"
                       >
                         {name}
                         <button
                           onClick={() =>
                             handleServiceSelection(selectedServiceIds[index])
                           }
-                          className="ml-1.5 hover:text-blue-100"
+                          className="ml-2 hover:text-blue-100 transition-colors"
                           title={t("ui.clear_selection", {
                             defaultValue: "Xóa lựa chọn",
                           })}
                         >
-                          <XCircle className="h-3.5 w-3.5" />
+                          <XCircle className="h-4 w-4" />
                         </button>
                       </span>
                     ))}
@@ -354,199 +434,141 @@ export function FindTechnicianPage({ loggedInUser }) {
                 </div>
               )}
 
-              {isServiceDropdownOpen && !isServicesLoading && (
-                <ul className="absolute z-20 w-full bg-white border border-gray-300 mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {filteredServices.map((service) => {
-                    const isSelected = selectedServiceIds.includes(service.id);
-                    return (
-                      <li
-                        key={service.id}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          handleServiceSelection(service.id);
-                        }}
-                        className={`p-2.5 text-sm cursor-pointer hover:bg-gray-50 flex items-center justify-between ${
-                          isSelected
-                            ? "bg-blue-50 text-blue-700 font-medium"
-                            : "text-gray-800"
-                        }`}
-                      >
-                        {service.name}
-                        {isSelected && (
-                          <Check className="h-4 w-4 text-blue-600" />
-                        )}
-                      </li>
-                    );
-                  })}
-                  {filteredServices.length === 0 && serviceSearchInput && (
-                    <li className="p-2.5 text-gray-500 text-sm text-center">
-                      {t("ui.no_results_found", {
-                        defaultValue: "Không tìm thấy kết quả",
-                      })}
-                    </li>
-                  )}
-                </ul>
-              )}
-            </div>
+              {/* KHỐI UL GỐC (TỪ DÒNG 299) ĐÃ BỊ XÓA BỎ Ở ĐÂY */}
+            </InputField>
 
             {/* Date/Time (ĐÃ BỎ Ô BÁN KÍNH) */}
             <div
-              className={`grid gap-3 ${
+              className={`grid gap-4 ${
                 loggedInUser ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
               }`}
             >
               {loggedInUser && (
-                <div>
-                  <label
-                    htmlFor="preferred-date"
-                    className="block text-sm font-medium text-gray-700 mb-1.5"
-                  >
-                    {t("ui.preferred_date_label")}
-                  </label>
+                <InputField 
+                  label={t("ui.preferred_date_label")} 
+                  id="preferred-date"
+                >
                   <input
                     id="preferred-date"
                     type="date"
                     value={preferredDate}
                     onChange={(e) => setPreferredDate(e.target.value)}
                     min={new Date().toISOString().split("T")[0]}
-                    className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full h-12 px-4 text-base border border-gray-300 rounded-xl transition-all focus:ring-4 focus:ring-blue-100 focus:border-blue-500"
                     disabled={isSearching || isMatching}
                   />
-                </div>
+                </InputField>
               )}
 
               {loggedInUser && (
-                <div>
-                  <label
-                    htmlFor="preferred-time"
-                    className="block text-sm font-medium text-gray-700 mb-1.5"
-                  >
-                    {t("ui.preferred_time_label")}
-                  </label>
+                <InputField 
+                  label={t("ui.preferred_time_label")} 
+                  id="preferred-time"
+                >
                   <input
                     id="preferred-time"
                     type="time"
                     value={preferredTime}
                     onChange={(e) => setPreferredTime(e.target.value)}
-                    className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full h-12 px-4 text-base border border-gray-300 rounded-xl transition-all focus:ring-4 focus:ring-blue-100 focus:border-blue-500"
                     disabled={isSearching || isMatching}
                   />
-                </div>
+                </InputField>
               )}
               
               {/* VỊ TRÍ CỦA INPUT BÁN KÍNH ĐÃ BỊ XÓA BỎ */}
             </div>
             
             {!loggedInUser && (
-              <div>
-                <label
-                  htmlFor="address-input"
-                  className="block text-sm font-medium text-gray-700 mb-1.5"
-                >
-                  {t("ui.manual_address_label")}
-                </label>
+              <InputField 
+                label={t("ui.manual_address_label")}
+                id="address-input-manual"
+              >
                 <input
-                  id="address-input"
+                  id="address-input-manual"
                   type="text"
                   placeholder={t("form.placeholder.address")}
                   value={addressInput}
                   onChange={(e) => setAddressInput(e.target.value)}
                   onBlur={handleGeocode}
-                  className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full h-12 px-4 text-base border border-gray-300 rounded-xl transition-all focus:ring-4 focus:ring-blue-100 focus:border-blue-500"
                   disabled={isSearching || isGettingLocation || isMatching}
                 />
-              </div>
+              </InputField>
             )}
+            
             {renderStatusMessage(statusMessage)}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2 items-center sm:items-stretch">
-              <button
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-3">
+              <PrimaryButton
                 onClick={handleFindTechnician}
                 disabled={isSearching || isMatching}
-                className={`${
-            loggedInUser 
-                ? "w-11/12 max-w-md sm:flex-1" // Giữ nguyên cho màn hình lớn khi có 2 nút
-                : "w-full" // Thay đổi để chiếm toàn bộ chiều rộng khi chỉ có 1 nút
-        } h-11 bg-blue-600 text-white font-medium text-sm rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm`}
+                icon={isSearching ? Loader2 : Search}
+                className={loggedInUser ? "sm:flex-1" : "sm:flex-1"}
               >
-                {isSearching ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("ui.searching")}
-                  </>
-                ) : (
-                  <>
-                    <Search className="h-4 w-4" />
-                    {t("ui.find_technicians_button", { 
-                      // Đã loại bỏ radius: searchRadius 
+                {isSearching
+                  ? t("ui.searching")
+                  : t("ui.find_technicians_button", { 
+                      defaultValue: "Tìm Kỹ Thuật Viên" 
                     })} 
-                    {t("ui.find_technicians_button_default", {
-                      defaultValue: ""
-                    })}
-                  </>
-                )}
-              </button>
+              </PrimaryButton>
 
               {loggedInUser && (
-                <button
+                <SuccessButton
                   onClick={handleCreateAndMatchBooking}
                   disabled={isMatching || isSearching}
-                  className="w-11/12 max-w-md sm:flex-1 h-11 bg-green-600 text-white font-medium text-sm rounded-lg hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                  icon={isMatching ? Loader2 : Check}
+                  className="sm:flex-1"
                 >
-                  {isMatching ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t("ui.matching", { defaultValue: "Đang ghép nối..." })}
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      {t("ui.match_technician_button", {
+                  {isMatching
+                    ? t("ui.matching", { defaultValue: "Đang ghép nối..." })
+                    : t("ui.match_technician_button", {
                         defaultValue: "Yêu cầu & Ghép nối Ngay",
                       })}
-                    </>
-                  )}
-                </button>
+                </SuccessButton>
               )}
             </div>
           </div>
         </div>
-        <div className="lg:w-1/2 flex relative lg:min-h-[450px]">
-          <div className="w-full h-full rounded-xl shadow-lg">
-            {" "}
-            <div className="w-full h-full rounded-[10px] overflow-hidden relative">
-              <MapDisplay
-                lat={coords.latitude}
-                lng={coords.longitude}
-                technicians={technicians}
-                isDraggable={!loggedInUser}
-                onMarkerDragEnd={handleMarkerDrag}
-              />
-              {!loggedInUser && (
-                <button
-                  onClick={handleGetMyLocation}
-                  disabled={isSearching || isGettingLocation || isMatching}
-                  className={`absolute bottom-4 left-4 z-10 w-10 h-10 rounded-lg bg-white shadow-md hover:shadow-lg transition-all flex items-center justify-center border border-gray-200 ${
-                    isGettingLocation ? "animate-pulse" : "hover:bg-gray-50"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  title={t("ui.use_my_current_location", {
-                    defaultValue: "Sử dụng Vị trí Hiện tại của tôi",
-                  })}
-                >
-                  {isGettingLocation ? (
-                    <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-                  ) : (
-                    <Locate className="h-5 w-5 text-gray-700" strokeWidth={2} />
-                  )}
-                </button>
-              )}
-            </div>
+        
+        {/* Cột Map Display */}
+        <div className="relative lg:min-h-[550px] min-h-[300px]">
+          <div className="w-full h-full rounded-2xl shadow-xl overflow-hidden relative border border-gray-100">
+            <MapDisplay
+              lat={coords.latitude}
+              lng={coords.longitude}
+              technicians={technicians}
+              isDraggable={!loggedInUser}
+              onMarkerDragEnd={handleMarkerDrag}
+            />
+            {!loggedInUser && (
+              <button
+                onClick={handleGetMyLocation}
+                disabled={isSearching || isGettingLocation || isMatching}
+                className={`absolute bottom-4 right-4 z-10 w-12 h-12 rounded-full bg-white shadow-xl hover:shadow-2xl transition-all flex items-center justify-center border border-gray-200 ${
+                  isGettingLocation ? "animate-pulse" : "hover:bg-gray-100"
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                title={t("ui.use_my_current_location", {
+                  defaultValue: "Sử dụng Vị trí Hiện tại của tôi",
+                })}
+              >
+                {isGettingLocation ? (
+                  <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+                ) : (
+                  <Locate className="h-6 w-6 text-indigo-700" strokeWidth={2.5} />
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 overflow-y-auto">
-        <div className="pb-3 border-b border-gray-200 mb-4">
-          <h3 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
-            <ChevronsDown className="h-5 w-5 text-gray-600" />
+      
+      {/* Technician List */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-xl p-6 md:p-8 overflow-y-auto">
+        <div className="pb-4 border-b border-gray-100 mb-6">
+          <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
+            <ChevronsDown className="h-5 w-5 text-indigo-500" />
             {t("ui.technicians_list_title", {
               count: technicians ? technicians.length : 0,
             })}
@@ -554,47 +576,47 @@ export function FindTechnicianPage({ loggedInUser }) {
         </div>
 
         {isSearching && (
-          <p className="text-center text-blue-600 flex items-center justify-center p-4 text-sm">
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          <p className="text-center text-blue-600 flex items-center justify-center p-6 text-base font-medium">
+            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
             {t("ui.loading_data")}
           </p>
         )}
 
         {technicians && technicians.length === 0 && !isSearching && (
-          <div className="text-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-            <XCircle className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 font-medium text-sm">
+          <div className="text-center p-10 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+            <XCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 font-medium text-base">
               {t("ui.no_technicians_found")}
             </p>
           </div>
         )}
 
         {technicians && technicians.length > 0 && (
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {technicians.map((tech, index) => (
               <li
                 key={tech.id}
-                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer"
+                className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-gray-200 rounded-xl bg-white hover:bg-indigo-50 hover:border-indigo-400 transition-all cursor-pointer shadow-sm hover:shadow-md duration-300 group"
               >
-                <div className="flex items-center gap-3 w-full sm:w-auto mb-2 sm:mb-0">
+                <div className="flex items-center gap-4 w-full md:w-auto mb-3 md:mb-0">
                   <span
-                    className={`text-lg font-bold w-6 text-center ${
-                      index < 3 ? "text-blue-600" : "text-gray-400"
-                    }`}
+                    className={`text-xl font-extrabold w-8 text-center ${
+                      index < 3 ? "text-indigo-600" : "text-gray-400"
+                    } transition-colors duration-300`}
                   >
                     {index + 1}
                   </span>
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200">
-                    <MapPin className="h-5 w-5 text-blue-600" />
+                  <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center border border-indigo-200 group-hover:bg-indigo-200 transition-colors">
+                    <UserRound className="h-6 w-6 text-indigo-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900 text-sm">
+                    <p className="font-semibold text-gray-900 text-base">
                       {tech.name}
                     </p>
-                    <div className="flex items-center text-xs text-gray-600 mt-1 gap-2">
+                    <div className="flex flex-wrap items-center text-sm text-gray-600 mt-1 gap-x-4 gap-y-1">
                       <div className="flex items-center">
                         <Star
-                          className="h-3.5 w-3.5 text-yellow-500 mr-0.5"
+                          className="h-4 w-4 text-yellow-500 mr-1"
                           fill="currentColor"
                         />
                         <span className="font-medium">
@@ -609,23 +631,21 @@ export function FindTechnicianPage({ loggedInUser }) {
                           )}
                         </span>
                       </div>
-                      <span className="text-blue-600 font-semibold">
-                        • {tech.distance} {t("ui.search_radius_unit")}
+                      <span className="text-blue-600 font-bold flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-blue-500" /> 
+                        {tech.distance} {t("ui.search_radius_unit")}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
+                <div className="flex gap-3 w-full md:w-auto mt-2 md:mt-0">
                   <button
                     onClick={() => handleViewTechnicianDetails(tech.id)}
-                    className="text-sm px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-all shadow-sm flex items-center gap-2"
+                    className="flex-1 md:flex-none text-sm px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all shadow-sm flex items-center justify-center gap-2"
                   >
                     <Eye className="h-4 w-4" />
                     {t("ui.view_details", { defaultValue: "Xem chi tiết" })}
                   </button>
-                  {/* <button className="text-sm px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all shadow-sm flex-1 sm:flex-initial">
-                    {t("ui.select_technician")}
-                  </button> */}
                 </div>
               </li>
             ))}
@@ -644,14 +664,17 @@ export function FindTechnicianPage({ loggedInUser }) {
       {isMatching && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Hiệu ứng mờ tối (Dimmed) */}
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300"></div>{" "}
+          <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm transition-opacity duration-300"></div>{" "}
           
-          <div className="relative bg-white px-8 py-6 rounded-xl shadow-2xl border border-gray-200 flex flex-col items-center gap-4 animate-fadeIn">
-            <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
-            <p className="text-base font-semibold text-gray-800">
+          <div className="relative bg-white px-10 py-8 rounded-3xl shadow-2xl border-4 border-blue-200 flex flex-col items-center gap-4 animate-bounce-in">
+            <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
+            <p className="text-lg font-bold text-gray-800 animate-pulse">
               {t("ui.matching_technician_process", {
                 defaultValue: "Đang ghép nối kỹ thuật viên...",
               })}
+            </p>
+            <p className="text-sm text-gray-500">
+              {t("ui.please_wait", { defaultValue: "Vui lòng chờ trong giây lát." })}
             </p>
           </div>
         </div>
@@ -659,30 +682,28 @@ export function FindTechnicianPage({ loggedInUser }) {
 
       {/* Match Success Modal */}
       {matchSuccessInfo && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"></div>
-          <div className="relative z-50 w-[90%] max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-gray-100">
-            <div className="flex items-center gap-3 mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-lg font-semibold text-gray-900">
-                  {t("success.match_booking_success", {
-                    defaultValue: "Ghép nối thành công!",
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm"></div>
+          <div className="relative z-50 w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl border-t-8 border-green-500 transform transition-all duration-500 scale-100 opacity-100">
+            <div className="flex flex-col items-center text-center mb-6">
+              <CheckCircle className="h-12 w-12 text-green-600 mb-3" />
+              <p className="text-xl font-extrabold text-gray-900">
+                {t("success.match_booking_success", {
+                  defaultValue: "Ghép nối thành công!",
+                })}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {matchSuccessInfo.message ||
+                  t("ui.view_booking_details_prompt", {
+                    defaultValue:
+                      "Kiểm tra chi tiết lịch hẹn của bạn trong phần Đặt lịch.",
                   })}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {matchSuccessInfo.message ||
-                    t("ui.view_booking_details_prompt", {
-                      defaultValue:
-                        "Kiểm tra chi tiết lịch hẹn của bạn trong phần Đặt lịch.",
-                    })}
-                </p>
-              </div>
+              </p>
             </div>
 
-            <div className="space-y-3 rounded-xl bg-gray-50 p-4 border border-gray-100">
+            <div className="space-y-4 rounded-xl bg-gray-50 p-4 border border-gray-100">
               <div className="flex items-start gap-3">
-                <UserRound className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <UserRound className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs uppercase tracking-wide text-gray-500">
                     {t("technicians.name", { defaultValue: "Kỹ thuật viên" })}
@@ -695,7 +716,7 @@ export function FindTechnicianPage({ loggedInUser }) {
               </div>
 
               <div className="flex items-start gap-3">
-                <ListChecks className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <ListChecks className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs uppercase tracking-wide text-gray-500">
                     {t("services.title", { defaultValue: "Dịch vụ" })}
@@ -709,7 +730,7 @@ export function FindTechnicianPage({ loggedInUser }) {
               </div>
 
               <div className="flex items-start gap-3">
-                <CalendarClock className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <CalendarClock className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs uppercase tracking-wide text-gray-500">
                     {t("ui.appointment_time", {
@@ -724,7 +745,7 @@ export function FindTechnicianPage({ loggedInUser }) {
               </div>
 
               <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <MapPin className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs uppercase tracking-wide text-gray-500">
                     {t("ui.address", { defaultValue: "Địa chỉ" })}
@@ -737,19 +758,19 @@ export function FindTechnicianPage({ loggedInUser }) {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleCloseMatchModal}
-                className="flex-1 rounded-xl border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 transition"
+                className="flex-1 h-11 rounded-xl border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-100 transition shadow-sm"
               >
                 {t("ui.view_later", { defaultValue: "Để sau" })}
               </button>
               <button
                 onClick={handleViewBooking}
-                className="flex-1 rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                className="flex-1 h-11 rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
               >
                 {t("ui.go_to_booking", {
-                  defaultValue: "Xem Chi tiết",
+                  defaultValue: "Xem Chi tiết Đặt lịch",
                 })}
                 <ArrowRight className="h-4 w-4" />
               </button>
