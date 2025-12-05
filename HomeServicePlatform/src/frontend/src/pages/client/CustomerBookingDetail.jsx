@@ -300,7 +300,7 @@ const fetchFileMetadata = async (bookingId, relationType) => {
     : null;
   const serviceItems = booking.items || [];
   const hasServices = serviceItems.length > 0;
-  const showCompletionBanner = booking.status === BookingStatus.Completed;
+  const showCompletionBanner = booking.status === BookingStatus.InProgress;
   const showPaymentButton = showCompletionBanner && !paymentInfo.isPaid;
   const shortId = (value) =>
     value ? String(value).substring(0, 8) : "N/A";

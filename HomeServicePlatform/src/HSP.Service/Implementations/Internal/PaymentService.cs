@@ -135,7 +135,12 @@ namespace HSP.Service.Implementations.Internal
 
                     _paymentRepository.Update(payment);
                     await _unitOfWork.SaveChangesAsync();
-
+                    var isClosed = await _chatConversation.GetAll().FirstOrDefaultAsync(x => x.BookingId == booking.Id);
+                    if (isClosed != null)
+                    {
+                        isClosed.IsClosed = true;
+                        await _unitOfWork.SaveChangesAsync();
+                    }
                     return new PaymentResponseDto
                     {
                         Success = true,
@@ -463,12 +468,7 @@ namespace HSP.Service.Implementations.Internal
                     booking.DateModified = DateTime.UtcNow;
                     _bookingRepository.Update(booking);
                 }
-                var isClosed = await _chatConversation.GetAll().FirstOrDefaultAsync(x => x.BookingId == booking.Id);
-                if (isClosed != null)
-                {
-                    isClosed.IsClosed = true;
-                    await _unitOfWork.SaveChangesAsync();
-                }
+                
             }
 
             payment.DateModified = DateTime.UtcNow;
