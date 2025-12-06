@@ -13,7 +13,7 @@ export default function CustomerChat() {
   // START: LOGIC TÌM KIẾM MỚI
   const [searchTerm, setSearchTerm] = useState("");
   // END: LOGIC TÌM KIẾM MỚI
-
+  const messagesContainerRef = useRef(null);
   const currentUserId = localStorage.getItem("userId")?.toLowerCase();
   const token = localStorage.getItem("jwtToken");
   const messagesEndRef = useRef(null);
@@ -81,10 +81,13 @@ export default function CustomerChat() {
   };
 
   const scrollToBottom = () => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  };
+  setTimeout(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+    }
+  }, 50);
+};
 
   const formatMessageTime = (dateString) => {
     const date = new Date(dateString);
@@ -249,7 +252,10 @@ export default function CustomerChat() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-6 py-8 bg-gradient-to-b from-gray-50/50 to-white">
+           <div
+  ref={messagesContainerRef}
+  className="flex-1 overflow-y-auto px-6 py-8 bg-gradient-to-b from-gray-50/50 to-white"
+>
               <div className="max-w-4xl mx-auto space-y-6">
                 {messages.map((m) => (
                   <div

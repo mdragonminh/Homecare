@@ -7,23 +7,21 @@ import {
   FileText,
   Eye,
   MapPin,
-  Edit3,
-  Save,
-  X,
+  Edit,
   AlertCircle,
   Trash2,
-  Edit,
 } from "lucide-react";
 import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import axiosClient from "../config/axiosClient";
 import { serviceApi } from "../services/serviceApi";
 import { toast } from "sonner";
+
 const CITIES = ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Cần Thơ", "Hải Phòng"];
 
 // ----------------------------------------------------
 // Component con: FilePreviewModal (Giữ nguyên)
 // ----------------------------------------------------
-const FilePreviewModal = ({ isOpen, onClose, fileUrl, fileName ,}) => {
+const FilePreviewModal = ({ isOpen, onClose, fileUrl, fileName }) => {
   const [scale, setScale] = useState(1);
   const [rotate, setRotate] = useState(0);
 
@@ -109,84 +107,87 @@ const FilePreviewModal = ({ isOpen, onClose, fileUrl, fileName ,}) => {
     </div>
   );
 };
+
 // eslint-disable-next-line no-unused-vars
 const SimpleFieldEditor = ({ label, icon: Icon, value, fieldName, error, children, isFieldEditing, handleEditField }) => {
-    return (
-      <div className="flex flex-col space-y-1 p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-white transition relative">
-        <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
-          <Icon className="w-4 h-4 text-blue-500" /> {label}
-        </label>
-        
-        {isFieldEditing ? (
-          <>
-            <div className="pt-1">{children}</div>
-            {error && (
-                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                    <p className="text-xs text-red-700 font-medium">{error}</p>
-                </div>
-            )}
-          </>
-        ) : (
-          <div
-            className="flex items-center justify-between py-1 cursor-pointer group"
-            onClick={() => handleEditField(fieldName)}
+  return (
+    <div className="flex flex-col space-y-1 p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-white transition relative">
+      <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
+        <Icon className="w-4 h-4 text-blue-500" /> {label}
+      </label>
+      
+      {isFieldEditing ? (
+        <>
+          <div className="pt-1">{children}</div>
+          {error && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  <p className="text-xs text-red-700 font-medium">{error}</p>
+              </div>
+          )}
+        </>
+      ) : (
+        <div
+          className="flex items-center justify-between py-1 cursor-pointer group"
+          onClick={() => handleEditField(fieldName)}
+        >
+          <p className="text-gray-900 font-medium text-lg truncate group-hover:text-blue-600 transition">
+            {value}
+          </p>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditField(fieldName);
+            }}
+            className="text-blue-600 hover:text-blue-700 p-1"
           >
-            <p className="text-gray-900 font-medium text-lg truncate group-hover:text-blue-600 transition">
-              {value}
-            </p>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEditField(fieldName);
-              }}
-              className="text-blue-600 hover:text-blue-700 p-1"
-            >
-              <Edit className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-      </div>
-    );
+            <Edit className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 };
+
 // eslint-disable-next-line no-unused-vars
 const ComplexSectionEditor = ({ label, icon: Icon, fieldName, error, children, viewContent, isFieldEditing, handleEditField }) => {
-    return (
-      <div>
-        <div className="flex items-center justify-between pb-2 mb-2"> 
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <Icon className="w-4 h-4 text-blue-500" /> {label}
-          </label>
-          {!isFieldEditing && (
-            <button 
-              onClick={() => handleEditField(fieldName)} 
-              className="text-blue-500 hover:text-blue-700 transition p-1"
-              title="Chỉnh sửa phần này"
-            >
-              <Edit className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-        
-        {isFieldEditing ? (
-          <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
-            {children}
-            {error && (
-                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                    <p className="text-xs text-red-700 font-medium">{error}</p>
-                </div>
-            )}
-          </div>
-        ) : (
-          <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-            {viewContent}
-          </div>
+  return (
+    <div>
+      <div className="flex items-center justify-between pb-2 mb-2"> 
+        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <Icon className="w-4 h-4 text-blue-500" /> {label}
+        </label>
+        {!isFieldEditing && (
+          <button 
+            onClick={() => handleEditField(fieldName)} 
+            className="text-blue-500 hover:text-blue-700 transition p-1"
+            title="Chỉnh sửa phần này"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
         )}
       </div>
-    );
+      
+      {isFieldEditing ? (
+        <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+          {children}
+          {error && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                  <p className="text-xs text-red-700 font-medium">{error}</p>
+              </div>
+          )}
+        </div>
+      ) : (
+        <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+          {viewContent}
+        </div>
+      )}
+    </div>
+  );
 };
-const TechnicianDetails = forwardRef(({ profile, getFileUrl, onUpdateSuccess ,setIsDetailsEditing,}, ref) => {
+
+const TechnicianDetails = forwardRef(({ profile, getFileUrl, setIsDetailsEditing }, ref) => {
   const [previewFile, setPreviewFile] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [loadingServices, setLoadingServices] = useState(false);
@@ -196,19 +197,29 @@ const TechnicianDetails = forwardRef(({ profile, getFileUrl, onUpdateSuccess ,se
     citizenId: "",
     address: "",
     experienceYears: 0,
-    selectedServiceIds: [],
+    selectedServices: [],  // THAY ĐỔI: Array [{id, name}] thay vì ids
     legalDocumentFile: null, 
     certificateFiles: [],
   });
 
   const [errors, setErrors] = useState({});
   const [originalForm, setOriginalForm] = useState(null);
-useImperativeHandle(ref, () => ({
+  const ALLOWED_MIME_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "application/pdf",
+];
+
+const ALLOWED_EXTENSIONS = [".png", ".jpg", ".jpeg", ".pdf"];
+
+  useImperativeHandle(ref, () => ({
     handleDetailsSave: handleSave, 
-    handleDetailsCancel: handleCancel, 
+    cancelEdit: handleCancel,  // Sửa tên thành cancelEdit như trong UI
     isEditing: !!editingField, 
     isFormValid: validate,
   }));
+
   const clearError = useCallback((fieldName) => {
     setErrors((prevErrors) => {
       if (!prevErrors[fieldName]) return prevErrors;
@@ -220,16 +231,19 @@ useImperativeHandle(ref, () => ({
 
   useEffect(() => {
     if (profile) {
-        const initialForm = {
-            citizenId: profile.citizenId || "",
-            address: profile.address || "",
-            experienceYears: profile.experienceYears || 0,
-            selectedServiceIds: (profile.services || []).map((s) => s.id),
-            legalDocumentFile: profile.legalDocument?.[0] || null,
-            certificateFiles: profile.certificateFiles || [],
-        };
-        setForm(initialForm);
-        setOriginalForm(initialForm);
+      const initialForm = {
+        citizenId: profile.citizenId || "",
+        address: profile.address || "",
+        experienceYears: profile.experienceYears || 0,
+        selectedServices: (profile.services || []).map(s => ({ id: s.id, name: s.name })),  // THAY ĐỔI: Lưu full object
+        legalDocumentFile: profile.legalDocument?.[0] || null,
+        certificateFiles: profile.certificateFiles || [],
+      };
+      setForm(initialForm);
+      setOriginalForm(initialForm);
+
+      // Fetch allServices để sẵn cho checkbox (nếu cần)
+      fetchServices();
     }
   }, [profile]);
 
@@ -246,18 +260,15 @@ useImperativeHandle(ref, () => ({
     }
   }, []);
 
- const handleEditField = useCallback((fieldName) => {
-    if (fieldName === 'services') {
-      fetchServices();
-    }
+  const handleEditField = useCallback((fieldName) => {
     setEditingField(fieldName); 
     setIsDetailsEditing(true);
     setErrors({});
-  }, [fetchServices]); 
+  }, []); 
 
   const handleCancel = useCallback(() => {
     if (originalForm) {
-        setForm(originalForm);
+      setForm(originalForm);
     }
     setEditingField(null);
     setIsDetailsEditing(false);
@@ -274,7 +285,7 @@ useImperativeHandle(ref, () => ({
 
     if (form.experienceYears < 0) newErrors.experienceYears = "Số năm kinh nghiệm không âm";
 
-    if (form.selectedServiceIds.length === 0) newErrors.services = "Chọn ít nhất 1 dịch vụ";
+    if (form.selectedServices.length === 0) newErrors.services = "Chọn ít nhất 1 dịch vụ";
 
     if (!form.legalDocumentFile) newErrors.legalDocumentFile = "Phải tải lên tài liệu pháp lý";
 
@@ -286,13 +297,13 @@ useImperativeHandle(ref, () => ({
   const handleSave = async () => {
     if (!validate()) {
       toast.error("Vui lòng kiểm tra các trường bị lỗi");
-      return;
+      return false;
     }
 
     const jwtToken = localStorage.getItem("jwtToken");
     if (!jwtToken) {
       toast.error("Phiên đăng nhập hết hạn");
-      return;
+      return false;
     }
 
     try {
@@ -304,10 +315,8 @@ useImperativeHandle(ref, () => ({
               .then(r => r.blob())
               .then(blob => new File([blob], form.legalDocumentFile.fileName, { type: blob.type }));
         formData.append("LegalDocument", legalFile);
-      } else {
-          // LƯU Ý: Nếu legalDocumentFile là bắt buộc, bạn nên xử lý lỗi ở đây
-          // hoặc dựa vào hàm validate đã có.
       }
+      
       for (const file of form.certificateFiles) {
         let certFile = file instanceof File
           ? file
@@ -316,28 +325,34 @@ useImperativeHandle(ref, () => ({
               .then(blob => new File([blob], file.fileName, { type: blob.type }));
         formData.append("Certificates", certFile);
       }
+      
       const urlSearchParams = new URLSearchParams({
           CitizenId: form.citizenId,
           Address: form.address,
           ExperienceYears: form.experienceYears.toString(),
       });
-     form.selectedServiceIds.forEach((id, index) => {
-    formData.append(`Services[${index}].Id`, id); 
-});
+      
+      form.selectedServices.forEach((s, index) => {  // THAY ĐỔI: Dùng s.id
+        formData.append(`Services[${index}].Id`, s.id); 
+      });
+      
       const finalUrl = `/TechnicianManagement?${urlSearchParams.toString()}`;
       await axiosClient.put(finalUrl, formData, {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
         },
       });
+      
       setOriginalForm({...form});
       setEditingField(null);
       setIsDetailsEditing(false);
-      onUpdateSuccess?.(); 
+      
+      return true;
     } catch (err) {
       console.error("Full error:", err);
       console.error("Response data:", err.response?.data);
       toast.error(err.response?.data?.message || "Cập nhật thất bại");
+      return false;
     }
   };
 
@@ -348,23 +363,71 @@ useImperativeHandle(ref, () => ({
 
   const handleDeleteCertificate = useCallback((index) => {
     clearError('certificateFiles');
-    const newFiles = form.certificateFiles.filter((_, i) => i !== index);
-    setForm({ ...form, certificateFiles: newFiles });
-  }, [form, clearError]);
+    setForm(prevForm => {
+      const newFiles = prevForm.certificateFiles.filter((_, i) => i !== index);
+      return { ...prevForm, certificateFiles: newFiles };
+    });
+  }, [clearError]);
 
   const handleLegalFileChange = useCallback((e) => {
-    clearError('legalDocumentFile');
-    const file = e.target.files[0];
-    if (file) {
-      setForm((prevForm) => ({ ...prevForm, legalDocumentFile: file }));
-    }
-  }, [clearError]);
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const fileName = file.name.toLowerCase();
+  const isValidType =
+    ALLOWED_MIME_TYPES.includes(file.type) ||
+    ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
+
+  if (!isValidType) {
+    setErrors((prev) => ({
+      ...prev,
+      legalDocumentFile: "File không hợp lệ. Chỉ chấp nhận các file: PNG, JPG, JPEG, PDF",
+    }));
+    e.target.value = ""; // reset input file
+    return;
+  }
+
+  clearError("legalDocumentFile");
+  setForm((prev) => ({ ...prev, legalDocumentFile: file }));
+}, [clearError]);
+
   
   const handleCertificateFileChange = useCallback((e) => {
-    clearError('certificateFiles');
-    const newFiles = Array.from(e.target.files);
-    setForm((prevForm) => ({ ...prevForm, certificateFiles: [...prevForm.certificateFiles, ...newFiles] }));
-  }, [clearError]);
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+
+  const invalidFiles = [];
+  const validFiles = [];
+
+  files.forEach((file) => {
+    const fileName = file.name.toLowerCase();
+    const isValid =
+      ALLOWED_MIME_TYPES.includes(file.type) ||
+      ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
+
+    if (!isValid) invalidFiles.push(file.name);
+    else validFiles.push(file);
+  });
+
+  if (invalidFiles.length > 0) {
+    setErrors((prev) => ({
+      ...prev,
+     certificateFiles: "File không hợp lệ. Chỉ chấp nhận các file: PNG, JPG, JPEG, PDF",
+    }));
+  } else {
+    clearError("certificateFiles");
+  }
+
+  e.target.value = ""; // reset input
+
+  if (validFiles.length > 0) {
+    setForm((prev) => ({
+      ...prev,
+      certificateFiles: [...prev.certificateFiles, ...validFiles],
+    }));
+  }
+}, [clearError]);
+
   
   const handleDeleteLegalDocument = useCallback(() => {
     clearError('legalDocumentFile');
@@ -372,7 +435,6 @@ useImperativeHandle(ref, () => ({
   }, [clearError]);
 
   if (!profile) return null;
-
 
   return (
     <div className="space-y-6">
@@ -462,19 +524,14 @@ useImperativeHandle(ref, () => ({
         handleEditField={handleEditField}
         viewContent={
           <div className="flex flex-wrap gap-2">
-           {form.selectedServiceIds.length > 0 ? (
-                form.selectedServiceIds.map((id) => {
-                    // Tìm đối tượng dịch vụ (cần tìm trong profile hoặc allServices)
-                    const service = profile.services?.find(s => s.id === id) || allServices.find(s => s.id === id);
-                    
-                    return service ? (
-                        <span key={id} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                            {service.name}
-                        </span>
-                    ) : null;
-                })
+            {form.selectedServices.length > 0 ? (  // THAY ĐỔI: Dùng form.selectedServices
+              form.selectedServices.map((service) => (
+                <span key={service.id} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                  {service.name}
+                </span>
+              ))
             ) : (
-                <p className="text-sm text-yellow-800">Chưa có dịch vụ nào.</p>
+              <p className="text-sm text-yellow-800">Chưa có dịch vụ nào.</p>
             )}
           </div>
         }
@@ -489,13 +546,16 @@ useImperativeHandle(ref, () => ({
                 <label key={s.id} className="flex items-center gap-2 p-2 border rounded-lg hover:bg-blue-50 cursor-pointer transition bg-gray-50">
                   <input
                     type="checkbox"
-                    checked={form.selectedServiceIds.includes(s.id)}
+                    checked={form.selectedServices.some((selected) => selected.id === s.id)}  // THAY ĐỔI: some với id
                     onChange={(e) => {
                       clearError('services');
-                      const newIds = e.target.checked
-                        ? [...form.selectedServiceIds, s.id]
-                        : form.selectedServiceIds.filter((id) => id !== s.id);
-                      setForm({ ...form, selectedServiceIds: newIds });
+                      let newServices = [...form.selectedServices];
+                      if (e.target.checked) {
+                        newServices.push({ id: s.id, name: s.name });  // THAY ĐỔI: Add object
+                      } else {
+                        newServices = newServices.filter((selected) => selected.id !== s.id);
+                      }
+                      setForm({ ...form, selectedServices: newServices });
                     }}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
@@ -517,17 +577,18 @@ useImperativeHandle(ref, () => ({
         handleEditField={handleEditField}
         viewContent={
           <div className="space-y-2">
-            {profile.certificateFiles?.length > 0 ? profile.certificateFiles.map((cert) => (
-              <button
-                key={cert.id}
-                onClick={() => handlePreview(cert)}
-                // ✅ Sửa viền cho Chế độ Xem (View Mode) Chứng chỉ
-                className="w-full flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg hover:bg-green-50"
-              >
-                <span className="text-sm truncate">{cert.fileName}</span>
-                <Eye className="w-4 h-4 text-gray-600" />
-              </button>
-            )) : <p className="text-sm text-yellow-800">Không có chứng chỉ.</p>}
+            {form.certificateFiles?.length > 0 ? (  // THAY ĐỔI: Dùng form.certificateFiles
+              form.certificateFiles.map((cert, index) => (  // Dùng index làm key vì file mới không có id
+                <button
+                  key={index}
+                  onClick={() => handlePreview(cert)}
+                  className="w-full flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg hover:bg-green-50"
+                >
+                  <span className="text-sm truncate">{cert.fileName || cert.name}</span>
+                  <Eye className="w-4 h-4 text-gray-600" />
+                </button>
+              ))
+            ) : <p className="text-sm text-yellow-800">Không có chứng chỉ.</p>}
           </div>
         }
       >
@@ -568,16 +629,15 @@ useImperativeHandle(ref, () => ({
         handleEditField={handleEditField}
         viewContent={
           <div className="space-y-2">
-            {profile.legalDocument?.length > 0 ? profile.legalDocument.map((doc) => (
+            {form.legalDocumentFile ? (  // THAY ĐỔI: Dùng form.legalDocumentFile (single)
               <button
-                key={doc.id}
-                onClick={() => handlePreview(doc)}
+                onClick={() => handlePreview(form.legalDocumentFile)}
                 className="w-full flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg hover:bg-indigo-50"
               >
-                <span className="text-sm truncate">{doc.fileName}</span>
+                <span className="text-sm truncate">{form.legalDocumentFile.fileName || form.legalDocumentFile.name}</span>
                 <Eye className="w-4 h-4 text-gray-600" />
               </button>
-            )) : <p className="text-sm text-yellow-800">Không có tài liệu pháp lý.</p>}
+            ) : <p className="text-sm text-yellow-800">Không có tài liệu pháp lý.</p>}
           </div>
         }
       >
@@ -606,7 +666,6 @@ useImperativeHandle(ref, () => ({
           )}
         </div>
       </ComplexSectionEditor>
-
 
       <FilePreviewModal
         isOpen={!!previewFile}

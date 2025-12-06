@@ -1,6 +1,6 @@
 // File: src/hooks/useTechnicianProfile.js
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback,useRef } from "react";
 import { toast } from "sonner";
 import { profileApi, technicianApi, resendTechnicianApplication } from "../services/profileApi";
 import { jwtDecode } from "jwt-decode";
@@ -69,6 +69,7 @@ export const useTechnicianProfile = ({ onProfileUpdate, t }) => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showDeleteAvatarModal, setShowDeleteAvatarModal] = useState(false);
 const [showResendConfirmModal, setShowResendConfirmModal] = useState(false);
+const isSavingRef = useRef(false);
   // ------------------------------------------
   // 3. VALIDATION FUNCTIONS
   // ------------------------------------------
@@ -149,76 +150,79 @@ const [showResendConfirmModal, setShowResendConfirmModal] = useState(false);
   // 4. API & DATA FETCHING
   // ------------------------------------------
 
-  const fetchProfile = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const fetchProfile = useCallback(async (skipIfSaving = false) => {
+  if (skipIfSaving && isSavingRef.current) {
+    return; // Skip nếu đang trong quá trình save
+  }
+  
+  setLoading(true);
+  setError("");
 
-    const technicianIdFromStorage = localStorage.getItem("userId");
-    const jwtToken = localStorage.getItem("jwtToken");
+  const technicianIdFromStorage = localStorage.getItem("userId");
+  const jwtToken = localStorage.getItem("jwtToken");
 
-    if (!technicianIdFromStorage || !jwtToken) {
-      setError(
-        t("ui.login_required") ||
-          "Không tìm thấy token. Vui lòng đăng nhập lại."
-      );
-      setLoading(false);
-      return;
+  if (!technicianIdFromStorage || !jwtToken) {
+    setError(
+      t("ui.login_required") ||
+        "Không tìm thấy token. Vui lòng đăng nhập lại."
+    );
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const decodedToken = jwtDecode(jwtToken);
+    const ROLE_CLAIM_NAME =
+      "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+    const ID_CLAIM_NAME =
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
+
+    const roleFromToken = decodedToken[ROLE_CLAIM_NAME]
+      ? String(decodedToken[ROLE_CLAIM_NAME]).toLowerCase()
+      : "N/A";
+    const userIdFromToken = decodedToken[ID_CLAIM_NAME];
+
+    if (roleFromToken !== "technician") {
+      //
     }
 
-    try {
-      const decodedToken = jwtDecode(jwtToken);
+    if (technicianIdFromStorage !== userIdFromToken) {
+      //
+    }
 
-      const ROLE_CLAIM_NAME =
-        "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-      const ID_CLAIM_NAME =
-        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
+    const result = await technicianApi.getTechnicianDetails(
+      technicianIdFromStorage
+    );
 
-      const roleFromToken = decodedToken[ROLE_CLAIM_NAME]
-        ? String(decodedToken[ROLE_CLAIM_NAME]).toLowerCase()
-        : "N/A";
-      const userIdFromToken = decodedToken[ID_CLAIM_NAME];
-
-      if (roleFromToken !== "technician") {
-        //
-      }
-
-      if (technicianIdFromStorage !== userIdFromToken) {
-        //
-      }
-
-      const result = await technicianApi.getTechnicianDetails(
-        technicianIdFromStorage
-      );
-
-      if (result.success) {
-        const rawData = result.data;
-        const data = {
-          ...rawData,
-          certificateFiles:
-            rawData.CertificateFiles || rawData.certificateFiles || [],
-          legalDocument:
-            rawData.LegalDocuments ||
-            rawData.legalDocument ||
-            rawData.LegalDocument ||
-            [],
-        };
-        if (Array.isArray(data.avatar) && data.avatar.length > 0) {
-          data.avatarUrl = data.avatar[0].filePath;
-        } else {
-          data.avatarUrl = null;
-        }
-        setProfile(data);
+    if (result.success) {
+      const rawData = result.data;
+      const data = {
+        ...rawData,
+        certificateFiles:
+          rawData.CertificateFiles || rawData.certificateFiles || [],
+        legalDocument:
+          rawData.LegalDocuments ||
+          rawData.legalDocument ||
+          rawData.LegalDocument ||
+          [],
+      };
+      if (Array.isArray(data.avatar) && data.avatar.length > 0) {
+        data.avatarUrl = data.avatar[0].filePath;
       } else {
-        setError(result.message);
+        data.avatarUrl = null;
       }
-    } catch (err) {
-      setError(
-        t("ui.error_loading_profile") + (err.message ? `: ${err.message}` : "")
-      );
-    } finally {
-      setLoading(false);
+      setProfile(data);
+    } else {
+      setError(result.message);
     }
-  }, [t]);
+  } catch (err) {
+    setError(
+      t("ui.error_loading_profile") + (err.message ? `: ${err.message}` : "")
+    );
+  } finally {
+    setLoading(false);
+  }
+}, [t]);
   
 const handleResendApplication = useCallback(() => {
     // Mở modal xác nhận
@@ -377,67 +381,72 @@ const handleConfirmResend = useCallback(async () => {
     }));
   };
 
-  const handleSaveProfile = async () => {
-    try {
-      const fullNameError = validateFullName(editForm.fullName);
-      const emailError = validateEmail(editForm.email);
-      const phoneError = validatePhoneNumber(editForm.phoneNumber);
+ const handleSaveProfile = async () => {
+  try {
+    const fullNameError = validateFullName(editForm.fullName);
+    const emailError = validateEmail(editForm.email);
+    const phoneError = validatePhoneNumber(editForm.phoneNumber);
 
-      setErrors({
-        fullName: fullNameError,
-        email: emailError,
-        phoneNumber: phoneError,
-      });
+    setErrors({
+      fullName: fullNameError,
+      email: emailError,
+      phoneNumber: phoneError,
+    });
 
-      if (fullNameError || emailError || phoneError) {
-        return;
-      }
-
-      const fieldToUpdate = editingField;
-
-      if (fieldToUpdate === "fullName" || fieldToUpdate === "phoneNumber") {
-        const updateResult = await profileApi.updateMyProfile(
-          editForm.fullName,
-          editForm.phoneNumber
-        );
-
-        if (!updateResult.success) {
-          throw new Error(updateResult.message);
-        }
-
-        const updatedProfileData = {
-          ...profile,
-          fullName: editForm.fullName,
-          phoneNumber: editForm.phoneNumber,
-        };
-
-        setProfile(updatedProfileData);
-
-        if (onProfileUpdate) {
-          onProfileUpdate(updatedProfileData);
-        }
-
-        setEditingField(null);
-      } else if (fieldToUpdate === "email") {
-        if (editForm.email !== profile.email) {
-          const emailResult = await profileApi.requestEmailChange(
-            editForm.email
-          );
-          if (emailResult.success) {
-            setEmailVerificationPending(true);
-            toast.success(t("success.profile_updated_email_pending"));
-          } else {
-            throw new Error(emailResult.message);
-          }
-        } else {
-          setEditingField(null);
-          toast.success(t("success.profile_updated"));
-        }
-      }
-    } catch (error) {
-      toast.error(error.message);
+    if (fullNameError || emailError || phoneError) {
+      return false; // Trả về false nếu có lỗi
     }
-  };
+
+    const fieldToUpdate = editingField;
+
+    if (fieldToUpdate === "fullName" || fieldToUpdate === "phoneNumber") {
+      const updateResult = await profileApi.updateMyProfile(
+        editForm.fullName,
+        editForm.phoneNumber
+      );
+
+      if (!updateResult.success) {
+        throw new Error(updateResult.message);
+      }
+
+      // CẬP NHẬT LOCAL STATE thay vì fetch lại
+      const updatedProfileData = {
+        ...profile,
+        fullName: editForm.fullName,
+        phoneNumber: editForm.phoneNumber,
+      };
+
+      setProfile(updatedProfileData);
+
+      if (onProfileUpdate) {
+        onProfileUpdate(updatedProfileData);
+      }
+
+      setEditingField(null);
+      return true; // Thành công
+    } else if (fieldToUpdate === "email") {
+      if (editForm.email !== profile.email) {
+        const emailResult = await profileApi.requestEmailChange(
+          editForm.email
+        );
+        if (emailResult.success) {
+          setEmailVerificationPending(true);
+          toast.success(t("success.profile_updated_email_pending"));
+          return true;
+        } else {
+          throw new Error(emailResult.message);
+        }
+      } else {
+        setEditingField(null);
+        return true;
+      }
+    }
+    return true;
+  } catch (error) {
+    toast.error(error.message);
+    return false;
+  }
+};
   const handleAvatarUpload = useCallback(async () => {
     if (!avatarFile || !profile?.id) {
       toast.error("Vui lòng chọn tệp ảnh để tải lên.");
@@ -559,6 +568,7 @@ const handleConfirmResend = useCallback(async () => {
     uploadingAvatar,
     showDeleteAvatarModal,
     showResendConfirmModal,
+    isSavingRef,
     // Handlers & Functions
     fetchProfile,
     handleChangePassword,
@@ -580,5 +590,6 @@ const handleConfirmResend = useCallback(async () => {
     handleResendApplication, // Giờ là hàm mở modal
     handleConfirmResend, // Hàm xử lý submit API
     setShowResendConfirmModal,
+    
   };
 };

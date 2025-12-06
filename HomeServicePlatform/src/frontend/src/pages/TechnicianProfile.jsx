@@ -27,6 +27,7 @@ const TechnicianProfile = ({
     uploadingAvatar,
     showDeleteAvatarModal,
     showResendConfirmModal,
+    isSavingRef,
     // Handlers
     fetchProfile,
     handleChangePassword,
@@ -65,6 +66,7 @@ const TechnicianProfile = ({
       uploadingAvatar={uploadingAvatar}
       showDeleteAvatarModal={showDeleteAvatarModal}
       showResendConfirmModal={showResendConfirmModal}
+      isSavingRef={isSavingRef}
       // Handlers
       fetchProfile={fetchProfile}
       handleChangePassword={handleChangePassword}

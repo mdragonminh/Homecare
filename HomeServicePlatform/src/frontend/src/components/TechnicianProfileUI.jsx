@@ -33,28 +33,29 @@ const ResendApplicationModal = ({ isOpen, onClose, onConfirm, loading }) => {
 
   return (
     // Backdrop: Dùng 'bg-gray-700/30 backdrop-blur-sm' để tạo hiệu ứng mờ
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-gray-700/30 backdrop-blur-sm transition-opacity duration-300"
-      onClick={onClose} 
+      onClick={onClose}
     >
       {/* Modal Content */}
-      <div 
+      <div
         className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4 transform transition-all duration-300 scale-100 opacity-100"
-        onClick={(e) => e.stopPropagation()} 
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col items-center">
           <AlertTriangle className="w-12 h-12 text-orange-500 mb-4" />
-          
+
           <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">
             Xác nhận Gửi lại Hồ sơ
           </h3>
-          
+
           <p className="text-gray-600 mb-6 text-center">
-            Bạn có chắc chắn muốn gửi lại hồ sơ này? Hồ sơ sẽ được chuyển sang trạng thái "Đang Chờ Duyệt" và cần thời gian để xem xét lại.
+            Bạn có chắc chắn muốn gửi lại hồ sơ này? Hồ sơ sẽ được chuyển sang
+            trạng thái "Đang Chờ Duyệt" và cần thời gian để xem xét lại.
           </p>
 
           {/* Cập nhật: Loại bỏ justify-end và thêm flex-1, justify-center vào các nút */}
-          <div className="flex gap-3 w-full"> 
+          <div className="flex gap-3 w-full">
             {/* Nút Hủy */}
             <button
               onClick={onClose}
@@ -63,22 +64,20 @@ const ResendApplicationModal = ({ isOpen, onClose, onConfirm, loading }) => {
             >
               Hủy
             </button>
-            
+
             {/* Nút Xác nhận */}
             <button
               onClick={onConfirm}
               // Thêm flex-1 và justify-center
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 font-semibold text-white rounded-lg transition-all duration-300 ${
-                loading 
-                  ? 'bg-orange-400 cursor-not-allowed' 
-                  : 'bg-orange-500 hover:bg-orange-600'
+                loading
+                  ? "bg-orange-400 cursor-not-allowed"
+                  : "bg-orange-500 hover:bg-orange-600"
               }`}
               disabled={loading}
             >
-              {loading && (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              )}
-              {loading ? 'Đang Gửi...' : 'Xác nhận Gửi lại'}
+              {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
+              {loading ? "Đang Gửi..." : "Xác nhận Gửi lại"}
             </button>
           </div>
         </div>
@@ -161,7 +160,8 @@ const TechnicianProfileUI = ({
   avatarPreview,
   uploadingAvatar,
   showDeleteAvatarModal,
-showResendConfirmModal,
+  showResendConfirmModal,
+  isSavingRef,
   // Handlers
   fetchProfile,
   handleChangePassword,
@@ -184,29 +184,51 @@ showResendConfirmModal,
 }) => {
   const detailsRef = useRef(null);
   const [isDetailsEditing, setIsDetailsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const combinedHandleSave = async () => {
+    // Set flags
+    isSavingRef.current = true;
+    setIsSaving(true);
+
     let hasDetailsChanges = detailsRef.current && detailsRef.current.isEditing;
     let hasProfileChanges = editingField !== null;
 
     // Validation trước khi lưu
     if (hasDetailsChanges && !detailsRef.current.isFormValid()) {
       toast.error("Vui lòng kiểm tra các trường bị lỗi");
+      isSavingRef.current = false;
+      setIsSaving(false);
       return;
     }
 
     try {
+      let detailsSuccess = true;
+      let profileSuccess = true;
+
+      // Save details (không tự fetch)
       if (hasDetailsChanges) {
-        await detailsRef.current.handleDetailsSave();
+        detailsSuccess = await detailsRef.current.handleDetailsSave();
       }
+
+      // Save profile (không tự fetch)
       if (hasProfileChanges) {
-        await handleSaveProfile();
+        profileSuccess = await handleSaveProfile();
       }
-      await fetchProfile();
-      setIsDetailsEditing(false);
-      toast.success("Cập nhật thông tin thành công!");
+
+      // ✅ CHỈ FETCH 1 LẦN SAU KHI CẢ 2 XONG
+      if (detailsSuccess && profileSuccess) {
+        await fetchProfile();
+        setIsDetailsEditing(false);
+        toast.success("Cập nhật thông tin thành công!");
+      } else {
+        toast.error("Có lỗi xảy ra khi lưu thông tin");
+      }
     } catch (error) {
       toast.error(error.message || "Có lỗi xảy ra khi lưu thông tin");
       console.error("Save error:", error);
+    } finally {
+      isSavingRef.current = false;
+      setIsSaving(false);
     }
   };
   const combinedHandleCancel = useCallback(() => {
@@ -583,25 +605,41 @@ showResendConfirmModal,
                     />
 
                     {/* Action Buttons */}
+                    {/* Action Buttons */}
                     {(editingField !== null || isDetailsEditing) && (
                       <div className="flex gap-3 mt-6">
                         <button
                           onClick={combinedHandleSave}
-                          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 group"
+                          disabled={isSaving}
+                          className={`flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg transition-all duration-200 group ${
+                            isSaving
+                              ? "opacity-50 cursor-not-allowed"
+                              : "hover:bg-blue-700"
+                          }`}
                         >
-                          <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
-                          {t("ui.save")}
+                          {isSaving ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                              Đang lưu...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                              {t("ui.save")}
+                            </>
+                          )}
                         </button>
                         <button
                           onClick={combinedHandleCancel}
-                          className="flex items-center justify-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 group"
+                          disabled={isSaving}
+                          className="flex items-center justify-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 group disabled:opacity-50"
                         >
                           <X className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                           {t("ui.cancel")}
                         </button>
                       </div>
                     )}
-                    {/* === NÚT GỬI LẠI HỒ SƠ (CHỈ HIỆN KHI BỊ REJECT) === */}
+
                     {profile.approvalStatus === 2 && (
                       <div className="mt-8 p-6 bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl border-2 border-orange-200 shadow-lg">
                         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -630,14 +668,12 @@ showResendConfirmModal,
                         </div>
                       </div>
                     )}
-                    
                   </div>
                 </div>
               )}
             </div>
           </div>
         )}
-        
       </main>
 
       {/* Change Password Modal */}
@@ -658,7 +694,7 @@ showResendConfirmModal,
         isOpen={showResendConfirmModal}
         onClose={() => setShowResendConfirmModal(false)} // Setter để đóng modal
         onConfirm={handleConfirmResend} // Hàm xử lý submit API
-        loading={uploadingAvatar} 
+        loading={uploadingAvatar}
         t={t}
       />
     </div>
