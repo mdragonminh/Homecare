@@ -31,6 +31,7 @@ import ConfirmEmailChangePage from "../pages/Auth/ConfirmEmailChangePage";
 import EquipmentManagerLayout from "../pages/equipmentmanager/EquipmentManagerLayout";
 import EquipmentManagerEquipmentPage from "../pages/equipmentmanager/EquipmentManagerEquipmentPage";
 import EquipmentManagerWarehousePage from "../pages/equipmentmanager/EquipmentManagerWarehousePage";
+import EquipmentRequestManagementPage from "../pages/equipmentmanager/EquipmentRequestManagementPage";
 import TechnicianLayout from "../pages/technician/TechnicianLayout";
 import TechnicianBookingsPage from "../pages/technician/TechnicianBookingsPage";
 import TechnicianChat from "../pages/technician/TechnicianChat";
@@ -267,6 +268,10 @@ export default function AppRoutes({
         <Route
           path="/warehouse/equipments"
           element={<EquipmentManagerEquipmentPage />}
+        />
+        <Route
+          path="/warehouse/equipment-requests"
+          element={<EquipmentRequestManagementPage />}
         />
       </Route>
 

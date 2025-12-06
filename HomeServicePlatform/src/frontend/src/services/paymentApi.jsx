@@ -311,7 +311,8 @@ export const BookingEquipmentStatus = {
   Draft: 0,
   Submitted: 1,
   Paid: 2,
-  Approved: 3
+  AwaitingDelivery: 3,
+  Delivered: 4
 };
 
 // Helper functions
@@ -354,7 +355,8 @@ export const getEquipmentStatusText = (status) => {
         0: "Nháp (Chưa gửi)",
         1: "Đã gửi khách (Chờ thanh toán)",
         2: "Đã thanh toán",
-        3: "Đã xuất kho"
+        3: "Đã xuất kho",
+        4: "Đã nhận thiết bị"
     };
     return statuses[status] || "N/A";
 };
@@ -364,7 +366,8 @@ export const getEquipmentStatusColor = (status) => {
         0: "text-gray-500 bg-gray-100", // Draft
         1: "text-amber-600 bg-amber-50", // Submitted
         2: "text-green-600 bg-green-50", // Paid
-        3: "text-blue-600 bg-blue-50",   // Approved
+        3: "text-yellow-600 bg-yellow-50",   // AwaitingDelivery
+        4: "text-emerald-600 bg-emerald-50", // Delivered
     };
     return colors[status] || "";
 };

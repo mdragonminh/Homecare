@@ -255,7 +255,7 @@ export function AuthButtons({
                     </div>
                   </button>
 
-                  {loggedInUser.role !== "technician" && (
+                  {loggedInUser.role !== "technician" && loggedInUser.role !== "supporter" && loggedInUser.role !== "equipmentmanager" && (
                     <button
                       onClick={() => handleNavigate("/list-home")}
                       className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-green-50 hover:text-green-600 transition-all duration-200 group"

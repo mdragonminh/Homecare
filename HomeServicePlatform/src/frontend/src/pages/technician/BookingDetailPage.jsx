@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { bookingApi } from "../../services/bookingApi";
 import { equipmentApi } from "../../services/equipmentApi";
+import equipmentRequestApi, { BookingEquipmentStatus as EquipmentStatus } from "../../services/equipmentRequestApi";
 import { uploadFile } from "../../services/fileApi";
 import { BookingStatus, BookingStatusLabels, FeedbackSource } from "../../constants/enums";
 import { toast } from "sonner";
@@ -196,6 +197,25 @@ const BookingDetailPage = () => {
     });
   };
 
+  const handleConfirmReceipt = async (bookingEquipmentId, equipmentName) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Xác nhận đã nhận thiết bị",
+      content: `Bạn xác nhận đã nhận thiết bị "${equipmentName}"?`,
+      isDanger: false,
+      onConfirm: async () => {
+        try {
+          await equipmentRequestApi.confirmReceipt(id, [bookingEquipmentId]);
+          toast.success("Đã xác nhận nhận thiết bị");
+          fetchBookingDetail();
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          toast.error(error.response?.data?.message || "Lỗi khi xác nhận");
+        }
+      }
+    });
+  };
+
   const onCompleteBookingClick = () => { setUploadType('CheckOut'); setIsUploadModalOpen(true); };
 
   const handleFeedbackSubmit = async (rating, comment) => {
@@ -343,12 +363,25 @@ const BookingDetailPage = () => {
                                  <div><span className="text-gray-800">{eq.equipmentName}</span></div>
                                  <span className="text-gray-600">x{eq.quantity}</span>
                               </div>
-                              <div className="flex justify-between items-center mt-1">
+                              <div className="flex justify-between items-center mt-1 gap-2">
                                   {/* Hiển thị Status Badge */}
                                   <span className={`text-[10px] px-2 py-0.5 rounded-full border ${getEquipmentStatusColor(eq.status)}`}>
                                       {getEquipmentStatusText(eq.status)}
                                   </span>
-                                  <div className="text-right font-bold text-blue-700 text-xs">
+                                  
+                                  {/* Nút xác nhận đã nhận thiết bị */}
+                                  {eq.status === EquipmentStatus.AwaitingDelivery && (
+                                    <button 
+                                      onClick={() => handleConfirmReceipt(eq.id, eq.equipmentName)}
+                                      className="text-[10px] px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition flex items-center gap-1"
+                                      title="Xác nhận đã nhận thiết bị"
+                                    >
+                                      <CheckCircleIcon className="h-3 w-3" />
+                                      Đã nhận
+                                    </button>
+                                  )}
+                                  
+                                  <div className="text-right font-bold text-blue-700 text-xs ml-auto">
                                      = {formatCurrency(eq.totalPrice)}
                                   </div>
                               </div>
@@ -379,7 +412,7 @@ const BookingDetailPage = () => {
 
               {canComplete && (
                 <button onClick={onCompleteBookingClick} className="bg-green-600 text-white px-5 py-3 rounded font-medium flex items-center gap-2">
-                  <CheckCircleIcon className="h-5 w-5" /> Hoàn thành công việc
+                  <CheckCircleIcon className="h-5 w-5" /> Checkout
                 </button>
               )}
               

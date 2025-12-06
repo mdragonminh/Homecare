@@ -81,12 +81,13 @@ namespace HSP.Service.Implementations.Internal
                 };
             }
 
-            // Check if booking already has a completed payment
-            var existingPayment = await _paymentRepository.GetAll()
+            // Check if booking already has a completed service payment
+            var existingServicePayment = await _paymentRepository.GetAll()
                 .FirstOrDefaultAsync(p => p.BookingId == input.BookingId &&
+                    p.Type == PaymentType.Service &&
                     p.Status == PaymentStatus.Completed);
 
-            if (existingPayment != null)
+            if (existingServicePayment != null)
             {
                 return new PaymentResponseDto
                 {
@@ -385,8 +386,10 @@ namespace HSP.Service.Implementations.Internal
                 Id = p.Id,
                 BookingId = p.BookingId,
                 Amount = p.Amount,
+                ShippingFee = p.ShippingFee,
                 PaymentMethod = p.PaymentMethod,
                 Status = p.Status,
+                Type = p.Type,
                 TransactionId = p.TransactionId,
                 SePayOrderId = p.SePayOrderId,
                 PaidAt = p.PaidAt,
@@ -472,15 +475,6 @@ namespace HSP.Service.Implementations.Internal
                 }
                 else
                 {
-                    // Nếu là thanh toán Service (Luồng cũ) -> Mới hoàn thành Booking
-                    var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
-                    if (booking != null && booking.Status != BookingStatus.Completed
-                        && booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
-                    {
-                        booking.Status = BookingStatus.Completed;
-                        booking.DateModified = DateTime.UtcNow;
-                        _bookingRepository.Update(booking);
-                    }
                 }
 
                 _paymentRepository.Update(payment);
@@ -553,15 +547,6 @@ namespace HSP.Service.Implementations.Internal
                 }
                 else
                 {
-                    // Update Booking status (Chỉ áp dụng cho thanh toán Service)
-                    var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
-                    if (booking != null && booking.Status != BookingStatus.Completed
-                        && booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
-                    {
-                        booking.Status = BookingStatus.Completed;
-                        booking.DateModified = DateTime.UtcNow;
-                        _bookingRepository.Update(booking);
-                    }
                 }
             }
             else if (callback.Status?.ToLower() == "failed")
@@ -600,16 +585,6 @@ namespace HSP.Service.Implementations.Internal
             if (input.Status == PaymentStatus.Completed)
             {
                 payment.PaidAt = DateTime.UtcNow;
-
-                var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
-                if (booking != null && booking.Status != BookingStatus.Completed
-            && booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
-                {
-                    booking.Status = BookingStatus.Completed;
-                    booking.DateModified = DateTime.UtcNow;
-                    _bookingRepository.Update(booking);
-                }
-                
             }
 
             payment.DateModified = DateTime.UtcNow;
@@ -706,6 +681,7 @@ namespace HSP.Service.Implementations.Internal
                 ShippingFee = payment.ShippingFee,
                 PaymentMethod = payment.PaymentMethod,
                 Status = payment.Status,
+                Type = payment.Type,
                 TransactionId = payment.TransactionId,
                 SePayOrderId = payment.SePayOrderId,
                 PaidAt = payment.PaidAt,

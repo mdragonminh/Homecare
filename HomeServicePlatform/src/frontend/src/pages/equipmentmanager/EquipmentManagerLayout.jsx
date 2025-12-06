@@ -20,6 +20,7 @@ export default function EquipmentManagerLayout({ loggedInUser }) {
   const { t } = useTranslation();
 
   const selectedKeys = useMemo(() => {
+    if (location.pathname.startsWith("/warehouse/equipment-requests")) return ["equipment-requests"];
     if (location.pathname.startsWith("/warehouse/equipments")) return ["equipments"];
     if (location.pathname.startsWith("/warehouse")) return ["warehouse"];
 
@@ -86,6 +87,7 @@ export default function EquipmentManagerLayout({ loggedInUser }) {
           onClick={({ key }) => {
             if (key === "warehouse") navigate("/warehouse");
             if (key === "equipments") navigate("/warehouse/equipments");
+            if (key === "equipment-requests") navigate("/warehouse/equipment-requests");
           }}
           items={[
             {
@@ -98,6 +100,12 @@ export default function EquipmentManagerLayout({ loggedInUser }) {
               key: "equipments",
               icon: <WrenchScrewdriverIcon style={{ width: 16, height: 16 }} />,
               label: t("equipment.menu.equipments", "Equipments"),
+              style: { marginBottom: 4 },
+            },
+            {
+              key: "equipment-requests",
+              icon: <ClipboardDocumentListIcon style={{ width: 16, height: 16 }} />,
+              label: t("equipment.menu.requests", "Equipment Requests"),
               style: { marginBottom: 4 },
             },
           ]}

@@ -10,6 +10,7 @@ namespace HSP.Core.Dtos.PaymentDto
 		public decimal ShippingFee { get; set; }
 		public PaymentMethod PaymentMethod { get; set; }
 		public PaymentStatus Status { get; set; }
+		public PaymentType Type { get; set; }
 		public string? TransactionId { get; set; }
 		public string? SePayOrderId { get; set; }
 		public DateTime? PaidAt { get; set; }

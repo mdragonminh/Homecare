@@ -271,7 +271,8 @@ namespace HSP.Service.Implementations.Internal
                         Quantity = e.Quantity,
                         UnitPrice = e.UnitPrice,
                         TotalPrice = e.Quantity * e.UnitPrice,
-                        Status = e.Status
+                        Status = e.Status,
+                        PaymentId = e.PaymentId
                     }).ToList(),
 
                 Payments = booking.Payments.Select(p => new PaymentDto
@@ -279,8 +280,10 @@ namespace HSP.Service.Implementations.Internal
                     Id = p.Id,
                     BookingId = p.BookingId,
                     Amount = p.Amount,
+                    ShippingFee = p.ShippingFee,
                     PaymentMethod = p.PaymentMethod,
                     Status = p.Status,
+                    Type = p.Type,
                     TransactionId = p.TransactionId,
                     PaidAt = p.PaidAt,
                     DateCreated = p.DateCreated
@@ -652,7 +655,7 @@ namespace HSP.Service.Implementations.Internal
                             }
 
                             item.Equipment.Quantity -= item.Quantity; 
-                            item.Status = BookingEquipmentStatus.Approved;
+                            item.Status = BookingEquipmentStatus.AwaitingDelivery;
 
                             _equipmentRepository.Update(item.Equipment);
                             _bookingEquipmentRepository.Update(item);

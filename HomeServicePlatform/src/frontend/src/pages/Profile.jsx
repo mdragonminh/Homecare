@@ -649,19 +649,25 @@ if ((domainParts.match(/\./g) || []).length < 1) {
                   {t("ui.quick_actions") || "Tác vụ nhanh"}
                 </h3>
                 <div className="space-y-3">
-                  <button
-                    onClick={() => (window.location.href = "/list-home")}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-blue-100 bg-blue-50 text-blue-700 transition-all duration-200 group hover:bg-blue-100"
-                  >
-                    <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors duration-200">
-                      <MapPin className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-semibold">
-                        {t("ui.manage_addresses")}
-                      </span>
-                    </div>
-                  </button>
+                  {(() => {
+                    const userRole = localStorage.getItem("role");
+                    const isRestrictedRole = userRole === "supporter" || userRole === "equipmentmanager";
+                    return !isRestrictedRole;
+                  })() && (
+                    <button
+                      onClick={() => (window.location.href = "/list-home")}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-blue-100 bg-blue-50 text-blue-700 transition-all duration-200 group hover:bg-blue-100"
+                    >
+                      <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors duration-200">
+                        <MapPin className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold">
+                          {t("ui.manage_addresses")}
+                        </span>
+                      </div>
+                    </button>
+                  )}
                   <button
                     onClick={handleChangePassword}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-rose-100 bg-rose-50 text-rose-700 transition-all duration-200 group hover:bg-rose-100"
@@ -678,25 +684,31 @@ if ((domainParts.match(/\./g) || []).length < 1) {
                 </div>
               </div>
 
-              {/* System Info */}
-              <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
-                <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
-                  {t("ui.system_information")}
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs text-gray-600 font-medium">
-                      {t("ui.total_homes")}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Home className="w-5 h-5 text-gray-400" />
-                      <p className="text-black-900 font-semibold">
-                        {profile.totalHomes || 0} {t("ui.homes")}
+              {/* System Info*/}
+              {(() => {
+                const userRole = localStorage.getItem("role");
+                const isRestrictedRole = userRole === "supporter" || userRole === "equipmentmanager";
+                return !isRestrictedRole;
+              })() && (
+                <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
+                  <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-4">
+                    {t("ui.system_information")}
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs text-gray-600 font-medium">
+                        {t("ui.total_homes")}
                       </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Home className="w-5 h-5 text-gray-400" />
+                        <p className="text-black-900 font-semibold">
+                          {profile.totalHomes || 0} {t("ui.homes")}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Main Content */}
