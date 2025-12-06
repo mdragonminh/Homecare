@@ -25,7 +25,15 @@ namespace HSP.Core.Dtos.PaymentDto
 		public string? Description { get; set; }
 	}
 
-	public class PaymentDetailDto : PaymentDto
+    public class CreateEquipmentPaymentDto
+    {
+        public Guid BookingId { get; set; }
+        public List<Guid> BookingEquipmentIds { get; set; } = new(); 
+        public PaymentMethod PaymentMethod { get; set; }
+        public string? Description { get; set; }
+    }
+
+    public class PaymentDetailDto : PaymentDto
 	{
 		public string? PaymentUrl { get; set; }
 		public string? FailureReason { get; set; }

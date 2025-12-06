@@ -1,4 +1,5 @@
 using HSP.Core.Dtos.BookingDto;
+using HSP.Core.Dtos.EquipmentDto;
 using HSP.Core.Dtos.Shared;
 
 namespace HSP.Service.Interfaces
@@ -13,6 +14,8 @@ namespace HSP.Service.Interfaces
 		Task<bool> TechnicianRejectAsync(Guid bookingId, Guid technicianUserId);
         Task<BookingAcceptResultDto> AcceptBookingAsync(Guid userId, AcceptBookingDto input);
         Task<bool> AddEquipmentToBookingAsync(Guid bookingId, AddBookingEquipmentDto input, Guid userId);
+		Task<bool> SubmitEquipmentToCustomerAsync(SubmitEquipmentDto input, Guid userId);
+		Task<bool> ApproveEquipmentAsync(ApproveEquipmentDto input, Guid managerId);
         Task<bool> RemoveEquipmentFromBookingAsync(Guid bookingId, Guid bookingEquipmentId, Guid userId);
     }
 }

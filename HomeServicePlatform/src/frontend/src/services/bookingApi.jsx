@@ -113,6 +113,9 @@ export const bookingApi = {
 
   // Get booking detail
   getBookingDetail: async (id) => {
+    if (!id || id === 'undefined' || id === 'null') {
+      throw new Error(`Invalid ID passed to getBookingDetail: ${id}`);
+    }
     const response = await axiosClient.get(`/booking/${id}`);
     return response.data;
   },
@@ -188,5 +191,13 @@ export const bookingApi = {
   removeEquipment: async (bookingId, bookingEquipmentId) => {
     const response = await axiosClient.delete(`/booking/${bookingId}/equipments/${bookingEquipmentId}`);
     return response.data;
-},
+  },
+
+  submitEquipments: async (bookingId, bookingEquipmentIds) => {
+    const payload = {
+      bookingEquipmentIds: bookingEquipmentIds
+    };
+    const response = await axiosClient.post(`/booking/${bookingId}/equipments/submit`, payload);
+    return response.data;
+  },
 };

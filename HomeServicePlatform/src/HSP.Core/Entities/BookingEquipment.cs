@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Abstractions.Entity;
+using HSP.Core.Enums;
 using HSP.Core.Interfaces.Entity;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -18,6 +19,11 @@ namespace HSP.Core.Entities
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
+        public BookingEquipmentStatus Status { get; set; } = BookingEquipmentStatus.Draft;
+
+        public Guid? PaymentId { get; set; }
+        [ForeignKey("PaymentId")]
+        public Payment? Payment { get; set; }
 
         public bool IsDeleted { get; set; } = false;
     }

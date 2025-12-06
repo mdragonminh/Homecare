@@ -1,27 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  CreditCard,
-  Wallet,
-  DollarSign,
-  QrCode,
-  Check,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+import { CreditCard, Wallet, DollarSign, QrCode, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  paymentApi,
-  PaymentMethod,
-  getPaymentMethodText,
-} from "../../../services/paymentApi";
+import { paymentApi, PaymentMethod } from "../../../services/paymentApi";
 import { bookingApi } from "../../../services/bookingApi";
 
 const PaymentPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { bookingId } = useParams();
+  const location = useLocation();
+
+  const isEquipmentPayment = location.state?.paymentType === 'equipment';
+  const equipmentItemsToPay = location.state?.items || [];
 
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,22 +29,32 @@ const PaymentPage = () => {
   const loadBookingDetails = async () => {
     try {
       setLoading(true);
-      const result = await bookingApi.getBookingDetail(bookingId);
-
-      if (result) {
-        setBooking(result);
-        // Calculate total amount from services and equipment
-        const serviceTotal = (result.items || []).reduce((sum, item) => sum + item.price, 0);
-        const equipmentTotal = (result.equipments || []).reduce((sum, eq) => sum + eq.totalPrice, 0);
-        const totalAmount = serviceTotal + equipmentTotal;
-        setAmount(totalAmount);
-        setDescription(`Thanh toán cho booking ${bookingId}`);
+      
+      if (isEquipmentPayment) {
+          if (equipmentItemsToPay.length === 0) {
+              toast.error("Không có vật tư nào để thanh toán");
+              navigate(`/customer/booking/${bookingId}`);
+              return;
+          }
+          const total = equipmentItemsToPay.reduce((sum, item) => sum + item.totalPrice, 0);
+          setAmount(total);
+          setDescription(`Thanh toán ${equipmentItemsToPay.length} vật tư phát sinh - Booking ${bookingId.substring(0,8)}`);
+          const result = await bookingApi.getBookingDetail(bookingId);
+          setBooking(result);
       } else {
-        toast.error("Không tìm thấy thông tin booking");
-        navigate("/");
+          const result = await bookingApi.getBookingDetail(bookingId);
+          if (result) {
+            setBooking(result);
+
+            const serviceTotal = (result.items || []).reduce((sum, item) => sum + item.price, 0);
+
+            setAmount(serviceTotal); 
+            setDescription(`Thanh toán dịch vụ booking ${bookingId}`);
+          } else {
+            navigate("/");
+          }
       }
     } catch (error) {
-      console.error("Error loading booking:", error);
       toast.error("Lỗi khi tải thông tin booking");
       navigate("/");
     } finally {
@@ -60,196 +62,99 @@ const PaymentPage = () => {
     }
   };
 
-  const handlePaymentMethodSelect = (method) => {
-    setSelectedMethod(method);
-  };
-
   const handleSubmitPayment = async () => {
-    if (!selectedMethod && selectedMethod !== 0) {
-      toast.error("Vui lòng chọn phương thức thanh toán");
-      return;
-    }
-
-    if (!amount || amount <= 0) {
-      toast.error("Số tiền thanh toán không hợp lệ");
-      return;
-    }
+    if (!amount || amount <= 0) return toast.error("Số tiền không hợp lệ");
 
     try {
       setSubmitting(true);
+      let result;
 
-      const paymentData = {
-        bookingId: bookingId,
-        amount: amount,
-        paymentMethod: selectedMethod,
-        description: description,
-      };
-
-      const result = await paymentApi.createPayment(paymentData);
+      if (isEquipmentPayment) {
+          const paymentData = {
+              bookingId: bookingId,
+              bookingEquipmentIds: equipmentItemsToPay.map(e => e.id),
+              amount: amount,
+              paymentMethod: selectedMethod,
+              description: description,
+          };
+          result = await paymentApi.createEquipmentPayment(paymentData);
+      } else {
+          const paymentData = {
+              bookingId: bookingId,
+              amount: amount,
+              paymentMethod: selectedMethod,
+              description: description,
+          };
+          result = await paymentApi.createPayment(paymentData);
+      }
 
       if (result.success) {
         const payment = result.data.payment;
-        const paymentUrl = result.data.paymentUrl;
+        const paymentUrl = result.data.paymentUrl; 
+        toast.success("Tạo thanh toán thành công!");
 
-        toast.success("Tạo yêu cầu thanh toán thành công!");
-
-        // Redirect based on payment method
         if (selectedMethod === PaymentMethod.Cash) {
-          // For cash payment, just show success
           navigate(`/payment/result/${payment.id}`);
         } else {
-          // For bank transfer, redirect to instructions page
-          navigate(`/payment/instructions/${payment.id}`, {
-            state: { payment, paymentUrl },
-          });
+             navigate(`/payment/instructions/${payment.id}`, { state: { payment, paymentUrl } });
         }
       } else {
         toast.error(result.message || "Không thể tạo thanh toán");
       }
     } catch (error) {
-      console.error("Error creating payment:", error);
-      toast.error("Lỗi khi tạo thanh toán");
+      toast.error("Lỗi hệ thống");
     } finally {
       setSubmitting(false);
     }
   };
 
   const paymentMethods = [
-    {
-      id: PaymentMethod.Cash,
-      name: "Tiền mặt",
-      description: "Thanh toán bằng tiền mặt khi hoàn thành dịch vụ",
-      icon: <DollarSign className="h-6 w-6" />,
-      color: "blue",
-    },
-    {
-      id: PaymentMethod.BankTransfer,
-      name: "Chuyển khoản ngân hàng",
-      description: "Chuyển khoản qua ngân hàng",
-      icon: <CreditCard className="h-6 w-6" />,
-      color: "green",
-    },
-    {
-      id: PaymentMethod.QRCode,
-      name: "Mã QR",
-      description: "Quét mã QR để thanh toán",
-      icon: <QrCode className="h-6 w-6" />,
-      color: "purple",
-      disabled: true,
-    },
-    {
-      id: PaymentMethod.EWallet,
-      name: "Ví điện tử",
-      description: "Thanh toán qua ví điện tử",
-      icon: <Wallet className="h-6 w-6" />,
-      color: "orange",
-      disabled: true,
-    },
+    { id: PaymentMethod.Cash, name: "Tiền mặt", description: "Thanh toán khi hoàn thành", icon: <DollarSign className="h-6 w-6" />, color: "blue" },
+    { id: PaymentMethod.BankTransfer, name: "Chuyển khoản / QR", description: "Quét mã QR SePay", icon: <QrCode className="h-6 w-6" />, color: "green" },
   ];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Đang tải thông tin...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-blue-600" /></div>;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Thanh toán dịch vụ
+            {isEquipmentPayment ? "Thanh toán Vật tư phát sinh" : "Thanh toán Dịch vụ"}
           </h1>
-          <p className="text-gray-600">
-            Chọn phương thức thanh toán phù hợp với bạn
-          </p>
+          <p className="text-gray-600">Chọn phương thức thanh toán phù hợp</p>
         </div>
 
-        {/* Booking Summary */}
         {booking && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Thông tin booking
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Chi tiết thanh toán</h2>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Mã booking:</span>
-                <span className="font-medium">{booking.id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Ngày hẹn:</span>
-                <span className="font-medium">
-                  {(() => {
-                    if (!booking.desiredDate) return "";
-                    const dateStr = String(booking.desiredDate);
-                    let date;
-                    if (dateStr.includes('Z') || dateStr.includes('+') || dateStr.match(/-\d{2}:\d{2}$/)) {
-                      date = new Date(dateStr);
-                    } else {
-                      date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
-                    }
-                    return date.toLocaleString("vi-VN", {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      timeZone: "Asia/Ho_Chi_Minh"
-                    });
-                  })()}
-                </span>
-              </div>
+              <div className="flex justify-between"><span className="text-gray-600">Mã booking:</span><span className="font-medium">{booking.id}</span></div>
               
-              {/* Services List */}
-              {booking.items && booking.items.length > 0 && (
-                <div className="pt-3 border-t border-gray-200 mt-3">
-                  <span className="text-gray-600 font-medium mb-2 block">
-                    Dịch vụ:
-                  </span>
-                  <div className="space-y-1">
-                    {booking.items.map((item, index) => (
-                      <div key={item.id || index} className="flex justify-between pl-4">
-                        <span className="text-gray-700">{item.serviceName || 'Dịch vụ'}</span>
-                        <span className="text-gray-900">{item.price.toLocaleString("vi-VN")} VNĐ</span>
-                      </div>
-                    ))}
+              <div className="pt-3 border-t border-gray-200 mt-3">
+                  <span className="text-gray-600 font-medium mb-2 block">Nội dung thanh toán:</span>
+                  <div className="space-y-1 bg-gray-50 p-3 rounded">
+                    {isEquipmentPayment ? (
+                        equipmentItemsToPay.map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-sm">
+                                <span>{item.equipmentName} (x{item.quantity})</span>
+                                <span className="font-medium">{item.totalPrice.toLocaleString("vi-VN")} đ</span>
+                            </div>
+                        ))
+                    ) : (
+                        booking.items?.map((item, idx) => (
+                            <div key={idx} className="flex justify-between text-sm">
+                                <span>{item.serviceName}</span>
+                                <span className="font-medium">{item.price.toLocaleString("vi-VN")} đ</span>
+                            </div>
+                        ))
+                    )}
                   </div>
-                </div>
-              )}
-
-              {/* Equipment List */}
-              {booking.equipments && booking.equipments.length > 0 && (
-                <div className="pt-3 border-t border-gray-200 mt-3">
-                  <span className="text-gray-600 font-medium mb-2 block">
-                    Thiết bị:
-                  </span>
-                  <div className="space-y-1">
-                    {booking.equipments.map((equipment, index) => (
-                      <div key={equipment.id || index} className="pl-4">
-                        <div className="flex justify-between">
-                          <span className="text-gray-700">{equipment.equipmentName}</span>
-                          <span className="text-gray-900">{equipment.totalPrice.toLocaleString("vi-VN")} VNĐ</span>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Số lượng: {equipment.quantity} × {equipment.unitPrice.toLocaleString("vi-VN")} VNĐ
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              </div>
               
               <div className="flex justify-between pt-3 border-t border-gray-200 mt-3">
-                <span className="text-gray-900 font-semibold">Tổng tiền:</span>
-                <span className="font-bold text-lg text-blue-600">
-                  {amount.toLocaleString("vi-VN")} VNĐ
-                </span>
+                <span className="text-gray-900 font-semibold">Tổng thanh toán:</span>
+                <span className="font-bold text-lg text-blue-600">{amount.toLocaleString("vi-VN")} VNĐ</span>
               </div>
             </div>
           </div>
@@ -257,102 +162,26 @@ const PaymentPage = () => {
 
         {/* Payment Methods */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Chọn phương thức thanh toán
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Phương thức thanh toán</h2>
           <div className="space-y-3">
             {paymentMethods.map((method) => (
-              <button
-                key={method.id}
-                onClick={() => !method.disabled && handlePaymentMethodSelect(method.id)}
-                disabled={method.disabled || submitting}
-                className={`w-full p-4 rounded-lg border-2 transition-all ${
-                  selectedMethod === method.id
-                    ? `border-${method.color}-500 bg-${method.color}-50`
-                    : "border-gray-200 hover:border-gray-300"
-                } ${
-                  method.disabled
-                    ? "opacity-50 cursor-not-allowed"
-                    : "cursor-pointer"
-                }`}
-              >
-                <div className="flex items-center">
-                  <div
-                    className={`text-${method.color}-600 mr-4 flex-shrink-0`}
-                  >
-                    {method.icon}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-semibold text-gray-900 flex items-center">
-                      {method.name}
-                      {method.disabled && (
-                        <span className="ml-2 text-xs text-gray-500">
-                          (Sắp ra mắt)
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {method.description}
-                    </div>
-                  </div>
-                  {selectedMethod === method.id && (
-                    <Check className="h-6 w-6 text-green-600 flex-shrink-0" />
-                  )}
+              <button key={method.id} onClick={() => setSelectedMethod(method.id)} disabled={submitting}
+                className={`w-full p-4 rounded-lg border-2 transition-all flex items-center ${selectedMethod === method.id ? `border-${method.color}-500 bg-${method.color}-50` : "border-gray-200"}`}>
+                <div className={`text-${method.color}-600 mr-4`}>{method.icon}</div>
+                <div className="flex-1 text-left">
+                    <div className="font-semibold text-gray-900">{method.name}</div>
+                    <div className="text-sm text-gray-600">{method.description}</div>
                 </div>
+                {selectedMethod === method.id && <Check className="h-6 w-6 text-green-600" />}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Amount Input */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Số tiền thanh toán
-          </h2>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Nhập số tiền"
-            disabled={submitting}
-          />
-          <p className="mt-2 text-sm text-gray-500">
-            Số tiền được làm tròn đến nghìn đồng
-          </p>
-        </div>
-
-        {/* Description */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ghi chú</h2>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            rows="3"
-            placeholder="Thêm ghi chú cho thanh toán (không bắt buộc)"
-            disabled={submitting}
-          />
-        </div>
-
-        {/* Submit Button */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <button
-            onClick={handleSubmitPayment}
-            disabled={submitting}
-            className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                Đang xử lý...
-              </>
-            ) : (
-              <>
-                <CreditCard className="h-5 w-5 mr-2" />
-                Xác nhận thanh toán
-              </>
-            )}
+          <button onClick={handleSubmitPayment} disabled={submitting} className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center disabled:opacity-70">
+            {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CreditCard className="h-5 w-5 mr-2" />}
+            {submitting ? "Đang xử lý..." : "Xác nhận thanh toán"}
           </button>
         </div>
       </div>

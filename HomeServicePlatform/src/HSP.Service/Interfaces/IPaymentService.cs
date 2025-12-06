@@ -10,10 +10,12 @@ namespace HSP.Service.Interfaces
 		/// </summary>
 		Task<PaymentResponseDto> CreatePaymentAsync(CreatePaymentDto input, string userId);
 
-		/// <summary>
-		/// Get payment details by ID
-		/// </summary>
-		Task<PaymentDetailDto?> GetPaymentByIdAsync(Guid paymentId);
+		Task<PaymentResponseDto> CreateEquipmentPaymentAsync(CreateEquipmentPaymentDto input, string userId);
+
+        /// <summary>
+        /// Get payment details by ID
+        /// </summary>
+        Task<PaymentDetailDto?> GetPaymentByIdAsync(Guid paymentId);
 
 		/// <summary>
 		/// Get all payments with filtering

@@ -106,5 +106,6 @@ namespace HSP.Core.Dtos.BookingDto
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; } 
         public decimal TotalPrice { get; set; } 
+        public BookingEquipmentStatus Status { get; set; }
     }
 }
