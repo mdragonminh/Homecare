@@ -45,6 +45,27 @@ export const paymentApi = {
     }
   },
 
+  createEquipmentPayment: async (paymentData) => {
+    try {
+      if (ENABLE_DEBUG) {
+        console.log("=== CREATE EQUIPMENT PAYMENT API ===", paymentData);
+      }
+      const response = await axiosClient.post("/payment/equipment", paymentData);
+
+      if (ENABLE_DEBUG) {
+        console.log("Equipment Payment created:", response.data);
+      }
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      if (ENABLE_DEBUG) console.error("Error creating equipment payment", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || "Lỗi khi tạo thanh toán vật tư",
+      };
+    }
+  },
+
   /**
    * Get payment details by ID
    * @param {string} paymentId - Payment ID
