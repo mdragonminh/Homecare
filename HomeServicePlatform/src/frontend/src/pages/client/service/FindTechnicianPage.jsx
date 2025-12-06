@@ -32,10 +32,6 @@ import MapDisplay from "../../../components/findTechnician/MapDisplay.jsx";
 import AddHomeModal from "../home/AddHome.jsx";
 import EditHomeModal from "../home/EditHomePage.jsx";
 import TechnicianDetailModal from "../../../components/client/TechnicianDetailModal.jsx";
-
-// --- START: CUSTOM STYLES / COMPONENTS FOR REDESIGN ---
-
-// Tái sử dụng để có hiệu ứng nút đẹp hơn
 const PrimaryButton = ({ children, onClick, disabled, className = "", icon: Icon }) => (
   <button
     onClick={onClick}
@@ -61,8 +57,6 @@ const SuccessButton = ({ children, onClick, disabled, className = "", icon: Icon
     {children}
   </button>
 );
-
-// Tái sử dụng cho input/select
 const InputField = ({ children, label, id,  }) => (
   <div>
     <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-2">
@@ -71,10 +65,6 @@ const InputField = ({ children, label, id,  }) => (
     {children}
   </div>
 );
-
-// --- END: CUSTOM STYLES / COMPONENTS FOR REDESIGN ---
-
-
 export function FindTechnicianPage({ loggedInUser }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -116,7 +106,6 @@ export function FindTechnicianPage({ loggedInUser }) {
     preferredDate,
     preferredTime,
     matchSuccessInfo,
-    // ĐÃ LOẠI BỎ: setSearchRadius,
     setAddressInput,
     setIsAddHomeModalOpen,
     setIsEditHomeModalOpen,
@@ -140,8 +129,6 @@ export function FindTechnicianPage({ loggedInUser }) {
     if (!matchSuccessInfo?.scheduledAt) return null;
     const date = new Date(matchSuccessInfo.scheduledAt);
     if (Number.isNaN(date.getTime())) return matchSuccessInfo.scheduledAt;
-
-    // Hiển thị thời gian theo múi giờ Việt Nam (UTC+7)
     return date.toLocaleString("vi-VN", {
       timeZone: "Asia/Ho_Chi_Minh",
       weekday: "short",
@@ -371,8 +358,6 @@ export function FindTechnicianPage({ loggedInUser }) {
                     <ChevronDown className="h-5 w-5" />
                   )}
                 </div>
-
-                {/* KHỐI UL ĐÃ ĐƯỢC DI CHUYỂN VÀO BÊN TRONG DIV.RELATIVE VÀ THÊM top-full mt-1 */}
                 {isServiceDropdownOpen && !isServicesLoading && (
                   <ul className="absolute z-20 w-full bg-white border border-gray-300 rounded-xl shadow-2xl max-h-72 overflow-y-auto top-full mt-1">
                     {filteredServices.map((service) => {
@@ -433,11 +418,7 @@ export function FindTechnicianPage({ loggedInUser }) {
                   </div>
                 </div>
               )}
-
-              {/* KHỐI UL GỐC (TỪ DÒNG 299) ĐÃ BỊ XÓA BỎ Ở ĐÂY */}
             </InputField>
-
-            {/* Date/Time (ĐÃ BỎ Ô BÁN KÍNH) */}
             <div
               className={`grid gap-4 ${
                 loggedInUser ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
@@ -546,7 +527,7 @@ export function FindTechnicianPage({ loggedInUser }) {
               <button
                 onClick={handleGetMyLocation}
                 disabled={isSearching || isGettingLocation || isMatching}
-                className={`absolute bottom-4 right-4 z-10 w-12 h-12 rounded-full bg-white shadow-xl hover:shadow-2xl transition-all flex items-center justify-center border border-gray-200 ${
+                className={`absolute bottom-4 left-4 z-10 w-12 h-12 rounded-full bg-white shadow-xl hover:shadow-2xl transition-all flex items-center justify-center border border-gray-200 ${
                   isGettingLocation ? "animate-pulse" : "hover:bg-gray-100"
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
                 title={t("ui.use_my_current_location", {
@@ -660,12 +641,10 @@ export function FindTechnicianPage({ loggedInUser }) {
         technicianId={selectedTechnicianId}
       />
 
-      {/* Matching Overlay */}
+      
       {isMatching && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Hiệu ứng mờ tối (Dimmed) */}
           <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm transition-opacity duration-300"></div>{" "}
-          
           <div className="relative bg-white px-10 py-8 rounded-3xl shadow-2xl border-4 border-blue-200 flex flex-col items-center gap-4 animate-bounce-in">
             <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
             <p className="text-lg font-bold text-gray-800 animate-pulse">

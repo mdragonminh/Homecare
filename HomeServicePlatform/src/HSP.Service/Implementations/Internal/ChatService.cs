@@ -69,7 +69,7 @@ namespace HSP.Service.Implementations.Internal
                 BookingId = c.BookingId,
                 BookingDescription = c.Booking.ProblemDescription ?? "Không có mô tả",
                 CreatedAt = c.CreatedAt,
-
+                IsClosed = c.IsClosed,
                 LastMessage = c.Messages
                     .OrderByDescending(m => m.SentAt)
                     .Select(m => new MessageResponseDto

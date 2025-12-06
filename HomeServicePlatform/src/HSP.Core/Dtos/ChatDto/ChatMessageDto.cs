@@ -41,5 +41,6 @@ namespace HSP.Core.Dtos.ChatDto
         public MessageResponseDto? LastMessage { get; set; }
         public int UnreadCount { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool IsClosed { get; set; }
     }
 }
