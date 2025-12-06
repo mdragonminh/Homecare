@@ -22,6 +22,7 @@ namespace HSP.Service.Implementations.Internal
         private readonly ISePayService _sePayService;
         private readonly SePayConfigurationDto _sePayConfig;
         private readonly IRepository<ChatConversation, Guid> _chatConversation;
+        private readonly IRepository<BookingEquipment, Guid> _bookingEquipmentRepository;
         public PaymentService(
             IRepository<Payment, Guid> paymentRepository,
             IRepository<Booking, Guid> bookingRepository,
@@ -29,13 +30,15 @@ namespace HSP.Service.Implementations.Internal
             IRepository<ChatConversation,Guid> chatConversation,
             IOptions<SePayConfigurationDto> sePayConfig,
             IUnitOfWork unitOfWork,
-            IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
+            IStringLocalizer<SharedResource> localizer,
+            IRepository<BookingEquipment, Guid> bookingEquipmentRepository) : base(unitOfWork, localizer)
         {
             _paymentRepository = paymentRepository;
             _bookingRepository = bookingRepository;
             _sePayService = sePayService;
             _sePayConfig = sePayConfig.Value;
             _chatConversation = chatConversation;
+            _bookingEquipmentRepository = bookingEquipmentRepository;
         }
 
         public async Task<PaymentResponseDto> CreatePaymentAsync(CreatePaymentDto input, string userId)
@@ -175,6 +178,96 @@ namespace HSP.Service.Implementations.Internal
             };
         }
 
+        public async Task<PaymentResponseDto> CreateEquipmentPaymentAsync(CreateEquipmentPaymentDto input, string userId)
+        {
+            // Validate Booking exists
+            var booking = await _bookingRepository.GetAll(b => b.Customer)
+                .FirstOrDefaultAsync(b => b.Id == input.BookingId && !b.IsDeleted);
+
+            if (booking == null) return new PaymentResponseDto { Success = false, Message = _localizer["Booking not found"] };
+
+            // Validate Items: Phải tồn tại, thuộc booking này, và đang ở trạng thái Submitted
+            var itemsToPay = await _bookingEquipmentRepository.GetAll() // Cần Inject _bookingEquipmentRepository vào PaymentService
+                .Where(be => input.BookingEquipmentIds.Contains(be.Id)
+                             && be.BookingId == input.BookingId
+                             && be.Status == BookingEquipmentStatus.Submitted)
+                .ToListAsync();
+
+            if (itemsToPay.Count != input.BookingEquipmentIds.Count)
+            {
+                return new PaymentResponseDto { Success = false, Message = _localizer["Một số thiết bị không hợp lệ hoặc sai trạng thái"] };
+            }
+
+            // Tính tổng tiền
+            decimal totalAmount = itemsToPay.Sum(x => x.Quantity * x.UnitPrice);
+
+            // Create Payment record
+            var payment = new Payment
+            {
+                Id = Guid.NewGuid(),
+                BookingId = input.BookingId,
+                Amount = totalAmount,
+                PaymentMethod = input.PaymentMethod,
+                Status = PaymentStatus.Pending,
+                Type = PaymentType.Equipment, // Đánh dấu là thanh toán Equipment
+                Description = input.Description ?? $"Payment for equipments: {string.Join(", ", itemsToPay.Select(x => x.EquipmentId))}",
+                DateCreated = DateTime.UtcNow,
+                DateModified = DateTime.UtcNow
+            };
+
+            // Link PaymentId vào các BookingEquipment ngay lập tức (để tracking)
+            foreach (var item in itemsToPay)
+            {
+                item.PaymentId = payment.Id;
+                _bookingEquipmentRepository.Update(item); // Cần update repository này
+            }
+
+            await _paymentRepository.AddAsync(payment);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Xử lý SePay (Logic tương tự hàm cũ nhưng object Payment khác)
+            if (input.PaymentMethod != PaymentMethod.Cash)
+            {
+                var sePayRequest = new SePayCreateOrderRequest
+                {
+                    OrderId = payment.Id.ToString(), // Sử dụng PaymentId làm OrderId
+                    Amount = payment.Amount,
+                    Description = payment.Description,
+                    ReturnUrl = _sePayConfig.ReturnUrl,
+                    CallbackUrl = _sePayConfig.CallbackUrl,
+                    BuyerName = booking.Customer?.FullName,
+                    BuyerEmail = booking.Customer?.Email,
+                    BuyerPhone = booking.Customer?.PhoneNumber
+                };
+
+                // ... (Gọi SePay service, update payment status như hàm cũ)
+                // Lưu ý: Nếu SePay trả về PaymentUrl thành công, return URL đó.
+            }
+            else
+            {
+                // Nếu là tiền mặt -> Đánh dấu thành công luôn -> Update Status BookingEquipment thành Paid
+                payment.Status = PaymentStatus.Completed;
+                payment.PaidAt = DateTime.UtcNow;
+
+                foreach (var item in itemsToPay)
+                {
+                    item.Status = BookingEquipmentStatus.Paid; // Cash -> Paid luôn
+                    _bookingEquipmentRepository.Update(item);
+                }
+
+                _paymentRepository.Update(payment);
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            return new PaymentResponseDto
+            {
+                Success = true,
+                Message = _localizer["Payment created successfully"],
+                Payment = MapToDto(payment)
+                // PaymentUrl...
+            };
+        }
+
         public async Task<PaymentDetailDto?> GetPaymentByIdAsync(Guid paymentId)
         {
             var payment = await _paymentRepository.GetAll(p => p.Booking)
@@ -296,53 +389,38 @@ namespace HSP.Service.Implementations.Internal
         {
             try
             {
-                // Validate webhook input
-                if (webhook == null)
-                {
-                    return false;
-                }
+                if (webhook == null) return false;
 
-                // Extract payment code from content
                 var content = webhook.Content?.Trim() ?? "";
-
-                // Try to find payment code (HSP + 8 digits/chars)
                 var paymentCode = ExtractPaymentCode(content);
 
-                if (string.IsNullOrEmpty(paymentCode))
-                {
-                    // No payment code found, ignore this transaction
-                    return false;
-                }
-                // Find payment by SePayOrderId (payment code)
+                if (string.IsNullOrEmpty(paymentCode)) return false;
+
+                // Include BookingEquipment để update sau này
                 var payment = await _paymentRepository.GetAll()
+                    .Include(p => p.BookingEquipments)
                     .FirstOrDefaultAsync(p => p.SePayOrderId == paymentCode && !p.IsDeleted);
 
-                if (payment == null)
-                {
-                    // No matching payment found
-                    return false;
-                }
+                if (payment == null) return false;
 
-                // Check if already processed
+                // Case 1: Đã xử lý rồi -> Return True luôn (Idempotency)
                 if (payment.Status == PaymentStatus.Completed)
                 {
-                    return true; // Already processed
+                    return true;
                 }
 
-                // Verify amount matches
+                // Verify amount
                 if (payment.Amount != webhook.TransferAmount)
                 {
-                    var errorMsg = $"Amount mismatch: Expected {payment.Amount}, Got {webhook.TransferAmount}";
-
                     payment.Status = PaymentStatus.Failed;
-                    payment.FailureReason = errorMsg;
+                    payment.FailureReason = $"Amount mismatch: Expected {payment.Amount}, Got {webhook.TransferAmount}";
                     payment.DateModified = DateTime.UtcNow;
                     _paymentRepository.Update(payment);
                     await _unitOfWork.SaveChangesAsync();
                     return false;
                 }
 
-                // Update payment status - only update necessary fields
+                // === CẬP NHẬT TRẠNG THÁI THANH TOÁN ===
                 payment.Status = PaymentStatus.Completed;
                 payment.PaidAt = DateTime.UtcNow;
                 payment.TransactionId = webhook.Id.ToString();
@@ -350,17 +428,38 @@ namespace HSP.Service.Implementations.Internal
                 payment.SePayResponse = System.Text.Json.JsonSerializer.Serialize(webhook);
                 payment.DateModified = DateTime.UtcNow;
 
-                _paymentRepository.Update(payment);
-
-                var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
-                if (booking != null && booking.Status != BookingStatus.Completed
-                && booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
+                // === LOGIC MỚI: XỬ LÝ THEO LOẠI THANH TOÁN ===
+                if (payment.Type == PaymentType.Equipment)
                 {
-                    booking.Status = BookingStatus.Completed;
-                    booking.DateModified = DateTime.UtcNow;
-                    _bookingRepository.Update(booking);
+                    // Nếu là thanh toán Equipment -> Chỉ update trạng thái các món đồ
+                    // (Lưu ý: Dùng _bookingEquipmentRepository để đảm bảo tracking change)
+                    var equipments = await _bookingEquipmentRepository.GetAll()
+                        .Where(be => be.PaymentId == payment.Id).ToListAsync();
+
+                    foreach (var item in equipments)
+                    {
+                        if (item.Status == BookingEquipmentStatus.Submitted)
+                        {
+                            item.Status = BookingEquipmentStatus.Paid;
+                            _bookingEquipmentRepository.Update(item);
+                        }
+                    }
+                    // KHÔNG update Booking.Status = Completed ở đây vì thợ vẫn đang làm
+                }
+                else
+                {
+                    // Nếu là thanh toán Service (Luồng cũ) -> Mới hoàn thành Booking
+                    var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
+                    if (booking != null && booking.Status != BookingStatus.Completed
+                        && booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
+                    {
+                        booking.Status = BookingStatus.Completed;
+                        booking.DateModified = DateTime.UtcNow;
+                        _bookingRepository.Update(booking);
+                    }
                 }
 
+                _paymentRepository.Update(payment);
                 await _unitOfWork.SaveChangesAsync();
 
                 return true;
@@ -393,33 +492,52 @@ namespace HSP.Service.Implementations.Internal
                 return false;
             }
 
-            // Find payment by order ID
             if (!Guid.TryParse(callback.OrderId, out var paymentId))
             {
                 return false;
             }
 
             var payment = await _paymentRepository.GetByIdAsync(paymentId);
-            if (payment == null)
-            {
-                return false;
-            }
+            if (payment == null) return false;
 
             // Update payment status based on callback
             if (callback.Status?.ToLower() == "success" || callback.Status?.ToLower() == "completed")
             {
+                // Kiểm tra nếu đã completed rồi thì thôi
+                if (payment.Status == PaymentStatus.Completed) return true;
+
                 payment.Status = PaymentStatus.Completed;
                 payment.PaidAt = DateTime.UtcNow;
                 payment.TransactionId = callback.TransactionRef;
                 payment.SePayTransactionRef = callback.TransactionRef;
 
-                var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
-                if (booking != null && booking.Status != BookingStatus.Completed
-            && booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
+                // === LOGIC MỚI ===
+                if (payment.Type == PaymentType.Equipment)
                 {
-                    booking.Status = BookingStatus.Completed;
-                    booking.DateModified = DateTime.UtcNow;
-                    _bookingRepository.Update(booking);
+                    // Update Equipment status
+                    var equipments = await _bookingEquipmentRepository.GetAll()
+                        .Where(be => be.PaymentId == payment.Id).ToListAsync();
+
+                    foreach (var item in equipments)
+                    {
+                        if (item.Status == BookingEquipmentStatus.Submitted)
+                        {
+                            item.Status = BookingEquipmentStatus.Paid;
+                            _bookingEquipmentRepository.Update(item);
+                        }
+                    }
+                }
+                else
+                {
+                    // Update Booking status (Chỉ áp dụng cho thanh toán Service)
+                    var booking = await _bookingRepository.GetByIdAsync(payment.BookingId);
+                    if (booking != null && booking.Status != BookingStatus.Completed
+                        && booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Pending)
+                    {
+                        booking.Status = BookingStatus.Completed;
+                        booking.DateModified = DateTime.UtcNow;
+                        _bookingRepository.Update(booking);
+                    }
                 }
             }
             else if (callback.Status?.ToLower() == "failed")
@@ -438,7 +556,6 @@ namespace HSP.Service.Implementations.Internal
 
             return true;
         }
-
         public async Task<bool> UpdatePaymentStatusAsync(UpdatePaymentStatusDto input)
         {
             var payment = await _paymentRepository.GetByIdAsync(input.PaymentId);

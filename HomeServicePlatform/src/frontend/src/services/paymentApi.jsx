@@ -286,6 +286,13 @@ export const PaymentStatus = {
   Refunded: 5,
 };
 
+export const BookingEquipmentStatus = {
+  Draft: 0,
+  Submitted: 1,
+  Paid: 2,
+  Approved: 3
+};
+
 // Helper functions
 export const getPaymentMethodText = (method) => {
   const methods = {
@@ -319,4 +326,24 @@ export const getPaymentStatusColor = (status) => {
     5: "secondary", // Refunded - purple
   };
   return colors[status] || "default";
+};
+
+export const getEquipmentStatusText = (status) => {
+    const statuses = {
+        0: "Nháp (Chưa gửi)",
+        1: "Đã gửi khách (Chờ thanh toán)",
+        2: "Đã thanh toán",
+        3: "Đã xuất kho"
+    };
+    return statuses[status] || "N/A";
+};
+
+export const getEquipmentStatusColor = (status) => {
+    const colors = {
+        0: "text-gray-500 bg-gray-100", // Draft
+        1: "text-amber-600 bg-amber-50", // Submitted
+        2: "text-green-600 bg-green-50", // Paid
+        3: "text-blue-600 bg-blue-50",   // Approved
+    };
+    return colors[status] || "";
 };

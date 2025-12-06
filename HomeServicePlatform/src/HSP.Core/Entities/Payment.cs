@@ -49,8 +49,11 @@ namespace HSP.Core.Entities
 
 		[MaxLength(2000)]
 		public string? RefundReason { get; set; }
+        public PaymentType Type { get; set; } = PaymentType.Service;
 
-		public bool IsDeleted { get; set; }
+        public ICollection<BookingEquipment> BookingEquipments { get; set; } = new List<BookingEquipment>();
+
+        public bool IsDeleted { get; set; }
 		public DateTime DateCreated { get; set; }
 		public DateTime DateModified { get; set; }
 	}
