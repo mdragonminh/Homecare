@@ -1,5 +1,7 @@
-﻿using HSP.Core.Constants;
+﻿using HSP.Core.Constans;
+using HSP.Core.Constants;
 using HSP.Core.Dtos.FileDto;
+using HSP.Core.Dtos.ServiceRequestDto;
 using HSP.Core.Dtos.TechnicianProfileDto;
 using HSP.Core.Entities;
 using HSP.Core.Enums;
@@ -1504,7 +1506,821 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Equal(dateModified, item.DateModified);
         }
 
+        // ============================================================
+        // TEST: GetFeaturedTechniciansAsync
+        // ============================================================
 
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldReturnEmptyList_WhenNoApprovedTechnicians()
+        {
+            // Arrange
+            var technicians = new List<TechnicianProfile>().BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldReturnEmptyList_WhenNoTechniciansWithRatings()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Test User",
+                IsActive = true
+            };
+
+            var technician = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                User = user,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Bookings = new List<Booking>()
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldFilterOutInactiveUsers()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Inactive User",
+                IsActive = false
+            };
+
+            var technician = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                User = user,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Bookings = new List<Booking>
+                {
+                    new Booking
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = BookingStatus.Completed,
+                        Feedbacks = new List<BookingFeedback>
+                        {
+                            new BookingFeedback
+                            {
+                                Id = Guid.NewGuid(),
+                                Rating = 5,
+                                Source = FeedbackSource.Customer
+                            }
+                        }
+                    }
+                }
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldFilterOutNonApprovedTechnicians()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Pending User",
+                IsActive = true
+            };
+
+            var technician = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                User = user,
+                ApprovalStatus = TechnicianApprovalStatus.Pending,
+                Bookings = new List<Booking>
+                {
+                    new Booking
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = BookingStatus.Completed,
+                        Feedbacks = new List<BookingFeedback>
+                        {
+                            new BookingFeedback
+                            {
+                                Id = Guid.NewGuid(),
+                                Rating = 5,
+                                Source = FeedbackSource.Customer
+                            }
+                        }
+                    }
+                }
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldReturnTechnicians_WithCustomerFeedbacksOnly()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Test Technician",
+                IsActive = true
+            };
+
+            var technicianId = Guid.NewGuid();
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                User = user,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Services = new List<Core.Entities.Service>
+                {
+                    new Core.Entities.Service
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Sửa chữa điện"
+                    }
+                },
+                Bookings = new List<Booking>
+                {
+                    new Booking
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = BookingStatus.Completed,
+                        Feedbacks = new List<BookingFeedback>
+                        {
+                            new BookingFeedback
+                            {
+                                Id = Guid.NewGuid(),
+                                Rating = 5,
+                                Source = FeedbackSource.Customer
+                            },
+                            new BookingFeedback
+                            {
+                                Id = Guid.NewGuid(),
+                                Rating = 4,
+                                Source = FeedbackSource.Technician // Should be ignored
+                            }
+                        }
+                    }
+                }
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            _mockFileService.Setup(f => f.GetFilesAsync(It.IsAny<GetFilesRequestDto>()))
+                .ReturnsAsync(new List<FileDto>());
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+            var featured = result.First();
+            Assert.Equal(technicianId, featured.Id);
+            Assert.Equal("Test Technician", featured.FullName);
+            Assert.Equal(5.0, featured.Rating);
+            Assert.Equal(1, featured.RatingCount); // Only customer feedback counted
+        }
+
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldCalculateAverageRating_Correctly()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Test Technician",
+                IsActive = true
+            };
+
+            var technicianId = Guid.NewGuid();
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                User = user,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Services = new List<Core.Entities.Service>(),
+                Bookings = new List<Booking>
+                {
+                    new Booking
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = BookingStatus.Completed,
+                        Feedbacks = new List<BookingFeedback>
+                        {
+                            new BookingFeedback
+                            {
+                                Id = Guid.NewGuid(),
+                                Rating = 5,
+                                Source = FeedbackSource.Customer
+                            },
+                            new BookingFeedback
+                            {
+                                Id = Guid.NewGuid(),
+                                Rating = 4,
+                                Source = FeedbackSource.Customer
+                            },
+                            new BookingFeedback
+                            {
+                                Id = Guid.NewGuid(),
+                                Rating = 3,
+                                Source = FeedbackSource.Customer
+                            }
+                        }
+                    }
+                }
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            _mockFileService.Setup(f => f.GetFilesAsync(It.IsAny<GetFilesRequestDto>()))
+                .ReturnsAsync(new List<FileDto>());
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+            var featured = result.First();
+            Assert.Equal(4.0, featured.Rating); // (5+4+3)/3 = 4.0
+            Assert.Equal(3, featured.RatingCount);
+        }
+
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldOrderByRating_ThenRatingCount_ThenCompletedBookings()
+        {
+            // Arrange
+            var userId1 = Guid.NewGuid();
+            var user1 = new AppUser
+            {
+                Id = userId1,
+                FullName = "Technician 1",
+                IsActive = true
+            };
+
+            var userId2 = Guid.NewGuid();
+            var user2 = new AppUser
+            {
+                Id = userId2,
+                FullName = "Technician 2",
+                IsActive = true
+            };
+
+            var userId3 = Guid.NewGuid();
+            var user3 = new AppUser
+            {
+                Id = userId3,
+                FullName = "Technician 3",
+                IsActive = true
+            };
+
+            // Technician 1: Rating 5.0, 2 ratings, 3 completed bookings
+            var technician1 = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId1,
+                User = user1,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Services = new List<Core.Entities.Service>(),
+                Bookings = new List<Booking>
+                {
+                    new Booking
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = BookingStatus.Completed,
+                        Feedbacks = new List<BookingFeedback>
+                        {
+                            new BookingFeedback { Id = Guid.NewGuid(), Rating = 5, Source = FeedbackSource.Customer },
+                            new BookingFeedback { Id = Guid.NewGuid(), Rating = 5, Source = FeedbackSource.Customer }
+                        }
+                    },
+                    new Booking { Id = Guid.NewGuid(), Status = BookingStatus.Completed, Feedbacks = new List<BookingFeedback>() },
+                    new Booking { Id = Guid.NewGuid(), Status = BookingStatus.Completed, Feedbacks = new List<BookingFeedback>() }
+                }
+            };
+
+            // Technician 2: Rating 5.0, 1 rating, 1 completed booking (lower rating count)
+            var technician2 = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId2,
+                User = user2,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Services = new List<Core.Entities.Service>(),
+                Bookings = new List<Booking>
+                {
+                    new Booking
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = BookingStatus.Completed,
+                        Feedbacks = new List<BookingFeedback>
+                        {
+                            new BookingFeedback { Id = Guid.NewGuid(), Rating = 5, Source = FeedbackSource.Customer }
+                        }
+                    }
+                }
+            };
+
+            // Technician 3: Rating 4.0, 2 ratings, 2 completed bookings (lower rating)
+            var technician3 = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId3,
+                User = user3,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Services = new List<Core.Entities.Service>(),
+                Bookings = new List<Booking>
+                {
+                    new Booking
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = BookingStatus.Completed,
+                        Feedbacks = new List<BookingFeedback>
+                        {
+                            new BookingFeedback { Id = Guid.NewGuid(), Rating = 4, Source = FeedbackSource.Customer },
+                            new BookingFeedback { Id = Guid.NewGuid(), Rating = 4, Source = FeedbackSource.Customer }
+                        }
+                    },
+                    new Booking { Id = Guid.NewGuid(), Status = BookingStatus.Completed, Feedbacks = new List<BookingFeedback>() }
+                }
+            };
+
+            var technicians = new List<TechnicianProfile> { technician1, technician2, technician3 }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            _mockFileService.Setup(f => f.GetFilesAsync(It.IsAny<GetFilesRequestDto>()))
+                .ReturnsAsync(new List<FileDto>());
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync(3);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(3, result.Count());
+            
+            // Should be ordered: Technician1 (5.0, 2 ratings, 3 bookings) > Technician2 (5.0, 1 rating) > Technician3 (4.0)
+            var resultList = result.ToList();
+            Assert.Equal("Technician 1", resultList[0].FullName);
+            Assert.Equal("Technician 2", resultList[1].FullName);
+            Assert.Equal("Technician 3", resultList[2].FullName);
+        }
+
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldRespectCountParameter()
+        {
+            // Arrange
+            var technicians = new List<TechnicianProfile>();
+            for (int i = 0; i < 10; i++)
+            {
+                var userId = Guid.NewGuid();
+                var user = new AppUser
+                {
+                    Id = userId,
+                    FullName = $"Technician {i}",
+                    IsActive = true
+                };
+
+                var technician = new TechnicianProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    User = user,
+                    ApprovalStatus = TechnicianApprovalStatus.Approved,
+                    Services = new List<Core.Entities.Service>(),
+                    Bookings = new List<Booking>
+                    {
+                        new Booking
+                        {
+                            Id = Guid.NewGuid(),
+                            Status = BookingStatus.Completed,
+                            Feedbacks = new List<BookingFeedback>
+                            {
+                                new BookingFeedback
+                                {
+                                    Id = Guid.NewGuid(),
+                                    Rating = 5,
+                                    Source = FeedbackSource.Customer
+                                }
+                            }
+                        }
+                    }
+                };
+                technicians.Add(technician);
+            }
+
+            var techniciansMock = technicians.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(techniciansMock);
+
+            _mockFileService.Setup(f => f.GetFilesAsync(It.IsAny<GetFilesRequestDto>()))
+                .ReturnsAsync(new List<FileDto>());
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync(4);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(4, result.Count());
+        }
+
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldIncludeAvatarUrl_WhenAvailable()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Test Technician",
+                IsActive = true
+            };
+
+            var technicianId = Guid.NewGuid();
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                User = user,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Services = new List<Core.Entities.Service>(),
+                Bookings = new List<Booking>
+                {
+                    new Booking
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = BookingStatus.Completed,
+                        Feedbacks = new List<BookingFeedback>
+                        {
+                            new BookingFeedback
+                            {
+                                Id = Guid.NewGuid(),
+                                Rating = 5,
+                                Source = FeedbackSource.Customer
+                            }
+                        }
+                    }
+                }
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            var avatarFile = new FileDto
+            {
+                Id = Guid.NewGuid(),
+                FilePath = "/uploads/avatar.jpg",
+                FileName = "avatar.jpg"
+            };
+
+            _mockFileService.Setup(f => f.GetFilesAsync(It.Is<GetFilesRequestDto>(
+                req => req.objectId == technicianId &&
+                       req.objectTypeName == HSP.Core.Constans.RoleNames.Technician &&
+                       req.relationType == FileConstants.Avatar)))
+                .ReturnsAsync(new List<FileDto> { avatarFile });
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+            var featured = result.First();
+            Assert.Equal("/uploads/avatar.jpg", featured.AvatarUrl);
+        }
+
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldHandleAvatarNotFound_Gracefully()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Test Technician",
+                IsActive = true
+            };
+
+            var technicianId = Guid.NewGuid();
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                User = user,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Services = new List<Core.Entities.Service>(),
+                Bookings = new List<Booking>
+                {
+                    new Booking
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = BookingStatus.Completed,
+                        Feedbacks = new List<BookingFeedback>
+                        {
+                            new BookingFeedback
+                            {
+                                Id = Guid.NewGuid(),
+                                Rating = 5,
+                                Source = FeedbackSource.Customer
+                            }
+                        }
+                    }
+                }
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            _mockFileService.Setup(f => f.GetFilesAsync(It.IsAny<GetFilesRequestDto>()))
+                .ThrowsAsync(new Exception("File not found"));
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+            var featured = result.First();
+            Assert.Null(featured.AvatarUrl);
+        }
+
+        [Fact]
+        public async Task GetFeaturedTechniciansAsync_ShouldIncludeServices()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = new AppUser
+            {
+                Id = userId,
+                FullName = "Test Technician",
+                IsActive = true
+            };
+
+            var technicianId = Guid.NewGuid();
+            var service1 = new Core.Entities.Service
+            {
+                Id = Guid.NewGuid(),
+                Name = "Sửa chữa điện"
+            };
+            var service2 = new Core.Entities.Service
+            {
+                Id = Guid.NewGuid(),
+                Name = "Sửa chữa nước"
+            };
+
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                User = user,
+                ApprovalStatus = TechnicianApprovalStatus.Approved,
+                Services = new List<Core.Entities.Service> { service1, service2 },
+                Bookings = new List<Booking>
+                {
+                    new Booking
+                    {
+                        Id = Guid.NewGuid(),
+                        Status = BookingStatus.Completed,
+                        Feedbacks = new List<BookingFeedback>
+                        {
+                            new BookingFeedback
+                            {
+                                Id = Guid.NewGuid(),
+                                Rating = 5,
+                                Source = FeedbackSource.Customer
+                            }
+                        }
+                    }
+                }
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            _mockFileService.Setup(f => f.GetFilesAsync(It.IsAny<GetFilesRequestDto>()))
+                .ReturnsAsync(new List<FileDto>());
+
+            // Act
+            var result = await _service.GetFeaturedTechniciansAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+            var featured = result.First();
+            Assert.Equal(2, featured.Services.Count);
+            Assert.Contains("Sửa chữa điện", featured.Services);
+            Assert.Contains("Sửa chữa nước", featured.Services);
+        }
+
+        // ============================================================
+        // TEST: ResendTechnicianApplication
+        // ============================================================
+
+        [Fact]
+        public async Task ResendTechnicianApplication_ShouldThrowKeyNotFoundException_WhenProfileNotFound()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var technicians = new List<TechnicianProfile>().BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _service.ResendTechnicianApplication(userId));
+
+            Assert.Contains("Không tìm thấy hồ sơ người gửi", exception.Message);
+        }
+
+        [Fact]
+        public async Task ResendTechnicianApplication_ShouldThrowException_WhenStatusIsNotRejected()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var technician = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ApprovalStatus = TechnicianApprovalStatus.Pending
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(
+                () => _service.ResendTechnicianApplication(userId));
+
+            Assert.Contains("Không thể gửi duyệt ở trạng thái hiện tại", exception.Message);
+        }
+
+        [Fact]
+        public async Task ResendTechnicianApplication_ShouldThrowException_WhenStatusIsApproved()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var technician = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ApprovalStatus = TechnicianApprovalStatus.Approved
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(
+                () => _service.ResendTechnicianApplication(userId));
+
+            Assert.Contains("Không thể gửi duyệt ở trạng thái hiện tại", exception.Message);
+        }
+
+        [Fact]
+        public async Task ResendTechnicianApplication_ShouldUpdateStatusToPending_WhenStatusIsRejected()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var technicianId = Guid.NewGuid();
+            var originalDateModified = DateTime.UtcNow.AddDays(-1);
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                ApprovalStatus = TechnicianApprovalStatus.Rejected,
+                DateModified = originalDateModified
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _service.ResendTechnicianApplication(userId);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(TechnicianApprovalStatus.Pending, technician.ApprovalStatus);
+            Assert.True(technician.DateModified > originalDateModified);
+            _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task ResendTechnicianApplication_ShouldUpdateDateModified()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var technicianId = Guid.NewGuid();
+            var originalDateModified = DateTime.UtcNow.AddDays(-5);
+            var technician = new TechnicianProfile
+            {
+                Id = technicianId,
+                UserId = userId,
+                ApprovalStatus = TechnicianApprovalStatus.Rejected,
+                DateModified = originalDateModified
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            // Act
+            var beforeUpdate = technician.DateModified;
+            await _service.ResendTechnicianApplication(userId);
+            var afterUpdate = technician.DateModified;
+
+            // Assert
+            Assert.True(afterUpdate > beforeUpdate);
+            Assert.True(afterUpdate >= DateTime.UtcNow.AddSeconds(-1)); // Allow small time difference
+        }
+
+        [Fact]
+        public async Task ResendTechnicianApplication_ShouldReturnTrue_WhenSuccessful()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var technician = new TechnicianProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ApprovalStatus = TechnicianApprovalStatus.Rejected
+            };
+
+            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+                     .Returns(technicians);
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            // Act
+            var result = await _service.ResendTechnicianApplication(userId);
+
+            // Assert
+            Assert.True(result);
+        }
+
+            
 
     }
 }

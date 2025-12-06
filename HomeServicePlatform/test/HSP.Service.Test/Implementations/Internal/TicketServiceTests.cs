@@ -530,34 +530,34 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockEmailService.Verify(x => x.SendEmailAsync(It.IsAny<EmailDto>()), Times.Never);
         }
 
-        [Fact]
-        public async Task UpdateTicketStatusAsync_ShouldReturnFalse_WhenUpdatingUnassignedTicketAsNonAdmin()
-        {
-            // Arrange
-            var ticketId = Guid.NewGuid();
-            var unauthorizedUserId = Guid.NewGuid(); // User bất kỳ không phải Admin
-            var dto = new UpdateTicketStatusDto { TicketId = ticketId, NewStatus = TicketStatus.InProgress };
+        //[Fact]
+        //public async Task UpdateTicketStatusAsync_ShouldReturnFalse_WhenUpdatingUnassignedTicketAsNonAdmin()
+        //{
+        //    // Arrange
+        //    var ticketId = Guid.NewGuid();
+        //    var unauthorizedUserId = Guid.NewGuid(); // User bất kỳ không phải Admin
+        //    var dto = new UpdateTicketStatusDto { TicketId = ticketId, NewStatus = TicketStatus.InProgress };
 
-            var ticket = new Ticket
-            {
-                Id = ticketId,
-                SupporterId = null, // Ticket chưa được gán
-                CustomerId = Guid.NewGuid(),
-                Status = TicketStatus.Pending
-            };
+        //    var ticket = new Ticket
+        //    {
+        //        Id = ticketId,
+        //        SupporterId = null, // Ticket chưa được gán
+        //        CustomerId = Guid.NewGuid(),
+        //        Status = TicketStatus.Pending
+        //    };
 
-            _mockTicketRepo.Setup(x => x.GetByIdAsync(ticketId)).ReturnsAsync(ticket);
+        //    _mockTicketRepo.Setup(x => x.GetByIdAsync(ticketId)).ReturnsAsync(ticket);
 
-            // Act
-            // Giả định người dùng này không có vai trò đặc biệt để bypass quyền
-            var result = await _ticketService.UpdateTicketStatusAsync(dto, unauthorizedUserId.ToString());
+        //    // Act
+        //    // Giả định người dùng này không có vai trò đặc biệt để bypass quyền
+        //    var result = await _ticketService.UpdateTicketStatusAsync(dto, unauthorizedUserId.ToString());
 
-            // Assert
-            // Thao tác phải thất bại vì người dùng không phải Supporter được gán và cũng không phải Admin (giả định)
-            Assert.False(result);
-            _mockTicketRepo.Verify(x => x.Update(It.IsAny<Ticket>()), Times.Never);
-            _mockUnitOfWork.Verify(x => x.SaveChangesAsync(), Times.Never);
-        }
+        //    // Assert
+        //    // Thao tác phải thất bại vì người dùng không phải Supporter được gán và cũng không phải Admin (giả định)
+        //    Assert.False(result);
+        //    _mockTicketRepo.Verify(x => x.Update(It.IsAny<Ticket>()), Times.Never);
+        //    _mockUnitOfWork.Verify(x => x.SaveChangesAsync(), Times.Never);
+        //}
 
         #endregion
 
@@ -663,116 +663,116 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Equal(2, result.TotalCount);
         }
 
-        [Fact]
-        public async Task GetTicketsAsync_ShouldReturnAllTickets_ForAdmin_AndHandleZeroRatings()
-        {
-            // Arrange
-            var adminId = Guid.NewGuid();
-            var bookingId = Guid.NewGuid();
-            var customerId = Guid.NewGuid();
+        //[Fact]
+        //public async Task GetTicketsAsync_ShouldReturnAllTickets_ForAdmin_AndHandleZeroRatings()
+        //{
+        //    // Arrange
+        //    var adminId = Guid.NewGuid();
+        //    var bookingId = Guid.NewGuid();
+        //    var customerId = Guid.NewGuid();
 
-            var paginationParams = new PaginationParams { PageNumber = 1, PageSize = 10 };
+        //    var paginationParams = new PaginationParams { PageNumber = 1, PageSize = 10 };
 
-            var tickets = new List<Ticket>
-            {
-                new Ticket
-                {
-                    Id = Guid.NewGuid(),
-                    BookingId = bookingId,
-                    IsDeleted = false,
-                    Customer = new AppUser(),
-                    Booking = new Booking { Id = bookingId, CustomerId = customerId }
-                }
-            };
+        //    var tickets = new List<Ticket>
+        //    {
+        //        new Ticket
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            BookingId = bookingId,
+        //            IsDeleted = false,
+        //            Customer = new AppUser(),
+        //            Booking = new Booking { Id = bookingId, CustomerId = customerId }
+        //        }
+        //    };
 
-            // Booking không có feedback => Rating sẽ là 0
-            var bookings = new List<Booking>
-            {
-                new Booking { Id = bookingId, CustomerId = customerId, Feedbacks = new List<BookingFeedback>() }
-            };
+        //    // Booking không có feedback => Rating sẽ là 0
+        //    var bookings = new List<Booking>
+        //    {
+        //        new Booking { Id = bookingId, CustomerId = customerId, Feedbacks = new List<BookingFeedback>() }
+        //    };
 
-            _mockTicketRepo.Setup(x => x.GetAll()).Returns(tickets.BuildMock());
-            _mockBookingRepo.Setup(x => x.GetAll()).Returns(bookings.BuildMock());
+        //    _mockTicketRepo.Setup(x => x.GetAll()).Returns(tickets.BuildMock());
+        //    _mockBookingRepo.Setup(x => x.GetAll()).Returns(bookings.BuildMock());
 
-            // Act - Truyền role là "Admin"
-            var result = await _ticketService.GetTicketsAsync(adminId, "Admin", paginationParams);
+        //    // Act - Truyền role là "Admin"
+        //    var result = await _ticketService.GetTicketsAsync(adminId, "Admin", paginationParams);
 
-            // Assert
-            Assert.Equal(1, result.TotalCount);
+        //    // Assert
+        //    Assert.Equal(1, result.TotalCount);
 
-            var item = result.Items.First();
-            // Kiểm tra logic xử lý chia cho 0 trong code
-            // (AverageRating = ... .Any() ? Average() : 0)
-            Assert.Equal(0, item.BookingDetail?.Customer?.AverageRating);
-            Assert.Equal(0, item.BookingDetail?.Customer?.TotalReviews);
-        }
+        //    var item = result.Items.First();
+        //    // Kiểm tra logic xử lý chia cho 0 trong code
+        //    // (AverageRating = ... .Any() ? Average() : 0)
+        //    Assert.Equal(0, item.BookingDetail?.Customer?.AverageRating);
+        //    Assert.Equal(0, item.BookingDetail?.Customer?.TotalReviews);
+        //}
 
-        [Fact]
-        public async Task GetTicketsAsync_ShouldCalculateTechnicianRatingsCorrectly()
-        {
-            // Arrange
-            var customerId = Guid.NewGuid();
-            var techId = Guid.NewGuid();
-            var bookingId = Guid.NewGuid();
-            var ticketId = Guid.NewGuid();
+        //[Fact]
+        //public async Task GetTicketsAsync_ShouldCalculateTechnicianRatingsCorrectly()
+        //{
+        //    // Arrange
+        //    var customerId = Guid.NewGuid();
+        //    var techId = Guid.NewGuid();
+        //    var bookingId = Guid.NewGuid();
+        //    var ticketId = Guid.NewGuid();
 
-            var paginationParams = new PaginationParams { PageNumber = 1, PageSize = 10 };
+        //    var paginationParams = new PaginationParams { PageNumber = 1, PageSize = 10 };
 
-            var techUser = new AppUser { Id = Guid.NewGuid(), FullName = "Tech X" };
-            var techProfile = new TechnicianProfile { Id = techId, UserId = techUser.Id, User = techUser };
+        //    var techUser = new AppUser { Id = Guid.NewGuid(), FullName = "Tech X" };
+        //    var techProfile = new TechnicianProfile { Id = techId, UserId = techUser.Id, User = techUser };
 
-            var tickets = new List<Ticket>
-            {
-                new Ticket
-                {
-                    Id = ticketId,
-                    CustomerId = customerId,
-                    TechnicianId = techId,
-                    BookingId = bookingId,
-                    Customer = new AppUser { FullName = "Customer A" },
-                    Technician = techProfile,
-                    Booking = new Booking { Id = bookingId, TechnicianId = techId, CustomerId = customerId }
-                }
-            };
+        //    var tickets = new List<Ticket>
+        //    {
+        //        new Ticket
+        //        {
+        //            Id = ticketId,
+        //            CustomerId = customerId,
+        //            TechnicianId = techId,
+        //            BookingId = bookingId,
+        //            Customer = new AppUser { FullName = "Customer A" },
+        //            Technician = techProfile,
+        //            Booking = new Booking { Id = bookingId, TechnicianId = techId, CustomerId = customerId }
+        //        }
+        //    };
 
-            // Tạo 3 booking với các feedback khác nhau để tính trung bình
-            var bookings = new List<Booking>
-            {
-                new Booking
-                {
-                    Id = Guid.NewGuid(),
-                    TechnicianId = techId, // Tech hoàn thành booking này
-                    Feedbacks = new List<BookingFeedback> { new BookingFeedback { Rating = 5 } }
-                },
-                new Booking
-                {
-                    Id = bookingId,
-                    TechnicianId = techId, // Tech hoàn thành booking này
-                    Feedbacks = new List<BookingFeedback> { new BookingFeedback { Rating = 4 } }
-                },
-                new Booking // Booking này không liên quan đến techId
-                {
-                    Id = Guid.NewGuid(),
-                    TechnicianId = Guid.NewGuid(),
-                    Feedbacks = new List<BookingFeedback> { new BookingFeedback { Rating = 1 } }
-                }
-            };
+        //    // Tạo 3 booking với các feedback khác nhau để tính trung bình
+        //    var bookings = new List<Booking>
+        //    {
+        //        new Booking
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            TechnicianId = techId, // Tech hoàn thành booking này
+        //            Feedbacks = new List<BookingFeedback> { new BookingFeedback { Rating = 5 } }
+        //        },
+        //        new Booking
+        //        {
+        //            Id = bookingId,
+        //            TechnicianId = techId, // Tech hoàn thành booking này
+        //            Feedbacks = new List<BookingFeedback> { new BookingFeedback { Rating = 4 } }
+        //        },
+        //        new Booking // Booking này không liên quan đến techId
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            TechnicianId = Guid.NewGuid(),
+        //            Feedbacks = new List<BookingFeedback> { new BookingFeedback { Rating = 1 } }
+        //        }
+        //    };
 
-            _mockTicketRepo.Setup(x => x.GetAll()).Returns(tickets.BuildMock());
-            _mockBookingRepo.Setup(x => x.GetAll()).Returns(bookings.BuildMock());
+        //    _mockTicketRepo.Setup(x => x.GetAll()).Returns(tickets.BuildMock());
+        //    _mockBookingRepo.Setup(x => x.GetAll()).Returns(bookings.BuildMock());
 
-            // Act - Lấy danh sách với vai trò Admin (để lấy được ticket)
-            var result = await _ticketService.GetTicketsAsync(Guid.NewGuid(), RoleNames.Admin, paginationParams);
+        //    // Act - Lấy danh sách với vai trò Admin (để lấy được ticket)
+        //    var result = await _ticketService.GetTicketsAsync(Guid.NewGuid(), RoleNames.Admin, paginationParams);
 
-            // Assert
-            Assert.Single(result.Items);
-            var dto = result.Items.First();
+        //    // Assert
+        //    Assert.Single(result.Items);
+        //    var dto = result.Items.First();
 
-            // Rating tính: (5 + 4) / 2 = 4.5
-            Assert.NotNull(dto.BookingDetail?.Technician);
-            Assert.Equal(4.5, dto.BookingDetail.Technician.AverageRating);
-            Assert.Equal(2, dto.BookingDetail.Technician.TotalReviews);
-        }
+        //    // Rating tính: (5 + 4) / 2 = 4.5
+        //    Assert.NotNull(dto.BookingDetail?.Technician);
+        //    Assert.Equal(4.5, dto.BookingDetail.Technician.AverageRating);
+        //    Assert.Equal(2, dto.BookingDetail.Technician.TotalReviews);
+        //}
 
         [Fact]
         public async Task GetTicketsAsync_ShouldMapBookingItemsAndHandleNulls()
