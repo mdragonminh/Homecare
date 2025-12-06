@@ -20,6 +20,8 @@ const PaymentPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState(PaymentMethod.BankTransfer);
   const [amount, setAmount] = useState(0);
+  const [subtotal, setSubtotal] = useState(0);
+  const [shippingFee] = useState(50000);
   const [description, setDescription] = useState("");
 
   useEffect(() => {
@@ -36,7 +38,9 @@ const PaymentPage = () => {
               navigate(`/customer/booking/${bookingId}`);
               return;
           }
-          const total = equipmentItemsToPay.reduce((sum, item) => sum + item.totalPrice, 0);
+          const equipmentTotal = equipmentItemsToPay.reduce((sum, item) => sum + item.totalPrice, 0);
+          const total = equipmentTotal + shippingFee;
+          setSubtotal(equipmentTotal);
           setAmount(total);
           setDescription(`Thanh toán ${equipmentItemsToPay.length} vật tư phát sinh - Booking ${bookingId.substring(0,8)}`);
           const result = await bookingApi.getBookingDetail(bookingId);
@@ -151,6 +155,19 @@ const PaymentPage = () => {
                     )}
                   </div>
               </div>
+              
+              {isEquipmentPayment && (
+                <>
+                  <div className="flex justify-between pt-2 text-sm">
+                    <span className="text-gray-600">Tạm tính vật tư:</span>
+                    <span className="font-medium">{subtotal.toLocaleString("vi-VN")} đ</span>
+                  </div>
+                  <div className="flex justify-between pt-2 text-sm">
+                    <span className="text-gray-600">Phí vận chuyển:</span>
+                    <span className="font-medium text-blue-600">{shippingFee.toLocaleString("vi-VN")} đ</span>
+                  </div>
+                </>
+              )}
               
               <div className="flex justify-between pt-3 border-t border-gray-200 mt-3">
                 <span className="text-gray-900 font-semibold">Tổng thanh toán:</span>

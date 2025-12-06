@@ -198,8 +198,12 @@ namespace HSP.Service.Implementations.Internal
                 return new PaymentResponseDto { Success = false, Message = _localizer["Một số thiết bị không hợp lệ hoặc sai trạng thái"] };
             }
 
-            // Tính tổng tiền
-            decimal totalAmount = itemsToPay.Sum(x => x.Quantity * x.UnitPrice);
+            // Tính tổng tiền thiết bị
+            decimal equipmentTotal = itemsToPay.Sum(x => x.Quantity * x.UnitPrice);
+            
+            // Phí vận chuyển cố định 50,000 VND cho mỗi lần gửi thiết bị
+            decimal shippingFee = 50000m;
+            decimal totalAmount = equipmentTotal + shippingFee;
 
             // Create Payment record
             var payment = new Payment
@@ -207,6 +211,7 @@ namespace HSP.Service.Implementations.Internal
                 Id = Guid.NewGuid(),
                 BookingId = input.BookingId,
                 Amount = totalAmount,
+                ShippingFee = shippingFee,
                 PaymentMethod = input.PaymentMethod,
                 Status = PaymentStatus.Pending,
                 Type = PaymentType.Equipment, // Đánh dấu là thanh toán Equipment
@@ -230,7 +235,7 @@ namespace HSP.Service.Implementations.Internal
             {
                 var sePayRequest = new SePayCreateOrderRequest
                 {
-                    OrderId = payment.Id.ToString(), // Sử dụng PaymentId làm OrderId
+                    OrderId = payment.Id.ToString(),
                     Amount = payment.Amount,
                     Description = payment.Description,
                     ReturnUrl = _sePayConfig.ReturnUrl,
@@ -240,23 +245,42 @@ namespace HSP.Service.Implementations.Internal
                     BuyerPhone = booking.Customer?.PhoneNumber
                 };
 
-                // ... (Gọi SePay service, update payment status như hàm cũ)
-                // Lưu ý: Nếu SePay trả về PaymentUrl thành công, return URL đó.
-            }
-            else
-            {
-                // Nếu là tiền mặt -> Đánh dấu thành công luôn -> Update Status BookingEquipment thành Paid
-                payment.Status = PaymentStatus.Completed;
-                payment.PaidAt = DateTime.UtcNow;
+                var sePayResponse = await _sePayService.CreatePaymentOrderAsync(sePayRequest);
 
-                foreach (var item in itemsToPay)
+                if (sePayResponse.Success)
                 {
-                    item.Status = BookingEquipmentStatus.Paid; // Cash -> Paid luôn
-                    _bookingEquipmentRepository.Update(item);
-                }
+                    payment.SePayOrderId = sePayResponse.OrderId;
+                    payment.PaymentUrl = sePayResponse.PaymentUrl;
+                    payment.Status = PaymentStatus.Processing;
+                    payment.SePayResponse = System.Text.Json.JsonSerializer.Serialize(sePayResponse);
+                    payment.DateModified = DateTime.UtcNow;
 
-                _paymentRepository.Update(payment);
-                await _unitOfWork.SaveChangesAsync();
+                    _paymentRepository.Update(payment);
+                    await _unitOfWork.SaveChangesAsync();
+
+                    return new PaymentResponseDto
+                    {
+                        Success = true,
+                        Message = _localizer["Payment created successfully"],
+                        Payment = MapToDto(payment),
+                        PaymentUrl = sePayResponse.PaymentUrl
+                    };
+                }
+                else
+                {
+                    payment.Status = PaymentStatus.Failed;
+                    payment.FailureReason = sePayResponse.Message;
+                    payment.DateModified = DateTime.UtcNow;
+
+                    _paymentRepository.Update(payment);
+                    await _unitOfWork.SaveChangesAsync();
+
+                    return new PaymentResponseDto
+                    {
+                        Success = false,
+                        Message = _localizer["Failed to create payment: {0}", sePayResponse.Message ?? "Unknown error"]
+                    };
+                }
             }
 
             return new PaymentResponseDto
@@ -679,6 +703,7 @@ namespace HSP.Service.Implementations.Internal
                 Id = payment.Id,
                 BookingId = payment.BookingId,
                 Amount = payment.Amount,
+                ShippingFee = payment.ShippingFee,
                 PaymentMethod = payment.PaymentMethod,
                 Status = payment.Status,
                 TransactionId = payment.TransactionId,

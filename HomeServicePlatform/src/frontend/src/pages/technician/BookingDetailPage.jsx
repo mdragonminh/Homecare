@@ -329,6 +329,12 @@ const BookingDetailPage = () => {
                        )}
                    </div>
                    
+                   {hasDraftEquipments && (
+                       <div className="mb-2 bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
+                           <strong>Lưu ý:</strong> Khi gửi thiết bị cho khách, phí vận chuyển 50,000đ sẽ tự động được thêm vào tổng thanh toán.
+                       </div>
+                   )}
+                   
                    {booking.equipments && booking.equipments.length > 0 ? (
                       <ul className="space-y-2">
                         {booking.equipments.map((eq) => (
