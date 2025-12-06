@@ -7,6 +7,7 @@ namespace HSP.Core.Dtos.PaymentDto
 		public Guid Id { get; set; }
 		public Guid BookingId { get; set; }
 		public decimal Amount { get; set; }
+		public decimal ShippingFee { get; set; }
 		public PaymentMethod PaymentMethod { get; set; }
 		public PaymentStatus Status { get; set; }
 		public string? TransactionId { get; set; }

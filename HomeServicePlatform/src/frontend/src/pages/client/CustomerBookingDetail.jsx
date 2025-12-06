@@ -138,7 +138,9 @@ export default function CustomerBookingDetail() {
   
   const equipments = booking.equipments || [];
   const unpaidEquipments = equipments.filter(e => e.status === BookingEquipmentStatus.Submitted);
-  const unpaidEquipmentTotal = unpaidEquipments.reduce((sum, e) => sum + e.totalPrice, 0);
+  const unpaidEquipmentSubtotal = unpaidEquipments.reduce((sum, e) => sum + e.totalPrice, 0);
+  const shippingFee = unpaidEquipments.length > 0 ? 50000 : 0;
+  const unpaidEquipmentTotal = unpaidEquipmentSubtotal + shippingFee;
 
   const handlePayEquipments = () => {
       navigate(`/payment/${booking.id}`, { 
@@ -190,7 +192,7 @@ export default function CustomerBookingDetail() {
                     <div>
                         <p className="font-semibold text-amber-900">Có vật tư phát sinh cần thanh toán</p>
                         <p className="text-sm text-amber-800">
-                            Bạn có {unpaidEquipments.length} mục vật tư mới ({formatCurrency(unpaidEquipmentTotal)} VNĐ).
+                            Bạn có {unpaidEquipments.length} mục vật tư mới ({formatCurrency(unpaidEquipmentSubtotal)} đ + phí ship {formatCurrency(shippingFee)} đ = {formatCurrency(unpaidEquipmentTotal)} VNĐ).
                         </p>
                     </div>
                 </div>
