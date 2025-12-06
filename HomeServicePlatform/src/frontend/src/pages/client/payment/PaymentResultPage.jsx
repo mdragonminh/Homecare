@@ -382,16 +382,6 @@ const PaymentResultPage = () => {
           {payment.status === PaymentStatus.Completed ? (
             <>
               <button
-                onClick={() =>
-                  navigate(`/my-bookings/${payment.bookingId}`, {
-                    state: { openRating: true },
-                  })
-                }
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Đánh giá dịch vụ
-              </button>
-              <button
                 onClick={() => navigate(`/my-bookings/${payment.bookingId}`)}
                 className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
               >

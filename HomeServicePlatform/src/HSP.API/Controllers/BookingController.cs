@@ -2,6 +2,7 @@ using HSP.API.Extensions;
 using HSP.API.Filters;
 using HSP.Core.Constans;
 using HSP.Core.Dtos.BookingDto;
+using HSP.Core.Dtos.EquipmentDto;
 using HSP.Core.Entities;
 using HSP.Core.Enums;
 using HSP.Core.Interfaces.DataAccess;
@@ -321,6 +322,56 @@ namespace HSP.API.Controllers
 
                 await _bookingService.RemoveEquipmentFromBookingAsync(id, bookingEquipmentId, userGuid);
                 return Ok(new { message = "Đã xóa thiết bị khỏi đơn hàng" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/equipments/submit")]
+        [Authorize]
+        public async Task<IActionResult> SubmitEquipmentToCustomer(Guid id, [FromBody] SubmitEquipmentDto input)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out Guid userGuid))
+                    return Unauthorized();
+
+                input.BookingId = id;
+
+                var result = await _bookingService.SubmitEquipmentToCustomerAsync(input, userGuid);
+
+                if (result)
+                    return Ok(new { message = "Đã gửi danh sách thiết bị cho khách hàng xác nhận" });
+
+                return BadRequest(new { message = "Không thể gửi danh sách. Vui lòng kiểm tra lại thiết bị hoặc quyền hạn." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/equipments/approve")]
+        [Authorize(Roles = RoleNames.Admin + "," + RoleNames.EquipmentManager)] 
+        public async Task<IActionResult> ApproveEquipment(Guid id, [FromBody] ApproveEquipmentDto input)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out Guid userGuid))
+                    return Unauthorized();
+
+                input.BookingId = id;
+
+                var result = await _bookingService.ApproveEquipmentAsync(input, userGuid);
+
+                if (result)
+                    return Ok(new { message = "Đã xác nhận xuất kho thiết bị thành công" });
+
+                return BadRequest(new { message = "Xác nhận thất bại. Vui lòng kiểm tra tồn kho hoặc trạng thái thanh toán." });
             }
             catch (Exception ex)
             {

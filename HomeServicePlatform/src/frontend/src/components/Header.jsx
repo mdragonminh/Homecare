@@ -40,7 +40,7 @@ export function Header({
             >
               {t("nav.home")}
             </button>
-            {loggedInUser?.role !== "technician" && (
+            {loggedInUser?.role !== "technician" && loggedInUser?.role !== "supporter" && loggedInUser?.role !== "equipmentmanager" && (
               <button
                 onClick={() => navigate("/services")}
                 className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"

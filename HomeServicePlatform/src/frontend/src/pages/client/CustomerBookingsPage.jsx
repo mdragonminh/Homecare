@@ -352,7 +352,7 @@ const CustomerBookingsPage = () => {
                         Xem chi tiết
                       </button>
 
-                      {payment ? (
+                      {/* {payment ? (
                         <button
                           onClick={() => handleViewPayment(payment.id)}
                           className="flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
@@ -368,7 +368,7 @@ const CustomerBookingsPage = () => {
                           <CreditCard className="h-4 w-4 mr-2" />
                           Thanh toán ngay
                         </button>
-                      ) : null}
+                      ) : null} */}
                     </div>
                   </div>
                 </div>

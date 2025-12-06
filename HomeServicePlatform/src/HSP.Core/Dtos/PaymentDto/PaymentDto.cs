@@ -7,8 +7,10 @@ namespace HSP.Core.Dtos.PaymentDto
 		public Guid Id { get; set; }
 		public Guid BookingId { get; set; }
 		public decimal Amount { get; set; }
+		public decimal ShippingFee { get; set; }
 		public PaymentMethod PaymentMethod { get; set; }
 		public PaymentStatus Status { get; set; }
+		public PaymentType Type { get; set; }
 		public string? TransactionId { get; set; }
 		public string? SePayOrderId { get; set; }
 		public DateTime? PaidAt { get; set; }
@@ -25,7 +27,15 @@ namespace HSP.Core.Dtos.PaymentDto
 		public string? Description { get; set; }
 	}
 
-	public class PaymentDetailDto : PaymentDto
+    public class CreateEquipmentPaymentDto
+    {
+        public Guid BookingId { get; set; }
+        public List<Guid> BookingEquipmentIds { get; set; } = new(); 
+        public PaymentMethod PaymentMethod { get; set; }
+        public string? Description { get; set; }
+    }
+
+    public class PaymentDetailDto : PaymentDto
 	{
 		public string? PaymentUrl { get; set; }
 		public string? FailureReason { get; set; }

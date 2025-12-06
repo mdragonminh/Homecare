@@ -212,5 +212,32 @@ namespace HSP.API.Controllers
 				return BadRequest(new { message = ex.Message });
 			}
 		}
-	}
+
+        [HttpPost("equipment")]
+        public async Task<IActionResult> CreateEquipmentPayment([FromBody] CreateEquipmentPaymentDto input)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
+
+                var result = await _paymentService.CreateEquipmentPaymentAsync(input, userId);
+
+                if (!result.Success)
+                    return BadRequest(new { message = result.Message });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+    }
 }

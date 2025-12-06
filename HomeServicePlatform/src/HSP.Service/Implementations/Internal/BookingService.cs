@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Dtos.BookingDto;
+using HSP.Core.Dtos.EquipmentDto;
 using HSP.Core.Dtos.PaymentDto;
 using HSP.Core.Dtos.Shared;
 using HSP.Core.Entities;
@@ -269,7 +270,9 @@ namespace HSP.Service.Implementations.Internal
                         EquipmentName = e.Equipment.Name,
                         Quantity = e.Quantity,
                         UnitPrice = e.UnitPrice,
-                        TotalPrice = e.Quantity * e.UnitPrice
+                        TotalPrice = e.Quantity * e.UnitPrice,
+                        Status = e.Status,
+                        PaymentId = e.PaymentId
                     }).ToList(),
 
                 Payments = booking.Payments.Select(p => new PaymentDto
@@ -277,8 +280,10 @@ namespace HSP.Service.Implementations.Internal
                     Id = p.Id,
                     BookingId = p.BookingId,
                     Amount = p.Amount,
+                    ShippingFee = p.ShippingFee,
                     PaymentMethod = p.PaymentMethod,
                     Status = p.Status,
+                    Type = p.Type,
                     TransactionId = p.TransactionId,
                     PaidAt = p.PaidAt,
                     DateCreated = p.DateCreated
@@ -549,23 +554,21 @@ namespace HSP.Service.Implementations.Internal
                 try
                 {
                     var equipment = await _equipmentRepository.GetByIdAsync(input.EquipmentId);
-                    if (equipment == null)
-                        throw new KeyNotFoundException("Thiết bị không tồn tại");
+                    if (equipment == null) throw new KeyNotFoundException("Thiết bị không tồn tại");
 
                     if (equipment.Quantity < input.Quantity)
-                        throw new InvalidOperationException($"Kho không đủ hàng. Chỉ còn {equipment.Quantity} {equipment.UnitOfMeasure}");
+                        throw new InvalidOperationException($"Kho hiện tại chỉ còn {equipment.Quantity}, không đủ để thêm vào đơn (Cần chờ Manager duyệt sau).");
 
                     var existingItem = await _bookingEquipmentRepository.GetAll()
                         .FirstOrDefaultAsync(be => be.BookingId == bookingId &&
                                                  be.EquipmentId == input.EquipmentId &&
+                                                 be.Status == BookingEquipmentStatus.Draft &&
                                                  !be.IsDeleted);
 
                     if (existingItem != null)
                     {
                         existingItem.Quantity += input.Quantity;
-
                         existingItem.UnitPrice = equipment.UnitPrice;
-
                         _bookingEquipmentRepository.Update(existingItem);
                     }
                     else
@@ -576,13 +579,11 @@ namespace HSP.Service.Implementations.Internal
                             EquipmentId = input.EquipmentId,
                             Quantity = input.Quantity,
                             UnitPrice = equipment.UnitPrice,
-                            IsDeleted = false
+                            IsDeleted = false,
+                            Status = BookingEquipmentStatus.Draft 
                         };
                         await _bookingEquipmentRepository.AddAsync(bookingEquipment);
                     }
-
-                    equipment.Quantity -= input.Quantity;
-                    _equipmentRepository.Update(equipment);
 
                     booking.DateModified = DateTime.UtcNow;
                     _bookingRepository.Update(booking);
@@ -590,6 +591,79 @@ namespace HSP.Service.Implementations.Internal
                     await _unitOfWork.SaveChangesAsync();
                     await transaction.CommitAsync();
 
+                    return true;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+        }
+
+        public async Task<bool> SubmitEquipmentToCustomerAsync(SubmitEquipmentDto input, Guid userId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(input.BookingId);
+            if (booking == null)
+                throw new KeyNotFoundException("Booking không tồn tại");
+
+            var technicianProfile = await _technicianRepository.GetAll(t => t.User)
+                    .FirstOrDefaultAsync(t => t.User.Id.ToString() == userId.ToString());
+
+            if (technicianProfile == null || booking.TechnicianId != technicianProfile.Id)  
+                throw new UnauthorizedAccessException("Bạn không phải kỹ thuật viên của booking này");
+
+            var equipments = await _bookingEquipmentRepository.GetAll()
+                .Where(e => input.BookingEquipmentIds.Contains(e.Id) && e.BookingId == input.BookingId)
+                .ToListAsync();
+
+            if (!equipments.Any()) return false;
+
+            foreach (var item in equipments)
+            {
+                if (item.Status == BookingEquipmentStatus.Draft)
+                {
+                    item.Status = BookingEquipmentStatus.Submitted; 
+                    _bookingEquipmentRepository.Update(item);
+                }
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ApproveEquipmentAsync(ApproveEquipmentDto input, Guid managerId)
+        {
+            using (var transaction = await _unitOfWork.BeginTransactionAsync())
+            {
+                try
+                {
+                    var bookingEquipments = await _bookingEquipmentRepository.GetAll()
+                        .Include(be => be.Equipment)
+                        .Where(be => input.BookingEquipmentIds.Contains(be.Id) && be.BookingId == input.BookingId)
+                        .ToListAsync();
+
+                    if (!bookingEquipments.Any()) return false;
+
+                    foreach (var item in bookingEquipments)
+                    {
+                        if (item.Status == BookingEquipmentStatus.Paid)
+                        {
+                            if (item.Equipment.Quantity < item.Quantity)
+                            {
+                                throw new InvalidOperationException($"Sản phẩm {item.Equipment.Name} không đủ tồn kho để xuất (Còn: {item.Equipment.Quantity}, Cần: {item.Quantity})");
+                            }
+
+                            item.Equipment.Quantity -= item.Quantity; 
+                            item.Status = BookingEquipmentStatus.AwaitingDelivery;
+
+                            _equipmentRepository.Update(item.Equipment);
+                            _bookingEquipmentRepository.Update(item);
+                        }
+                    }
+
+                    await _unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
                     return true;
                 }
                 catch
