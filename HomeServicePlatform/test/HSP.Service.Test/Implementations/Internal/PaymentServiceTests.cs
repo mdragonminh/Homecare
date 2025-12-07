@@ -1,2228 +1,1232 @@
-﻿//using HSP.Core.Abstractions.External;
-//using HSP.Core.Dtos.ConfigurationDto;
-//using HSP.Core.Dtos.PaymentDto;
-//using HSP.Core.Entities;
-//using HSP.Core.Enums;
-//using HSP.Core.Interfaces.DataAccess;
-//using HSP.Core.Resources;
-//using HSP.Service.Implementations.Internal;
-//using Microsoft.Extensions.Localization;
-//using Microsoft.Extensions.Options;
-//using MockQueryable;
-//using MockQueryable.Moq;
-//using Moq;
-//using System.Linq.Expressions;
-//using Xunit;
-
-//namespace HSP.Service.Test.Implementations.Internal
-//{
-//    public class PaymentServiceTests
-//    {
-//        private readonly Mock<IRepository<Payment, Guid>> _paymentRepositoryMock;
-//        private readonly Mock<IRepository<Booking, Guid>> _bookingRepositoryMock;
-//        private readonly Mock<ISePayService> _sePayServiceMock;
-//        private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-//        private readonly Mock<IStringLocalizer<SharedResource>> _localizerMock;
-//        private readonly PaymentService _paymentService;
-//        private readonly SePayConfigurationDto _sePayConfig;
-
-//        public PaymentServiceTests()
-//        {
-//            _paymentRepositoryMock = new Mock<IRepository<Payment, Guid>>();
-//            _bookingRepositoryMock = new Mock<IRepository<Booking, Guid>>();
-//            _sePayServiceMock = new Mock<ISePayService>();
-//            _unitOfWorkMock = new Mock<IUnitOfWork>();
-//            _localizerMock = new Mock<IStringLocalizer<SharedResource>>();
-
-//            _sePayConfig = new SePayConfigurationDto
-//            {
-//                ReturnUrl = "https://test.com/return",
-//                CallbackUrl = "https://test.com/callback"
-//            };
-
-//            var options = Options.Create(_sePayConfig);
-
-//            // Setup localizer to return the key as the value
-//            _localizerMock.Setup(l => l[It.IsAny<string>()])
-//                .Returns((string key) => new LocalizedString(key, key));
-//            _localizerMock.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()])
-//                .Returns((string key, object[] args) => new LocalizedString(key, string.Format(key, args)));
-
-//            _paymentService = new PaymentService(
-//                _paymentRepositoryMock.Object,
-//                _bookingRepositoryMock.Object,
-//                _sePayServiceMock.Object,
-//                options,
-//                _unitOfWorkMock.Object,
-//                _localizerMock.Object
-//            );
-//        }
-
-//        #region Helper Methods
-
-//        private Booking CreateTestBooking(Guid? id = null, Guid? customerId = null)
-//        {
-//            return new Booking
-//            {
-//                Id = id ?? Guid.NewGuid(),
-//                CustomerId = customerId ?? Guid.NewGuid(),
-//                Status = BookingStatus.Confirmed,
-//                IsDeleted = false,
-//                Customer = new AppUser
-//                {
-//                    Id = customerId ?? Guid.NewGuid(),
-//                    FullName = "Test User",
-//                    Email = "test@test.com",
-//                    PhoneNumber = "0123456789"
-//                },
-//                DateCreated = DateTime.UtcNow,
-//                DateModified = DateTime.UtcNow
-//            };
-//        }
-
-//        private Payment CreateTestPayment(Guid? id = null, Guid? bookingId = null, PaymentStatus status = PaymentStatus.Pending)
-//        {
-//            return new Payment
-//            {
-//                Id = id ?? Guid.NewGuid(),
-//                BookingId = bookingId ?? Guid.NewGuid(),
-//                Amount = 100000,
-//                PaymentMethod = PaymentMethod.BankTransfer,
-//                Status = status,
-//                IsDeleted = false,
-//                DateCreated = DateTime.UtcNow,
-//                DateModified = DateTime.UtcNow
-//            };
-//        }
-
-//        #endregion
-
-//        #region CreatePaymentAsync Tests
-
-//        [Fact]
-//        public async Task CreatePaymentAsync_BookingNotFound_ReturnsFailure()
-//        {
-//            // Arrange
-//            var createDto = new CreatePaymentDto
-//            {
-//                BookingId = Guid.NewGuid(),
-//                Amount = 100000,
-//                PaymentMethod = PaymentMethod.BankTransfer
-//            };
-
-//            var emptyBookings = new List<Booking>().BuildMock();
-//            _bookingRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-//                .Returns(emptyBookings);
-
-//            // Act
-//            var result = await _paymentService.CreatePaymentAsync(createDto, "user123");
-
-//            // Assert
-//            Assert.False(result.Success);
-//            Assert.Equal("Booking not found", result.Message);
-//            _paymentRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Payment>()), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task CreatePaymentAsync_BookingAlreadyHasCompletedPayment_ReturnsFailure()
-//        {
-//            // Arrange
-//            var bookingId = Guid.NewGuid();
-//            var booking = CreateTestBooking(bookingId);
-
-//            var existingPayment = CreateTestPayment(bookingId: bookingId, status: PaymentStatus.Completed);
-
-//            var bookings = new List<Booking> { booking }.BuildMock();
-//            var payments = new List<Payment> { existingPayment }.BuildMock();
-
-//            _bookingRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-//                .Returns(bookings);
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(payments);
-
-//            var createDto = new CreatePaymentDto
-//            {
-//                BookingId = bookingId,
-//                Amount = 100000,
-//                PaymentMethod = PaymentMethod.BankTransfer
-//            };
-
-//            // Act
-//            var result = await _paymentService.CreatePaymentAsync(createDto, "user123");
-
-//            // Assert
-//            Assert.False(result.Success);
-//            Assert.Equal("Booking already has a completed payment", result.Message);
-//            _paymentRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Payment>()), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task CreatePaymentAsync_CashPayment_CreatesSuccessfully()
-//        {
-//            // Arrange
-//            var bookingId = Guid.NewGuid();
-//            var booking = CreateTestBooking(bookingId);
-
-//            var bookings = new List<Booking> { booking }.BuildMock();
-//            var emptyPayments = new List<Payment>().BuildMock();
-
-//            _bookingRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-//                .Returns(bookings);
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(emptyPayments);
-
-//            var createDto = new CreatePaymentDto
-//            {
-//                BookingId = bookingId,
-//                Amount = 100000,
-//                PaymentMethod = PaymentMethod.Cash,
-//                Description = "Test payment"
-//            };
-
-//            // Act
-//            var result = await _paymentService.CreatePaymentAsync(createDto, "user123");
-
-//            // Assert
-//            Assert.True(result.Success);
-//            Assert.Equal("Payment created successfully", result.Message);
-//            Assert.NotNull(result.Payment);
-//            Assert.Equal(createDto.Amount, result.Payment.Amount);
-//            Assert.Equal(PaymentMethod.Cash, result.Payment.PaymentMethod);
-//            Assert.Equal(PaymentStatus.Pending, result.Payment.Status);
-
-//            _paymentRepositoryMock.Verify(r => r.AddAsync(It.Is<Payment>(p =>
-//                p.BookingId == bookingId &&
-//                p.Amount == createDto.Amount &&
-//                p.PaymentMethod == PaymentMethod.Cash &&
-//                p.Status == PaymentStatus.Pending
-//            )), Times.Once);
-//            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
-//        }
-
-//        [Theory]
-//        [InlineData(PaymentMethod.BankTransfer)]
-//        [InlineData(PaymentMethod.QRCode)]
-//        [InlineData(PaymentMethod.EWallet)]
-//        public async Task CreatePaymentAsync_NonCashPaymentMethods_CreatesSePayOrder_Success(PaymentMethod paymentMethod)
-//        {
-//            // Arrange
-//            var bookingId = Guid.NewGuid();
-//            var booking = CreateTestBooking(bookingId);
-
-//            var bookings = new List<Booking> { booking }.BuildMock();
-//            var emptyPayments = new List<Payment>().BuildMock();
-
-//            _bookingRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-//                .Returns(bookings);
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(emptyPayments);
-
-//            var sePayResponse = new SePayCreateOrderResponse
-//            {
-//                Success = true,
-//                OrderId = "HSP12345678",
-//                PaymentUrl = "https://sepay.com/pay/123",
-//                QrCode = "data:image/png;base64,..."
-//            };
-
-//            _sePayServiceMock.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
-//                .ReturnsAsync(sePayResponse);
-
-//            var createDto = new CreatePaymentDto
-//            {
-//                BookingId = bookingId,
-//                Amount = 100000,
-//                PaymentMethod = paymentMethod
-//            };
-
-//            // Act
-//            var result = await _paymentService.CreatePaymentAsync(createDto, "user123");
-
-//            // Assert
-//            Assert.True(result.Success);
-//            Assert.NotNull(result.PaymentUrl);
-//            Assert.Equal(sePayResponse.PaymentUrl, result.PaymentUrl);
-//            Assert.NotNull(result.Payment);
-//            Assert.Equal(PaymentStatus.Processing, result.Payment.Status);
-//            Assert.Equal(paymentMethod, result.Payment.PaymentMethod);
-
-//            _paymentRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Payment>()), Times.Once);
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.SePayOrderId == sePayResponse.OrderId &&
-//                p.PaymentUrl == sePayResponse.PaymentUrl &&
-//                p.Status == PaymentStatus.Processing
-//            )), Times.Once);
-//            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Exactly(2));
-//        }
-
-//        [Fact]
-//        public async Task CreatePaymentAsync_SePayOrderCreationFails_ReturnsFailure()
-//        {
-//            // Arrange
-//            var bookingId = Guid.NewGuid();
-//            var booking = CreateTestBooking(bookingId);
-
-//            var bookings = new List<Booking> { booking }.BuildMock();
-//            var emptyPayments = new List<Payment>().BuildMock();
-
-//            _bookingRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-//                .Returns(bookings);
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(emptyPayments);
-
-//            var sePayResponse = new SePayCreateOrderResponse
-//            {
-//                Success = false,
-//                Message = "SePay service unavailable"
-//            };
-
-//            _sePayServiceMock.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
-//                .ReturnsAsync(sePayResponse);
-
-//            var createDto = new CreatePaymentDto
-//            {
-//                BookingId = bookingId,
-//                Amount = 100000,
-//                PaymentMethod = PaymentMethod.BankTransfer
-//            };
-
-//            // Act
-//            var result = await _paymentService.CreatePaymentAsync(createDto, "user123");
-
-//            // Assert
-//            Assert.False(result.Success);
-//            Assert.Contains("Failed to create payment", result.Message);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Failed &&
-//                p.FailureReason == sePayResponse.Message
-//            )), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task CreatePaymentAsync_WithDescription_UsesProvidedDescription()
-//        {
-//            // Arrange
-//            var bookingId = Guid.NewGuid();
-//            var booking = CreateTestBooking(bookingId);
-//            var customDescription = "Custom payment description";
-
-//            var bookings = new List<Booking> { booking }.BuildMock();
-//            var emptyPayments = new List<Payment>().BuildMock();
-
-//            _bookingRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-//                .Returns(bookings);
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(emptyPayments);
-
-//            var createDto = new CreatePaymentDto
-//            {
-//                BookingId = bookingId,
-//                Amount = 100000,
-//                PaymentMethod = PaymentMethod.Cash,
-//                Description = customDescription
-//            };
-
-//            // Act
-//            var result = await _paymentService.CreatePaymentAsync(createDto, "user123");
-
-//            // Assert
-//            Assert.True(result.Success);
-//            Assert.Equal(customDescription, result.Payment?.Description);
-//        }
-
-//        #endregion
-
-//        #region GetPaymentByIdAsync Tests
-
-//        [Fact]
-//        public async Task GetPaymentByIdAsync_PaymentExists_ReturnsPaymentDetail()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var bookingId = Guid.NewGuid();
-//            var payment = CreateTestPayment(paymentId, bookingId, PaymentStatus.Completed);
-//            payment.TransactionId = "TXN123";
-//            payment.PaidAt = DateTime.UtcNow;
-//            payment.Description = "Test payment";
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(payments);
-
-//            // Act
-//            var result = await _paymentService.GetPaymentByIdAsync(paymentId);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(paymentId, result.Id);
-//            Assert.Equal(bookingId, result.BookingId);
-//            Assert.Equal(payment.Amount, result.Amount);
-//            Assert.Equal(payment.Status, result.Status);
-//            Assert.Equal(payment.TransactionId, result.TransactionId);
-//            Assert.Equal(payment.Description, result.Description);
-//        }
-
-//        [Fact]
-//        public async Task GetPaymentByIdAsync_PaymentNotFound_ReturnsNull()
-//        {
-//            // Arrange
-//            var emptyPayments = new List<Payment>().BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(emptyPayments);
-
-//            // Act
-//            var result = await _paymentService.GetPaymentByIdAsync(Guid.NewGuid());
-
-//            // Assert
-//            Assert.Null(result);
-//        }
-
-//        [Fact]
-//        public async Task GetPaymentByIdAsync_DeletedPayment_ReturnsNull()
-//        {
-//            // Arrange
-//            var payment = CreateTestPayment();
-//            payment.IsDeleted = true;
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(payments);
-
-//            // Act
-//            var result = await _paymentService.GetPaymentByIdAsync(payment.Id);
-
-//            // Assert
-//            Assert.Null(result);
-//        }
-
-//        #endregion
-
-//        #region GetPaymentsByBookingIdAsync Tests
-
-//        [Fact]
-//        public async Task GetPaymentsByBookingIdAsync_ReturnsPaymentsOrderedByDateDescending()
-//        {
-//            // Arrange
-//            var bookingId = Guid.NewGuid();
-//            var payment1 = CreateTestPayment(bookingId: bookingId);
-//            payment1.DateCreated = DateTime.UtcNow.AddDays(-2);
-
-//            var payment2 = CreateTestPayment(bookingId: bookingId);
-//            payment2.DateCreated = DateTime.UtcNow.AddDays(-1);
-
-//            var payment3 = CreateTestPayment(bookingId: bookingId);
-//            payment3.DateCreated = DateTime.UtcNow;
-
-//            var payments = new List<Payment> { payment1, payment2, payment3 }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(payments);
-
-//            // Act
-//            var result = await _paymentService.GetPaymentsByBookingIdAsync(bookingId);
-
-//            // Assert
-//            Assert.Equal(3, result.Count);
-//            Assert.True(result[0].DateCreated >= result[1].DateCreated);
-//            Assert.True(result[1].DateCreated >= result[2].DateCreated);
-//        }
-
-//        [Fact]
-//        public async Task GetPaymentsByBookingIdAsync_ExcludesDeletedPayments()
-//        {
-//            // Arrange
-//            var bookingId = Guid.NewGuid();
-//            var activePayment = CreateTestPayment(bookingId: bookingId);
-//            activePayment.IsDeleted = false;
-
-//            var deletedPayment = CreateTestPayment(bookingId: bookingId);
-//            deletedPayment.IsDeleted = true;
-
-//            var payments = new List<Payment> { activePayment, deletedPayment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(payments);
-
-//            // Act
-//            var result = await _paymentService.GetPaymentsByBookingIdAsync(bookingId);
-
-//            // Assert
-//            Assert.Single(result);
-//            Assert.Equal(activePayment.Id, result[0].Id);
-//        }
-
-//        #endregion
-
-//        #region HandleSePayWebhookAsync Tests
-
-//        [Fact]
-//        public async Task HandleSePayWebhookAsync_NullWebhook_ReturnsFalse()
-//        {
-//            // Act
-//            var result = await _paymentService.HandleSePayWebhookAsync(null);
-
-//            // Assert
-//            Assert.False(result);
-//        }
-
-//        [Fact]
-//        public async Task HandleSePayWebhookAsync_NoPaymentCodeInContent_ReturnsFalse()
-//        {
-//            // Arrange
-//            var webhook = new SePayWebhookDto
-//            {
-//                Content = "Random content without payment code",
-//                TransferAmount = 100000,
-//                Id = 12345
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
-
-//            // Assert
-//            Assert.False(result);
-//        }
-
-//        [Fact]
-//        public async Task HandleSePayWebhookAsync_PaymentCodeNotFound_ReturnsFalse()
-//        {
-//            // Arrange
-//            var paymentCode = "HSP12345678";
-//            var webhook = new SePayWebhookDto
-//            {
-//                Content = $"Transfer from bank - {paymentCode}",
-//                TransferAmount = 100000,
-//                Id = 12345
-//            };
-
-//            var emptyPayments = new List<Payment>().BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(emptyPayments);
-
-//            // Act
-//            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
-
-//            // Assert
-//            Assert.False(result);
-//        }
-
-//        [Fact]
-//        public async Task HandleSePayWebhookAsync_ValidWebhook_UpdatesPaymentAndBookingSuccessfully()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var bookingId = Guid.NewGuid();
-//            var paymentCode = "HSP12345678";
-
-//            var payment = CreateTestPayment(paymentId, bookingId, PaymentStatus.Processing);
-//            payment.SePayOrderId = paymentCode;
-//            payment.Amount = 100000;
-
-//            var booking = CreateTestBooking(bookingId);
-//            booking.Status = BookingStatus.Confirmed;
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(payments);
-//            _bookingRepositoryMock.Setup(r => r.GetByIdAsync(bookingId))
-//                .ReturnsAsync(booking);
-
-//            var webhook = new SePayWebhookDto
-//            {
-//                Id = 123456,
-//                Content = $"Transfer from VCB - Code: {paymentCode}",
-//                TransferAmount = 100000,
-//                ReferenceCode = "REF123456",
-//                Gateway = "VCB",
-//                TransactionDate = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
-
-//            // Assert
-//            Assert.True(result);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Completed &&
-//                p.PaidAt != null &&
-//                p.TransactionId == webhook.Id.ToString() &&
-//                p.SePayTransactionRef == webhook.ReferenceCode
-//            )), Times.Once);
-
-//            _bookingRepositoryMock.Verify(r => r.Update(It.Is<Booking>(b =>
-//                b.Status == BookingStatus.Completed
-//            )), Times.Once);
-
-//            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task HandleSePayWebhookAsync_AmountMismatch_FailsPayment()
-//        {
-//            // Arrange
-//            var paymentCode = "HSP12345678";
-//            var payment = CreateTestPayment(status: PaymentStatus.Processing);
-//            payment.SePayOrderId = paymentCode;
-//            payment.Amount = 100000;
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(payments);
-
-//            var webhook = new SePayWebhookDto
-//            {
-//                Id = 123456,
-//                Content = $"Transfer - {paymentCode}",
-//                TransferAmount = 200000 // Different amount
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
-
-//            // Assert
-//            Assert.False(result);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Failed &&
-//                p.FailureReason != null &&
-//                p.FailureReason.Contains("Amount mismatch")
-//            )), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task HandleSePayWebhookAsync_AlreadyCompleted_ReturnsTrue_NoUpdate()
-//        {
-//            // Arrange
-//            var paymentCode = "HSP12345678";
-//            var payment = CreateTestPayment(status: PaymentStatus.Completed);
-//            payment.SePayOrderId = paymentCode;
-//            payment.Amount = 100000;
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(payments);
-
-//            var webhook = new SePayWebhookDto
-//            {
-//                Id = 123456,
-//                Content = $"Transfer - {paymentCode}",
-//                TransferAmount = 100000
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
-
-//            // Assert
-//            Assert.True(result);
-//            _paymentRepositoryMock.Verify(r => r.Update(It.IsAny<Payment>()), Times.Never);
-//            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task HandleSePayWebhookAsync_BookingAlreadyCompleted_DoesNotUpdateBooking()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var bookingId = Guid.NewGuid();
-//            var paymentCode = "HSP12345678";
-
-//            var payment = CreateTestPayment(paymentId, bookingId, PaymentStatus.Processing);
-//            payment.SePayOrderId = paymentCode;
-//            payment.Amount = 100000;
-
-//            var booking = CreateTestBooking(bookingId);
-//            booking.Status = BookingStatus.Completed; // Already completed
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(payments);
-//            _bookingRepositoryMock.Setup(r => r.GetByIdAsync(bookingId))
-//                .ReturnsAsync(booking);
-
-//            var webhook = new SePayWebhookDto
-//            {
-//                Id = 123456,
-//                Content = $"Transfer - {paymentCode}",
-//                TransferAmount = 100000
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
-
-//            // Assert
-//            Assert.True(result);
-//            _bookingRepositoryMock.Verify(r => r.Update(It.IsAny<Booking>()), Times.Never);
-//        }
-
-//        [Theory]
-//        [InlineData("Transfer from VCB HSP12345678")]
-//        [InlineData("Payment HSPabcd1234 received")]
-//        [InlineData("Code: HSP99999999")]
-//        [InlineData("HSP12AB34CD")]
-//        public async Task HandleSePayWebhookAsync_VariousPaymentCodeFormats_ExtractsCorrectly(string content)
-//        {
-//            // Arrange
-//            var paymentCode = System.Text.RegularExpressions.Regex.Match(content, @"HSP[A-Za-z0-9]{8}").Value;
-//            var payment = CreateTestPayment(status: PaymentStatus.Processing);
-//            payment.SePayOrderId = paymentCode;
-//            payment.Amount = 100000;
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(payments);
-//            _bookingRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-//                .ReturnsAsync(CreateTestBooking());
-
-//            var webhook = new SePayWebhookDto
-//            {
-//                Id = 123456,
-//                Content = content,
-//                TransferAmount = 100000
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
-
-//            // Assert
-//            Assert.True(result);
-//        }
-
-//        #endregion
-
-//        #region HandlePaymentCallbackAsync Tests
-
-//        [Fact]
-//        public async Task HandlePaymentCallbackAsync_InvalidSignature_ReturnsFalse()
-//        {
-//            // Arrange
-//            var callback = new PaymentCallbackDto
-//            {
-//                OrderId = Guid.NewGuid().ToString(),
-//                Status = "success",
-//                Signature = "invalid"
-//            };
-
-//            _sePayServiceMock.Setup(s => s.VerifyCallbackSignature(callback))
-//                .Returns(false);
-
-//            // Act
-//            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
-
-//            // Assert
-//            Assert.False(result);
-//            _paymentRepositoryMock.Verify(r => r.Update(It.IsAny<Payment>()), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task HandlePaymentCallbackAsync_InvalidOrderId_ReturnsFalse()
-//        {
-//            // Arrange
-//            var callback = new PaymentCallbackDto
-//            {
-//                OrderId = "not-a-guid",
-//                Status = "success"
-//            };
-
-//            _sePayServiceMock.Setup(s => s.VerifyCallbackSignature(callback))
-//                .Returns(true);
-
-//            // Act
-//            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
-
-//            // Assert
-//            Assert.False(result);
-//        }
-
-//        [Fact]
-//        public async Task HandlePaymentCallbackAsync_PaymentNotFound_ReturnsFalse()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var callback = new PaymentCallbackDto
-//            {
-//                OrderId = paymentId.ToString(),
-//                Status = "success"
-//            };
-
-//            _sePayServiceMock.Setup(s => s.VerifyCallbackSignature(callback))
-//                .Returns(true);
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync((Payment)null);
-
-//            // Act
-//            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
-
-//            // Assert
-//            Assert.False(result);
-//        }
-
-//        [Theory]
-//        [InlineData("success")]
-//        [InlineData("completed")]
-//        [InlineData("SUCCESS")]
-//        [InlineData("COMPLETED")]
-//        public async Task HandlePaymentCallbackAsync_SuccessStatus_UpdatesPaymentAndBooking(string status)
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var bookingId = Guid.NewGuid();
-
-//            var payment = CreateTestPayment(paymentId, bookingId, PaymentStatus.Processing);
-//            var booking = CreateTestBooking(bookingId);
-
-//            _sePayServiceMock.Setup(s => s.VerifyCallbackSignature(It.IsAny<PaymentCallbackDto>()))
-//                .Returns(true);
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-//            _bookingRepositoryMock.Setup(r => r.GetByIdAsync(bookingId))
-//                .ReturnsAsync(booking);
-
-//            var callback = new PaymentCallbackDto
-//            {
-//                OrderId = paymentId.ToString(),
-//                Status = status,
-//                TransactionRef = "TXN123456",
-//                Amount = payment.Amount
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
-
-//            // Assert
-//            Assert.True(result);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Completed &&
-//                p.PaidAt != null &&
-//                p.TransactionId == callback.TransactionRef &&
-//                p.SePayTransactionRef == callback.TransactionRef
-//            )), Times.Once);
-
-//            _bookingRepositoryMock.Verify(r => r.Update(It.Is<Booking>(b =>
-//                b.Status == BookingStatus.Completed
-//            )), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task HandlePaymentCallbackAsync_FailedStatus_UpdatesPaymentStatus()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var payment = CreateTestPayment(paymentId, status: PaymentStatus.Processing);
-
-//            _sePayServiceMock.Setup(s => s.VerifyCallbackSignature(It.IsAny<PaymentCallbackDto>()))
-//                .Returns(true);
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-
-//            var callback = new PaymentCallbackDto
-//            {
-//                OrderId = paymentId.ToString(),
-//                Status = "failed",
-//                Message = "Payment processing failed"
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
-
-//            // Assert
-//            Assert.True(result);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Failed &&
-//                p.FailureReason == callback.Message
-//            )), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task HandlePaymentCallbackAsync_CancelledStatus_UpdatesPaymentStatus()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var payment = CreateTestPayment(paymentId, status: PaymentStatus.Processing);
-
-//            _sePayServiceMock.Setup(s => s.VerifyCallbackSignature(It.IsAny<PaymentCallbackDto>()))
-//                .Returns(true);
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-
-//            var callback = new PaymentCallbackDto
-//            {
-//                OrderId = paymentId.ToString(),
-//                Status = "cancelled",
-//                Message = "Payment cancelled by user"
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
-
-//            // Assert
-//            Assert.True(result);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Cancelled
-//            )), Times.Once);
-//        }
-
-//        #endregion
-
-//        #region UpdatePaymentStatusAsync Tests
-
-//        [Fact]
-//        public async Task UpdatePaymentStatusAsync_PaymentNotFound_ReturnsFalse()
-//        {
-//            // Arrange
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-//                .ReturnsAsync((Payment)null);
-
-//            var updateDto = new UpdatePaymentStatusDto
-//            {
-//                PaymentId = Guid.NewGuid(),
-//                Status = PaymentStatus.Completed
-//            };
-
-//            // Act
-//            var result = await _paymentService.UpdatePaymentStatusAsync(updateDto);
-
-//            // Assert
-//            Assert.False(result);
-//            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task UpdatePaymentStatusAsync_CompletedStatus_UpdatesPaymentAndBooking()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var bookingId = Guid.NewGuid();
-
-//            var payment = CreateTestPayment(paymentId, bookingId, PaymentStatus.Pending);
-//            var booking = CreateTestBooking(bookingId);
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-//            _bookingRepositoryMock.Setup(r => r.GetByIdAsync(bookingId))
-//                .ReturnsAsync(booking);
-
-//            var updateDto = new UpdatePaymentStatusDto
-//            {
-//                PaymentId = paymentId,
-//                Status = PaymentStatus.Completed,
-//                TransactionId = "TXN123"
-//            };
-
-//            // Act
-//            var result = await _paymentService.UpdatePaymentStatusAsync(updateDto);
-
-//            // Assert
-//            Assert.True(result);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Completed &&
-//                p.PaidAt != null &&
-//                p.TransactionId == updateDto.TransactionId
-//            )), Times.Once);
-
-//            _bookingRepositoryMock.Verify(r => r.Update(It.Is<Booking>(b =>
-//                b.Status == BookingStatus.Completed
-//            )), Times.Once);
-
-//            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task UpdatePaymentStatusAsync_FailedStatus_UpdatesWithReason()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var payment = CreateTestPayment(paymentId, status: PaymentStatus.Processing);
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-
-//            var updateDto = new UpdatePaymentStatusDto
-//            {
-//                PaymentId = paymentId,
-//                Status = PaymentStatus.Failed,
-//                FailureReason = "Insufficient funds"
-//            };
-
-//            // Act
-//            var result = await _paymentService.UpdatePaymentStatusAsync(updateDto);
-
-//            // Assert
-//            Assert.True(result);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Failed &&
-//                p.FailureReason == updateDto.FailureReason
-//            )), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task UpdatePaymentStatusAsync_NonCompletedStatus_DoesNotUpdateBooking()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var payment = CreateTestPayment(paymentId, status: PaymentStatus.Pending);
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-
-//            var updateDto = new UpdatePaymentStatusDto
-//            {
-//                PaymentId = paymentId,
-//                Status = PaymentStatus.Processing
-//            };
-
-//            // Act
-//            var result = await _paymentService.UpdatePaymentStatusAsync(updateDto);
-
-//            // Assert
-//            Assert.True(result);
-//            _bookingRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
-//            _bookingRepositoryMock.Verify(r => r.Update(It.IsAny<Booking>()), Times.Never);
-//        }
-
-//        #endregion
-
-//        #region RefundPaymentAsync Tests
-
-//        [Fact]
-//        public async Task RefundPaymentAsync_PaymentNotFound_ReturnsFalse()
-//        {
-//            // Arrange
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-//                .ReturnsAsync((Payment)null);
-
-//            var refundDto = new RefundPaymentDto
-//            {
-//                PaymentId = Guid.NewGuid(),
-//                Reason = "Customer request"
-//            };
-
-//            // Act
-//            var result = await _paymentService.RefundPaymentAsync(refundDto, "user123");
-
-//            // Assert
-//            Assert.False(result);
-//            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task RefundPaymentAsync_PaymentNotCompleted_ReturnsFalse()
-//        {
-//            // Arrange
-//            var payment = CreateTestPayment(status: PaymentStatus.Pending);
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-//                .ReturnsAsync(payment);
-
-//            var refundDto = new RefundPaymentDto
-//            {
-//                PaymentId = payment.Id,
-//                Reason = "Customer request"
-//            };
-
-//            // Act
-//            var result = await _paymentService.RefundPaymentAsync(refundDto, "user123");
-
-//            // Assert
-//            Assert.False(result);
-//            _paymentRepositoryMock.Verify(r => r.Update(It.IsAny<Payment>()), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task RefundPaymentAsync_CashPayment_RefundsSuccessfully()
-//        {
-//            // Arrange
-//            var payment = CreateTestPayment(status: PaymentStatus.Completed);
-//            payment.PaymentMethod = PaymentMethod.Cash;
-//            payment.Amount = 100000;
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-//                .ReturnsAsync(payment);
-
-//            var refundDto = new RefundPaymentDto
-//            {
-//                PaymentId = payment.Id,
-//                Reason = "Customer request"
-//            };
-
-//            // Act
-//            var result = await _paymentService.RefundPaymentAsync(refundDto, "user123");
-
-//            // Assert
-//            Assert.True(result);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Refunded &&
-//                p.RefundedAt != null &&
-//                p.RefundReason == refundDto.Reason
-//            )), Times.Once);
-
-//            _sePayServiceMock.Verify(s => s.RefundPaymentAsync(It.IsAny<SePayRefundRequest>()), Times.Never);
-//            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task RefundPaymentAsync_BankTransferPayment_CallsSePayRefund_Success()
-//        {
-//            // Arrange
-//            var payment = CreateTestPayment(status: PaymentStatus.Completed);
-//            payment.PaymentMethod = PaymentMethod.BankTransfer;
-//            payment.Amount = 100000;
-//            payment.SePayOrderId = "HSP12345678";
-//            payment.SePayTransactionRef = "TXN123";
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-//                .ReturnsAsync(payment);
-
-//            _sePayServiceMock.Setup(s => s.RefundPaymentAsync(It.IsAny<SePayRefundRequest>()))
-//                .ReturnsAsync(new SePayRefundResponse
-//                {
-//                    Success = true,
-//                    RefundId = "REF123"
-//                });
-
-//            var refundDto = new RefundPaymentDto
-//            {
-//                PaymentId = payment.Id,
-//                Reason = "Customer request"
-//            };
-
-//            // Act
-//            var result = await _paymentService.RefundPaymentAsync(refundDto, "user123");
-
-//            // Assert
-//            Assert.True(result);
-
-//            _sePayServiceMock.Verify(s => s.RefundPaymentAsync(It.Is<SePayRefundRequest>(r =>
-//                r.OrderId == payment.SePayOrderId &&
-//                r.TransactionRef == payment.SePayTransactionRef &&
-//                r.Amount == payment.Amount &&
-//                r.Reason == refundDto.Reason
-//            )), Times.Once);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Refunded
-//            )), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task RefundPaymentAsync_SePayRefundFails_ReturnsFalse()
-//        {
-//            // Arrange
-//            var payment = CreateTestPayment(status: PaymentStatus.Completed);
-//            payment.PaymentMethod = PaymentMethod.BankTransfer;
-//            payment.SePayOrderId = "HSP12345678";
-//            payment.SePayTransactionRef = "TXN123";
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-//                .ReturnsAsync(payment);
-
-//            _sePayServiceMock.Setup(s => s.RefundPaymentAsync(It.IsAny<SePayRefundRequest>()))
-//                .ReturnsAsync(new SePayRefundResponse
-//                {
-//                    Success = false,
-//                    Message = "Refund failed"
-//                });
-
-//            var refundDto = new RefundPaymentDto
-//            {
-//                PaymentId = payment.Id,
-//                Reason = "Customer request"
-//            };
-
-//            // Act
-//            var result = await _paymentService.RefundPaymentAsync(refundDto, "user123");
-
-//            // Assert
-//            Assert.False(result);
-//            _paymentRepositoryMock.Verify(r => r.Update(It.IsAny<Payment>()), Times.Never);
-//        }
-
-//        [Theory]
-//        [InlineData(PaymentMethod.QRCode)]
-//        [InlineData(PaymentMethod.EWallet)]
-//        public async Task RefundPaymentAsync_NonCashPaymentMethods_CallsSePayRefund(PaymentMethod paymentMethod)
-//        {
-//            // Arrange
-//            var payment = CreateTestPayment(status: PaymentStatus.Completed);
-//            payment.PaymentMethod = paymentMethod;
-//            payment.SePayOrderId = "HSP12345678";
-//            payment.SePayTransactionRef = "TXN123";
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-//                .ReturnsAsync(payment);
-
-//            _sePayServiceMock.Setup(s => s.RefundPaymentAsync(It.IsAny<SePayRefundRequest>()))
-//                .ReturnsAsync(new SePayRefundResponse { Success = true });
-
-//            var refundDto = new RefundPaymentDto
-//            {
-//                PaymentId = payment.Id,
-//                Reason = "Customer request"
-//            };
-
-//            // Act
-//            var result = await _paymentService.RefundPaymentAsync(refundDto, "user123");
-
-//            // Assert
-//            Assert.True(result);
-//            _sePayServiceMock.Verify(s => s.RefundPaymentAsync(It.IsAny<SePayRefundRequest>()), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task RefundPaymentAsync_BankTransferWithoutSePayRef_RefundsWithoutCallingSePayService()
-//        {
-//            // Arrange
-//            var payment = CreateTestPayment(status: PaymentStatus.Completed);
-//            payment.PaymentMethod = PaymentMethod.BankTransfer;
-//            payment.SePayOrderId = "HSP12345678";
-//            payment.SePayTransactionRef = null; // No transaction ref
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-//                .ReturnsAsync(payment);
-
-//            var refundDto = new RefundPaymentDto
-//            {
-//                PaymentId = payment.Id,
-//                Reason = "Customer request"
-//            };
-
-//            // Act
-//            var result = await _paymentService.RefundPaymentAsync(refundDto, "user123");
-
-//            // Assert
-//            Assert.True(result);
-//            _sePayServiceMock.Verify(s => s.RefundPaymentAsync(It.IsAny<SePayRefundRequest>()), Times.Never);
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Refunded &&
-//                p.RefundedAt != null &&
-//                p.RefundReason == refundDto.Reason
-//            )), Times.Once);
-//        }
-
-//        #endregion
-
-//        #region QueryPaymentStatusAsync Tests
-
-//        [Fact]
-//        public async Task QueryPaymentStatusAsync_PaymentNotFound_ReturnsNull()
-//        {
-//            // Arrange
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-//                .ReturnsAsync((Payment)null);
-
-//            var emptyPayments = new List<Payment>().BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(emptyPayments);
-
-//            // Act
-//            var result = await _paymentService.QueryPaymentStatusAsync(Guid.NewGuid());
-
-//            // Assert
-//            Assert.Null(result);
-//        }
-
-//        [Fact]
-//        public async Task QueryPaymentStatusAsync_PaymentWithoutSePayOrderId_ReturnsLocalStatus()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var payment = CreateTestPayment(paymentId, status: PaymentStatus.Pending);
-//            payment.SePayOrderId = null;
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(payments);
-
-//            // Act
-//            var result = await _paymentService.QueryPaymentStatusAsync(paymentId);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(paymentId, result.Id);
-//            Assert.Equal(PaymentStatus.Pending, result.Status);
-//            _sePayServiceMock.Verify(s => s.QueryPaymentStatusAsync(It.IsAny<string>()), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task QueryPaymentStatusAsync_SePayReturnsCompleted_UpdatesLocalPaymentAndBooking()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var bookingId = Guid.NewGuid();
-//            var payment = CreateTestPayment(paymentId, bookingId, PaymentStatus.Processing);
-//            payment.SePayOrderId = "HSP12345678";
-
-//            var booking = CreateTestBooking(bookingId);
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-//            _bookingRepositoryMock.Setup(r => r.GetByIdAsync(bookingId))
-//                .ReturnsAsync(booking);
-
-//            // First call for query, second call after update
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(payments);
-
-//            var queryResponse = new SePayQueryResponse
-//            {
-//                Success = true,
-//                Status = "completed",
-//                TransactionRef = "TXN123",
-//                Amount = payment.Amount,
-//                PaidAt = DateTime.UtcNow
-//            };
-
-//            _sePayServiceMock.Setup(s => s.QueryPaymentStatusAsync(payment.SePayOrderId))
-//                .ReturnsAsync(queryResponse);
-
-//            // Act
-//            var result = await _paymentService.QueryPaymentStatusAsync(paymentId);
-
-//            // Assert
-//            Assert.NotNull(result);
-
-//            _sePayServiceMock.Verify(s => s.QueryPaymentStatusAsync(payment.SePayOrderId), Times.Once);
-
-//            _paymentRepositoryMock.Verify(r => r.Update(It.Is<Payment>(p =>
-//                p.Status == PaymentStatus.Completed &&
-//                p.PaidAt != null &&
-//                p.TransactionId == queryResponse.TransactionRef
-//            )), Times.Once);
-
-//            _bookingRepositoryMock.Verify(r => r.Update(It.Is<Booking>(b =>
-//                b.Status == BookingStatus.Completed
-//            )), Times.Once);
-
-//            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task QueryPaymentStatusAsync_SePayReturnsNonCompleted_DoesNotUpdate()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var payment = CreateTestPayment(paymentId, status: PaymentStatus.Processing);
-//            payment.SePayOrderId = "HSP12345678";
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(payments);
-
-//            var queryResponse = new SePayQueryResponse
-//            {
-//                Success = true,
-//                Status = "pending",
-//                Amount = payment.Amount
-//            };
-
-//            _sePayServiceMock.Setup(s => s.QueryPaymentStatusAsync(payment.SePayOrderId))
-//                .ReturnsAsync(queryResponse);
-
-//            // Act
-//            var result = await _paymentService.QueryPaymentStatusAsync(paymentId);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            _paymentRepositoryMock.Verify(r => r.Update(It.IsAny<Payment>()), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task QueryPaymentStatusAsync_SePayQueryFails_ReturnsLocalStatus()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var payment = CreateTestPayment(paymentId, status: PaymentStatus.Processing);
-//            payment.SePayOrderId = "HSP12345678";
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(payments);
-
-//            var queryResponse = new SePayQueryResponse
-//            {
-//                Success = false,
-//                Message = "Query failed"
-//            };
-
-//            _sePayServiceMock.Setup(s => s.QueryPaymentStatusAsync(payment.SePayOrderId))
-//                .ReturnsAsync(queryResponse);
-
-//            // Act
-//            var result = await _paymentService.QueryPaymentStatusAsync(paymentId);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(PaymentStatus.Processing, result.Status);
-//            _paymentRepositoryMock.Verify(r => r.Update(It.IsAny<Payment>()), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task QueryPaymentStatusAsync_PaymentAlreadyCompleted_DoesNotQuerySePay()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var payment = CreateTestPayment(paymentId, status: PaymentStatus.Completed);
-//            payment.SePayOrderId = "HSP12345678";
-
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-
-//            var payments = new List<Payment> { payment }.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(payments);
-
-//            var queryResponse = new SePayQueryResponse
-//            {
-//                Success = true,
-//                Status = "completed"
-//            };
-
-//            _sePayServiceMock.Setup(s => s.QueryPaymentStatusAsync(payment.SePayOrderId))
-//                .ReturnsAsync(queryResponse);
-
-//            // Act
-//            var result = await _paymentService.QueryPaymentStatusAsync(paymentId);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            // Should still query SePay but not update since already completed
-//            _sePayServiceMock.Verify(s => s.QueryPaymentStatusAsync(payment.SePayOrderId), Times.Once);
-//            _paymentRepositoryMock.Verify(r => r.Update(It.IsAny<Payment>()), Times.Never);
-//        }
-
-//        #endregion
-
-//        #region GetAllPaymentsAsync Tests
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_NoFilters_ReturnsAllPayments()
-//        {
-//            // Arrange
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(3, result.TotalCount);
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_FilterByBookingId_ReturnsMatchingPayments()
-//        {
-//            // Arrange
-//            var targetBookingId = Guid.NewGuid();
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(bookingId: targetBookingId),
-//                CreateTestPayment(bookingId: targetBookingId),
-//                CreateTestPayment(bookingId: Guid.NewGuid()) // Different booking
-//            };
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                BookingId = targetBookingId,
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(2, result.TotalCount);
-//            Assert.All(result.Items, p => Assert.Equal(targetBookingId, p.BookingId));
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_FilterByCustomerId_ReturnsMatchingPayments()
-//        {
-//            // Arrange
-//            var targetCustomerId = Guid.NewGuid();
-//            var otherCustomerId = Guid.NewGuid();
-
-//            var booking1 = CreateTestBooking(customerId: targetCustomerId);
-//            var booking2 = CreateTestBooking(customerId: otherCustomerId);
-
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(bookingId: booking1.Id),
-//                CreateTestPayment(bookingId: booking1.Id),
-//                CreateTestPayment(bookingId: booking2.Id)
-//            };
-
-//            payments[0].Booking = booking1;
-//            payments[1].Booking = booking1;
-//            payments[2].Booking = booking2;
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                CustomerId = targetCustomerId,
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(2, result.TotalCount);
-//        }
-
-//        [Theory]
-//        [InlineData(PaymentStatus.Pending)]
-//        [InlineData(PaymentStatus.Processing)]
-//        [InlineData(PaymentStatus.Completed)]
-//        [InlineData(PaymentStatus.Failed)]
-//        public async Task GetAllPaymentsAsync_FilterByStatus_ReturnsMatchingPayments(PaymentStatus status)
-//        {
-//            // Arrange
-//            // Determine different statuses to use for non-matching payments
-//            var differentStatus1 = status == PaymentStatus.Pending ? PaymentStatus.Processing : PaymentStatus.Pending;
-//            var differentStatus2 = status == PaymentStatus.Completed ? PaymentStatus.Failed : PaymentStatus.Completed;
-
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(status: differentStatus1),
-//                CreateTestPayment(status: differentStatus2),
-//                CreateTestPayment(status: status),
-//                CreateTestPayment(status: status)
-//            };
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                Status = status,
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(2, result.TotalCount);
-//            Assert.Equal(2, result.Items.Count);
-//            Assert.All(result.Items, p => Assert.Equal(status, p.Status));
-//        }
-
-//        [Theory]
-//        [InlineData(PaymentMethod.Cash)]
-//        [InlineData(PaymentMethod.BankTransfer)]
-//        [InlineData(PaymentMethod.QRCode)]
-//        [InlineData(PaymentMethod.EWallet)]
-//        public async Task GetAllPaymentsAsync_FilterByPaymentMethod_ReturnsMatchingPayments(PaymentMethod paymentMethod)
-//        {
-//            // Arrange
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-//            payments[0].PaymentMethod = paymentMethod;
-//            payments[1].PaymentMethod = paymentMethod;
-//            // Set payment[2] to a different method to ensure filtering works
-//            payments[2].PaymentMethod = paymentMethod == PaymentMethod.Cash
-//                ? PaymentMethod.BankTransfer
-//                : PaymentMethod.Cash;
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                PaymentMethod = paymentMethod,
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(2, result.TotalCount);
-//            Assert.Equal(2, result.Items.Count);
-//            Assert.All(result.Items, p => Assert.Equal(paymentMethod, p.PaymentMethod));
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_FilterByFromDate_ReturnsPaymentsAfterDate()
-//        {
-//            // Arrange
-//            var fromDate = DateTime.UtcNow.AddDays(-5);
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-//            payments[0].DateCreated = fromDate.AddDays(-1); // Before fromDate
-//            payments[1].DateCreated = fromDate.AddDays(1);  // After fromDate
-//            payments[2].DateCreated = fromDate.AddDays(2);  // After fromDate
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                FromDate = fromDate,
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(2, result.TotalCount);
-//            Assert.All(result.Items, p => Assert.True(p.DateCreated >= fromDate));
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_FilterByToDate_ReturnsPaymentsBeforeDate()
-//        {
-//            // Arrange
-//            var toDate = DateTime.UtcNow;
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-//            payments[0].DateCreated = toDate.AddDays(-2); // Before toDate
-//            payments[1].DateCreated = toDate.AddDays(-1); // Before toDate
-//            payments[2].DateCreated = toDate.AddDays(1);  // After toDate
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                ToDate = toDate,
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(2, result.TotalCount);
-//            Assert.All(result.Items, p => Assert.True(p.DateCreated <= toDate));
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_FilterByDateRange_ReturnsPaymentsInRange()
-//        {
-//            // Arrange
-//            var fromDate = DateTime.UtcNow.AddDays(-10);
-//            var toDate = DateTime.UtcNow.AddDays(-5);
-
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment(),
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-//            payments[0].DateCreated = fromDate.AddDays(-1); // Before range
-//            payments[1].DateCreated = fromDate.AddDays(1);  // In range
-//            payments[2].DateCreated = fromDate.AddDays(2);  // In range
-//            payments[3].DateCreated = toDate.AddDays(1);    // After range
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                FromDate = fromDate,
-//                ToDate = toDate,
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(2, result.TotalCount);
-//            Assert.All(result.Items, p =>
-//            {
-//                Assert.True(p.DateCreated >= fromDate);
-//                Assert.True(p.DateCreated <= toDate);
-//            });
-//        }
-
-//        [Theory]
-//        [InlineData("Test description")]
-//        [InlineData("TXN123")]
-//        [InlineData("HSP12345678")]
-//        public async Task GetAllPaymentsAsync_FilterBySearchTerm_ReturnsMatchingPayments(string searchTerm)
-//        {
-//            // Arrange
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-//            payments[0].Description = "Test description for payment";
-//            payments[0].TransactionId = "TXN123";
-//            payments[0].SePayOrderId = "HSP12345678";
-
-//            payments[1].Description = "Another payment";
-//            payments[1].TransactionId = "TXN456";
-//            payments[1].SePayOrderId = "HSP87654321";
-
-//            payments[2].Description = null;
-//            payments[2].TransactionId = null;
-//            payments[2].SePayOrderId = null;
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                SearchTerm = searchTerm,
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.True(result.TotalCount >= 1);
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_SearchTermInDescription_ReturnsMatchingPayments()
-//        {
-//            // Arrange
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-//            payments[0].Description = "Payment for booking ABC";
-//            payments[1].Description = "Different description";
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                SearchTerm = "booking",
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Single(result.Items);
-//            Assert.Contains("booking", result.Items[0].Description, StringComparison.OrdinalIgnoreCase);
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_NoOrderBy_OrdersByDateCreatedDescending()
-//        {
-//            // Arrange
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-//            payments[0].DateCreated = DateTime.UtcNow.AddDays(-2);
-//            payments[1].DateCreated = DateTime.UtcNow.AddDays(-1);
-//            payments[2].DateCreated = DateTime.UtcNow;
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(3, result.TotalCount);
-//            // Verify descending order
-//            for (int i = 0; i < result.Items.Count - 1; i++)
-//            {
-//                Assert.True(result.Items[i].DateCreated >= result.Items[i + 1].DateCreated);
-//            }
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_MultipleFilters_ReturnsMatchingPayments()
-//        {
-//            // Arrange
-//            var targetBookingId = Guid.NewGuid();
-//            var fromDate = DateTime.UtcNow.AddDays(-10);
-//            var toDate = DateTime.UtcNow;
-
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(bookingId: targetBookingId, status: PaymentStatus.Completed),
-//                CreateTestPayment(bookingId: targetBookingId, status: PaymentStatus.Completed),
-//                CreateTestPayment(bookingId: targetBookingId, status: PaymentStatus.Pending),
-//                CreateTestPayment(bookingId: Guid.NewGuid(), status: PaymentStatus.Completed)
-//            };
-
-//            payments[0].DateCreated = fromDate.AddDays(1);
-//            payments[0].PaymentMethod = PaymentMethod.BankTransfer;
-
-//            payments[1].DateCreated = fromDate.AddDays(2);
-//            payments[1].PaymentMethod = PaymentMethod.BankTransfer;
-
-//            payments[2].DateCreated = fromDate.AddDays(1);
-//            payments[2].PaymentMethod = PaymentMethod.Cash;
-
-//            payments[3].DateCreated = fromDate.AddDays(1);
-//            payments[3].PaymentMethod = PaymentMethod.BankTransfer;
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                BookingId = targetBookingId,
-//                Status = PaymentStatus.Completed,
-//                PaymentMethod = PaymentMethod.BankTransfer,
-//                FromDate = fromDate,
-//                ToDate = toDate,
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(2, result.TotalCount);
-//            Assert.All(result.Items, p =>
-//            {
-//                Assert.Equal(targetBookingId, p.BookingId);
-//                Assert.Equal(PaymentStatus.Completed, p.Status);
-//                Assert.Equal(PaymentMethod.BankTransfer, p.PaymentMethod);
-//                Assert.True(p.DateCreated >= fromDate);
-//                Assert.True(p.DateCreated <= toDate);
-//            });
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_Pagination_ReturnsCorrectPage()
-//        {
-//            // Arrange
-//            var payments = new List<Payment>();
-//            for (int i = 0; i < 25; i++)
-//            {
-//                var payment = CreateTestPayment();
-//                payment.DateCreated = DateTime.UtcNow.AddMinutes(-i);
-//                payments.Add(payment);
-//            }
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                PageNumber = 2,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(25, result.TotalCount);
-//            Assert.Equal(10, result.Items.Count);
-//            Assert.Equal(2, result.CurrentPage);
-//            Assert.Equal(3, result.TotalPages);
-//            Assert.True(result.HasPrevious);
-//            Assert.True(result.HasNext);
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_FirstPage_HasNoPrevious()
-//        {
-//            // Arrange
-//            var payments = new List<Payment>();
-//            for (int i = 0; i < 25; i++)
-//            {
-//                payments.Add(CreateTestPayment());
-//            }
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(1, result.CurrentPage);
-//            Assert.False(result.HasPrevious);
-//            Assert.True(result.HasNext);
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_LastPage_HasNoNext()
-//        {
-//            // Arrange
-//            var payments = new List<Payment>();
-//            for (int i = 0; i < 25; i++)
-//            {
-//                payments.Add(CreateTestPayment());
-//            }
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                PageNumber = 3, // Last page (25 items / 10 per page = 3 pages)
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(3, result.CurrentPage);
-//            Assert.Equal(5, result.Items.Count); // Last page has 5 items
-//            Assert.True(result.HasPrevious);
-//            Assert.False(result.HasNext);
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_SinglePage_HasNoPreviousOrNext()
-//        {
-//            // Arrange
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(1, result.CurrentPage);
-//            Assert.Equal(1, result.TotalPages);
-//            Assert.Equal(3, result.Items.Count);
-//            Assert.False(result.HasPrevious);
-//            Assert.False(result.HasNext);
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_EmptyResult_ReturnsEmptyList()
-//        {
-//            // Arrange
-//            var emptyPayments = new List<Payment>().BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(emptyPayments);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                BookingId = Guid.NewGuid(),
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(0, result.TotalCount);
-//            Assert.Empty(result.Items);
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_NullSearchTerm_IgnoresSearchFilter()
-//        {
-//            // Arrange
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                SearchTerm = null,
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(2, result.TotalCount);
-//        }
-
-//        [Fact]
-//        public async Task GetAllPaymentsAsync_EmptySearchTerm_IgnoresSearchFilter()
-//        {
-//            // Arrange
-//            var payments = new List<Payment>
-//            {
-//                CreateTestPayment(),
-//                CreateTestPayment()
-//            };
-
-//            var paymentsQueryable = payments.BuildMock();
-//            _paymentRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-//                .Returns(paymentsQueryable);
-
-//            var filter = new PaymentFilterDto
-//            {
-//                SearchTerm = "",
-//                PageNumber = 1,
-//                PageSize = 10
-//            };
-
-//            // Act
-//            var result = await _paymentService.GetAllPaymentsAsync(filter);
-
-//            // Assert
-//            Assert.NotNull(result);
-//            Assert.Equal(2, result.TotalCount);
-//        }
-
-//        #endregion
-
-//        #region Edge Cases and Integration Tests
-
-//        [Fact]
-//        public async Task CreatePaymentAsync_NullCustomerInfo_CreatesPaymentWithoutCustomerData()
-//        {
-//            // Arrange
-//            var bookingId = Guid.NewGuid();
-//            var booking = CreateTestBooking(bookingId);
-//            booking.Customer = null;
-
-//            var bookings = new List<Booking> { booking }.BuildMock();
-//            var emptyPayments = new List<Payment>().BuildMock();
-
-//            _bookingRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-//                .Returns(bookings);
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(emptyPayments);
-
-//            var sePayResponse = new SePayCreateOrderResponse
-//            {
-//                Success = true,
-//                OrderId = "HSP12345678",
-//                PaymentUrl = "https://sepay.com/pay/123"
-//            };
-
-//            _sePayServiceMock.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
-//                .ReturnsAsync(sePayResponse);
-
-//            var createDto = new CreatePaymentDto
-//            {
-//                BookingId = bookingId,
-//                Amount = 100000,
-//                PaymentMethod = PaymentMethod.BankTransfer
-//            };
-
-//            // Act
-//            var result = await _paymentService.CreatePaymentAsync(createDto, "user123");
-
-//            // Assert
-//            Assert.True(result.Success);
-
-//            _sePayServiceMock.Verify(s => s.CreatePaymentOrderAsync(It.Is<SePayCreateOrderRequest>(r =>
-//                r.BuyerName == null &&
-//                r.BuyerEmail == null &&
-//                r.BuyerPhone == null
-//            )), Times.Once);
-//        }
-
-//        [Fact]
-//        public async Task HandleSePayWebhookAsync_ExceptionThrown_ReturnsFalse()
-//        {
-//            // Arrange
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Throws(new Exception("Database error"));
-
-//            var webhook = new SePayWebhookDto
-//            {
-//                Content = "HSP12345678",
-//                TransferAmount = 100000
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
-
-//            // Assert
-//            Assert.False(result);
-//        }
-
-//        [Fact]
-//        public async Task HandlePaymentCallbackAsync_BookingStatusPending_DoesNotUpdateToCompleted()
-//        {
-//            // Arrange
-//            var paymentId = Guid.NewGuid();
-//            var bookingId = Guid.NewGuid();
-
-//            var payment = CreateTestPayment(paymentId, bookingId, PaymentStatus.Processing);
-//            var booking = CreateTestBooking(bookingId);
-//            booking.Status = BookingStatus.Pending;
-
-//            _sePayServiceMock.Setup(s => s.VerifyCallbackSignature(It.IsAny<PaymentCallbackDto>()))
-//                .Returns(true);
-//            _paymentRepositoryMock.Setup(r => r.GetByIdAsync(paymentId))
-//                .ReturnsAsync(payment);
-//            _bookingRepositoryMock.Setup(r => r.GetByIdAsync(bookingId))
-//                .ReturnsAsync(booking);
-
-//            var callback = new PaymentCallbackDto
-//            {
-//                OrderId = paymentId.ToString(),
-//                Status = "success"
-//            };
-
-//            // Act
-//            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
-
-//            // Assert
-//            Assert.True(result);
-//            _bookingRepositoryMock.Verify(r => r.Update(It.IsAny<Booking>()), Times.Never);
-//        }
-
-//        [Fact]
-//        public async Task CreatePaymentAsync_EmptyDescription_GeneratesDefaultDescription()
-//        {
-//            // Arrange
-//            var bookingId = Guid.NewGuid();
-//            var booking = CreateTestBooking(bookingId);
-
-//            var bookings = new List<Booking> { booking }.BuildMock();
-//            var emptyPayments = new List<Payment>().BuildMock();
-
-//            _bookingRepositoryMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-//                .Returns(bookings);
-//            _paymentRepositoryMock.Setup(r => r.GetAll())
-//                .Returns(emptyPayments);
-
-//            var createDto = new CreatePaymentDto
-//            {
-//                BookingId = bookingId,
-//                Amount = 100000,
-//                PaymentMethod = PaymentMethod.Cash,
-//                Description = null
-//            };
-
-//            // Act
-//            var result = await _paymentService.CreatePaymentAsync(createDto, "user123");
-
-//            // Assert
-//            Assert.True(result.Success);
-//            Assert.Contains($"Payment for booking {bookingId}", result.Payment?.Description);
-//        }
-
-//        #endregion
-//    }
-//}
+﻿using HSP.Core.Abstractions.Entity;
+using HSP.Core.Abstractions.External;
+using HSP.Core.Dtos.ConfigurationDto;
+using HSP.Core.Dtos.PaymentDto;
+using HSP.Core.Dtos.Shared;
+using HSP.Core.Entities;
+using HSP.Core.Enums;
+using HSP.Core.Interfaces.DataAccess;
+using HSP.Core.Resources;
+using HSP.Service.Implementations.Internal;
+using HSP.Service.Interfaces;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
+using MockQueryable;
+using MockQueryable.Moq; // <--- QUAN TRỌNG: Import thư viện này
+using Moq;
+using System.Linq.Expressions;
+using Xunit;
+
+namespace HSP.Service.Test.Implementations.Internal
+{
+    public class PaymentServiceTests
+    {
+        private readonly Mock<IRepository<Payment, Guid>> _mockPaymentRepository;
+        private readonly Mock<IRepository<Booking, Guid>> _mockBookingRepository;
+        private readonly Mock<ISePayService> _mockSePayService;
+        private readonly Mock<IRepository<ChatConversation, Guid>> _mockChatConversationRepo;
+        private readonly Mock<IRepository<BookingEquipment, Guid>> _mockBookingEquipmentRepo;
+        private readonly Mock<IBookingService> _mockBookingService;
+        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
+        private readonly Mock<IStringLocalizer<SharedResource>> _mockLocalizer;
+        private readonly IOptions<SePayConfigurationDto> _sePayConfig;
+
+        private readonly PaymentService _paymentService;
+
+        public PaymentServiceTests()
+        {
+            _mockPaymentRepository = new Mock<IRepository<Payment, Guid>>();
+            _mockBookingRepository = new Mock<IRepository<Booking, Guid>>();
+            _mockSePayService = new Mock<ISePayService>();
+            _mockChatConversationRepo = new Mock<IRepository<ChatConversation, Guid>>();
+            _mockBookingEquipmentRepo = new Mock<IRepository<BookingEquipment, Guid>>();
+            _mockBookingService = new Mock<IBookingService>();
+            _mockUnitOfWork = new Mock<IUnitOfWork>();
+            _mockLocalizer = new Mock<IStringLocalizer<SharedResource>>();
+
+            // Setup Localizer
+            _mockLocalizer.Setup(l => l[It.IsAny<string>()]).Returns((string key) => new LocalizedString(key, key));
+            _mockLocalizer.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()])
+                .Returns((string key, object[] args) => new LocalizedString(key, string.Format(key, args)));
+
+            var config = new SePayConfigurationDto
+            {
+                ReturnUrl = "http://test.com/return",
+                CallbackUrl = "http://test.com/callback"
+            };
+            _sePayConfig = Options.Create(config);
+
+            _paymentService = new PaymentService(
+                _mockPaymentRepository.Object,
+                _mockBookingRepository.Object,
+                _mockSePayService.Object,
+                _mockChatConversationRepo.Object,
+                _sePayConfig,
+                _mockUnitOfWork.Object,
+                _mockLocalizer.Object,
+                _mockBookingEquipmentRepo.Object,
+                _mockBookingService.Object
+            );
+        }
+
+        // --- Helper RÚT GỌN (Sử dụng MockQueryable) ---
+        private void SetupRepository<T>(Mock<IRepository<T, Guid>> repoMock, List<T> data)
+            where T : BaseEntity<Guid>
+        {
+            // BuildMock() là hàm mở rộng từ thư viện MockQueryable.Moq
+            // Nó tự động tạo IQueryable hỗ trợ Async (ToListAsync, FirstOrDefaultAsync...)
+            var mockSet = data.BuildMock();
+
+            repoMock.Setup(r => r.GetAll(It.IsAny<Expression<Func<T, object>>[]>()))
+                .Returns(mockSet);
+
+            repoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync((Guid id) => data.FirstOrDefault(x => x.Id == id));
+        }
+
+        #region CreatePaymentAsync Tests
+
+        [Fact]
+        public async Task CreatePaymentAsync_ShouldReturnFail_WhenBookingNotFound()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            SetupRepository(_mockBookingRepository, new List<Booking>());
+
+            var input = new CreatePaymentDto { BookingId = bookingId };
+
+            // Act
+            var result = await _paymentService.CreatePaymentAsync(input, "userId");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal("Booking not found", result.Message);
+        }
+
+        [Fact]
+        public async Task CreatePaymentAsync_ShouldReturnFail_WhenDistanceIsTooFar()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var technician = new TechnicianProfile { Id = Guid.NewGuid(), Latitude = 10.0000, Longitude = 106.0000 };
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Customer = new AppUser(),
+                Technician = technician,
+                Latitude = 11.0000,
+                Longitude = 107.0000,
+                IsDeleted = false
+            };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+
+            var input = new CreatePaymentDto { BookingId = bookingId, Amount = 100000 };
+
+            // Act
+            var result = await _paymentService.CreatePaymentAsync(input, "userId");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal("KTV không ở tại vị trí làm việc", result.Message);
+        }
+
+        [Fact]
+        public async Task CreatePaymentAsync_ShouldCreateSePayOrder_WhenValid()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var technician = new TechnicianProfile { Id = Guid.NewGuid(), Latitude = 10.762622, Longitude = 106.660172 };
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Customer = new AppUser { FullName = "Test User", Email = "test@test.com" },
+                Technician = technician,
+                Latitude = 10.762622,
+                Longitude = 106.660172,
+                IsDeleted = false
+            };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+            SetupRepository(_mockChatConversationRepo, new List<ChatConversation>());
+
+            var input = new CreatePaymentDto
+            {
+                BookingId = bookingId,
+                Amount = 50000,
+                PaymentMethod = PaymentMethod.QRCode
+            };
+
+            var sePayResponse = new SePayCreateOrderResponse
+            {
+                Success = true,
+                OrderId = "SEPAY123",
+                PaymentUrl = "http://sepay.com/pay"
+            };
+
+            _mockSePayService.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
+                .ReturnsAsync(sePayResponse);
+
+            // Act
+            var result = await _paymentService.CreatePaymentAsync(input, "userId");
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal("SEPAY123", result.Payment.SePayOrderId);
+
+            _mockPaymentRepository.Verify(r => r.AddAsync(It.IsAny<Payment>()), Times.Once);
+            _mockPaymentRepository.Verify(r => r.Update(It.IsAny<Payment>()), Times.Once);
+            _mockUnitOfWork.Verify(u => u.SaveChangesAsync(), Times.AtLeast(2));
+        }
+
+        [Fact]
+        public async Task CreatePaymentAsync_ShouldFail_WhenLocationIsMissing()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Customer = new AppUser(),
+                Technician = new TechnicianProfile { Latitude = 10, Longitude = 10 },
+                Latitude = 0, // Mocking invalid logic: giả sử code check null, hoặc value = 0 tùy logic validation
+                // Trong code gốc bạn check: booking.Latitude == null. 
+                // Vì double không null được trừ khi là double?, hãy đảm bảo entity của bạn đúng.
+                // Giả định entity là double? như trong code service check null
+            };
+            // Note: Nếu Entity định nghĩa double (không ?), logic check null trong Service sẽ luôn false.
+            // Test này giả định Booking có thể trả về null location hoặc logic check.
+
+            // Tuy nhiên, dựa vào code service: "if (booking.Latitude == null...)" 
+            // -> Ta cần setup Booking sao cho check này true. Nếu entity là double non-nullable, branch này là Dead Code.
+            // Giả sử Entity đã sửa thành double? hoặc ta test logic logic Technician location null.
+
+            var bookingNullLoc = new Booking
+            {
+                Id = bookingId,
+                Customer = new AppUser(),
+                Technician = null, // Technician null -> location null
+                IsDeleted = false
+            };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { bookingNullLoc });
+
+            var input = new CreatePaymentDto { BookingId = bookingId };
+
+            // Act
+            var result = await _paymentService.CreatePaymentAsync(input, "uid");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("Không thể xác định vị trí", result.Message);
+        }
+
+        [Fact]
+        public async Task CreatePaymentAsync_ShouldFail_WhenPaymentAlreadyExists()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var tech = new TechnicianProfile { Latitude = 10, Longitude = 10 };
+            var booking = new Booking { Id = bookingId, Customer = new AppUser(), Technician = tech, Latitude = 10, Longitude = 10 };
+
+            var existingPayment = new Payment
+            {
+                BookingId = bookingId,
+                Type = PaymentType.Service,
+                Status = PaymentStatus.Completed
+            };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+            SetupRepository(_mockPaymentRepository, new List<Payment> { existingPayment });
+
+            var input = new CreatePaymentDto { BookingId = bookingId };
+
+            // Act
+            var result = await _paymentService.CreatePaymentAsync(input, "uid");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal("Booking already has a completed payment", result.Message);
+        }
+
+        [Fact]
+        public async Task CreatePaymentAsync_ShouldFail_WhenSePayCreateOrderFails()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Customer = new AppUser(),
+                Technician = new TechnicianProfile { Latitude = 10, Longitude = 10 },
+                Latitude = 10,
+                Longitude = 10
+            };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+            SetupRepository(_mockChatConversationRepo, new List<ChatConversation>());
+
+            var input = new CreatePaymentDto { BookingId = bookingId, PaymentMethod = PaymentMethod.QRCode, Amount = 50000 };
+
+            _mockSePayService.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
+                .ReturnsAsync(new SePayCreateOrderResponse { Success = false, Message = "API Error" });
+
+            // Act
+            var result = await _paymentService.CreatePaymentAsync(input, "uid");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("Failed to create payment", result.Message);
+
+            // Verify payment saved as Failed
+            _mockPaymentRepository.Verify(r => r.Update(It.Is<Payment>(p => p.Status == PaymentStatus.Failed)), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreatePaymentAsync_ShouldCloseChat_WhenPaymentCreated()
+        {
+            // Test nhánh logic: if (isClosed != null) { isClosed.IsClosed = true; }
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Customer = new AppUser(),
+                Technician = new TechnicianProfile { Latitude = 10, Longitude = 10 },
+                Latitude = 10,
+                Longitude = 10
+            };
+
+            var chatConversation = new ChatConversation { BookingId = bookingId, IsClosed = false };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+            SetupRepository(_mockChatConversationRepo, new List<ChatConversation> { chatConversation });
+
+            var input = new CreatePaymentDto { BookingId = bookingId, PaymentMethod = PaymentMethod.QRCode, Amount = 100 };
+
+            _mockSePayService.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
+                .ReturnsAsync(new SePayCreateOrderResponse { Success = true });
+
+            // Act
+            await _paymentService.CreatePaymentAsync(input, "uid");
+
+            // Assert
+            Assert.True(chatConversation.IsClosed); // Verify chat was closed
+            //_mockChatConversationRepo.Verify(r => r.Update(It.IsAny<ChatConversation>()), Times.AtLeastOnce); // Verify repo update call
+        }
+
+        [Fact]
+        public async Task CreatePaymentAsync_ShouldHandle_SePayFailure()
+        {
+            // Test nhánh logic: if (sePayResponse.Success) ... else { ... }
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Customer = new AppUser(),
+                Technician = new TechnicianProfile { Latitude = 10, Longitude = 10 },
+                Latitude = 10,
+                Longitude = 10
+            };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+            SetupRepository(_mockChatConversationRepo, new List<ChatConversation>());
+
+            var input = new CreatePaymentDto { BookingId = bookingId, PaymentMethod = PaymentMethod.EWallet };
+
+            _mockSePayService.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
+                .ReturnsAsync(new SePayCreateOrderResponse { Success = false, Message = "Bank maintenance" });
+
+            // Act
+            var result = await _paymentService.CreatePaymentAsync(input, "uid");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("Bank maintenance", result.Message);
+            // Verify status is Failed
+            _mockPaymentRepository.Verify(r => r.Update(It.Is<Payment>(p => p.Status == PaymentStatus.Failed)), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreatePaymentAsync_ShouldReturnSuccessImmediately_WhenMethodIsCash()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Customer = new AppUser(),
+                Technician = new TechnicianProfile { Latitude = 10, Longitude = 10 },
+                Latitude = 10,
+                Longitude = 10
+            };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+
+            var input = new CreatePaymentDto
+            {
+                BookingId = bookingId,
+                Amount = 50000,
+                PaymentMethod = PaymentMethod.Cash // Quan trọng: CASH
+            };
+
+            // Act
+            var result = await _paymentService.CreatePaymentAsync(input, "uid");
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(PaymentStatus.Pending, result.Payment.Status);
+
+            // Verify: KHÔNG gọi SePay service
+            _mockSePayService.Verify(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()), Times.Never);
+        }
+
+        #endregion
+
+        #region CreateEquipmentPaymentAsync Tests
+
+        [Fact]
+        public async Task CreateEquipmentPaymentAsync_ShouldCalculateTotalCorrectly_AndMarkItems()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var eq1Id = Guid.NewGuid();
+            var booking = new Booking { Id = bookingId, Customer = new AppUser() };
+
+            var bookingEquipments = new List<BookingEquipment>
+            {
+                new BookingEquipment
+                {
+                    Id = eq1Id,
+                    BookingId = bookingId,
+                    Status = BookingEquipmentStatus.Submitted,
+                    Quantity = 2,
+                    UnitPrice = 10000
+                }
+            };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+            SetupRepository(_mockBookingEquipmentRepo, bookingEquipments);
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+
+            var input = new CreateEquipmentPaymentDto
+            {
+                BookingId = bookingId,
+                BookingEquipmentIds = new List<Guid> { eq1Id },
+                PaymentMethod = PaymentMethod.Cash
+            };
+
+            // Act
+            var result = await _paymentService.CreateEquipmentPaymentAsync(input, "userId");
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(70000, result.Payment.Amount); // (2*10k) + 50k ship
+            Assert.Equal(PaymentType.Equipment, result.Payment.Type);
+
+            _mockBookingEquipmentRepo.Verify(r => r.Update(It.Is<BookingEquipment>(
+                be => be.Id == eq1Id && be.PaymentId == result.Payment.Id
+            )), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateEquipmentPaymentAsync_ShouldFail_WhenItemCountMismatch()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var booking = new Booking { Id = bookingId, Customer = new AppUser() };
+
+            // DB chỉ có 1 item hợp lệ
+            var dbItem = new BookingEquipment { Id = Guid.NewGuid(), BookingId = bookingId, Status = BookingEquipmentStatus.Submitted };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+            SetupRepository(_mockBookingEquipmentRepo, new List<BookingEquipment> { dbItem });
+
+            // Input yêu cầu thanh toán 2 item (1 item không tồn tại)
+            var input = new CreateEquipmentPaymentDto
+            {
+                BookingId = bookingId,
+                BookingEquipmentIds = new List<Guid> { dbItem.Id, Guid.NewGuid() }
+            };
+
+            // Act
+            var result = await _paymentService.CreateEquipmentPaymentAsync(input, "uid");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("không hợp lệ", result.Message);
+        }
+
+        [Fact]
+        public async Task CreateEquipmentPaymentAsync_ShouldCreateSePayOrder_WhenMethodIsNotCash()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var eqId = Guid.NewGuid();
+            var booking = new Booking { Id = bookingId, Customer = new AppUser { FullName = "Customer" } };
+            var item = new BookingEquipment { Id = eqId, BookingId = bookingId, Status = BookingEquipmentStatus.Submitted, Quantity = 1, UnitPrice = 10000 };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+            SetupRepository(_mockBookingEquipmentRepo, new List<BookingEquipment> { item });
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+
+            var input = new CreateEquipmentPaymentDto
+            {
+                BookingId = bookingId,
+                BookingEquipmentIds = new List<Guid> { eqId },
+                PaymentMethod = PaymentMethod.BankTransfer // Trigger SePay logic
+            };
+
+            _mockSePayService.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
+                .ReturnsAsync(new SePayCreateOrderResponse { Success = true, OrderId = "EQ_ORDER_1" });
+
+            // Act
+            var result = await _paymentService.CreateEquipmentPaymentAsync(input, "uid");
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal("EQ_ORDER_1", result.Payment.SePayOrderId);
+            Assert.Equal(PaymentStatus.Processing, result.Payment.Status);
+        }
+
+        [Fact]
+        public async Task CreateEquipmentPaymentAsync_ShouldHandle_SePayFailure()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var eqId = Guid.NewGuid();
+            var booking = new Booking { Id = bookingId, Customer = new AppUser() };
+            var item = new BookingEquipment { Id = eqId, BookingId = bookingId, Status = BookingEquipmentStatus.Submitted, Quantity = 1, UnitPrice = 10000 };
+
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+            SetupRepository(_mockBookingEquipmentRepo, new List<BookingEquipment> { item });
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+
+            var input = new CreateEquipmentPaymentDto
+            {
+                BookingId = bookingId,
+                BookingEquipmentIds = new List<Guid> { eqId },
+                PaymentMethod = PaymentMethod.QRCode
+            };
+
+            _mockSePayService.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
+                .ReturnsAsync(new SePayCreateOrderResponse { Success = false, Message = "Fail" });
+
+            // Act
+            var result = await _paymentService.CreateEquipmentPaymentAsync(input, "uid");
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Null(result.Payment); // Xác nhận rằng Payment trả về là null theo đúng logic hiện tại
+
+            // FIX: Verify trực tiếp vào Repository để đảm bảo trạng thái đã được cập nhật xuống DB là Failed
+            _mockPaymentRepository.Verify(r => r.Update(It.Is<Payment>(p =>
+                p.Status == PaymentStatus.Failed &&
+                p.FailureReason == "Fail"
+            )), Times.Once);
+        }
+
+        #endregion
+
+        #region HandleSePayWebhookAsync Tests
+
+        [Fact]
+        public async Task HandleSePayWebhookAsync_ShouldCompleteEquipmentPayment_AndSetItemsToPaid()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var sePayOrderId = "HSP12345678";
+            var amount = 150000m;
+
+            var payment = new Payment
+            {
+                Id = paymentId,
+                SePayOrderId = sePayOrderId,
+                Amount = amount,
+                Status = PaymentStatus.Processing,
+                Type = PaymentType.Equipment,
+                BookingId = Guid.NewGuid()
+            };
+
+            var equipment = new BookingEquipment
+            {
+                Id = Guid.NewGuid(),
+                PaymentId = paymentId,
+                Status = BookingEquipmentStatus.Submitted
+            };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+            SetupRepository(_mockBookingEquipmentRepo, new List<BookingEquipment> { equipment });
+
+            var webhook = new SePayWebhookDto
+            {
+                Content = $"Payment for {sePayOrderId}",
+                TransferAmount = amount,
+                Id = 999
+            };
+
+            // Act
+            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(PaymentStatus.Completed, payment.Status);
+
+            // Do MockQueryable giữ nguyên reference của object trong list, 
+            // nên ta có thể assert trực tiếp vào object equipment ban đầu.
+            Assert.Equal(BookingEquipmentStatus.Paid, equipment.Status);
+
+            _mockBookingService.Verify(s => s.TryCompleteBookingAsync(payment.BookingId), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandleSePayWebhookAsync_ShouldReturnTrueImmediately_IfAlreadyCompleted()
+        {
+            // Arrange
+            // FIX: Dùng format đúng chuẩn "HSP" + 8 ký tự để qua được Regex validation
+            var validCode = "HSP12345678";
+
+            var payment = new Payment
+            {
+                SePayOrderId = validCode,
+                Amount = 100,
+                Status = PaymentStatus.Completed
+            };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+
+            var webhook = new SePayWebhookDto
+            {
+                Content = $"Transfer content {validCode}", // Nội dung chứa mã code
+                TransferAmount = 100
+            };
+
+            // Act
+            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
+
+            // Assert
+            Assert.True(result); // Giờ sẽ trả về True
+
+            // Verify update was NOT called again (Idempotency)
+            _mockPaymentRepository.Verify(r => r.Update(It.IsAny<Payment>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task HandleSePayWebhookAsync_ShouldReturnFalse_IfPaymentNotFound()
+        {
+            // Test Payment = null
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+            var result = await _paymentService.HandleSePayWebhookAsync(new SePayWebhookDto { Content = "HSP12345678" });
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task HandleSePayWebhookAsync_ShouldProcessServicePayment_Correctly()
+        {
+            // Arrange
+            // FIX: Sửa format thành "HSP" + 8 ký tự (A-Z, 0-9) để khớp với Regex trong Service
+            var code = "HSP12345678";
+
+            var payment = new Payment
+            {
+                SePayOrderId = code,
+                Amount = 200000,
+                Status = PaymentStatus.Processing,
+                Type = PaymentType.Service, // SERVICE type
+                BookingId = Guid.NewGuid()
+            };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+            // Cần setup mock này để tránh null ref khi service logic gọi Include() hoặc GetAll()
+            SetupRepository(_mockBookingEquipmentRepo, new List<BookingEquipment>());
+
+            var webhook = new SePayWebhookDto { Content = $"Thanh toan {code}", TransferAmount = 200000 };
+
+            // Act
+            var result = await _paymentService.HandleSePayWebhookAsync(webhook);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(PaymentStatus.Completed, payment.Status);
+
+            // Verify: Logic Equipment update KHÔNG được gọi
+            _mockBookingEquipmentRepo.Verify(r => r.Update(It.IsAny<BookingEquipment>()), Times.Never);
+
+            // Verify: Booking Service vẫn được gọi để complete booking
+            _mockBookingService.Verify(s => s.TryCompleteBookingAsync(payment.BookingId), Times.Once);
+        }
+
+        #endregion
+
+        #region HandlePaymentCallbackAsync Tests
+
+        [Fact]
+        public async Task HandlePaymentCallbackAsync_ShouldReturnFalse_WhenSignatureInvalid()
+        {
+            // Arrange
+            var callback = new PaymentCallbackDto { Signature = "invalid" };
+            _mockSePayService.Setup(s => s.VerifyCallbackSignature(callback)).Returns(false);
+
+            // Act
+            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task HandlePaymentCallbackAsync_ShouldCompletePayment_WhenSuccess()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var payment = new Payment { Id = paymentId, Status = PaymentStatus.Processing, BookingId = Guid.NewGuid() };
+            var callback = new PaymentCallbackDto
+            {
+                OrderId = paymentId.ToString(),
+                Status = "success",
+                TransactionRef = "TRANS123"
+            };
+
+            _mockSePayService.Setup(s => s.VerifyCallbackSignature(callback)).Returns(true);
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+            SetupRepository(_mockBookingEquipmentRepo, new List<BookingEquipment>()); // Empty list logic
+
+            // Act
+            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(PaymentStatus.Completed, payment.Status);
+            Assert.Equal("TRANS123", payment.TransactionId);
+            _mockBookingService.Verify(s => s.TryCompleteBookingAsync(payment.BookingId), Times.Once);
+        }
+
+        [Fact]
+        public async Task HandlePaymentCallbackAsync_ShouldMarkFailed_WhenStatusFailed()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var payment = new Payment { Id = paymentId, Status = PaymentStatus.Processing };
+            var callback = new PaymentCallbackDto { OrderId = paymentId.ToString(), Status = "failed", Message = "No money" };
+
+            _mockSePayService.Setup(s => s.VerifyCallbackSignature(callback)).Returns(true);
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+
+            // Act
+            await _paymentService.HandlePaymentCallbackAsync(callback);
+
+            // Assert
+            Assert.Equal(PaymentStatus.Failed, payment.Status);
+            Assert.Equal("No money", payment.FailureReason);
+        }
+
+        [Fact]
+        public async Task HandlePaymentCallbackAsync_ShouldReturnFalse_WhenPaymentIdInvalid()
+        {
+            _mockSePayService.Setup(s => s.VerifyCallbackSignature(It.IsAny<PaymentCallbackDto>())).Returns(true);
+
+            var callback = new PaymentCallbackDto { OrderId = "NotAGuid" };
+            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task HandlePaymentCallbackAsync_ShouldMarkCancelled_WhenStatusCancelled()
+        {
+            var pid = Guid.NewGuid();
+            var payment = new Payment { Id = pid, Status = PaymentStatus.Pending };
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+
+            _mockSePayService.Setup(s => s.VerifyCallbackSignature(It.IsAny<PaymentCallbackDto>())).Returns(true);
+
+            var callback = new PaymentCallbackDto { OrderId = pid.ToString(), Status = "cancelled" };
+
+            // Act
+            await _paymentService.HandlePaymentCallbackAsync(callback);
+
+            // Assert
+            Assert.Equal(PaymentStatus.Cancelled, payment.Status);
+        }
+
+        [Fact]
+        public async Task HandlePaymentCallbackAsync_ShouldDoNothing_IfPaymentAlreadyCompleted()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var payment = new Payment
+            {
+                Id = paymentId,
+                Status = PaymentStatus.Completed, // Đã hoàn thành trước đó
+                DateModified = DateTime.UtcNow.AddHours(-1)
+            };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+            _mockSePayService.Setup(s => s.VerifyCallbackSignature(It.IsAny<PaymentCallbackDto>())).Returns(true);
+
+            var callback = new PaymentCallbackDto
+            {
+                OrderId = paymentId.ToString(),
+                Status = "success"
+            };
+
+            // Act
+            var result = await _paymentService.HandlePaymentCallbackAsync(callback);
+
+            // Assert
+            Assert.True(result);
+
+            // QUAN TRỌNG: Verify rằng Repository.Update KHÔNG bao giờ được gọi
+            // (Vì code return true ngay đầu hàm)
+            _mockPaymentRepository.Verify(r => r.Update(It.IsAny<Payment>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task HandlePaymentCallbackAsync_ShouldUpdateEquipmentStatus_WhenSuccess()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var payment = new Payment
+            {
+                Id = paymentId,
+                Status = PaymentStatus.Processing,
+                Type = PaymentType.Equipment // Loại Equipment
+            };
+
+            var equipment = new BookingEquipment
+            {
+                Id = Guid.NewGuid(),
+                PaymentId = paymentId,
+                Status = BookingEquipmentStatus.Submitted
+            };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+            SetupRepository(_mockBookingEquipmentRepo, new List<BookingEquipment> { equipment });
+            _mockSePayService.Setup(s => s.VerifyCallbackSignature(It.IsAny<PaymentCallbackDto>())).Returns(true);
+
+            var callback = new PaymentCallbackDto
+            {
+                OrderId = paymentId.ToString(),
+                Status = "success",
+                TransactionRef = "TRANS_EQ_CALLBACK"
+            };
+
+            // Act
+            await _paymentService.HandlePaymentCallbackAsync(callback);
+
+            // Assert
+            Assert.Equal(PaymentStatus.Completed, payment.Status);
+            // Verify: Equipment cũng được cập nhật sang Paid
+            Assert.Equal(BookingEquipmentStatus.Paid, equipment.Status);
+            _mockBookingEquipmentRepo.Verify(r => r.Update(equipment), Times.Once);
+        }
+
+        #endregion
+
+        #region RefundPaymentAsync Tests
+
+        [Fact]
+        public async Task RefundPaymentAsync_ShouldReturnFalse_WhenPaymentNotCompleted()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var payment = new Payment { Id = paymentId, Status = PaymentStatus.Pending };
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+
+            // Act
+            var result = await _paymentService.RefundPaymentAsync(new RefundPaymentDto { PaymentId = paymentId }, "uid");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task RefundPaymentAsync_ShouldCallSePay_AndRefund_WhenValid()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var payment = new Payment
+            {
+                Id = paymentId,
+                Status = PaymentStatus.Completed,
+                PaymentMethod = PaymentMethod.QRCode,
+                SePayTransactionRef = "TRANS_REF",
+                Amount = 100
+            };
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+
+            _mockSePayService.Setup(s => s.RefundPaymentAsync(It.IsAny<SePayRefundRequest>()))
+                .ReturnsAsync(new SePayRefundResponse { Success = true });
+
+            // Act
+            var result = await _paymentService.RefundPaymentAsync(new RefundPaymentDto { PaymentId = paymentId, Reason = "Bad service" }, "uid");
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(PaymentStatus.Refunded, payment.Status);
+            Assert.Equal("Bad service", payment.RefundReason);
+            _mockSePayService.Verify(s => s.RefundPaymentAsync(It.IsAny<SePayRefundRequest>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RefundPaymentAsync_ShouldReturnFalse_WhenSePayRefundFails()
+        {
+            // Arrange
+            var pid = Guid.NewGuid();
+            var payment = new Payment { Id = pid, Status = PaymentStatus.Completed, PaymentMethod = PaymentMethod.EWallet, SePayTransactionRef = "REF" };
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+
+            _mockSePayService.Setup(s => s.RefundPaymentAsync(It.IsAny<SePayRefundRequest>()))
+                .ReturnsAsync(new SePayRefundResponse { Success = false });
+
+            // Act
+            var result = await _paymentService.RefundPaymentAsync(new RefundPaymentDto { PaymentId = pid, Reason = "R" }, "u");
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(PaymentStatus.Completed, payment.Status); // Status unchanged
+        }
+
+        #endregion
+
+        #region QueryPaymentStatusAsync Tests
+
+        [Fact]
+        public async Task QueryPaymentStatusAsync_ShouldUpdateStatus_WhenSePayReturnsCompleted()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+            var payment = new Payment
+            {
+                Id = paymentId,
+                BookingId = bookingId,
+                Status = PaymentStatus.Processing,
+                SePayOrderId = "ORDER123"
+            };
+            var booking = new Booking { Id = bookingId, Status = BookingStatus.InProgress };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+
+            _mockSePayService.Setup(s => s.QueryPaymentStatusAsync("ORDER123"))
+                .ReturnsAsync(new SePayQueryResponse { Success = true, Status = "completed", TransactionRef = "REF123" });
+
+            // Act
+            var result = await _paymentService.QueryPaymentStatusAsync(paymentId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(PaymentStatus.Completed, result.Status);
+            Assert.Equal(PaymentStatus.Completed, payment.Status); // Verify Entity updated
+            Assert.Equal(BookingStatus.Completed, booking.Status); // Verify Booking updated
+        }
+
+        [Fact]
+        public async Task QueryPaymentStatusAsync_ShouldReturnLocalDetail_WhenNoSePayOrderId()
+        {
+            // Arrange
+            var pid = Guid.NewGuid();
+            var payment = new Payment { Id = pid, SePayOrderId = null, Amount = 100 }; // Null OrderId
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+
+            // Act
+            var result = await _paymentService.QueryPaymentStatusAsync(pid);
+
+            // Assert
+            Assert.NotNull(result);
+            // Verify: KHÔNG gọi SePay query
+            _mockSePayService.Verify(s => s.QueryPaymentStatusAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task QueryPaymentStatusAsync_ShouldNotUpdateBooking_IfAlreadyCancelled()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+            var payment = new Payment
+            {
+                Id = paymentId,
+                BookingId = bookingId,
+                Status = PaymentStatus.Processing,
+                SePayOrderId = "ORDER_CHK"
+            };
+            // Booking đã bị hủy trước đó
+            var booking = new Booking { Id = bookingId, Status = BookingStatus.Cancelled };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+
+            _mockSePayService.Setup(s => s.QueryPaymentStatusAsync("ORDER_CHK"))
+                .ReturnsAsync(new SePayQueryResponse { Success = true, Status = "completed" });
+
+            // Act
+            await _paymentService.QueryPaymentStatusAsync(paymentId);
+
+            // Assert
+            Assert.Equal(PaymentStatus.Completed, payment.Status); // Payment vẫn update
+            Assert.Equal(BookingStatus.Cancelled, booking.Status); // Booking KHÔNG đổi status
+
+            // Verify: Booking Update KHÔNG được gọi
+            _mockBookingRepository.Verify(r => r.Update(booking), Times.Never);
+        }
+
+        [Fact]
+        public async Task QueryPaymentStatusAsync_ShouldNotUpdate_WhenSePayStatusIsNotCompleted()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var payment = new Payment
+            {
+                Id = paymentId,
+                Status = PaymentStatus.Processing,
+                SePayOrderId = "ORDER_PENDING"
+            };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+
+            // Mock SePay trả về trạng thái vẫn đang chờ (chưa xong)
+            _mockSePayService.Setup(s => s.QueryPaymentStatusAsync("ORDER_PENDING"))
+                .ReturnsAsync(new SePayQueryResponse { Success = true, Status = "pending" });
+
+            // Act
+            var result = await _paymentService.QueryPaymentStatusAsync(paymentId);
+
+            // Assert
+            Assert.Equal(PaymentStatus.Processing, payment.Status); // Status cũ phải giữ nguyên
+            _mockPaymentRepository.Verify(r => r.Update(payment), Times.Never); // Không được gọi update
+        }
+
+        #endregion
+
+        #region GetPaymentByIdAsync Tests
+
+        [Fact]
+        public async Task GetPaymentByIdAsync_ShouldReturnNull_WhenNotFound()
+        {
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+            var result = await _paymentService.GetPaymentByIdAsync(Guid.NewGuid());
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetPaymentByIdAsync_ShouldReturnDto_WhenFound()
+        {
+            var id = Guid.NewGuid();
+            SetupRepository(_mockPaymentRepository, new List<Payment> { new Payment { Id = id, Amount = 100 } });
+
+            var result = await _paymentService.GetPaymentByIdAsync(id);
+
+            Assert.NotNull(result);
+            Assert.Equal(100, result.Amount);
+        }
+
+        #endregion
+
+        #region GetAllPaymentsAsync Tests
+
+        [Fact]
+        public async Task GetAllPaymentsAsync_ShouldFilterCorrectly()
+        {
+            // Arrange
+            var bookingGuid = Guid.NewGuid();
+            var customerGuid = Guid.NewGuid();
+
+            var p1 = new Payment
+            {
+                Id = Guid.NewGuid(),
+                BookingId = bookingGuid,
+                Status = PaymentStatus.Completed,
+                DateCreated = DateTime.UtcNow,
+                Booking = new Booking { CustomerId = customerGuid }
+            };
+
+            var p2 = new Payment
+            {
+                Id = Guid.NewGuid(),
+                BookingId = bookingGuid,
+                Status = PaymentStatus.Pending,
+                DateCreated = DateTime.UtcNow.AddDays(-1),
+                Booking = new Booking { CustomerId = customerGuid }
+            };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { p1, p2 });
+
+            // FIX: Dùng PageNumber thay vì PageIndex
+            var filter = new PaymentFilterDto
+            {
+                Status = PaymentStatus.Completed,
+                PageNumber = 1,
+                PageSize = 10
+            };
+
+            // Act
+            var result = await _paymentService.GetAllPaymentsAsync(filter);
+
+            // Assert
+            // FIX: Truy cập vào property .Items để kiểm tra danh sách
+            Assert.Single(result.Items);
+            Assert.Equal(p1.Id, result.Items.First().Id);
+            Assert.Equal(1, result.TotalCount);
+        }
+
+        [Fact]
+        public async Task GetAllPaymentsAsync_ShouldApplyAllFilters_AndSearchTerms()
+        {
+            // Arrange: Tạo 3 payment với các đặc điểm khác nhau
+            var dateNow = DateTime.UtcNow;
+            var p1 = new Payment
+            {
+                Id = Guid.NewGuid(),
+                Description = "Pay for HSP123",
+                TransactionId = "TRANS_A",
+                DateCreated = dateNow,
+                Booking = new Booking { CustomerId = Guid.NewGuid() }
+            };
+            var p2 = new Payment
+            {
+                Id = Guid.NewGuid(),
+                Description = "Other",
+                TransactionId = "TRANS_B",
+                DateCreated = dateNow.AddDays(-5), // Cũ hơn
+                Booking = new Booking { CustomerId = Guid.NewGuid() }
+            };
+            var p3 = new Payment
+            {
+                Id = Guid.NewGuid(),
+                Description = "Hidden",
+                TransactionId = "TRANS_C",
+                DateCreated = dateNow.AddDays(1), // Tương lai
+                Booking = new Booking { CustomerId = Guid.NewGuid() }
+            };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { p1, p2, p3 });
+
+            // Case 1: Filter theo Date Range và Search Term "HSP" (chỉ p1 thỏa mãn)
+            var filter1 = new PaymentFilterDto
+            {
+                FromDate = dateNow.AddDays(-1),
+                ToDate = dateNow.AddDays(1),
+                SearchTerm = "HSP", // Sẽ match vào Description của p1
+                PageNumber = 1,
+                PageSize = 10
+            };
+
+            // Act 1
+            var result1 = await _paymentService.GetAllPaymentsAsync(filter1);
+
+            // Assert 1
+            Assert.Single(result1.Items);
+            Assert.Equal(p1.Id, result1.Items.First().Id);
+
+            // Case 2: Filter theo TransactionId (chỉ p2 thỏa mãn)
+            var filter2 = new PaymentFilterDto
+            {
+                SearchTerm = "TRANS_B",
+                PageNumber = 1,
+                PageSize = 10
+            };
+
+            // Act 2
+            var result2 = await _paymentService.GetAllPaymentsAsync(filter2);
+
+            // Assert 2
+            Assert.Single(result2.Items);
+            Assert.Equal(p2.Id, result2.Items.First().Id);
+        }
+
+        #endregion
+
+        #region UpdatePaymentStatusAsync Tests
+
+        [Fact]
+        public async Task UpdatePaymentStatusAsync_ShouldReturnFalse_WhenPaymentNotFound()
+        {
+            SetupRepository(_mockPaymentRepository, new List<Payment>());
+            var result = await _paymentService.UpdatePaymentStatusAsync(new UpdatePaymentStatusDto { PaymentId = Guid.NewGuid() });
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task UpdatePaymentStatusAsync_ShouldUpdateStatusAndCompleteBooking_WhenCompleted()
+        {
+            // Arrange
+            var paymentId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+            var payment = new Payment { Id = paymentId, BookingId = bookingId, Status = PaymentStatus.Pending };
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
+
+            var input = new UpdatePaymentStatusDto
+            {
+                PaymentId = paymentId,
+                Status = PaymentStatus.Completed,
+                TransactionId = "TRANS_MANUAL"
+            };
+
+            // Act
+            var result = await _paymentService.UpdatePaymentStatusAsync(input);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(PaymentStatus.Completed, payment.Status);
+            Assert.Equal("TRANS_MANUAL", payment.TransactionId);
+            Assert.NotNull(payment.PaidAt);
+
+            // Verify booking service call
+            _mockBookingService.Verify(s => s.TryCompleteBookingAsync(bookingId), Times.Once);
+        }
+
+        #endregion
+
+        #region GetPaymentsByBookingIdAsync Tests
+
+        [Fact]
+        public async Task GetPaymentsByBookingIdAsync_ShouldReturnSortedList()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var p1 = new Payment { Id = Guid.NewGuid(), BookingId = bookingId, DateCreated = DateTime.UtcNow.AddHours(-1) };
+            var p2 = new Payment { Id = Guid.NewGuid(), BookingId = bookingId, DateCreated = DateTime.UtcNow }; // Newer
+            var p3 = new Payment { Id = Guid.NewGuid(), BookingId = Guid.NewGuid() }; // Other booking
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { p1, p2, p3 });
+
+            // Act
+            var result = await _paymentService.GetPaymentsByBookingIdAsync(bookingId);
+
+            // Assert
+            Assert.Equal(2, result.Count);
+            Assert.Equal(p2.Id, result[0].Id); // Should be ordered by descending date
+        }
+
+        [Fact]
+        public async Task GetPaymentsByBookingIdAsync_ShouldExcludeDeletedPayments()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var activePayment = new Payment { Id = Guid.NewGuid(), BookingId = bookingId, IsDeleted = false };
+            var deletedPayment = new Payment { Id = Guid.NewGuid(), BookingId = bookingId, IsDeleted = true }; // Đã xóa
+
+            SetupRepository(_mockPaymentRepository, new List<Payment> { activePayment, deletedPayment });
+
+            // Act
+            var result = await _paymentService.GetPaymentsByBookingIdAsync(bookingId);
+
+            // Assert
+            Assert.Single(result); // Chỉ được trả về 1 item
+            Assert.Equal(activePayment.Id, result[0].Id);
+        }
+
+        #endregion
+
+    }
+}
