@@ -23,6 +23,7 @@ namespace HSP.Service.Implementations.Internal
         private readonly SePayConfigurationDto _sePayConfig;
         private readonly IRepository<ChatConversation, Guid> _chatConversation;
         private readonly IRepository<BookingEquipment, Guid> _bookingEquipmentRepository;
+        private readonly IBookingService _bookingService;
         public PaymentService(
             IRepository<Payment, Guid> paymentRepository,
             IRepository<Booking, Guid> bookingRepository,
@@ -31,7 +32,8 @@ namespace HSP.Service.Implementations.Internal
             IOptions<SePayConfigurationDto> sePayConfig,
             IUnitOfWork unitOfWork,
             IStringLocalizer<SharedResource> localizer,
-            IRepository<BookingEquipment, Guid> bookingEquipmentRepository) : base(unitOfWork, localizer)
+            IRepository<BookingEquipment, Guid> bookingEquipmentRepository,
+            IBookingService bookingService) : base(unitOfWork, localizer)
         {
             _paymentRepository = paymentRepository;
             _bookingRepository = bookingRepository;
@@ -39,6 +41,7 @@ namespace HSP.Service.Implementations.Internal
             _sePayConfig = sePayConfig.Value;
             _chatConversation = chatConversation;
             _bookingEquipmentRepository = bookingEquipmentRepository;
+            _bookingService = bookingService;
         }
 
         public async Task<PaymentResponseDto> CreatePaymentAsync(CreatePaymentDto input, string userId)
@@ -480,6 +483,11 @@ namespace HSP.Service.Implementations.Internal
                 _paymentRepository.Update(payment);
                 await _unitOfWork.SaveChangesAsync();
 
+                if (payment.BookingId != Guid.Empty)
+                {
+                    await _bookingService.TryCompleteBookingAsync(payment.BookingId);
+                }
+
                 return true;
             }
             catch (Exception)
@@ -563,6 +571,11 @@ namespace HSP.Service.Implementations.Internal
             _paymentRepository.Update(payment);
             await _unitOfWork.SaveChangesAsync();
 
+            if (payment.BookingId != Guid.Empty && payment.Status == PaymentStatus.Completed)
+            {
+                await _bookingService.TryCompleteBookingAsync(payment.BookingId);
+            }
+
             return true;
         }
         public async Task<bool> UpdatePaymentStatusAsync(UpdatePaymentStatusDto input)
@@ -590,6 +603,11 @@ namespace HSP.Service.Implementations.Internal
             payment.DateModified = DateTime.UtcNow;
             _paymentRepository.Update(payment);
             await _unitOfWork.SaveChangesAsync();
+
+            if (payment.BookingId != Guid.Empty && input.Status == PaymentStatus.Completed)
+            {
+                await _bookingService.TryCompleteBookingAsync(payment.BookingId);
+            }
 
             return true;
         }

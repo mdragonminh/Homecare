@@ -23,7 +23,7 @@ import {
   PaperAirplaneIcon
 } from "@heroicons/react/24/outline";
 import { FeedbackModal } from "../../components/feedback/FeedbackModal";
-import { PaymentStatus, BookingEquipmentStatus, getEquipmentStatusText, getEquipmentStatusColor } from "../../services/paymentApi";
+import { PaymentStatus, BookingEquipmentStatus, getEquipmentStatusText, getPaymentStatusText,getEquipmentStatusColor } from "../../services/paymentApi";
 
 const getCheckStatus = (bookingId, type) => {
   return localStorage.getItem(`booking_${bookingId}_${type}`) === 'true';
@@ -31,6 +31,15 @@ const getCheckStatus = (bookingId, type) => {
 
 const setCheckStatus = (bookingId, type, status) => {
   localStorage.setItem(`booking_${bookingId}_${type}`, status);
+};
+
+const getPaymentInfo = (payments) => {
+  if (!payments || payments.length === 0)
+    return { statusText: "Chưa thanh toán", isPaid: false };
+  const servicePayment = payments.find((p) => p.type === 0);
+  if (!servicePayment) return { statusText: "Chưa thanh toán", isPaid: false };
+  const isPaid = servicePayment.status === PaymentStatus.Completed;
+  return { statusText: getPaymentStatusText(servicePayment.status), isPaid };
 };
 
 const UploadPhotoModal = ({ isOpen, onClose, onUpload, uploadType }) => {
@@ -68,7 +77,19 @@ const UploadPhotoModal = ({ isOpen, onClose, onUpload, uploadType }) => {
             </div>
             <h3 className="text-xl font-bold text-gray-900">{title}</h3>
           </div>
+
+          <p className="text-gray-600 mb-4 leading-relaxed text-sm">
+            {uploadType === 'CheckIn' 
+                ? "Vui lòng chụp ảnh chứng minh bạn đã đến địa điểm và bắt đầu công việc."
+                : "Vui lòng chụp ảnh công việc đã hoàn thành để khách hàng xác nhận."
+            }
+          </p>
+          
           <input type="file" accept="image/*" onChange={handleFileChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+          
+          {file && (
+             <p className="mt-2 text-sm text-gray-700">Đã chọn: **{file.name}**</p>
+          )}
           <div className="flex justify-end gap-3 mt-6">
             <button onClick={() => { onClose(); setFile(null); }} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md">Hủy bỏ</button>
             <button onClick={handleSubmit} disabled={uploading || !file} className={`px-4 py-2 text-white rounded-md ${uploading || !file ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}>
@@ -262,7 +283,7 @@ const BookingDetailPage = () => {
     } else if (type === 'CheckOut') {
       await bookingApi.completeBooking(id); 
       localStorage.removeItem(`booking_${id}_CheckIn`);
-      toast.success("Booking đã hoàn thành!");
+      toast.success("Check-out thành công!");
     }
     setIsUploadModalOpen(false);
     fetchBookingDetail(); 
@@ -277,15 +298,19 @@ const BookingDetailPage = () => {
   const isInProgressFlow = isAccepted && booking.status !== BookingStatus.Completed && booking.status !== BookingStatus.Rejected && booking.status !== BookingStatus.Cancelled;
   const canAccept = booking.status === BookingStatus.Pending && (!booking.technicianId || booking.technicianId === "00000000-0000-0000-0000-000000000000");
   const canCheckIn = isInProgressFlow && (booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.TechnicianOnTheWay) && !isCheckedIn;
-  const canComplete = isInProgressFlow && isCheckedIn && booking.status === BookingStatus.InProgress && booking.payments?.some(payment => payment.status === PaymentStatus.Completed);
+  const canComplete = isInProgressFlow && isCheckedIn && booking.status === BookingStatus.InProgress;
   const canOpenChat = isInProgressFlow;
   const canAddEquipment = isInProgressFlow; 
   
   const hasDraftEquipments = booking.equipments?.some(e => e.status === BookingEquipmentStatus.Draft);
 
   const paymentCompleted = booking.payments?.some(payment => payment.status === PaymentStatus.Completed) || false;
+  const waitingForPayment = booking.status === BookingStatus.Completed && !paymentCompleted;
   const customerFeedback = booking.feedbacks?.find(f => f.source === FeedbackSource.Customer);
-
+  const technicianFeedback = booking.feedbacks?.find(f => f.source === FeedbackSource.Technician);
+  const canGiveFeedback = booking.status === BookingStatus.Completed && paymentCompleted && !technicianFeedback;
+  const paymentInfo = getPaymentInfo(booking.payments);
+  
   return (
     <div className="p-6 max-w-7xl mx-auto relative">
       <button onClick={() => navigate("/technician/bookings")} className="text-gray-500 hover:text-gray-700 inline-flex mb-4 items-center">
@@ -310,9 +335,60 @@ const BookingDetailPage = () => {
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <h2 className="text-lg font-bold mb-4 border-b pb-2">Thông tin khách hàng</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><p className="text-gray-500 text-sm">Họ tên</p><p className="font-medium">{booking.customerName}</p></div>
-              <div><p className="text-gray-500 text-sm">SĐT</p><p className="font-medium flex items-center"><PhoneIcon className="h-4 w-4 mr-1 text-gray-400" />{booking.customerPhone}</p></div>
-              <div className="md:col-span-2"><p className="text-gray-500 text-sm">Địa chỉ</p><p className="font-medium flex items-start"><MapPinIcon className="h-5 w-5 mr-1 text-red-500 shrink-0 mt-0.5" />{booking.address}</p></div>
+              <div>
+                <p className="text-gray-500 text-sm">Họ tên</p>
+                <p className="font-medium">{booking.customerName}</p>
+                
+                {/* Rating trung bình của customer từ các booking đã hoàn thành */}
+                <div className="flex items-center mt-2">
+                    <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, i) => {
+                          const rating = booking.customerAverageRating || 0;
+                          return (
+                            <StarIcon
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i < Math.floor(rating)
+                                  ? "text-yellow-400 fill-yellow-400" 
+                                  : i < rating
+                                  ? "text-yellow-400 fill-yellow-400 opacity-50"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          );
+                        })}
+                    </div>
+                    {booking.customerAverageRating > 0 ? (
+                      <>
+                        <span className="ml-2 text-sm font-semibold text-gray-700">
+                          {booking.customerAverageRating.toFixed(1)}/5
+                        </span>
+                        <span className="ml-2 text-sm text-gray-500">
+                          ({booking.customerRatingCount || 0} đánh giá)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="ml-2 text-sm text-gray-500 italic">
+                        Chưa có đánh giá
+                      </span>
+                    )}
+                </div>
+
+              </div>
+              <div>
+                <p className="text-gray-500 text-sm">Số điện thoại</p>
+                <p className="font-medium flex items-center">
+                  <PhoneIcon className="h-4 w-4 mr-1 text-gray-400" />
+                  {booking.customerPhone}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-gray-500 text-sm">Địa chỉ</p>
+                <p className="font-medium flex items-start">
+                  <MapPinIcon className="h-5 w-5 mr-1 text-red-500 shrink-0 mt-0.5" />
+                  {booking.address}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -328,7 +404,18 @@ const BookingDetailPage = () => {
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                   <h3 className="font-semibold text-gray-700 mb-3 flex items-center"><WrenchScrewdriverIcon className="h-5 w-5 mr-2" /> Dịch vụ đăng ký</h3>
+                   <div className="flex items-center justify-between mb-3">
+                     <h3 className="font-semibold text-gray-700 flex items-center"><WrenchScrewdriverIcon className="h-5 w-5 mr-2" /> Dịch vụ đăng ký</h3>
+                     <div
+                       className={`inline-flex px-3 py-1 rounded-lg border font-semibold text-xs ${
+                         paymentInfo.isPaid
+                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                           : "bg-amber-50 text-amber-700 border-amber-200"
+                       }`}
+                     >
+                       {paymentInfo.statusText}
+                     </div>
+                   </div>
                    <ul className="space-y-2">
                       {booking.items?.map((item) => (
                          <li key={item.serviceId} className="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
@@ -398,7 +485,103 @@ const BookingDetailPage = () => {
                    ) : ( <p className="text-gray-400 text-sm italic">Chưa sử dụng linh kiện nào.</p> )}
                 </div>
              </div>
+             <div className="mt-6 pt-4 border-t bg-gray-50 -mx-6 -mb-6 p-4 rounded-b-lg">
+                <p className="text-gray-600 text-sm"><strong>Mô tả vấn đề:</strong> {booking.problemDescription || "Không có mô tả"}</p>
+                <p className="text-gray-600 text-sm mt-1"><strong>Thời gian hẹn:</strong> {formatDate(booking.desiredDate)}</p>
+             </div>
           </div>
+
+          {/* Feedbacks Section */}
+          {(customerFeedback || technicianFeedback || canGiveFeedback || waitingForPayment) && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h2 className="text-lg font-bold mb-4 border-b pb-2 flex items-center">
+                <StarIcon className="h-5 w-5 mr-2 text-yellow-500" />
+                Đánh giá và Phản hồi
+              </h2>
+              
+              <div className="space-y-4">
+                {/* Customer Feedback về Technician */}
+                {customerFeedback ? (
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-800">Đánh giá từ khách hàng về bạn</h3>
+                      <div className="flex items-center">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <StarIcon
+                            key={i}
+                            className={`h-5 w-5 ${
+                              i < customerFeedback.rating
+                                ? "text-yellow-400 fill-yellow-400"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                        <span className="ml-2 text-sm font-medium text-gray-700">
+                          {customerFeedback.rating}/5
+                        </span>
+                      </div>
+                    </div>
+                    {customerFeedback.comment && (
+                      <p className="text-gray-700 text-sm mt-2 italic">
+                        "{customerFeedback.comment}"
+                      </p>
+                    )}
+                  </div>
+                ) : booking.status === BookingStatus.Completed && (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center text-gray-500 text-sm">
+                    Khách hàng chưa đánh giá
+                  </div>
+                )}
+
+                {/* Technician Feedback về Customer */}
+                {technicianFeedback ? (
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-800">Đánh giá của bạn về khách hàng</h3>
+                      <div className="flex items-center">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <StarIcon
+                            key={i}
+                            className={`h-5 w-5 ${
+                              i < technicianFeedback.rating
+                                ? "text-yellow-400 fill-yellow-400"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                        <span className="ml-2 text-sm font-medium text-gray-700">
+                          {technicianFeedback.rating}/5
+                        </span>
+                      </div>
+                    </div>
+                    {technicianFeedback.comment && (
+                      <p className="text-gray-700 text-sm mt-2 italic">
+                        "{technicianFeedback.comment}"
+                      </p>
+                    )}
+                  </div>
+                ) : waitingForPayment ? (
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-gray-700">
+                      Khách hàng chưa hoàn tất thanh toán. Bạn có thể đánh giá sau khi thanh toán thành công.
+                    </p>
+                  </div>
+                ) : canGiveFeedback && (
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-gray-700 mb-2">
+                      Khách hàng đã thanh toán. Vui lòng đánh giá để hoàn tất booking.
+                    </p>
+                    <button
+                      onClick={() => setIsFeedbackModalOpen(true)}
+                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded font-medium text-sm transition"
+                    >
+                      Đánh giá khách hàng
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-3 pt-2">
               {booking.status === BookingStatus.Pending && <button onClick={onRejectBookingClick} className="bg-red-100 text-red-700 px-5 py-3 rounded font-medium">Từ chối</button>}
@@ -469,7 +652,18 @@ const BookingDetailPage = () => {
           </div>
         </div>
       )}
-      <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} onSubmit={handleFeedbackSubmit} />
+        <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        onSubmit={handleFeedbackSubmit}
+        title="Đánh giá khách hàng"
+        subtitle="Chia sẻ trải nghiệm của bạn về khách hàng"
+        ratingLabel="Bạn đánh giá khách hàng như thế nào?"
+        commentLabel="Nhận xét về khách hàng (tùy chọn)"
+        commentPlaceholder="Nhập nhận xét về khách hàng..."
+        submitButtonText="Gửi đánh giá"
+        maxCommentLength={1000}
+      />
       <UploadPhotoModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} onUpload={handleUploadProof} uploadType={uploadType} />
     </div>
   );

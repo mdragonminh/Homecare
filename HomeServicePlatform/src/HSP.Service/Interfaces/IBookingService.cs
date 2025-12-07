@@ -17,5 +17,6 @@ namespace HSP.Service.Interfaces
 		Task<bool> SubmitEquipmentToCustomerAsync(SubmitEquipmentDto input, Guid userId);
 		Task<bool> ApproveEquipmentAsync(ApproveEquipmentDto input, Guid managerId);
         Task<bool> RemoveEquipmentFromBookingAsync(Guid bookingId, Guid bookingEquipmentId, Guid userId);
+        Task<bool> TryCompleteBookingAsync(Guid bookingId);
     }
 }
