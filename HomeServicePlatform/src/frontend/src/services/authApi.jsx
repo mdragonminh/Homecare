@@ -29,11 +29,12 @@ export const authApi = {
     }
   },
 
-  addPassword: async ({ newPassword, confirmPassword }) => {
+  addPassword: async ({ newPassword, confirmPassword, phoneNumber }) => {
     try {
       const res = await axiosClient.post("/Authentication/add-password", {
         newPassword,
         confirmPassword,
+        phoneNumber
       });
       return { success: true, data: res.data };
     } catch (error) {

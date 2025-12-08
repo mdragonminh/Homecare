@@ -10,7 +10,7 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -49,6 +49,13 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
       );
       return;
     }
+    if (!phoneNumber.trim()) {
+      setError(
+        t("validation.phone_number_required") ||
+          "Số điện thoại không được để trống."
+      );
+      return;
+    }
     const passwordRegex =
       /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
     if (!passwordRegex.test(newPassword)) {
@@ -70,7 +77,7 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
     setLoading(true);
 
     try {
-      const res = await authApi.addPassword({ newPassword, confirmPassword });
+      const res = await authApi.addPassword({ newPassword, confirmPassword,phoneNumber });
 
       if (res.success) {
         setSuccess(true);
@@ -219,7 +226,27 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
                 </button>
               </div>
             </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                {t("form.label.phone_number") || "Số điện thoại"} {/* <-- NHÃN MỚI */}
+              </label>
+              <div className="relative">
+                {/* Bạn có thể dùng Phone hoặc một icon phù hợp */}
+                <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-7.53-7.53A19.79 19.79 0 0 1 2 4.18 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.72 17 17 0 0 0 .8 3.55 1 1 0 0 1-.29 1.05l-1.88 1.88a15.15 15.15 0 0 0 7.53 7.53l1.88-1.88a1 1 0 0 1 1.05-.29 17 17 0 0 0 3.55.8 2 2 0 0 1 1.72 2z"/></svg>
 
+                <input
+                  type="tel" // Sử dụng type="tel" cho số điện thoại
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder={
+                    t("form.placeholder.phone_number") ||
+                    "Nhập số điện thoại"
+                  }
+                  className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  required
+                />
+              </div>
+            </div>
             <button
               type="submit"
               disabled={loading}

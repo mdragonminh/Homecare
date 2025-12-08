@@ -158,10 +158,8 @@ namespace HSP.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
@@ -169,21 +167,20 @@ namespace HSP.DAL.Migrations
                     b.Property<DateTime>("DateModified")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<Guid?>("EntityId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("EntityName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("EntityType")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("NewValue")
                         .HasColumnType("nvarchar(max)");
@@ -191,17 +188,18 @@ namespace HSP.DAL.Migrations
                     b.Property<string>("OldValue")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("UserName")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("UserRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
@@ -209,11 +207,11 @@ namespace HSP.DAL.Migrations
 
                     b.HasIndex("DateCreated");
 
-                    b.HasIndex("EntityType");
+                    b.HasIndex("EntityName");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("EntityType", "EntityId");
+                    b.HasIndex("EntityName", "EntityId");
 
                     b.ToTable("AuditLogs");
                 });
@@ -241,6 +239,12 @@ namespace HSP.DAL.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("float");
 
                     b.Property<string>("ProblemDescription")
                         .HasMaxLength(1000)
@@ -281,8 +285,50 @@ namespace HSP.DAL.Migrations
                     b.ToTable("BookingCancellations");
                 });
 
+            modelBuilder.Entity("HSP.Core.Entities.BookingEquipment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("EquipmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("EquipmentId");
+
+                    b.HasIndex("PaymentId");
+
+                    b.ToTable("BookingEquipment", (string)null);
+                });
+
             modelBuilder.Entity("HSP.Core.Entities.BookingFeedback", b =>
                 {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("BookingId")
                         .HasColumnType("uniqueidentifier");
 
@@ -293,7 +339,12 @@ namespace HSP.DAL.Migrations
                     b.Property<int>("Rating")
                         .HasColumnType("int");
 
-                    b.HasKey("BookingId");
+                    b.Property<int>("Source")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
 
                     b.ToTable("BookingFeedbacks");
                 });
@@ -323,39 +374,6 @@ namespace HSP.DAL.Migrations
                     b.HasIndex("ServiceId");
 
                     b.ToTable("BookingItems");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.ChatAttachment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("FileType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("FileUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<Guid>("MessageId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MessageId");
-
-                    b.ToTable("ChatAttachments");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.ChatConversation", b =>
@@ -521,9 +539,6 @@ namespace HSP.DAL.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("SupplierId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("UnitOfMeasure")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -539,8 +554,6 @@ namespace HSP.DAL.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("SupplierId");
 
                     b.HasIndex("WarehouseId");
 
@@ -576,9 +589,6 @@ namespace HSP.DAL.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<Guid>("UploadedBy")
                         .HasColumnType("uniqueidentifier");
@@ -792,12 +802,18 @@ namespace HSP.DAL.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<decimal>("ShippingFee")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<string>("TransactionId")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -876,37 +892,6 @@ namespace HSP.DAL.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Services");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.Supplier", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("DateCreated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DateModified")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid?>("ModifiedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Suppliers");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.SystemSetting", b =>
@@ -1026,8 +1011,14 @@ namespace HSP.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
@@ -1035,10 +1026,10 @@ namespace HSP.DAL.Migrations
                     b.Property<DateTime>("DateModified")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("EquipmentId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRefundRequested")
                         .HasColumnType("bit");
 
                     b.Property<string>("IssueDescription")
@@ -1051,7 +1042,7 @@ namespace HSP.DAL.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("SupporterId")
+                    b.Property<Guid?>("SupporterId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("TechnicianId")
@@ -1059,7 +1050,9 @@ namespace HSP.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EquipmentId");
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("SupporterId");
 
@@ -1075,6 +1068,7 @@ namespace HSP.DAL.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Address")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
@@ -1090,7 +1084,7 @@ namespace HSP.DAL.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("ManagerId")
+                    b.Property<Guid>("ManagerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("ModifiedBy")
@@ -1260,11 +1254,36 @@ namespace HSP.DAL.Migrations
                     b.Navigation("Booking");
                 });
 
+            modelBuilder.Entity("HSP.Core.Entities.BookingEquipment", b =>
+                {
+                    b.HasOne("HSP.Core.Entities.Booking", "Booking")
+                        .WithMany("Equipments")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HSP.Core.Entities.Equipment", "Equipment")
+                        .WithMany()
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HSP.Core.Entities.Payment", "Payment")
+                        .WithMany("BookingEquipments")
+                        .HasForeignKey("PaymentId");
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Equipment");
+
+                    b.Navigation("Payment");
+                });
+
             modelBuilder.Entity("HSP.Core.Entities.BookingFeedback", b =>
                 {
                     b.HasOne("HSP.Core.Entities.Booking", "Booking")
-                        .WithOne("Feedback")
-                        .HasForeignKey("HSP.Core.Entities.BookingFeedback", "BookingId")
+                        .WithMany("Feedbacks")
+                        .HasForeignKey("BookingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1288,17 +1307,6 @@ namespace HSP.DAL.Migrations
                     b.Navigation("Booking");
 
                     b.Navigation("Service");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.ChatAttachment", b =>
-                {
-                    b.HasOne("HSP.Core.Entities.ChatMessage", "Message")
-                        .WithMany("Attachments")
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Message");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.ChatConversation", b =>
@@ -1348,17 +1356,11 @@ namespace HSP.DAL.Migrations
 
             modelBuilder.Entity("HSP.Core.Entities.Equipment", b =>
                 {
-                    b.HasOne("HSP.Core.Entities.Supplier", "Supplier")
-                        .WithMany("Equipments")
-                        .HasForeignKey("SupplierId");
-
                     b.HasOne("HSP.Core.Entities.Warehouse", "Warehouse")
                         .WithMany("Equipments")
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Supplier");
 
                     b.Navigation("Warehouse");
                 });
@@ -1439,24 +1441,31 @@ namespace HSP.DAL.Migrations
 
             modelBuilder.Entity("HSP.Core.Entities.Ticket", b =>
                 {
-                    b.HasOne("HSP.Core.Entities.Equipment", "Equipment")
+                    b.HasOne("HSP.Core.Entities.Booking", "Booking")
                         .WithMany()
-                        .HasForeignKey("EquipmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HSP.Core.Entities.AppUser", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("HSP.Core.Entities.AppUser", "Supporter")
                         .WithMany()
                         .HasForeignKey("SupporterId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("HSP.Core.Entities.TechnicianProfile", "Technician")
                         .WithMany()
                         .HasForeignKey("TechnicianId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Equipment");
+                    b.Navigation("Booking");
+
+                    b.Navigation("Customer");
 
                     b.Navigation("Supporter");
 
@@ -1468,7 +1477,8 @@ namespace HSP.DAL.Migrations
                     b.HasOne("HSP.Core.Entities.AppUser", "Manager")
                         .WithMany()
                         .HasForeignKey("ManagerId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Manager");
                 });
@@ -1550,7 +1560,9 @@ namespace HSP.DAL.Migrations
                 {
                     b.Navigation("Cancellation");
 
-                    b.Navigation("Feedback");
+                    b.Navigation("Equipments");
+
+                    b.Navigation("Feedbacks");
 
                     b.Navigation("Items");
 
@@ -1560,11 +1572,6 @@ namespace HSP.DAL.Migrations
             modelBuilder.Entity("HSP.Core.Entities.ChatConversation", b =>
                 {
                     b.Navigation("Messages");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.ChatMessage", b =>
-                {
-                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.File", b =>
@@ -1582,14 +1589,14 @@ namespace HSP.DAL.Migrations
                     b.Navigation("FileRelations");
                 });
 
+            modelBuilder.Entity("HSP.Core.Entities.Payment", b =>
+                {
+                    b.Navigation("BookingEquipments");
+                });
+
             modelBuilder.Entity("HSP.Core.Entities.Service", b =>
                 {
                     b.Navigation("BookingItems");
-                });
-
-            modelBuilder.Entity("HSP.Core.Entities.Supplier", b =>
-                {
-                    b.Navigation("Equipments");
                 });
 
             modelBuilder.Entity("HSP.Core.Entities.TechnicianProfile", b =>

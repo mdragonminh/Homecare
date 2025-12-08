@@ -202,7 +202,7 @@ namespace HSP.Service.Implementations.Internal
                .Include(b => b.Equipments).ThenInclude(e => e.Equipment)
                .Include(b => b.Payments)
                .Include(b => b.Feedbacks)
-               .Include(b=>b.ChatConversation)
+               
                .FirstOrDefaultAsync(b => b.Id == bookingId);
 
             if (booking == null)
@@ -228,7 +228,7 @@ namespace HSP.Service.Implementations.Internal
             var equipmentPrice = booking.Equipments
                 .Where(e => !e.IsDeleted)
                 .Sum(e => e.Quantity * e.UnitPrice);
-
+            var chat = await _conversationRepository.GetAll().FirstOrDefaultAsync(x => x.BookingId.Equals(bookingId));
             var totalPrice = servicePrice + equipmentPrice;
 
             var dto = new BookingDetailDto
@@ -244,7 +244,7 @@ namespace HSP.Service.Implementations.Internal
                 CustomerName = booking.Customer?.FullName,
                 CustomerEmail = booking.Customer?.Email,
                 CustomerPhone = booking.Customer?.PhoneNumber,
-                ChatConversationId = booking.ChatConversation?.Id,
+                ChatConversationId = chat?.Id,
                 CustomerAverageRating = customerFeedbacks.Any()
                     ? customerFeedbacks.Average(f => f.Rating)
                     : 0,
