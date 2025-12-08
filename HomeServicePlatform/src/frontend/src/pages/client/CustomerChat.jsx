@@ -139,7 +139,9 @@ export default function CustomerChat() {
   // END: LOGIC TÌM KIẾM MỚI
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+    // SỬA ĐỔI QUAN TRỌNG: Thay h-screen bằng h-[calc(100vh-70px)] 
+    // để trừ đi chiều cao của Navbar bên ngoài trang web.
+    <div className="flex h-[calc(100vh-70px)] bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
       {/* SIDEBAR */}
       <div 
         className={`
@@ -210,7 +212,7 @@ export default function CustomerChat() {
         </div>
       </div>
 
-      {/* MAIN CHAT - Phần này không thay đổi */}
+      {/* MAIN CHAT */}
       <div 
         className={`
           flex-1 flex flex-col min-h-0
@@ -251,11 +253,11 @@ export default function CustomerChat() {
               </div>
             </div>
 
-            {/* Messages */}
+            {/* Messages - Vẫn giữ flex-1 để nó chiếm hết chiều cao còn lại bên trong component */}
            <div
-  ref={messagesContainerRef}
-  className="flex-1 overflow-y-auto px-6 py-8 bg-gradient-to-b from-gray-50/50 to-white"
->
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto px-6 py-8 bg-gradient-to-b from-gray-50/50 to-white"
+            >
               <div className="max-w-4xl mx-auto space-y-6">
                 {messages.map((m) => (
                   <div
@@ -305,7 +307,7 @@ export default function CustomerChat() {
               </div>
             </div>
 
-            {/* Input */}
+            {/* Input - Luôn nằm ở cuối component chat */}
             <div className="bg-white/90 backdrop-blur border-t border-gray-200 p-6">
               <form
                 onSubmit={handleSendMessage}
