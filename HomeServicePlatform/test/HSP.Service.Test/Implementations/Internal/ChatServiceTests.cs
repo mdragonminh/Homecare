@@ -15,7 +15,6 @@ namespace HSP.Service.Test.Implementations.Internal
     {
         private readonly Mock<IRepository<ChatConversation, Guid>> _conversationRepo;
         private readonly Mock<IRepository<ChatMessage, Guid>> _messageRepo;
-        private readonly Mock<IRepository<ChatAttachment, Guid>> _attachmentRepo;
         private readonly Mock<IRepository<Booking, Guid>> _bookingRepo;
         private readonly Mock<IUnitOfWork> _unitOfWork;
         private readonly Mock<IStringLocalizer<SharedResource>> _localizer;
@@ -24,7 +23,6 @@ namespace HSP.Service.Test.Implementations.Internal
         {
             _conversationRepo = new Mock<IRepository<ChatConversation, Guid>>();
             _messageRepo = new Mock<IRepository<ChatMessage, Guid>>();
-            _attachmentRepo = new Mock<IRepository<ChatAttachment, Guid>>();
             _bookingRepo = new Mock<IRepository<Booking, Guid>>();
             _unitOfWork = new Mock<IUnitOfWork>();
             _localizer = new Mock<IStringLocalizer<SharedResource>>();
@@ -32,7 +30,6 @@ namespace HSP.Service.Test.Implementations.Internal
             _chatService = new ChatService(
                 _conversationRepo.Object,
                 _messageRepo.Object,
-                _attachmentRepo.Object,
                 _bookingRepo.Object,
                 _unitOfWork.Object,
                 _localizer.Object
@@ -168,14 +165,6 @@ namespace HSP.Service.Test.Implementations.Internal
                 .Callback<ChatMessage>(m => savedMsg = m)
                 .ReturnsAsync((ChatMessage m) => m);
 
-            _attachmentRepo.Setup(r => r.AddAsync(It.IsAny<ChatAttachment>()))
-                .ReturnsAsync((ChatAttachment a) => a);
-
-            _attachmentRepo.Setup(r => r.GetAll())
-                .Returns(new List<ChatAttachment>
-                {
-            new ChatAttachment { MessageId = conv.Id, FileName = "file.png", FileUrl = "url", FileSize = 123 }
-                }.BuildMockDbSet().Object);
 
             var mockTx = new Mock<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction>();
             _unitOfWork.Setup(u => u.BeginTransactionAsync()).ReturnsAsync(mockTx.Object);
@@ -186,7 +175,6 @@ namespace HSP.Service.Test.Implementations.Internal
             {
                 ConversationId = conv.Id,
                 Content = "Hello",
-                Attachments = new List<AttachmentCreateDto>()
             };
 
             var result = await _chatService.SendMessageAsync(userId, dto);
@@ -312,15 +300,8 @@ namespace HSP.Service.Test.Implementations.Internal
             _conversationRepo.Setup(r => r.GetAll())
                 .Returns(new List<ChatConversation> { conv }.BuildMockDbSet().Object);
 
-            var attachmentList = new List<ChatAttachment>();
 
-            _attachmentRepo.Setup(r => r.GetAll())
-                .Returns(attachmentList.BuildMockDbSet().Object);
-
-            _attachmentRepo.Setup(r => r.AddAsync(It.IsAny<ChatAttachment>()))
-                .Callback<ChatAttachment>(a => attachmentList.Add(a))
-                .ReturnsAsync((ChatAttachment c)=>c);
-
+         
             _messageRepo.Setup(r => r.AddAsync(It.IsAny<ChatMessage>()))
                 .ReturnsAsync((ChatMessage c)=>c);
 
@@ -332,15 +313,10 @@ namespace HSP.Service.Test.Implementations.Internal
             {
                 ConversationId = conv.Id,
                 Content = "hello",
-                Attachments = new List<AttachmentCreateDto>
-                {
-                    new AttachmentCreateDto { FileName = "a.png", FileUrl = "u", FileSize = 20 }
-                }
+               
             };
 
             await _chatService.SendMessageAsync(userId, dto);
-
-            Assert.Single(attachmentList);
         }
 
         [Fact]

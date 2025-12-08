@@ -202,13 +202,12 @@ namespace HSP.Service.Implementations.Internal
                .Include(b => b.Equipments).ThenInclude(e => e.Equipment)
                .Include(b => b.Payments)
                .Include(b => b.Feedbacks)
+               .Include(b=>b.ChatConversation)
                .FirstOrDefaultAsync(b => b.Id == bookingId);
 
             if (booking == null)
                 throw new KeyNotFoundException("Không tìm thấy booking");
 
-            // Lấy tất cả feedbacks từ technician về customer từ tất cả các booking đã hoàn thành
-            // Để technician có thể thấy rating của customer khi quyết định nhận booking
             var customerFeedbacks = booking.CustomerId != null
                 ? await _bookingRepository.GetAll()
                     .Include(b => b.Feedbacks)
@@ -241,19 +240,15 @@ namespace HSP.Service.Implementations.Internal
                 DateModified = booking.DateModified,
                 DateCompleted = booking.DateCompleted,
                 ProblemDescription = booking.ProblemDescription,
-
                 Address = address ?? string.Empty,
-
                 CustomerName = booking.Customer?.FullName,
                 CustomerEmail = booking.Customer?.Email,
                 CustomerPhone = booking.Customer?.PhoneNumber,
-
+                ChatConversationId = booking.ChatConversation?.Id,
                 CustomerAverageRating = customerFeedbacks.Any()
                     ? customerFeedbacks.Average(f => f.Rating)
                     : 0,
-
                 CustomerRatingCount = customerFeedbacks.Count,
-
                 TechnicianId = booking.TechnicianId,
                 TechnicianName = booking.Technician?.User?.FullName,
                 TechnicianEmail = booking.Technician?.User?.Email,
@@ -326,14 +321,15 @@ namespace HSP.Service.Implementations.Internal
                 booking.DateModified = DateTime.UtcNow;
                 _bookingRepository.Update(booking);
                 await _unitOfWork.SaveChangesAsync();
-            } else if (input.Status != BookingStatus.Completed)
+            }
+            else if (input.Status != BookingStatus.Completed)
             {
                 booking.Status = input.Status;
                 booking.DateModified = DateTime.UtcNow;
                 _bookingRepository.Update(booking);
                 await _unitOfWork.SaveChangesAsync();
             }
-            
+
             return true;
         }
 
@@ -505,20 +501,35 @@ namespace HSP.Service.Implementations.Internal
 
             if (booking.Status != BookingStatus.Pending)
                 return new BookingAcceptResultDto { IsSuccess = false, Message = "Booking đã được xử lý." };
+            var conversation = await _conversationRepository
+                .GetAll()
+                .FirstOrDefaultAsync(c => c.BookingId == booking.Id);
             using (var transaction = await _unitOfWork.BeginTransactionAsync())
             {
                 booking.TechnicianId = technician.Id;
                 booking.Status = BookingStatus.Confirmed;
                 booking.DateModified = DateTime.UtcNow;
                 await _unitOfWork.SaveChangesAsync();
-                var conversation = new ChatConversation
+                if (conversation == null)
                 {
-                    BookingId = booking.Id,
-                    CustomerId = booking.CustomerId,
-                    TechnicianId = technician.Id,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await _conversationRepository.AddAsync(conversation);
+                    conversation = new ChatConversation
+                    {
+                        BookingId = booking.Id,
+                        CustomerId = booking.CustomerId,
+                        TechnicianId = technician.Id,
+                        IsClosed = false,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _conversationRepository.AddAsync(conversation);
+                }
+                else
+                {
+                    if(conversation.IsClosed == true)
+                    {
+                        conversation.IsClosed = false;
+                        conversation.TechnicianId = technician.Id;
+                    }
+                }
                 await _unitOfWork.SaveChangesAsync();
                 await transaction.CommitAsync();
             }

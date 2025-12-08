@@ -59,17 +59,6 @@ namespace HSP.Service.Implementations.Internal
             _systemSettingService = systemSettingService;
         }
 
-        private async Task<Guid?> GetAcceptedTechnicianAsync(string token)
-        {
-            var techId = await _redisCacheService.GetAsync<Guid>($"accepted_{token}");
-            if (techId != Guid.Empty)
-            {
-                await _redisCacheService.RemoveAsync($"accepted_{token}");
-                return techId;
-            }
-            return null;
-        }
-
         public async Task<MatchedBookingResultDto> CreateAndMatchBookingAsync(CustomerCreateBookingDto input)
         {
             if (input == null)

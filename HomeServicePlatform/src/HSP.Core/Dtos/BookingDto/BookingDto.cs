@@ -60,6 +60,7 @@ namespace HSP.Core.Dtos.BookingDto
         public decimal? ServiceBasePrice { get; set; }
         public double? CustomerAverageRating { get; set; }
         public int? CustomerRatingCount { get; set; }
+        public Guid? ChatConversationId { get; set; }
         public List<BookingItemDto>? Items { get; set; }
         public List<BookingEquipmentDto> Equipments { get; set; } = new List<BookingEquipmentDto>();
         public ICollection<PaymentDto.PaymentDto> Payments { get; set; } = new List<PaymentDto.PaymentDto>();

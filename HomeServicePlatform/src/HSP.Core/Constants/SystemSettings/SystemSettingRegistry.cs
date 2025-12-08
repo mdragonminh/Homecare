@@ -9,7 +9,6 @@
             public const string EmailTokenLifespanMinutes = "EmailTokenLifespanMinutes";
             public const string DefaultServiceBasePrice = "DefaultServiceBasePrice";
             public const string TechnicianSearchRadiusKm = "TechnicianSearchRadiusKm";
-            public const string TechnicianMinRating = "TechnicianMinRating";
         }
 
         public static class Groups
@@ -66,16 +65,6 @@
                     Description: "Giá sàn tối thiểu cho một dịch vụ gia đình"
                 )
             },
-            {
-                Keys.TechnicianMinRating,
-                new SystemSettingDefinition(
-                    Keys.TechnicianMinRating,
-                    DefaultValue: "3",
-                    Group: Groups.TechnicianMatching,
-                    Description: "Điểm đánh giá tối thiểu của kỹ thuật viên để nhận job"
-                )
-            },
-
         };
     }
 }
