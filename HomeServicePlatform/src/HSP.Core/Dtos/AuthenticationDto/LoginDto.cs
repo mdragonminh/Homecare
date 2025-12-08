@@ -28,5 +28,9 @@ namespace HSP.Service.Dtos.AuthenticationDto
 		[Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "ConfirmPasswordIsRequired")]
 		[Compare("NewPassword", ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PasswordsDoNotMatch")]
 		public string ConfirmPassword { get; set; }
-	}
+        [Required(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberIsRequired")]
+        [Phone(ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "InvalidPhoneNumberFormat")]
+        [StringLength(10, ErrorMessageResourceType = typeof(SharedResource), ErrorMessageResourceName = "PhoneNumberMaxLength")]
+        public string PhoneNumber { get; set; }
+    }
 }

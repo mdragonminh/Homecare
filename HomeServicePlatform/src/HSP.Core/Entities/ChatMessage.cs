@@ -15,8 +15,6 @@ namespace HSP.Core.Entities
 
         public string? Content { get; set; }
 
-        public ICollection<ChatAttachment> Attachments { get; set; } = new List<ChatAttachment>();
-
         public DateTime SentAt { get; set; } = DateTime.UtcNow;
 
         public bool IsRead { get; set; }

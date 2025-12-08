@@ -576,10 +576,12 @@ namespace HSP.Service.Implementations.Internal
             }
             var user = await _userRepository.FindByIdAsync(userId);
             if (user == null) throw new ValidationException(_localizer["UserNotFound"]);
+            if (!string.IsNullOrWhiteSpace(input.PhoneNumber)) user.PhoneNumber = input.PhoneNumber;
             if (!string.IsNullOrEmpty(user.PasswordHash))
             {
                 throw new ValidationException(_localizer["UserAlreadyHasPassword"]);
             }
+            await _userRepository.UpdateAccount(user);
             var result = await _userRepository.AddPasswordAsync(user, input.NewPassword);
             if (!result.Succeeded) throw new Exception(_localizer["AddPasswordFailed"]);
             return result.Succeeded;

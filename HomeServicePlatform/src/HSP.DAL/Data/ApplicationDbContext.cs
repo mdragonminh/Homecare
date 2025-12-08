@@ -35,7 +35,6 @@ namespace HSP.DAL.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<ChatConversation> ChatConversations { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
-        public DbSet<ChatAttachment> ChatAttachments { get; set; }
         public DbSet<ChatMessageHistory> ChatMessageHistories { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -237,11 +236,6 @@ namespace HSP.DAL.Data
 
             builder.Entity<ChatMessage>(entity =>
             {
-                entity.HasMany(m => m.Attachments)
-                      .WithOne(a => a.Message)
-                      .HasForeignKey(a => a.MessageId)
-                      .OnDelete(DeleteBehavior.Cascade);
-
                 entity.HasOne(m => m.Sender)
                       .WithMany()
                       .HasForeignKey(m => m.SenderId)
@@ -251,15 +245,6 @@ namespace HSP.DAL.Data
                 entity.HasIndex(m => m.SentAt);
             });
 
-            builder.Entity<ChatAttachment>(entity =>
-            {
-                entity.HasOne(a => a.Message)
-                      .WithMany(m => m.Attachments)
-                      .HasForeignKey(a => a.MessageId)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasIndex(a => a.MessageId);
-            });
 
             builder.Entity<Home>().HasQueryFilter(h => !h.IsDeleted);
             builder.Entity<HomeItem>().HasQueryFilter(hi => !hi.IsDeleted);

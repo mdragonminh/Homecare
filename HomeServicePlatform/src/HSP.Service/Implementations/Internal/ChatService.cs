@@ -14,19 +14,16 @@ namespace HSP.Service.Implementations.Internal
     {
         private readonly IRepository<ChatConversation, Guid> _conversationRepository;
         private readonly IRepository<ChatMessage, Guid> _messageRepository;
-        private readonly IRepository<ChatAttachment, Guid> _attachmentRepository;
         private readonly IRepository<Booking, Guid> _bookingRepository;
         public ChatService(
             IRepository<ChatConversation, Guid> conversationRepository,
             IRepository<ChatMessage, Guid> messageRepository,
-            IRepository<ChatAttachment, Guid> attachmentRepository,
             IRepository<Booking, Guid> bookingRepository,
             IUnitOfWork unitOfWork,
             IStringLocalizer<SharedResource> localizer) : base(unitOfWork, localizer)
         {
             _conversationRepository = conversationRepository;
             _messageRepository = messageRepository;
-            _attachmentRepository = attachmentRepository;
             _bookingRepository = bookingRepository;
         }
 
@@ -57,6 +54,10 @@ namespace HSP.Service.Implementations.Internal
         public async Task<List<ConversationListDto>> GetUserConversationsAsync(Guid userId)
         {
             var conversations = await _conversationRepository.GetAll()
+                .Include(c => c.Technician).ThenInclude(t => t.User)
+                .Include(c => c.Customer)
+                .Include(c => c.Booking)
+                .Include(c => c.Messages)
             .Where(c => c.CustomerId == userId || c.Technician.UserId == userId)
             .OrderByDescending(c => c.CreatedAt)
             .Select(c => new ConversationListDto
@@ -70,8 +71,9 @@ namespace HSP.Service.Implementations.Internal
                 BookingDescription = c.Booking.ProblemDescription ?? "Không có mô tả",
                 CreatedAt = c.CreatedAt,
                 IsClosed = c.IsClosed,
-                LastMessage = c.Messages
-                    .OrderByDescending(m => m.SentAt)
+                LastMessage = c.LastMessageId != null
+                ? c.Messages
+                    .Where(m => m.Id == c.LastMessageId)
                     .Select(m => new MessageResponseDto
                     {
                         Id = m.Id,
@@ -79,10 +81,11 @@ namespace HSP.Service.Implementations.Internal
                         SenderId = m.SenderId,
                         SentAt = m.SentAt
                     })
-                    .FirstOrDefault(),
-
+                    .FirstOrDefault()
+                : null,
                 UnreadCount = c.Messages
-                    .Count(m => !m.IsRead && m.SenderId != userId)
+                    .Where(m => !m.IsRead && m.SenderId != userId)
+                    .Count()
             })
             .ToListAsync();
 
@@ -96,7 +99,8 @@ namespace HSP.Service.Implementations.Internal
                      .ThenInclude(t => t.User)
                      .FirstOrDefaultAsync(c => c.Id == input.ConversationId)
                      ?? throw new ValidationException("Conversation không tồn tại");
-
+            if (conversation.IsClosed)
+                throw new ValidationException("Cuộc trò chuyện đã đóng.");
             if (conversation.CustomerId != userId &&
                 conversation.Technician.UserId != userId)
                 throw new UnauthorizedAccessException();
@@ -114,34 +118,6 @@ namespace HSP.Service.Implementations.Internal
                         IsRead = false
                     };
                     await _messageRepository.AddAsync(message);
-
-                    if (input.Attachments?.Any() == true)
-                    {
-                        if (input.Attachments.Count() > 1)
-                            throw new ValidationException("Chỉ được gửi tối đa 1 file mỗi tin nhắn.");
-                        foreach (var file in input.Attachments)
-                        {
-                            if (string.IsNullOrWhiteSpace(file.FileUrl))
-                                throw new ValidationException("FileUrl không hợp lệ");
-                            if (string.IsNullOrWhiteSpace(file.FileName))
-                                throw new ValidationException("FileName không hợp lệ");
-                            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                            if (!FileConstants.AllowedImageExtensions
-                                .Concat(FileConstants.AllowedDocumentExtensions)
-                                .Contains(extension))
-                                throw new ValidationException($"File '{file.FileName}' không được hỗ trợ.");
-                            if (file.FileSize > FileConstants.MaxFileSize)
-                                throw new ValidationException($"File '{file.FileName}' vượt quá kích thước cho phép.");
-                            await _attachmentRepository.AddAsync(new ChatAttachment
-                            {
-                                MessageId = message.Id,
-                                FileName = file.FileName,
-                                FileUrl = file.FileUrl,
-                                FileSize = file.FileSize,
-                                FileType = file.FileType
-                            });
-                        }
-                    }
                     conversation.LastMessageId = message.Id;
                     await _unitOfWork.SaveChangesAsync();
                     await transaction.CommitAsync();
@@ -152,22 +128,12 @@ namespace HSP.Service.Implementations.Internal
                     throw;
                 }
             }
-            var attachments = await _attachmentRepository.GetAll()
-                .Where(a => a.MessageId == message.Id)
-                .Select(a => new AttachmentCreateDto
-                {
-                    FileUrl = a.FileUrl,
-                    FileName = a.FileName,
-                    FileSize = a.FileSize
-                })
-                .ToListAsync();
             return new MessageResponseDto
             {
                 Id = message.Id,
                 Content = message.Content,
                 SenderId = message.SenderId,
-                SentAt = message.SentAt,
-                Attachments = attachments
+                SentAt = message.SentAt
             };
         }
 
@@ -185,7 +151,6 @@ namespace HSP.Service.Implementations.Internal
 
             var messages = await _messageRepository.GetAll()
             .Where(x => x.ConversationId == input.ConversationId)
-            .Include(x => x.Attachments)
             .OrderBy(x => x.SentAt)
             .Select(x => new MessageResponseDto
             {
@@ -193,12 +158,6 @@ namespace HSP.Service.Implementations.Internal
                 Content = x.Content,
                 SenderId = x.SenderId,
                 SentAt = x.SentAt,
-                Attachments = x.Attachments.Select(a => new AttachmentCreateDto
-                {
-                    FileUrl = a.FileUrl,
-                    FileName = a.FileName,
-                    FileSize = a.FileSize
-                }).ToList()
             })
             .ToListAsync();
 

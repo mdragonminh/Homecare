@@ -8,20 +8,11 @@ namespace HSP.Core.Dtos.ChatDto
         public string? Content { get; set; }
         public Guid SenderId { get; set; }
         public DateTime SentAt { get; set; }
-        public List<AttachmentCreateDto> Attachments { get; set; } = new();
-    }
-    public class AttachmentCreateDto
-    {
-        public string FileName { get; set; } = "";
-        public string FileUrl { get; set; } = "";
-        public long FileSize { get; set; }
-        public string? FileType { get; set; }
     }
     public class SendMessageRequestDto
     {
         public Guid ConversationId { get; set; }
         public string? Content { get; set; }
-        public List<AttachmentCreateDto>? Attachments { get; set; }
     }
 
     public class MarkMessageReadDto
