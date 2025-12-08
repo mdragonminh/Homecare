@@ -44,8 +44,17 @@ export function GoogleCallbackPage({ onLoginSuccess }) {
 
         onLoginSuccess(userData, requirePasswordSetup);
 
+        // Redirect based on requirePasswordSetup first, then role
         if (requirePasswordSetup) {
           navigate("/add-password", { replace: true });
+        } else if (role === "admin") {
+          navigate("/admin/dashboard", { replace: true });
+        } else if (role === "supporter") {
+          navigate("/supporter/tickets", { replace: true });
+        } else if (role === "operator") {
+          navigate("/operator/customers", { replace: true });
+        } else if (role === "equipmentmanager") {
+          navigate("/warehouse/equipments", { replace: true });
         } else {
           navigate("/", { replace: true });
         }

@@ -27,7 +27,18 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
     }
 
     if (!requirePasswordSetup) {
-      navigate("/", { replace: true });
+      const role = localStorage.getItem("role");
+      if (role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (role === "supporter") {
+        navigate("/supporter/tickets", { replace: true });
+      } else if (role === "operator") {
+        navigate("/operator/customers", { replace: true });
+      } else if (role === "equipmentmanager") {
+        navigate("/warehouse/equipments", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     }
   }, [navigate, t]);
 
@@ -83,8 +94,21 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
         setSuccess(true);
         localStorage.setItem("requirePasswordSetup", "false");
         onPasswordSetSuccess && onPasswordSetSuccess();
+        
+        // Get role from localStorage to determine redirect
+        const role = localStorage.getItem("role");
         setTimeout(() => {
-          navigate("/", { replace: true });
+          if (role === "admin") {
+            navigate("/admin/dashboard", { replace: true });
+          } else if (role === "supporter") {
+            navigate("/supporter/tickets", { replace: true });
+          } else if (role === "operator") {
+            navigate("/operator/customers", { replace: true });
+          } else if (role === "equipmentmanager") {
+            navigate("/warehouse/equipments", { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
         }, 2000);
       } else {
         const errors = res.validationErrors || {};
@@ -132,7 +156,20 @@ export function AddPasswordPage({ onPasswordSetSuccess }) {
               "Bạn đã có thể sử dụng mật khẩu này để đăng nhập."}
           </p>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => {
+              const role = localStorage.getItem("role");
+              if (role === "admin") {
+                navigate("/admin/dashboard");
+              } else if (role === "supporter") {
+                navigate("/supporter/tickets");
+              } else if (role === "operator") {
+                navigate("/operator/customers");
+              } else if (role === "equipmentmanager") {
+                navigate("/warehouse/equipments");
+              } else {
+                navigate("/");
+              }
+            }}
             className="mt-4 text-blue-600 hover:underline"
           >
             {t("ui.go_to_home") || "Về trang chủ"}

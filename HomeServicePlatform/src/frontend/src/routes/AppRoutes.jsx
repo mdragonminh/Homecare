@@ -147,7 +147,17 @@ export default function AppRoutes({
         path="/login"
         element={
           loggedInUser ? (
-            <Navigate to="/" replace />
+            loggedInUser.role === "admin" ? (
+              <Navigate to="/admin/dashboard" replace />
+            ) : loggedInUser.role === "supporter" ? (
+              <Navigate to="/supporter/tickets" replace />
+            ) : loggedInUser.role === "operator" ? (
+              <Navigate to="/operator/customers" replace />
+            ) : loggedInUser.role === "equipmentmanager" ? (
+              <Navigate to="/warehouse/equipments" replace />
+            ) : (
+              <Navigate to="/" replace />
+            )
           ) : (
             <LoginPage
               onSwitchToRegister={() => navigate("/register")}

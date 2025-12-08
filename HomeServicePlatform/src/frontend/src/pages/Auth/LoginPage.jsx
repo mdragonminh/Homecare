@@ -37,7 +37,19 @@ export function LoginPage({
 
   useEffect(() => {
     if (loggedInUser) {
-      navigate("/");
+      // Redirect based on role
+      const role = loggedInUser.role || localStorage.getItem("role");
+      if (role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (role === "supporter") {
+        navigate("/supporter/tickets", { replace: true });
+      } else if (role === "operator") {
+        navigate("/operator/customers", { replace: true });
+      } else if (role === "equipmentmanager") {
+        navigate("/warehouse/equipments", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     }
     
     // Check for error message from Google OAuth redirect
@@ -105,7 +117,7 @@ const handleSubmit = async (e) => {
       const name = decoded["UniqueName"] || decoded["name"] || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
       const role = decoded["role"] || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 
-      onLoginSuccess({
+      const userData = {
         userId,
         email,
         jwtToken,
@@ -113,7 +125,24 @@ const handleSubmit = async (e) => {
         role,
         requirePasswordSetup: res.data.requirePasswordSetup,
         mustChangePasswordOnLogin: res.data.mustChangePasswordOnLogin,
-      });
+      };
+
+      onLoginSuccess(userData);
+
+      // Redirect based on requirePasswordSetup first, then role
+      if (res.data.requirePasswordSetup) {
+        navigate("/add-password", { replace: true });
+      } else if (role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (role === "supporter") {
+        navigate("/supporter/tickets", { replace: true });
+      } else if (role === "operator") {
+        navigate("/operator/customers", { replace: true });
+      } else if (role === "equipmentmanager") {
+        navigate("/warehouse/equipments", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     } else {
       let errorMessage = t("error.invalid_email_or_password"); 
       switch (res.errorType) {
