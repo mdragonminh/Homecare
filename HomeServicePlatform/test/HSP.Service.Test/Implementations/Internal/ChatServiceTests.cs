@@ -98,6 +98,7 @@ namespace HSP.Service.Test.Implementations.Internal
         public async Task GetUserConversations_ReturnsConversationList()
         {
             var userId = Guid.NewGuid();
+            var lastMessageId = Guid.NewGuid();
 
             var conv = new ChatConversation
             {
@@ -112,12 +113,13 @@ namespace HSP.Service.Test.Implementations.Internal
                 },
 
                 Booking = new Booking { ProblemDescription = "Fix AC" },
+                LastMessageId = lastMessageId,
 
                 Messages = new List<ChatMessage>
                 {
                     new ChatMessage
                     {
-                        Id = Guid.NewGuid(),
+                        Id = lastMessageId,
                         SenderId = userId,
                         Content = "Hi",
                         SentAt = DateTime.UtcNow
@@ -133,6 +135,7 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Single(result);
             Assert.Equal("Fix AC", result[0].BookingDescription);
             Assert.NotNull(result[0].LastMessage);
+            Assert.Equal("Hi", result[0].LastMessage.Content);
             Assert.Equal("Customer A", result[0].CustomerName);
             Assert.Equal("Tech", result[0].TechnicianName);
         }

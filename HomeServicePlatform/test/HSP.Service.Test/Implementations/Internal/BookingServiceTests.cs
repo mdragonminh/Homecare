@@ -412,6 +412,9 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
                 .Returns(new List<BookingItem>().BuildMock());
 
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
+
             // FIX CS0854 (Lỗi dòng 239): 
             // Dù interface bạn gửi không thấy CancellationToken, nhưng lỗi CS0854 ngụ ý rằng có tham số ẩn (optional).
             // Nếu dòng dưới đây báo lỗi biên dịch (thừa tham số), hãy xóa tham số thứ 3 đi.
@@ -479,6 +482,8 @@ namespace HSP.Service.Test.Implementations.Internal
                 .Returns(new List<Payment>().BuildMock());
             _mockBookingEquipmentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingEquipment, object>>[]>()))
                 .Returns(new List<BookingEquipment>().BuildMock());
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
 
             // Act
             var result = await _bookingService.GetBookingDetailAsync(bookingId);
@@ -574,6 +579,8 @@ namespace HSP.Service.Test.Implementations.Internal
                 .Returns(new List<BookingEquipment>().BuildMock());
             _mockPaymentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
                 .Returns(new List<Payment>().BuildMock());
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
 
             // Act
             var result = await _bookingService.GetBookingDetailAsync(bookingId);
@@ -658,7 +665,8 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>())).Returns(new List<BookingItem>().BuildMock());
             _mockPaymentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>())).Returns(new List<Payment>().BuildMock());
             _mockBookingEquipmentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingEquipment, object>>[]>())).Returns(new List<BookingEquipment>().BuildMock());
-
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
 
             // Act
             var result = await _bookingService.GetBookingDetailAsync(bookingId);
@@ -705,6 +713,8 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>())).Returns(new List<BookingItem>().BuildMock());
             _mockPaymentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>())).Returns(new List<Payment>().BuildMock());
             _mockBookingEquipmentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingEquipment, object>>[]>())).Returns(new List<BookingEquipment>().BuildMock());
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
 
             // Act
             var result = await _bookingService.GetBookingDetailAsync(bookingId);
@@ -754,6 +764,8 @@ namespace HSP.Service.Test.Implementations.Internal
                 .Returns(new List<Payment>().BuildMock());
             _mockBookingEquipmentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingEquipment, object>>[]>()))
                 .Returns(new List<BookingEquipment>().BuildMock());
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
 
             // Act
             var result = await _bookingService.GetBookingDetailAsync(bookingId);
@@ -792,6 +804,12 @@ namespace HSP.Service.Test.Implementations.Internal
                 .Returns(new List<TechnicianProfile> { technician }.BuildMock());
 
             _mockBookingRepo.Setup(x => x.GetByIdAsync(bookingId)).ReturnsAsync(booking);
+
+            // Setup conversation repository to return empty list (conversation will be null)
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
+
+            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
             var result = await _bookingService.AcceptBookingAsync(userId, input);
 
