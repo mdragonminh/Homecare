@@ -27,6 +27,8 @@ namespace HSP.Service.Implementations.Internal
         private readonly IRepository<Equipment, Guid> _equipmentRepository;
         private readonly IRepository<BookingEquipment, Guid> _bookingEquipmentRepository;
         private readonly IRepository<ChatConversation, Guid> _conversationRepository;
+        private readonly IRepository<Payment, Guid> _paymentRepository;
+        private readonly IRepository<FileRelation, Guid> _fileRelationRepository;
         private readonly IGeocodingService _geocodingService;
         private readonly IUserRepository _userRepository;
         private readonly IRedisCacheService _redisCacheService;
@@ -44,7 +46,9 @@ namespace HSP.Service.Implementations.Internal
                 IStringLocalizer<SharedResource> localizer,
                 IEmailService emailService,
                 IRepository<Equipment, Guid> equipmentRepository,
-                IRepository<BookingEquipment, Guid> bookingEquipmentRepository) : base(unitOfWork, localizer)
+                IRepository<BookingEquipment, Guid> bookingEquipmentRepository,
+                IRepository<Payment, Guid> paymentRepository,
+                IRepository<FileRelation, Guid> fileRelationRepository) : base(unitOfWork, localizer)
         {
             _bookingRepository = bookingRepository;
             _bookingItemRepository = bookingItemRepository;
@@ -57,6 +61,8 @@ namespace HSP.Service.Implementations.Internal
             _emailService = emailService;
             _equipmentRepository = equipmentRepository;
             _bookingEquipmentRepository = bookingEquipmentRepository;
+            _paymentRepository = paymentRepository;
+            _fileRelationRepository = fileRelationRepository;
         }
 
         public async Task<PagedList<BookingDto>> GetAllBookingsAsync(BookingInput input)
@@ -313,13 +319,21 @@ namespace HSP.Service.Implementations.Internal
 
             if (technicianProfile == null || booking.TechnicianId != technicianProfile.Id)
                 return false;
+
+            if (input.Status == BookingStatus.Completed && CheckAndUpdateBookingCompletionAsync(input.BookingId).Result)
+            {
+                booking.Status = input.Status;
+                booking.DateModified = DateTime.UtcNow;
+                _bookingRepository.Update(booking);
+                await _unitOfWork.SaveChangesAsync();
+            } else if (input.Status != BookingStatus.Completed)
+            {
+                booking.Status = input.Status;
+                booking.DateModified = DateTime.UtcNow;
+                _bookingRepository.Update(booking);
+                await _unitOfWork.SaveChangesAsync();
+            }
             
-            booking.Status = input.Status;
-            booking.DateModified = DateTime.UtcNow;
-
-            _bookingRepository.Update(booking);
-            await _unitOfWork.SaveChangesAsync();
-
             return true;
         }
 
@@ -580,7 +594,7 @@ namespace HSP.Service.Implementations.Internal
                             Quantity = input.Quantity,
                             UnitPrice = equipment.UnitPrice,
                             IsDeleted = false,
-                            Status = BookingEquipmentStatus.Draft 
+                            Status = BookingEquipmentStatus.Draft
                         };
                         await _bookingEquipmentRepository.AddAsync(bookingEquipment);
                     }
@@ -610,7 +624,7 @@ namespace HSP.Service.Implementations.Internal
             var technicianProfile = await _technicianRepository.GetAll(t => t.User)
                     .FirstOrDefaultAsync(t => t.User.Id.ToString() == userId.ToString());
 
-            if (technicianProfile == null || booking.TechnicianId != technicianProfile.Id)  
+            if (technicianProfile == null || booking.TechnicianId != technicianProfile.Id)
                 throw new UnauthorizedAccessException("Bạn không phải kỹ thuật viên của booking này");
 
             var equipments = await _bookingEquipmentRepository.GetAll()
@@ -623,7 +637,7 @@ namespace HSP.Service.Implementations.Internal
             {
                 if (item.Status == BookingEquipmentStatus.Draft)
                 {
-                    item.Status = BookingEquipmentStatus.Submitted; 
+                    item.Status = BookingEquipmentStatus.Submitted;
                     _bookingEquipmentRepository.Update(item);
                 }
             }
@@ -654,7 +668,7 @@ namespace HSP.Service.Implementations.Internal
                                 throw new InvalidOperationException($"Sản phẩm {item.Equipment.Name} không đủ tồn kho để xuất (Còn: {item.Equipment.Quantity}, Cần: {item.Quantity})");
                             }
 
-                            item.Equipment.Quantity -= item.Quantity; 
+                            item.Equipment.Quantity -= item.Quantity;
                             item.Status = BookingEquipmentStatus.AwaitingDelivery;
 
                             _equipmentRepository.Update(item.Equipment);
@@ -718,6 +732,69 @@ namespace HSP.Service.Implementations.Internal
                     throw;
                 }
             }
+        }
+
+        private async Task<bool> CheckAndUpdateBookingCompletionAsync(Guid bookingId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            if (booking == null) return false;
+
+            if (booking.Status == BookingStatus.Completed) return true;
+
+            var hasCheckInProof = await _fileRelationRepository.GetAll()
+                .AnyAsync(fr => fr.ObjectId == bookingId &&
+                               fr.RelationType == "CheckInProof");
+
+            if (!hasCheckInProof) return false;
+
+            var hasCheckOutProof = await _fileRelationRepository.GetAll()
+                .AnyAsync(fr => fr.ObjectId == bookingId &&
+                               fr.RelationType == "CheckOutProof");
+
+            if (!hasCheckOutProof) return false;
+
+            var servicePayment = await _paymentRepository.GetAll()
+                .FirstOrDefaultAsync(p => p.BookingId == bookingId &&
+                                         p.Type == PaymentType.Service &&
+                                         !p.IsDeleted);
+
+            if (servicePayment == null || servicePayment.Status != PaymentStatus.Completed)
+                return false;
+
+            var hasEquipments = await _bookingEquipmentRepository.GetAll()
+                .AnyAsync(be => be.BookingId == bookingId && !be.IsDeleted);
+
+            if (hasEquipments)
+            {
+                var allEquipmentsPaid = await _bookingEquipmentRepository.GetAll()
+                    .Where(be => be.BookingId == bookingId && !be.IsDeleted)
+                    .AllAsync(be => be.Status == BookingEquipmentStatus.Paid ||
+                                   be.Status == BookingEquipmentStatus.AwaitingDelivery ||
+                                   be.Status == BookingEquipmentStatus.Delivered);
+
+                if (!allEquipmentsPaid) return false;
+            }
+
+            return true;
+        }
+
+        public async Task<bool> TryCompleteBookingAsync(Guid bookingId)
+        {
+            if (await CheckAndUpdateBookingCompletionAsync(bookingId))
+            {
+                var booking = await _bookingRepository.GetByIdAsync(bookingId);
+                if (booking == null) return false;
+
+                booking.Status = BookingStatus.Completed;
+                booking.DateModified = DateTime.UtcNow;
+                booking.DateCompleted = DateTime.UtcNow;
+
+                _bookingRepository.Update(booking);
+                await _unitOfWork.SaveChangesAsync();
+
+                return true;
+            }
+            return false;
         }
     }
 }

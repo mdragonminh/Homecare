@@ -334,7 +334,7 @@ const CustomerBookingsPage = () => {
                     {/* Actions Column */}
                     <div className="flex flex-col gap-2 lg:w-48">
                       {/* Show report button only for Confirmed (1) or Completed (4) status */}
-                      {(booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.Completed) && (
+                      {(booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.Completed || booking.status === BookingStatus.InProgress) && (
                         <button
                           onClick={() => openTicketModal(booking)}
                           className="flex items-center justify-center px-4 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
