@@ -1,293 +1,307 @@
 // src/pages/client/HomePage.jsx
 import { useState, useEffect } from "react";
-import { 
-  ArrowRight, 
-  Play, 
-  Wrench, 
-  Calendar, 
-  Home, 
-  CreditCard, 
-  Bell, 
-  Shield,
-  Fan,
-  Sparkles,
-  Zap,
-  Car,
-  Scissors,
-  Star,
-  MapPin,
-  Award,
-  ChevronLeft,
-  ChevronRight,
-  Quote,
-  CheckCircle
+import {
+  ArrowRight, Play, Wrench, Calendar, Home, CreditCard, Bell, Shield,
+  Fan, Sparkles, Zap, Car, Scissors, Star, Quote, CheckCircle,
+  ChevronLeft, ChevronRight
 } from "lucide-react";
+// eslint-disable-next-line no-unused-vars
+import { motion } from "framer-motion";
 import { technicianApi } from "../../services/technicianApi";
-// LOẠI BỎ: import { Header } from "../../components/Header";
-// LOẠI BỎ: import { Footer } from "../../components/Footer";
 
-// --- Data sections (features, services, technicians, testimonials) --- //
-const features = [
-  {
-    icon: Wrench,
-    title: "Yêu cầu dịch vụ",
-    description: "Gửi yêu cầu sửa chữa, bảo trì nhanh chóng. Theo dõi tiến độ thực hiện real-time.",
-    color: "text-blue-600",
-    bgColor: "bg-blue-50"
-  },
-  {
-    icon: Calendar,
-    title: "Đặt lịch & Báo giá",
-    description: "Quản lý lịch hẹn, nhận báo giá từ nhiều nhà cung cấp. So sánh và chọn lựa tối ưu.",
-    color: "text-green-600", 
-    bgColor: "bg-green-50"
-  },
-  {
-    icon: Home,
-    title: "Quản lý nhà & Thành viên",
-    description: "Thêm căn hộ, mời thành viên gia đình. Phân quyền truy cập theo vai trò.",
-    color: "text-purple-600",
-    bgColor: "bg-purple-50"
-  },
-  {
-    icon: CreditCard,
-    title: "Thanh toán & Hóa đơn",
-    description: "Thanh toán trực tuyến an toàn. Quản lý hóa đơn, lịch sử giao dịch chi tiết.",
-    color: "text-orange-600",
-    bgColor: "bg-orange-50"
-  },
-  {
-    icon: Bell,
-    title: "Thông báo thông minh",
-    description: "Nhận thông báo khi có cập nhật quan trọng. Tùy chỉnh theo sở thích cá nhân.",
-    color: "text-red-600",
-    bgColor: "bg-red-50"
-  },
-  {
-    icon: Shield,
-    title: "Xác thực & Bảo mật",
-    description: "KYC verification, GatePass management. Đảm bảo an toàn cho mọi giao dịch.",
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50"
-  }
+// Danh sách ảnh Hero
+const heroImages = [
+  "https://luxurydecor.vn/wp-content/uploads/2019/12/thiet-ke-noi-that-chung-cu-2-phong-ngu-6.jpg",
+  "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg",
+  "https://images.pexels.com/photos/2635038/pexels-photo-2635038.jpeg",
+  "https://images.pexels.com/photos/1438832/pexels-photo-1438832.jpeg",
+  "https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
 ];
+
+const features = [
+  { icon: Wrench, title: "Yêu cầu dịch vụ", desc: "Gửi yêu cầu nhanh, theo dõi real-time", color: "text-blue-600", bg: "bg-blue-50" },
+  { icon: Calendar, title: "Đặt lịch & Báo giá", desc: "So sánh giá từ nhiều thợ", color: "text-emerald-600", bg: "bg-emerald-50" },
+  { icon: Home, title: "Quản lý nhà & Thành viên", desc: "Thêm căn hộ, mời người thân", color: "text-cyan-600", bg: "bg-cyan-50" },
+  { icon: CreditCard, title: "Thanh toán an toàn", desc: "Ví điện tử, hóa đơn tự động", color: "text-teal-600", bg: "bg-teal-50" },
+  { icon: Bell, title: "Thông báo thông minh", desc: "Nhắc lịch, cập nhật tiến độ", color: "text-green-600", bg: "bg-green-50" },
+  { icon: Shield, title: "Bảo mật & KYC", desc: "Xác thực thợ, bảo hiểm dịch vụ", color: "text-indigo-600", bg: "bg-indigo-50" }
+];
+
+// Định nghĩa màu sắc riêng cho từng dịch vụ
+const serviceColors = [
+    { iconColor: "text-red-600", bgColor: "from-red-100 to-red-50" },     // Sửa điều hòa (Fan)
+    { iconColor: "text-amber-600", bgColor: "from-amber-100 to-amber-50" }, // Sửa điện (Zap)
+    { iconColor: "text-blue-600", bgColor: "from-blue-100 to-blue-50" },   // Sửa ống nước (Wrench)
+    { iconColor: "text-teal-600", bgColor: "from-teal-100 to-teal-50" },   // Vệ sinh nhà (Sparkles)
+    { iconColor: "text-purple-600", bgColor: "from-purple-100 to-purple-50" }, // Vận chuyển (Car)
+    { iconColor: "text-lime-600", bgColor: "from-lime-100 to-lime-50" }    // Cắt tỉa cây (Scissors)
+];
+
 
 const popularServices = [
-  { icon: Fan, title: "Sửa chữa điều hòa", description: "Bảo trì, sửa chữa máy lạnh", price: "Từ 200,000đ", color: "text-blue-600", bgColor: "bg-blue-50" },
-  { icon: Wrench, title: "Sửa chữa nước", description: "Sửa vòi, đường ống, thiết bị vệ sinh", price: "Từ 150,000đ", color: "text-cyan-600", bgColor: "bg-cyan-50" },
-  { icon: Sparkles, title: "Vệ sinh nhà cửa", description: "Dọn dẹp căn hộ định kỳ", price: "Từ 300,000đ", color: "text-green-600", bgColor: "bg-green-50" },
-  { icon: Zap, title: "Sửa chữa điện", description: "Lắp đặt, sửa chữa hệ thống điện", price: "Từ 180,000đ", color: "text-yellow-600", bgColor: "bg-yellow-50" },
-  { icon: Car, title: "Bảo vệ & Vận chuyển", description: "Dịch vụ bảo vệ, vận chuyển đồ", price: "Từ 250,000đ", color: "text-purple-600", bgColor: "bg-purple-50" },
-  { icon: Scissors, title: "Dịch vụ khác", description: "Cắt tỉa cây, sửa nội thất", price: "Từ 100,000đ", color: "text-orange-600", bgColor: "bg-orange-50" }
+  { icon: Fan, title: "Sửa điều hòa", desc: "Vệ sinh, nạp gas, sửa lỗi", price: "Từ 250k", hot: true },
+  { icon: Zap, title: "Sửa điện", desc: "Ổ cắm, đèn, quạt", price: "Từ 180k" },
+  { icon: Wrench, title: "Sửa ống nước", desc: "Thay vòi, thông tắc", price: "Từ 150k" },
+  { icon: Sparkles, title: "Vệ sinh nhà", desc: "Dọn tổng, sofa, kính", price: "Từ 400k", hot: true },
+  { icon: Car, title: "Vận chuyển", desc: "Chuyển nhà, đồ đạc", price: "Từ 500k" },
+  { icon: Scissors, title: "Cắt tỉa cây", desc: "Tỉa cây, chăm vườn", price: "Từ 300k" }
 ];
-
 
 const testimonials = [
-  { id: 1, name: "Nguyễn Thị Lan", content: "HomeCare giúp tôi tìm thợ rất nhanh, giá hợp lý.", role: "Chủ căn hộ", avatar: "https://i.pravatar.cc/150?img=5" },
-  { id: 2, name: "Trần Minh Khoa", content: "Thanh toán online tiện lợi, dịch vụ chuyên nghiệp.", role: "Người thuê", avatar: "https://i.pravatar.cc/150?img=6" }
+  { name: "Chị Nguyễn Lan", role: "Chủ căn hộ Vinhomes", content: "Tìm thợ cực nhanh, giá minh bạch, thợ đến đúng giờ!", avatar: "https://i.pravatar.cc/150?img=5" },
+  { name: "Anh Minh Khoa", role: "Người thuê căn hộ", content: "Thanh toán online tiện lắm, không cần tiền mặt.", avatar: "https://i.pravatar.cc/150?img=12" },
+  { name: "Cô Hà", role: "Chủ nhà phố", content: "Đã dùng 5 lần sửa điện + điều hòa, lần nào cũng ưng!", avatar: "https://i.pravatar.cc/150?img=8" }
 ];
 
-// --- Main HomePage --- //
-export function HomePage({  onShowRegister, loggedInUser }) {
+export function HomePage({ onShowRegister, loggedInUser }) {
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [featuredTechnicians, setFeaturedTechnicians] = useState([]);
   const [loadingTechnicians, setLoadingTechnicians] = useState(true);
 
-  // Helper function to get avatar URL from filePath
-  const getAvatarUrl = (filePath) => {
-    if (!filePath) return null;
-    
-    // If already a full URL, return as is
-    if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
-      return filePath;
-    }
-
-    // Construct URL from filePath
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-    const baseUrl = API_URL.endsWith("/api") ? API_URL : API_URL.replace(/\/api$/, "") + "/api";
-    return `${baseUrl}/File/preview?filePath=${encodeURIComponent(filePath)}`;
-  };
-
+  // Hero slider – 8 giây
   useEffect(() => {
-    const loadFeaturedTechnicians = async () => {
+    const interval = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Testimonial slider
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonial(prev => (prev + 1) % testimonials.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load technicians
+  useEffect(() => {
+    const load = async () => {
       setLoadingTechnicians(true);
       try {
-        const result = await technicianApi.getFeaturedTechnicians(4);
-        if (result.success) {
-          setFeaturedTechnicians(result.data || []);
-        }
-      } catch (error) {
-        console.error("Error loading featured technicians:", error);
-      } finally {
-        setLoadingTechnicians(false);
-      }
+        const res = await technicianApi.getFeaturedTechnicians(8);
+        if (res.success) setFeaturedTechnicians(res.data || []);
+      } catch (err) { console.error(err); }
+      finally { setLoadingTechnicians(false); }
     };
-
-    loadFeaturedTechnicians();
+    load();
   }, []);
+
+  const getAvatarUrl = (filePath) => {
+    if (!filePath) return null;
+    if (filePath.startsWith("http")) return filePath;
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const base = API_URL.endsWith("/api") ? API_URL : API_URL.replace(/\/api$/, "") + "/api";
+    return `${base}/File/preview?filePath=${encodeURIComponent(filePath)}`;
+  };
+
   return (
-    // LOẠI BỎ: min-h-screen flex flex-col (đã được bọc bởi Layout)
-    <div className="flex-1"> 
-      <div className="flex-1"> 
-        {/* Hero Section */}
-        <section className="bg-gradient-to-br from-gray-50 to-gray-100 py-20">
-          <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
-            {/* Text */}
-            <div className="space-y-6">
-              <h1 className="text-4xl lg:text-5xl font-bold">
-                Quản lý dịch vụ <span className="text-blue-600">HomeServicePlatform</span> dễ dàng hơn
+    <div className="bg-gray-50 dark:bg-gray-900">
+
+      {/* HERO SLIDER – KHÔNG MỜ ẢNH, GRADIENT ĐẬM NỔI BẬT */}
+      <section className="relative h-[500px] md:h-[600px] lg:h-[720px] overflow-hidden">
+        {/* Background ảnh rõ nét, không blend */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out"
+          style={{ 
+            backgroundImage: `url(${heroImages[currentSlide]})`
+          }}
+        />
+        {/* Overlay gradient đậm, nổi bật (xanh dương + tím đậm, opacity thấp để ảnh rõ) */}
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/20 via-blue-900/20 to-purple-900/20" />
+
+        {/* Nội dung Hero */}
+        <div className="absolute inset-0 flex items-center">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, x: -80 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              className="max-w-2xl text-white"
+            >
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
+                Dịch vụ nhà cửa<br />
+                {/* Đổi màu gradient sang màu vàng/cam/hồng nổi bật hơn */}
+                <span className="bg-gradient-to-r from-blue-200 via-blue-400 to-blue-600 bg-clip-text text-transparent">
+
+                  Chỉ 1 chạm là xong
+                </span>
               </h1>
-              <p className="text-lg text-gray-600">
-                Kết nối chủ nhà và thợ sửa chữa chỉ trong một nền tảng. Đặt lịch, thanh toán, quản lý dễ dàng.
+              <p className="text-lg md:text-xl mt-5 mb-8 text-gray-100 font-light">
+                Kết nối ngay với hàng nghìn thợ uy tín • Báo giá tức thì • Thanh toán an toàn
               </p>
-              <div className="flex gap-4">
-                <button onClick={onShowRegister} className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center">
-                  Bắt đầu ngay <ArrowRight className="ml-2 w-5 h-5" />
-                </button>
-                <button className="border px-6 py-3 rounded-lg hover:bg-gray-100 flex items-center">
-                  <Play className="mr-2 w-5 h-5" /> Xem demo
-                </button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onShowRegister}
+                  className="bg-white text-indigo-700 font-bold px-8 py-4 rounded-xl shadow-2xl flex items-center justify-center gap-3 text-lg hover:shadow-purple-500/50 transition"
+                >
+                  Bắt đầu miễn phí <ArrowRight className="w-6 h-6" />
+                </motion.button>
+                <motion.button className="border-2 border-white/80 text-white px-8 py-4 rounded-xl backdrop-blur-sm flex items-center justify-center gap-3 hover:bg-white/10 transition">
+                  <Play className="w-6 h-6" /> Xem giới thiệu
+                </motion.button>
               </div>
-            </div>
-
-            {/* Image */}
-            <div className="relative">
-              <img src="https://luxurydecor.vn/wp-content/uploads/2019/12/thiet-ke-noi-that-chung-cu-2-phong-ngu-6.jpg" alt="Thợ sửa chữa" className="rounded-2xl shadow-lg" />
-              <div className="absolute -top-4 -left-4 bg-white p-3 shadow rounded">
-                <p className="text-green-600 font-medium">✓ Yêu cầu hoàn thành</p>
-                <p className="text-sm text-gray-500">Sửa điều hòa - A101</p>
-              </div>
-            </div>
+            </motion.div>
           </div>
-        </section>
+        </div>
 
-        {/* Features */}
-        <section className="py-20 bg-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-4">Tính năng nổi bật</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
-              {features.map((f, i) => (
-                <div key={i} className="p-6 rounded-lg shadow hover:shadow-lg transition">
-                  <div className={`w-12 h-12 flex items-center justify-center ${f.bgColor} rounded mb-4`}>
-                    <f.icon className={`w-6 h-6 ${f.color}`} />
-                  </div>
-                  <h3 className="font-semibold text-xl mb-2">{f.title}</h3>
-                  <p className="text-gray-600">{f.description}</p>
+        {/* Dots + Prev/Next */}
+        <div className="absolute inset-y-0 w-full flex justify-between items-center px-4 z-10">
+          <button
+            onClick={() =>
+              setCurrentSlide(
+                (prev) => (prev - 1 + heroImages.length) % heroImages.length
+              )
+            }
+            // KÍCH THƯỚC NHỎ LẠI: w-10 h-10
+            className="w-10 h-10 bg-white/30 text-white rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/50 transition duration-300 shadow-lg"
+          >
+            <ChevronLeft className="h-5 w-5" /> {/* ICON NHỎ LẠI */}
+          </button>
+          <button
+            onClick={() =>
+              setCurrentSlide((prev) => (prev + 1) % heroImages.length)
+            }
+            // KÍCH THƯỚC NHỎ LẠI: w-10 h-10
+            className="w-10 h-10 bg-white/30 text-white rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/50 transition duration-300 shadow-lg"
+          >
+            <ChevronRight className="h-5 w-5" /> {/* ICON NHỎ LẠI */}
+          </button>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="py-16 bg-white dark:bg-gray-800">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Tại sao chọn chúng tôi?
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {features.map((f, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-5 rounded-xl shadow hover:shadow-lg transition"
+              >
+                <div className={`w-12 h-12 ${f.bg} rounded-lg flex items-center justify-center mb-3`}>
+                  <f.icon className={`w-7 h-7 ${f.color}`} />
                 </div>
+                <h3 className="text-base font-bold mb-1">{f.title}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* POPULAR SERVICES – MÀU RIÊNG CHO TIÊU ĐỀ, GIÁ VÀ ICON */}
+      <section className="py-16 bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Dịch vụ phổ biến
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {popularServices.map((s, i) => (
+              <motion.div key={i} whileHover={{ scale: 1.03 }} className="relative bg-white dark:bg-gray-800 rounded-xl shadow p-5 text-center">
+                {s.hot && <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-3 py-1 rounded-full font-bold">HOT</div>}
+                {/* Thay đổi màu nền và màu icon dựa trên serviceColors */}
+                <div className={`w-14 h-14 mx-auto mb-3 bg-gradient-to-br ${serviceColors[i].bgColor} rounded-xl flex items-center justify-center`}>
+                  <s.icon className={`w-8 h-8 ${serviceColors[i].iconColor}`} />
+                </div>
+                <h3 className="text-base font-semibold text-black dark:text-white">{s.title}</h3> {/* Màu đen cho tiêu đề */}
+                <p className="text-sm text-gray-600 mt-1">{s.desc}</p>
+                <p className="text-lg font-bold text-blue-600 mt-2">{s.price}</p> {/* Màu xanh dương cho giá */}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TECHNICIANS */}
+      <section className="py-16 bg-white dark:bg-gray-800">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-10 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+            Thợ được đánh giá cao
+          </h2>
+          {loadingTechnicians ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="bg-gray-200 dark:bg-gray-700 h-64 rounded-xl animate-pulse"></div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {featuredTechnicians.map((t, i) => (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  whileHover={{ y: -5 }}
+                  className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow p-5"
+                >
+                  <img
+                    src={getAvatarUrl(t.avatarUrl) || `https://i.pravatar.cc/150?u=${t.id}`}
+                    alt={t.fullName}
+                    className="w-20 h-20 mx-auto rounded-full object-cover border-4 border-white shadow"
+                    onError={e => e.target.src = `https://i.pravatar.cc/150?u=${t.id}`}
+                  />
+                  <h3 className="mt-3 text-base font-bold text-black dark:text-white">{t.fullName}</h3>
+                  <div className="flex justify-center gap-1 flex-wrap mt-2">
+                    {t.services?.slice(0, 2).map((s, idx) => (
+                      <span key={idx} className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 px-2 py-1 rounded">{s}</span>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-center mt-3 text-yellow-500">
+                    <Star className="w-5 h-5 fill-current" />
+                    <span className="ml-1 font-bold">{t.rating?.toFixed(1) || "5.0"}</span>
+                    <span className="ml-1 text-xs text-gray-500">({t.ratingCount || 89})</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="py-14 bg-gradient-to-r from-indigo-600 to-purple-700">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-white mb-8">Khách hàng nói gì</h2>
+          <div className="max-w-2xl mx-auto">
+            <motion.div className="bg-white rounded-xl shadow-xl p-6 text-center">
+              <Quote className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-base italic text-gray-700">"{testimonials[currentTestimonial].content}"</p>
+              <div className="flex items-center justify-center gap-4 mt-5">
+                <img src={testimonials[currentTestimonial].avatar} alt="" className="w-12 h-12 rounded-full border-2 border-purple-500" />
+                <div>
+                  <p className="font-semibold">{testimonials[currentTestimonial].name}</p>
+                  <p className="text-sm text-gray-600">{testimonials[currentTestimonial].role}</p>
+                </div>
+              </div>
+            </motion.div>
+            <div className="flex justify-center gap-2 mt-5">
+              {testimonials.map((_, i) => (
+                <button key={i} onClick={() => setCurrentTestimonial(i)} className={`w-2 h-2 rounded-full transition ${i === currentTestimonial ? "bg-white w-8" : "bg-white/50"}`} />
               ))}
             </div>
           </div>
-        </section>
-
-        {/* Services */}
-        <section className="py-20 bg-gray-50">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-12">Dịch vụ phổ biến</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {popularServices.map((s, i) => (
-                <div key={i} className="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
-                  <div className={`w-12 h-12 ${s.bgColor} flex items-center justify-center rounded mb-3`}>
-                    <s.icon className={`w-6 h-6 ${s.color}`} />
-                  </div>
-                  <h3 className="font-semibold text-lg">{s.title}</h3>
-                  <p className="text-gray-600 mb-3">{s.description}</p>
-                  <p className="text-blue-600 font-medium">{s.price}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Technicians */}
-        <section className="py-20 bg-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-12">Kỹ thuật viên nổi bật</h2>
-            {loadingTechnicians ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              </div>
-            ) : featuredTechnicians.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredTechnicians.map((t) => (
-                  <div key={t.id} className="p-6 bg-gray-50 rounded-lg shadow hover:shadow-lg transition-shadow">
-                    <img 
-                      src={getAvatarUrl(t.avatarUrl) || "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70)} 
-                      alt={t.fullName} 
-                      className="w-20 h-20 mx-auto rounded-full mb-4 object-cover border-2 border-gray-200" 
-                      onError={(e) => {
-                        e.target.src = "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70);
-                      }}
-                    />
-                    <h3 className="font-semibold text-lg mb-2">{t.fullName}</h3>
-                    {t.services && t.services.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-gray-600 text-sm font-medium mb-1">Dịch vụ:</p>
-                        <div className="flex flex-wrap justify-center gap-1">
-                          {t.services.slice(0, 2).map((service, idx) => (
-                            <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                              {service}
-                            </span>
-                          ))}
-                          {t.services.length > 2 && (
-                            <span className="text-xs text-gray-500">+{t.services.length - 2}</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  <div className="flex justify-center items-center mt-2 text-yellow-500">
-                      <Star className="w-4 h-4 fill-yellow-400" /> 
-                      <span className="ml-1 font-semibold">{t.rating.toFixed(1)}</span>
-                      {t.ratingCount > 0 && (
-                        <span className="ml-2 text-gray-500 text-sm">({t.ratingCount} đánh giá)</span>
-                      )}
-                    </div>
-                </div>
-              ))}
-            </div>
-            ) : (
-              <p className="text-gray-500 py-12">Chưa có kỹ thuật viên nổi bật</p>
-            )}
-          </div>
-        </section>
-
-        {/* Testimonials */}
-        <section className="py-20 bg-gray-50">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-12">Khách hàng nói gì</h2>
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white p-8 rounded-lg shadow relative">
-                <Quote className="absolute top-4 left-4 text-gray-200 w-10 h-10" />
-                <p className="text-lg mb-6">"{testimonials[currentTestimonial].content}"</p>
-                <div className="flex items-center justify-center gap-3">
-                  <img src={testimonials[currentTestimonial].avatar} className="w-12 h-12 rounded-full" />
-                  <div>
-                    <p className="font-semibold">{testimonials[currentTestimonial].name}</p>
-                    <p className="text-sm text-gray-500">{testimonials[currentTestimonial].role}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-center gap-4 mt-6">
-                <button onClick={() => setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)} className="p-2 border rounded-full">
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button onClick={() => setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)} className="p-2 border rounded-full">
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-      {/* Đóng main component wrapper */}
-      </div>
+        </div>
+      </section>
 
       {loggedInUser?.role === 'admin' && (
-        <div className="container mx-auto px-4 mt-4">
-          <a href="/admin/accounts" className="inline-block px-3 py-2 bg-blue-600 text-white rounded">Vào trang Admin</a>
+        <div className="text-center py-8">
+          <a href="/admin/accounts" className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700">
+            Vào Trang Quản Trị
+          </a>
         </div>
       )}
-
-      {/* LOẠI BỎ: Footer component */}
-      {/* <Footer /> */}
     </div>
   );
 }
