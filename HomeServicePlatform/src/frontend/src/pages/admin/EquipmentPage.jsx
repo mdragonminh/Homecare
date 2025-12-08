@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { warehouseApi } from "../../services/warehouseApi";
 import { toast } from "sonner";
+import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import {
   PlusIcon,
   PencilIcon,
@@ -56,6 +57,8 @@ const EquipmentPage = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [equipmentToDelete, setEquipmentToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
@@ -272,22 +275,26 @@ const EquipmentPage = () => {
     }
   };
 
-  const handleDelete = async (equipment) => {
-    if (
-      window.confirm(
-        `Bạn có chắc muốn xóa thiết bị này "${equipment.name}"?`
-      )
-    ) {
-      try {
-        await warehouseApi.deleteEquipment(equipment.id);
-        toast.success("Xóa thiết bị thành công");
-        fetchEquipments();
-      } catch (error) {
-        console.error("Error deleting equipment:", error);
-        toast.error(
-          error.response?.data?.message || "Failed to delete equipment"
-        );
-      }
+  const handleDeleteClick = (equipment) => {
+    setEquipmentToDelete(equipment);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!equipmentToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await warehouseApi.deleteEquipment(equipmentToDelete.id);
+      toast.success("Xóa thiết bị thành công");
+      setEquipmentToDelete(null);
+      fetchEquipments();
+    } catch (error) {
+      console.error("Error deleting equipment:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to delete equipment"
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -437,7 +444,7 @@ const EquipmentPage = () => {
                       <PencilIcon className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(equipment)}
+                      onClick={() => handleDeleteClick(equipment)}
                       className="text-red-600 hover:text-red-900"
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -869,6 +876,60 @@ const EquipmentPage = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {equipmentToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-white p-6 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-none sm:max-w-md">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">
+                Xác nhận xóa thiết bị
+              </h3>
+            </div>
+            <p className="text-gray-600 mb-2">
+              Bạn có chắc chắn muốn xóa thiết bị này?
+            </p>
+            <p className="text-gray-900 font-semibold mb-4">
+              "{equipmentToDelete.name}"
+            </p>
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>Hành động này không thể hoàn tác.</span>
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setEquipmentToDelete(null)}
+                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium"
+                disabled={isDeleting}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 shadow-sm transition-all duration-200 font-medium"
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang xóa...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Xóa
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

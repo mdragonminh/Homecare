@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { warehouseApi } from "../../services/warehouseApi";
 import { mapApi } from "../../services/mapApi";
 import { toast } from "sonner";
+import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import {
   PlusIcon,
   PencilIcon,
@@ -57,6 +58,8 @@ const WarehousePage = () => {
     name: "",
     address: "",
   });
+  const [warehouseToDelete, setWarehouseToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchWarehouses();
@@ -298,22 +301,33 @@ const WarehousePage = () => {
     }
   };
 
-  const handleDelete = async (warehouse) => {
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa kho "${warehouse.name}"?`
-      )
-    ) {
-      try {
-        await warehouseApi.deleteWarehouse(warehouse.id);
-        toast.success("Xóa kho thành công");
-        fetchWarehouses();
-      } catch (error) {
-        console.error("Error deleting warehouse:", error);
-        toast.error(
-          error.response?.data?.message || "Xóa kho thất bại"
-        );
+  const handleDeleteClick = (warehouse) => {
+    setWarehouseToDelete(warehouse);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!warehouseToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await warehouseApi.deleteWarehouse(warehouseToDelete.id);
+      toast.success("Xóa kho thành công");
+      setWarehouseToDelete(null);
+      fetchWarehouses();
+    } catch (error) {
+      console.error("Error deleting warehouse:", error);
+      const errorMessage = error.response?.data?.message || "Xóa kho thất bại";
+      
+      // Dịch message từ backend nếu cần
+      let displayMessage = errorMessage;
+      if (errorMessage.includes("Cannot delete warehouse that contains equipment") || 
+          errorMessage.includes("contains equipment")) {
+        displayMessage = `Không thể xóa kho "${warehouseToDelete.name}" vì kho này đang chứa thiết bị. Vui lòng di chuyển hoặc xóa thiết bị trước.`;
       }
+      
+      toast.error(displayMessage);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -424,7 +438,7 @@ const WarehousePage = () => {
                       <PencilIcon className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(warehouse)}
+                      onClick={() => handleDeleteClick(warehouse)}
                       className="text-red-600 hover:text-red-900"
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -643,6 +657,73 @@ const WarehousePage = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {warehouseToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-white p-6 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-none sm:max-w-md">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">
+                Xác nhận xóa kho
+              </h3>
+            </div>
+            <p className="text-gray-600 mb-2">
+              Bạn có chắc chắn muốn xóa kho này?
+            </p>
+            <p className="text-gray-900 font-semibold mb-4">
+              "{warehouseToDelete.name}"
+            </p>
+            {warehouseToDelete.totalEquipments > 0 && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    Kho này đang chứa {warehouseToDelete.totalEquipments} thiết bị. 
+                    Vui lòng di chuyển hoặc xóa thiết bị trước khi xóa kho.
+                  </span>
+                </p>
+              </div>
+            )}
+            {warehouseToDelete.totalEquipments === 0 && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>Hành động này không thể hoàn tác.</span>
+                </p>
+              </div>
+            )}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setWarehouseToDelete(null)}
+                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium"
+                disabled={isDeleting}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 shadow-sm transition-all duration-200 font-medium"
+                disabled={isDeleting || warehouseToDelete.totalEquipments > 0}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang xóa...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Xóa
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
