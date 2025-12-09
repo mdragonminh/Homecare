@@ -16,5 +16,6 @@ namespace HSP.Service.Interfaces
         Task<bool> UpdateTechnicianProfileAsync(Guid userId, UpdateTechnicianProfileDto input);
         Task<IEnumerable<FeaturedTechnicianDto>> GetFeaturedTechniciansAsync(int count = 4);
         Task<bool> ResendTechnicianApplication(Guid userId);
+        Task<bool> UpdateActiveStatusAsync(Guid userId, bool isActive);
     }
 }

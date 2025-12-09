@@ -213,5 +213,40 @@ namespace HSP.API.Controllers
                 return StatusCode(500, new { message = "Đã có lỗi xảy ra khi từ chối hàng loạt technician", error = ex.Message });
             }
         }
+
+        [HttpPut("update-active-status")]
+        [Authorize(Roles = RoleNames.Technician)]
+        public async Task<IActionResult> UpdateActiveStatus([FromBody] UpdateActiveStatusDto dto)
+        {
+            try
+            {
+                var userId = User.GetUserId();
+                var result = await _technicianProfileService.UpdateActiveStatusAsync(userId, dto.IsActive);
+                
+                if (!result)
+                {
+                    return BadRequest(new { message = "Không thể cập nhật trạng thái hoạt động" });
+                }
+
+                return Ok(new { message = "Cập nhật trạng thái hoạt động thành công", isActive = dto.IsActive });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Đã có lỗi xảy ra khi cập nhật trạng thái hoạt động", error = ex.Message });
+            }
+        }
+    }
+
+    public class UpdateActiveStatusDto
+    {
+        public bool IsActive { get; set; }
     }
 }

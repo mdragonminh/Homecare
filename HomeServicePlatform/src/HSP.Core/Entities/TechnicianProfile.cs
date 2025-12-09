@@ -34,6 +34,12 @@ namespace HSP.Core.Entities
 		public TechnicianApprovalStatus ApprovalStatus { get; set; } = TechnicianApprovalStatus.Pending;
 		public DateTime? ApprovedAt { get; set; }
 		public string? ApprovedBy { get; set; }
+		
+		/// <summary>
+		/// Trạng thái hoạt động của technician. Nếu false, customer không thể tìm và yêu cầu ghép nối.
+		/// </summary>
+		public bool IsActive { get; set; } = true;
+		
 		public DateTime DateCreated { get; set; }
 		public DateTime DateModified { get; set; }
 		public bool IsDeleted { get; set; }

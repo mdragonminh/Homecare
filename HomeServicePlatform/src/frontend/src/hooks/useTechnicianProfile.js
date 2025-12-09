@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback,useRef } from "react";
 import { toast } from "sonner";
-import { profileApi, technicianApi, resendTechnicianApplication } from "../services/profileApi";
+import { profileApi, technicianApi as profileTechnicianApi, resendTechnicianApplication } from "../services/profileApi";
+import { technicianApi as technicianApiService } from "../services/technicianApi";
 import { jwtDecode } from "jwt-decode";
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
@@ -69,6 +70,7 @@ export const useTechnicianProfile = ({ onProfileUpdate, t }) => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showDeleteAvatarModal, setShowDeleteAvatarModal] = useState(false);
 const [showResendConfirmModal, setShowResendConfirmModal] = useState(false);
+const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 const isSavingRef = useRef(false);
   // ------------------------------------------
   // 3. VALIDATION FUNCTIONS
@@ -190,7 +192,7 @@ const isSavingRef = useRef(false);
       //
     }
 
-    const result = await technicianApi.getTechnicianDetails(
+    const result = await profileTechnicianApi.getTechnicianDetails(
       technicianIdFromStorage
     );
 
@@ -456,7 +458,7 @@ const handleConfirmResend = useCallback(async () => {
 
     setUploadingAvatar(true);
     try {
-      const result = await technicianApi.uploadAvatar(
+      const result = await technicianApiService.uploadAvatar(
         avatarFile,
         objectTypeName
       );
@@ -552,6 +554,50 @@ const handleConfirmResend = useCallback(async () => {
     setShowChangePasswordModal(true);
   };
 
+  const handleToggleActiveStatus = useCallback(async () => {
+    if (!profile || isTogglingStatus) return;
+
+    // Mặc định là true nếu chưa có giá trị
+    const currentStatus = profile.isActive !== false;
+    const newStatus = !currentStatus;
+    setIsTogglingStatus(true);
+    
+    toast.loading(
+      newStatus 
+        ? t("ui.activating_account") || "Đang kích hoạt tài khoản..."
+        : t("ui.deactivating_account") || "Đang vô hiệu hóa tài khoản...",
+      { id: "toggle-status" }
+    );
+
+    try {
+      const result = await technicianApiService.updateActiveStatus(newStatus);
+      toast.dismiss("toggle-status");
+
+      if (result.success) {
+        toast.success(
+          newStatus
+            ? t("success.account_activated") || "Tài khoản đã được kích hoạt. Khách hàng có thể tìm và yêu cầu ghép nối với bạn."
+            : t("success.account_deactivated") || "Tài khoản đã được vô hiệu hóa. Khách hàng sẽ không thể tìm và yêu cầu ghép nối với bạn."
+        );
+        // Cập nhật profile local state
+        setProfile((prev) => ({
+          ...prev,
+          isActive: newStatus,
+        }));
+        // Fetch lại để đảm bảo đồng bộ
+        await fetchProfile();
+      } else {
+        toast.error(result.message || "Cập nhật trạng thái thất bại.");
+      }
+    } catch (error) {
+      toast.dismiss("toggle-status");
+      toast.error(error.message || "Có lỗi xảy ra khi cập nhật trạng thái.");
+      console.error("Toggle active status error:", error);
+    } finally {
+      setIsTogglingStatus(false);
+    }
+  }, [profile, isTogglingStatus, t, fetchProfile]);
+
   return {
     // State
     profile,
@@ -590,6 +636,7 @@ const handleConfirmResend = useCallback(async () => {
     handleResendApplication, // Giờ là hàm mở modal
     handleConfirmResend, // Hàm xử lý submit API
     setShowResendConfirmModal,
-    
+    handleToggleActiveStatus,
+    isTogglingStatus,
   };
 };

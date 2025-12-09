@@ -47,6 +47,8 @@ const TechnicianProfile = ({
     handleResendApplication,
     handleConfirmResend,       // <== THÊM: Hàm xử lý submit (API call)
     setShowResendConfirmModal,
+    handleToggleActiveStatus,
+    isTogglingStatus,
   } = useTechnicianProfile({ onProfileUpdate, t });
   return (
     <TechnicianProfileUI
@@ -86,6 +88,8 @@ const TechnicianProfile = ({
       handleResendApplication={handleResendApplication}
       handleConfirmResend={handleConfirmResend}       // <== TRUYỀN PROP
       setShowResendConfirmModal={setShowResendConfirmModal}
+      handleToggleActiveStatus={handleToggleActiveStatus}
+      isTogglingStatus={isTogglingStatus}
       loggedInUser={loggedInUser}
       onLogout={onLogout}
     />

@@ -338,5 +338,42 @@ export const technicianApi = {
       };
     }
   },
+
+  // Cập nhật trạng thái hoạt động của technician
+  updateActiveStatus: async (isActive) => {
+    try {
+      const jwtToken = localStorage.getItem("jwtToken");
+      if (!jwtToken) {
+        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại.");
+      }
+
+      const response = await axiosClient.put(
+        `/TechnicianManagement/update-active-status`,
+        { isActive },
+        {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (ENABLE_DEBUG)
+        console.log("Cập nhật trạng thái hoạt động thành công:", response.data);
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      if (ENABLE_DEBUG)
+        console.error("Cập nhật trạng thái hoạt động lỗi:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          error.message ||
+          "Lỗi khi cập nhật trạng thái hoạt động",
+      };
+    }
+  },
 };
 

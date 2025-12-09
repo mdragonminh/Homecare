@@ -16,6 +16,7 @@ import {
   Upload,
   Trash2,
   AlertTriangle,
+  Power,
 } from "lucide-react";
 import { toast } from "sonner";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -181,6 +182,8 @@ const TechnicianProfileUI = ({
   handleResendApplication, // Giờ là hàm mở modal
   handleConfirmResend, // Hàm xử lý submit API
   setShowResendConfirmModal,
+  handleToggleActiveStatus,
+  isTogglingStatus,
 }) => {
   const detailsRef = useRef(null);
   const [isDetailsEditing, setIsDetailsEditing] = useState(false);
@@ -386,6 +389,41 @@ const TechnicianProfileUI = ({
                   {t("ui.quick_actions") || "Tác vụ nhanh"}
                 </h3>
                 <div className="space-y-3">
+                  {/* Trạng thái hoạt động - Chỉ hiển thị khi đã được duyệt */}
+                  {profile.approvalStatus === 1 && (
+                    <div className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-transparent hover:border-blue-100 bg-blue-50 transition-all duration-200 group hover:bg-blue-100">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors duration-200">
+                          <Power className={`w-5 h-5 ${(profile.isActive !== false) ? 'text-green-600' : 'text-gray-400'}`} />
+                        </div>
+                        <div className="flex flex-col flex-1">
+                          <span className="font-semibold text-gray-900">
+                            {t("ui.active_status") || "Trạng thái hoạt động"}
+                          </span>
+                          <span className="text-xs text-gray-600 mt-0.5">
+                            {(profile.isActive !== false)
+                              ? (t("ui.active_status_description") || "Khách hàng có thể tìm và yêu cầu ghép nối")
+                              : (t("ui.inactive_status_description") || "Khách hàng không thể tìm và yêu cầu ghép nối")
+                            }
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleToggleActiveStatus}
+                        disabled={isTogglingStatus}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                          (profile.isActive !== false) ? 'bg-green-600' : 'bg-gray-300'
+                        } ${isTogglingStatus ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                            (profile.isActive !== false) ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  )}
+                  
                   <button
                     onClick={handleChangePassword}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium border border-transparent hover:border-rose-100 bg-rose-50 text-rose-700 transition-all duration-200 group hover:bg-rose-100"

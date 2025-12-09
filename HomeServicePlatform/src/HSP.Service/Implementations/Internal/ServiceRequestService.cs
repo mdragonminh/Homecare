@@ -125,6 +125,7 @@ namespace HSP.Service.Implementations.Internal
                 .Include(t => t.Services)
                 .Include(t => t.Bookings).ThenInclude(b => b.Feedbacks)
                 .Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
+                .Where(t => t.IsActive) // Chỉ lấy technicians đang hoạt động
                  .Where(t => t.Latitude >= minLat && t.Latitude <= maxLat && t.Longitude >= minLon && t.Longitude <= maxLon)
                 .Where(t => serviceIds.All(id => t.Services.Any(s => s.Id == id)))
                 .Where(t => !t.Bookings.Any(b =>
@@ -304,6 +305,7 @@ namespace HSP.Service.Implementations.Internal
                 .Include(x => x.Bookings)
                     .ThenInclude(b => b.Feedbacks)
                 .Where(x => x.ApprovalStatus == TechnicianApprovalStatus.Approved)
+                .Where(x => x.IsActive) // Chỉ lấy technicians đang hoạt động
                 .WhereIf(input.ServiceIds != null && input.ServiceIds.Any(), t => t.Services.Any(s => input.ServiceIds.Contains(s.Id)))
                 .Where(x => !x.Bookings.Any(b =>
                     b.Status == BookingStatus.InProgress

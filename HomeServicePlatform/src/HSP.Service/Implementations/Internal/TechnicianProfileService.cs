@@ -71,7 +71,7 @@ namespace HSP.Service.Implementations.Internal
                 //SkillSet = x.SkillSet,
                 ExperienceYears = x.ExperienceYears,
                 ApprovalStatus = x.ApprovalStatus,
-                IsActive = x.User != null && x.User.IsActive,
+                IsActive = x.IsActive,
                 ApprovedAt = x.ApprovedAt,
                 ApprovedBy = x.ApprovedBy,
                 DateCreated = x.DateCreated,
@@ -136,7 +136,7 @@ namespace HSP.Service.Implementations.Internal
                 FullName = technician.User?.FullName ?? string.Empty,
                 ExperienceYears = technician.ExperienceYears,
                 ApprovalStatus = technician.ApprovalStatus,
-                IsActive = technician.User?.IsActive ?? true,
+                IsActive = technician.IsActive,
                 Rating = avgRating,
                 RatingCount = customerFeedbacks.Count,
                 Comment = customerFeedbacks.Select(x => x.Comment).ToString(),
@@ -593,7 +593,7 @@ namespace HSP.Service.Implementations.Internal
                 .Include(t => t.Bookings)
                     .ThenInclude(b => b.Feedbacks)
                 .Where(t => t.ApprovalStatus == TechnicianApprovalStatus.Approved)
-                .Where(t => t.User != null && t.User.IsActive)
+                .Where(t => t.IsActive)
                 .ToListAsync();
 
             var featuredTechnicians = technicians
@@ -670,6 +670,28 @@ namespace HSP.Service.Implementations.Internal
             if (profile.ApprovalStatus != TechnicianApprovalStatus.Rejected)
                 throw new Exception("Không thể gửi duyệt ở trạng thái hiện tại");
             profile.ApprovalStatus = TechnicianApprovalStatus.Pending;
+            profile.DateModified = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateActiveStatusAsync(Guid userId, bool isActive)
+        {
+            var profile = await _technicianProfileRepository.GetAll()
+                .FirstOrDefaultAsync(x => x.UserId == userId);
+            
+            if (profile == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy hồ sơ technician");
+            }
+
+            // Chỉ cho phép cập nhật khi đã được duyệt
+            if (profile.ApprovalStatus != TechnicianApprovalStatus.Approved)
+            {
+                throw new InvalidOperationException("Chỉ có thể thay đổi trạng thái hoạt động khi hồ sơ đã được duyệt");
+            }
+
+            profile.IsActive = isActive;
             profile.DateModified = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
             return true;
