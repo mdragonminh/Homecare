@@ -576,8 +576,8 @@ const handleConfirmResend = useCallback(async () => {
       if (result.success) {
         toast.success(
           newStatus
-            ? t("success.account_activated") || "Tài khoản đã được kích hoạt. Khách hàng có thể tìm và yêu cầu ghép nối với bạn."
-            : t("success.account_deactivated") || "Tài khoản đã được vô hiệu hóa. Khách hàng sẽ không thể tìm và yêu cầu ghép nối với bạn."
+            ? "Tài khoản đã chuyển sang trạng thái làm việc."
+            : "Tài khoản đã chuyển sang trạng thái ngừng làm việc."
         );
         // Cập nhật profile local state
         setProfile((prev) => ({

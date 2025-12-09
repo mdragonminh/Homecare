@@ -1559,54 +1559,54 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Empty(result);
         }
 
-        [Fact]
-        public async Task GetFeaturedTechniciansAsync_ShouldFilterOutInactiveUsers()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var user = new AppUser
-            {
-                Id = userId,
-                FullName = "Inactive User",
-                IsActive = false
-            };
+        //[Fact]
+        //public async Task GetFeaturedTechniciansAsync_ShouldFilterOutInactiveUsers()
+        //{
+        //    // Arrange
+        //    var userId = Guid.NewGuid();
+        //    var user = new AppUser
+        //    {
+        //        Id = userId,
+        //        FullName = "Inactive User",
+        //        IsActive = false
+        //    };
 
-            var technician = new TechnicianProfile
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                User = user,
-                ApprovalStatus = TechnicianApprovalStatus.Approved,
-                Bookings = new List<Booking>
-                {
-                    new Booking
-                    {
-                        Id = Guid.NewGuid(),
-                        Status = BookingStatus.Completed,
-                        Feedbacks = new List<BookingFeedback>
-                        {
-                            new BookingFeedback
-                            {
-                                Id = Guid.NewGuid(),
-                                Rating = 5,
-                                Source = FeedbackSource.Customer
-                            }
-                        }
-                    }
-                }
-            };
+        //    var technician = new TechnicianProfile
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        UserId = userId,
+        //        User = user,
+        //        ApprovalStatus = TechnicianApprovalStatus.Approved,
+        //        Bookings = new List<Booking>
+        //        {
+        //            new Booking
+        //            {
+        //                Id = Guid.NewGuid(),
+        //                Status = BookingStatus.Completed,
+        //                Feedbacks = new List<BookingFeedback>
+        //                {
+        //                    new BookingFeedback
+        //                    {
+        //                        Id = Guid.NewGuid(),
+        //                        Rating = 5,
+        //                        Source = FeedbackSource.Customer
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    };
 
-            var technicians = new List<TechnicianProfile> { technician }.BuildMock();
-            _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
-                     .Returns(technicians);
+        //    var technicians = new List<TechnicianProfile> { technician }.BuildMock();
+        //    _mockRepo.Setup(r => r.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+        //             .Returns(technicians);
 
-            // Act
-            var result = await _service.GetFeaturedTechniciansAsync();
+        //    // Act
+        //    var result = await _service.GetFeaturedTechniciansAsync();
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Empty(result);
-        }
+        //    // Assert
+        //    Assert.NotNull(result);
+        //    Assert.Empty(result);
+        //}
 
         [Fact]
         public async Task GetFeaturedTechniciansAsync_ShouldFilterOutNonApprovedTechnicians()

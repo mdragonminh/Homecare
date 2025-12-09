@@ -401,10 +401,6 @@ const TechnicianProfileUI = ({
                             {t("ui.active_status") || "Trạng thái hoạt động"}
                           </span>
                           <span className="text-xs text-gray-600 mt-0.5">
-                            {(profile.isActive !== false)
-                              ? (t("ui.active_status_description") || "Khách hàng có thể tìm và yêu cầu ghép nối")
-                              : (t("ui.inactive_status_description") || "Khách hàng không thể tìm và yêu cầu ghép nối")
-                            }
                           </span>
                         </div>
                       </div>
