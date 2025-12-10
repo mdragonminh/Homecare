@@ -298,7 +298,12 @@ const BookingDetailPage = () => {
   const isInProgressFlow = isAccepted && booking.status !== BookingStatus.Completed && booking.status !== BookingStatus.Rejected && booking.status !== BookingStatus.Cancelled;
   const canAccept = booking.status === BookingStatus.Pending && (!booking.technicianId || booking.technicianId === "00000000-0000-0000-0000-000000000000");
   const canCheckIn = isInProgressFlow && (booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.TechnicianOnTheWay) && !isCheckedIn;
-  const canComplete = isInProgressFlow && isCheckedIn && booking.status === BookingStatus.InProgress;
+  
+  // Check if all equipment are delivered (or no equipment at all)
+  const allEquipmentsDelivered = !booking.equipments || booking.equipments.length === 0 || 
+    booking.equipments.every(e => e.status === BookingEquipmentStatus.Delivered);
+  
+  const canComplete = isInProgressFlow && isCheckedIn && booking.status === BookingStatus.InProgress && allEquipmentsDelivered;
   const canOpenChat = isInProgressFlow;
   const canAddEquipment = isInProgressFlow; 
   
@@ -597,6 +602,16 @@ const BookingDetailPage = () => {
                 <button onClick={onCompleteBookingClick} className="bg-green-600 text-white px-5 py-3 rounded font-medium flex items-center gap-2">
                   <CheckCircleIcon className="h-5 w-5" /> Checkout
                 </button>
+              )}
+              
+              {/* Show message if can't complete due to pending equipment delivery */}
+              {isInProgressFlow && isCheckedIn && booking.status === BookingStatus.InProgress && !allEquipmentsDelivered && (
+                <div className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2">
+                  <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+                  <div className="text-sm text-yellow-800">
+                    <strong>Chưa thể checkout:</strong> Cần xác nhận đã nhận tất cả thiết bị trước khi hoàn thành công việc.
+                  </div>
+                </div>
               )}
               
               {canOpenChat && (
