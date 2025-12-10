@@ -13,3 +13,19 @@
 .animate-scale-in {
   animation: scale-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
+@keyframes gradient-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-header {
+  background-size: 200% 200%;
+  animation: gradient-pan 12s ease-in-out infinite;
+}

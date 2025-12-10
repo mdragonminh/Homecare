@@ -291,7 +291,8 @@
       "new_password": "Mật khẩu mới",
       "confirm_new_password": "Xác nhận mật khẩu mới",
       "item_image_scan": "Hình ảnh Vật Phẩm",
-      "image_hint": "Quét tự động điền form."
+      "image_hint": "Quét tự động điền form.",
+      "phone_number":"Số điện thoại"
     },
     "placeholder": {
       "fullname": "Nhập họ tên đầy đủ của bạn",
@@ -309,7 +310,8 @@
       "notes": "Thông tin thêm về thiết bị (ví dụ: vị trí, ngày mua...)",
       "new_password": "Nhập mật khẩu mới",
       "search_radius": "Chọn bán kính tìm kiếm",
-      "address": " Nhập địa chỉ để tìm trên bản đồ"
+      "address": " Nhập địa chỉ để tìm trên bản đồ",
+      "phone_number": "Nhập số điện thoại"
     },
     "usertype": {
       "customer": "Khách hàng",
@@ -353,7 +355,9 @@
     "missing_booking_info_datetime": "Vui lòng nhập địa chỉ, chọn dịch vụ, bán kính, ngày và giờ.",
     "password_format": "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
     "phone_too_long": "Số điện thoại tối đa 10 chữ số",
-    "phone_too_short": "Số điện thoại tối thiểu 10 chữ số"
+    "phone_too_short": "Số điện thoại tối thiểu 10 chữ số",
+    "phone_number_required": "Vui lòng nhập số điện thoại",
+    "phone_number_format": "Số điện thoại phải đúng 10 chữ số"
   },
   "success": {
     "registration": "Bạn đã đăng ký thành công. Vui lòng kiểm tra email để xác minh và đăng nhập.",

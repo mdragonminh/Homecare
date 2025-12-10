@@ -17,9 +17,11 @@ import EditHomePage from "./EditHomePage";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+// eslint-disable-next-line
+import { motion } from "framer-motion"; // Import framer-motion
 
 /**
- * useDebounce
+ * useDebounce (GIỮ NGUYÊN LOGIC)
  */
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -57,6 +59,7 @@ export default function HomeManagementPage() {
 
   const abortControllerRef = useRef(null);
 
+  // GIỮ NGUYÊN LOGIC fetchHomes
   const fetchHomes = useCallback(async (page = 1, search = "") => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -100,7 +103,8 @@ export default function HomeManagementPage() {
       setInitialLoading(false);
       abortControllerRef.current = null;
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependency list chỉ cần fetchHomes
 
   useEffect(() => {
     setCurrentPage(1);
@@ -111,6 +115,7 @@ export default function HomeManagementPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, debouncedSearchTerm]);
 
+  // GIỮ NGUYÊN LOGIC Handlers
   const handleCloseAddModal = () => {
     setShowAddModal(false);
   };
@@ -132,6 +137,7 @@ export default function HomeManagementPage() {
       const res = await homeApi.deleteHome(homeToDelete);
       if (res.success) {
         toast.success(t("success.home_deleted"));
+        // Cập nhật lại trang nếu trang hiện tại không còn nhà nào
         const nextPage =
           currentPage > 1 && homes.length === 1 ? currentPage - 1 : currentPage;
         fetchHomes(nextPage, debouncedSearchTerm);
@@ -147,9 +153,9 @@ export default function HomeManagementPage() {
     }
   };
 
+  // GIỮ NGUYÊN LOGIC phân trang, chỉ thay đổi styling
   const renderPaginationButtons = () => {
     const pageNumbers = [];
-    // Giữ nguyên maxPagesToShow = 5, nhưng tăng kích thước nút
     const maxPagesToShow = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
@@ -162,234 +168,337 @@ export default function HomeManagementPage() {
       pageNumbers.push(i);
     }
 
+    const buttonClass = (isActive) =>
+      `w-9 h-9 rounded-lg font-medium transition-all duration-200 shadow-sm flex items-center justify-center ${
+        isActive
+          ? "bg-gray-700 text-white border-gray-700 hover:bg-gray-800"
+          : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-100"
+      }`;
+
+    const navButtonClass =
+      "p-1.5 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm w-9 h-9 flex items-center justify-center";
+
     return (
       <nav className="flex items-center justify-center gap-1 mt-6 text-sm">
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
           disabled={currentPage === 1}
-          // Thay đổi kích thước nút: w-9 h-9 (lớn hơn, dễ chạm hơn)
-          className="p-1.5 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm w-9 h-9 flex items-center justify-center"
+          className={navButtonClass}
         >
           <ChevronLeft size={16} />
-        </button>
+        </motion.button>
         {startPage > 1 && (
           <>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(1)}
-              // Thay đổi kích thước nút: w-9 h-9
-              className="w-9 h-9 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm"
+              className={buttonClass(1 === currentPage)}
             >
               1
-            </button>
+            </motion.button>
             {startPage > 2 && <span className="px-1 text-gray-400">...</span>}
           </>
         )}
         {pageNumbers.map((page) => (
-          <button
+          <motion.button
             key={page}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setCurrentPage(page)}
-            // Thay đổi kích thước nút: w-9 h-9
-            className={`w-9 h-9 rounded-lg font-medium transition-all duration-200 shadow-sm ${
-              page === currentPage
-                ? "bg-gray-700 text-white border-gray-700"
-                : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-100"
-            }`}
+            className={buttonClass(page === currentPage)}
           >
             {page}
-          </button>
+          </motion.button>
         ))}
         {endPage < totalPages && (
           <>
             {endPage < totalPages - 1 && (
               <span className="px-1 text-gray-400">...</span>
             )}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(totalPages)}
-              // Thay đổi kích thước nút: w-9 h-9
-              className="w-9 h-9 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm"
+              className={buttonClass(totalPages === currentPage)}
             >
               {totalPages}
-            </button>
+            </motion.button>
           </>
         )}
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
           disabled={currentPage === totalPages}
-          // Thay đổi kích thước nút: w-9 h-9
-          className="p-1.5 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm w-9 h-9 flex items-center justify-center"
+          className={navButtonClass}
         >
           <ChevronRight size={16} />
-        </button>
+        </motion.button>
       </nav>
     );
   };
 
-  // Error Panel
+  // Error Panel (Styling mới)
   if (error && !homeToDelete) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-blue-50">
-        <div className="text-center bg-white/90 backdrop-blur p-8 rounded-3xl shadow-2xl max-w-md border border-white/30">
-          <div className="text-6xl mb-4">Lỗi</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex justify-center items-center">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center bg-white/90 backdrop-blur p-8 rounded-3xl shadow-2xl max-w-md border border-white/30"
+        >
+          <div className="text-6xl mb-4 text-red-500">
+            <Settings className="w-16 h-16 mx-auto" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
             {t("ui.error_occurred")}
           </h3>
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
+          <p className="text-gray-600 mb-4">
+            {t("error.fetch_failed_detail") || "Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại."}
+          </p>
+          <p className="text-red-500 text-sm mb-4">
+            {t("error.message_prefix") || "Chi tiết lỗi:"} {error}
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               setError(null);
               setCurrentPage(1);
               fetchHomes(1, debouncedSearchTerm);
             }}
-            className="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:shadow-lg hover:shadow-blue-600/50 transition-all"
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all"
           >
             {t("ui.try_again")}
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       </div>
     );
   }
 
-return (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-      {/* ===== HEADER ===== */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white shadow hover:shadow-lg transition"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-            {t("ui.home_management")}
-          </h1>
-        </div>
-
-        <div className="text-sm text-gray-500">
-          {t("ui.showing")}{" "}
-          <span className="font-semibold text-red-900 text-xl">{totalCount}</span>{" "}
-          {t("ui.homes")}
-        </div>
+  return (
+    // Nền mới đồng bộ với LoginPage
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 relative overflow-hidden">
+      {/* Animated Background Circles (Đồng bộ với LoginPage) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.2, 0.3],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-cyan-400 to-blue-400 rounded-full blur-3xl"
+        />
       </div>
 
-      {/* ===== TOP TOOLBAR ===== */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <Search
-            size={20}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={t("ui.search_by_name_or_address")}
-            className="w-full h-12 pl-12 pr-4 rounded-2xl border border-gray-200 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-          />
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="h-12 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition active:scale-95 flex items-center gap-2"
+        {/* ===== HEADER ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center justify-between mb-8"
         >
-          <Plus size={20} />
-          {t("ui.add_new")}
-        </button>
-      </div>
-
-      {/* ===== MAIN LIST ===== */}
-      <div className="bg-white/70 backdrop-blur rounded-3xl shadow-xl border border-white/40 overflow-hidden">
-
-        {isFetching && !initialLoading && (
-          <div className="absolute top-4 right-4 px-4 py-2 bg-white/80 rounded-full shadow flex items-center gap-2 text-sm text-gray-600">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            {t("ui.loading")}...
+          <div className="flex items-center gap-4">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white shadow-md hover:shadow-lg transition-all border border-gray-100"
+            >
+              <ChevronLeft size={20} className="text-gray-700" />
+            </motion.button>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              {t("ui.home_management") || "Quản Lý Nhà Cửa"}
+            </h1>
           </div>
-        )}
 
-        {homes.length === 0 ? (
-          <div className="py-24 text-center">
-            <Home className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-800">
-              {t("ui.no_properties_found")}
-            </h3>
-            <p className="text-gray-500 mt-1">
-              {t("ui.try_change_search_or_filter")}
-            </p>
+          <div className="text-sm text-gray-500 bg-white/50 backdrop-blur-sm p-2 px-4 rounded-full border border-white/50 shadow-md">
+            {t("ui.showing")}{" "}
+            <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-600">
+              {totalCount}
+            </span>{" "}
+            <span className="font-semibold text-gray-700">{t("ui.homes")}</span>
           </div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {homes.map((home) => (
-              <div
-                key={home.id}
-                className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6
-                transition-all duration-300 hover:bg-gradient-to-r hover:from-slate-50 hover:to-white hover:-translate-y-[2px]"
-              >
-                {/* LEFT */}
-                <div className="flex items-start gap-5 flex-1 min-w-0">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600 flex items-center justify-center shadow-sm">
-                    <Home size={22} />
-                  </div>
+        </motion.div>
 
-                  <div className="min-w-0">
-                    <h3 className="text-xl font-bold text-gray-900 truncate">
-                      {home.name || t("ui.property_title")}
-                    </h3>
-                    <div className="flex items-start gap-2 text-sm text-gray-500 mt-1">
-                      <MapPin size={16} className="mt-0.5" />
-                      <span className="line-clamp-2">
-                        {home.address}
-                      </span>
+        {/* ===== TOP TOOLBAR ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex flex-col sm:flex-row gap-4 mb-8"
+        >
+          <div className="relative flex-1">
+            <Search
+              size={20}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={t("ui.search_by_name_or_address")}
+              className="w-full h-12 pl-12 pr-4 rounded-2xl border-2 border-gray-200 bg-white shadow-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-500 focus:outline-none transition"
+            />
+          </div>
+
+          <motion.button
+            whileHover={{ scale: 1.02, y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setShowAddModal(true)}
+            // Nút gradient đồng bộ
+            className="h-12 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-blue-500/50 transition active:scale-95 flex items-center gap-2"
+          >
+            <Plus size={20} />
+            {t("ui.add_new")}
+          </motion.button>
+        </motion.div>
+
+        {/* ===== MAIN LIST CONTAINER & LOADING/ERROR STATUS ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          // Card Container mới đồng bộ
+          className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 relative overflow-hidden"
+        >
+          {/* Loading Indicator */}
+          {isFetching && !initialLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute top-4 right-4 px-4 py-2 bg-white/90 rounded-full shadow-md flex items-center gap-2 text-sm text-gray-600 z-10 border border-gray-100"
+            >
+              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+              {t("ui.loading")}...
+            </motion.div>
+          )}
+
+          {/* Empty State */}
+          {homes.length === 0 && !isFetching && !initialLoading ? (
+            <div className="py-24 text-center">
+              <Home className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-800">
+                {t("ui.no_properties_found")}
+              </h3>
+              <p className="text-gray-500 mt-1">
+                {t("ui.try_change_search_or_filter")}
+              </p>
+            </div>
+          ) : (
+            // Home List
+            <div className="divide-y divide-gray-100">
+              {homes.map((home, index) => (
+                <motion.div
+                  key={home.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6
+                  transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-white hover:shadow-lg/50" // Hiệu ứng hover mượt mà hơn
+                >
+                  {/* LEFT: Home Info */}
+                  <div className="flex items-start gap-5 flex-1 min-w-0">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex items-center justify-center shadow-lg">
+                      <Home size={22} />
+                    </div>
+
+                    <div className="min-w-0">
+                      <h3 className="text-xl font-bold text-gray-900 truncate">
+                        {home.name || t("ui.property_title")}
+                      </h3>
+                      <div className="flex items-start gap-2 text-sm text-gray-500 mt-1">
+                        <MapPin size={16} className="mt-0.5 text-blue-500" />
+                        <span className="line-clamp-2">
+                          {home.address}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* RIGHT ACTIONS */}
-                <div className="flex items-center gap-6 flex-wrap justify-between sm:justify-end">
-                  <div className="flex gap-4">
-                    <button
+                  {/* RIGHT ACTIONS */}
+                  <div className="flex items-center gap-4 flex-wrap justify-between sm:justify-end">
+                    {/* Edit Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => setHomeToEdit(home)}
-                      className="text-amber-600 hover:text-amber-700 font-semibold transition hover:scale-105"
+                      className="flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-semibold transition-all p-2 rounded-lg hover:bg-amber-50"
                     >
+                      <Pencil size={18} />
                       {t("ui.edit")}
-                    </button>
-                    <button
+                    </motion.button>
+                    
+                    {/* Delete Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => setHomeToDelete(home.id)}
-                      className="text-red-600 hover:text-red-700 font-semibold transition hover:scale-105"
+                      className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700 font-semibold transition-all p-2 rounded-lg hover:bg-red-50"
                     >
+                      <Trash2 size={18} />
                       {t("ui.delete")}
-                    </button>
+                    </motion.button>
+                    
+                    {/* Manage Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.02, boxShadow: "0 5px 15px rgba(59, 130, 246, 0.3)" }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => navigate(`/home-items/${home.id}`)}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold text-sm hover:shadow-md transition"
+                    >
+                      {t("ui.manage_rooms_devices")}
+                    </motion.button>
                   </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </motion.div>
 
-                  <button
-                    onClick={() => navigate(`/home-items/${home.id}`)}
-                    className="px-5 py-2.5 rounded-xl bg-blue-50 text-blue-600 font-semibold hover:bg-blue-100 hover:shadow-md transition"
-                  >
-                    {t("ui.manage_rooms_devices")}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* ===== PAGINATION ===== */}
+        {totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="mt-10 flex justify-center gap-2"
+          >
+            {renderPaginationButtons()}
+          </motion.div>
         )}
+
       </div>
 
-      {/* ===== PAGINATION ===== */}
-      {totalPages > 1 && (
-        <div className="mt-10 flex justify-center gap-2">
-          {renderPaginationButtons()}
-        </div>
-      )}
-
-    </div>
-
-      {/* DELETE CONFIRM MODAL - Refactored for Mobile (Slide up from bottom) */}
+      {/* DELETE CONFIRM MODAL (GIỮ NGUYÊN LOGIC) */}
       {homeToDelete && (
-        // items-end trên mobile để modal trượt lên từ dưới, sm:items-center để căn giữa trên desktop
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div
-            // rounded-t-2xl trên mobile, w-full, không dùng max-w-md trên mobile
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: "0%" }}
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+            exit={{ y: "100%" }}
             className="bg-white p-6 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-none sm:max-w-md"
           >
             <div className="flex items-center gap-3 mb-4">
@@ -404,14 +513,18 @@ return (
               {t("ui.confirm_delete_message")}
             </p>
             <div className="flex justify-end gap-3">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setHomeToDelete(null)}
                 className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium"
                 disabled={isFetching}
               >
                 {t("ui.cancel")}
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={handleDelete}
                 className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 shadow-sm transition-all duration-200 font-medium"
                 disabled={isFetching}
@@ -427,13 +540,13 @@ return (
                     {t("ui.delete")}
                   </>
                 )}
-              </button>
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
-      {/* ADD MODAL */}
+      {/* ADD MODAL (GIỮ NGUYÊN LOGIC) */}
       {showAddModal && (
         <AddAddressPage
           onClose={handleCloseAddModal}
@@ -441,7 +554,7 @@ return (
         />
       )}
 
-      {/* EDIT MODAL */}
+      {/* EDIT MODAL (GIỮ NGUYÊN LOGIC) */}
       {homeToEdit && (
         <EditHomePage
           homeData={homeToEdit}

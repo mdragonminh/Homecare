@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react"; // Đã xóa 'useRef'
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -20,12 +20,14 @@ import {
   Tag,
   Hash,
 } from "lucide-react";
+// eslint-disable-next-line
+import { motion } from "framer-motion"; // Đã thêm framer-motion
 
 import AddHomeItemModal from "./AddHomeItemModal";
 import HomeItemEditModal from "./HomeItemEditModal";
 import HomeItemDetailsModal from "./HomeItemDetailsModal";
 
-// Kích thước trang mặc định
+// Kích thước trang mặc định (GIỮ NGUYÊN LOGIC)
 const pageSize = 6;
 
 export default function HomeItemsInterface() {
@@ -46,6 +48,7 @@ export default function HomeItemsInterface() {
   const [itemToViewId, setItemToViewId] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  // LOGIC: fetchHomeItems (GIỮ NGUYÊN)
   const fetchHomeItems = useCallback(
     async (page, search) => {
       if (!homeId) {
@@ -81,6 +84,7 @@ export default function HomeItemsInterface() {
     [homeId]
   );
 
+  // LOGIC: Debounce Search (GIỮ NGUYÊN)
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -92,10 +96,12 @@ export default function HomeItemsInterface() {
     };
   }, [searchTerm]);
 
+  // LOGIC: Fetch Data on Mount/Change (GIỮ NGUYÊN)
   useEffect(() => {
     fetchHomeItems(currentPage, debouncedSearch);
   }, [currentPage, debouncedSearch, fetchHomeItems]);
 
+  // LOGIC: Handlers (GIỮ NGUYÊN)
   const handleItemAddedOrEdited = () => {
     setShowAddModal(false);
     setItemToEditId(null);
@@ -144,9 +150,9 @@ export default function HomeItemsInterface() {
     });
   };
 
+  // LOGIC: Pagination, Chỉ thay đổi Styling và thêm Motion
   const renderPaginationButtons = () => {
     const pageNumbers = [];
-    // Giảm số trang hiển thị trên mobile
     const maxPagesToShow = window.innerWidth < 640 ? 3 : 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
@@ -159,63 +165,81 @@ export default function HomeItemsInterface() {
       pageNumbers.push(i);
     }
 
+    // Styling mới đồng bộ
+    const buttonClass = (isActive) =>
+      `min-w-[40px] h-10 rounded-xl font-medium transition-all duration-200 shadow-sm ${
+        isActive
+          ? "bg-gray-700 text-white border-gray-700 hover:bg-gray-800"
+          : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-100"
+      }`;
+
+    const navButtonClass =
+      "p-2.5 text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm w-10 h-10 flex items-center justify-center";
+
     return (
-      <nav className="flex items-center justify-center gap-2 mt-8">
-        <button
+      <nav className="flex items-center justify-center gap-1 mt-8 text-sm">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setCurrentPage(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2.5 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+          className={navButtonClass}
         >
-          <ChevronLeft size={20} />
-        </button>
+          <ChevronLeft size={16} />
+        </motion.button>
         {startPage > 1 && (
           <>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(1)}
-              className="min-w-[40px] h-10 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-all duration-200 shadow-sm"
+              className={buttonClass(1 === currentPage)}
             >
               1
-            </button>
-            {startPage > 2 && <span className="px-2 text-gray-400">...</span>}
+            </motion.button>
+            {startPage > 2 && <span className="px-1 text-gray-400">...</span>}
           </>
         )}
         {pageNumbers.map((page) => (
-          <button
+          <motion.button
             key={page}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setCurrentPage(page)}
-            className={`min-w-[40px] h-10 rounded-lg font-medium transition-all duration-200 shadow-sm ${
-              page === currentPage
-                ? "bg-blue-600 text-white border-blue-600"
-                : "text-blue-600 bg-white border border-blue-200 hover:bg-blue-50"
-            }`}
+            className={buttonClass(page === currentPage)}
           >
             {page}
-          </button>
+          </motion.button>
         ))}
         {endPage < totalPages && (
           <>
             {endPage < totalPages - 1 && (
-              <span className="px-2 text-gray-400">...</span>
+              <span className="px-1 text-gray-400">...</span>
             )}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(totalPages)}
-              className="min-w-[40px] h-10 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-all duration-200 shadow-sm"
+              className={buttonClass(totalPages === currentPage)}
             >
               {totalPages}
-            </button>
+            </motion.button>
           </>
         )}
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setCurrentPage(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-2.5 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+          className={navButtonClass}
         >
-          <ChevronRight size={20} />
-        </button>
+          <ChevronRight size={16} />
+        </motion.button>
       </nav>
     );
   };
 
+  // LOGIC: Icon/Color (GIỮ NGUYÊN)
   const getItemIcon = (type) => {
     switch (type?.toLowerCase()) {
       case "electronics":
@@ -240,76 +264,136 @@ export default function HomeItemsInterface() {
     return colors[index % colors.length];
   };
 
+  // Styling mới cho Skeleton
   const renderSkeleton = () => (
     <div className="space-y-4">
       {[...Array(pageSize)].map((_, i) => (
         <div
           key={i}
-          // Thay đổi: p-4 trên mobile, flex-col trên mobile
-          className="bg-white p-4 sm:p-6 rounded-xl border border-blue-200 animate-pulse flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6"
+          className="bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-lg border border-white/50 animate-pulse flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6"
         >
-          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 rounded-xl flex-shrink-0"></div>
+          <div className="w-14 h-14 bg-blue-100 rounded-xl flex-shrink-0"></div>
           <div className="flex-1 w-full">
-            <div className="h-5 bg-blue-100 rounded w-1/3 mb-2"></div>
-            <div className="h-4 bg-blue-100 rounded w-2/3 mb-1"></div>
+            <div className="h-5 bg-blue-200 rounded w-1/3 mb-2"></div>
+            <div className="h-4 bg-cyan-100 rounded w-2/3 mb-1"></div>
             <div className="h-3 bg-blue-100 rounded w-1/4"></div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto justify-end">
-            <div className="h-8 w-8 bg-blue-100 rounded-lg"></div>
-            <div className="h-8 w-8 bg-blue-100 rounded-lg"></div>
-            <div className="h-8 w-8 bg-blue-100 rounded-lg"></div>
+            <div className="h-10 w-10 bg-gray-200 rounded-xl"></div>
+            <div className="h-10 w-10 bg-gray-200 rounded-xl"></div>
+            <div className="h-10 w-10 bg-gray-200 rounded-xl"></div>
           </div>
         </div>
       ))}
     </div>
   );
 
-  if (error) {
+  // Styling mới cho Error Panel
+  if (error && !itemToDelete) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="text-center p-6 bg-white rounded-xl shadow-md border border-blue-200 w-full max-w-sm">
-          <h3 className="text-xl font-semibold text-red-600 mb-4">
-            {t("error.error_occurred")}: {error}
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex justify-center items-center">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center bg-white/90 backdrop-blur p-8 rounded-3xl shadow-2xl max-w-md border border-white/30"
+        >
+          <div className="text-6xl mb-4 text-red-500">
+            <AlertTriangle className="w-16 h-16 mx-auto" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            {t("ui.error_occurred")}
           </h3>
-          <button
-            onClick={() => fetchHomeItems(currentPage, debouncedSearch)}
-            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm"
+          <p className="text-red-600 mb-4">{error}</p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setError(null);
+              setCurrentPage(1);
+              fetchHomeItems(1, debouncedSearch);
+            }}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all"
           >
             {t("ui.try_again")}
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    // Nền mới đồng bộ
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 relative overflow-hidden">
+      {/* Animated Background Circles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.2, 0.3],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-cyan-400 to-blue-400 rounded-full blur-3xl"
+        />
+      </div>
+
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8 flex items-center gap-4">
-          <button
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 relative z-10">
+
+        {/* ===== HEADER ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8 flex items-center gap-4"
+        >
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => navigate(-1)}
-            className="p-1.5 text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-all duration-200 shadow-sm"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white shadow-md hover:shadow-lg transition-all border border-gray-100"
             title={t("ui.go_back") || "Quay lại"}
           >
-            <ChevronLeft size={16} />
-          </button>
-          <h1 className="text-xl font-bold text-gray-900">
+            <ChevronLeft size={20} className="text-gray-700" />
+          </motion.button>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             {t("ui.manage_items")}
           </h1>
-        </div>
-        
-        {/* Search and Add controls - Responsive Layout */}
-        <div className="flex flex-col sm:flex-row items-stretch gap-4 mb-6 sm:mb-8">
-          {/* Total Items Count - Responsive display */}
-          <div className="bg-white px-4 py-3 sm:px-6 sm:py-0 rounded-xl border border-gray-200 flex items-center justify-center flex-shrink-0">
+        </motion.div>
+
+        {/* Search and Add controls */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex flex-col sm:flex-row items-stretch gap-4 mb-8"
+        >
+          {/* Total Items Count */}
+          <div className="bg-white/50 backdrop-blur-sm px-4 py-3 sm:px-6 sm:py-0 rounded-2xl border border-white/50 shadow-md flex items-center justify-center flex-shrink-0">
             <p className="text-sm sm:text-xm text-gray-500 whitespace-nowrap">
               {t("ui.total_items") || "Hiện thị"}:{" "}
-              <span className="font-bold text-gray-900 ml-1">{totalCount}</span>
+              <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 ml-1">
+                {totalCount}
+              </span>
             </p>
           </div>
-          
+
           {/* Search Bar & Add Button */}
           <div className="flex flex-1 items-center gap-3">
             <div className="relative flex-1">
@@ -322,60 +406,75 @@ export default function HomeItemsInterface() {
                   t("ui.search_item_placeholder") ||
                   "Tìm kiếm theo tên hoặc địa chỉ..."
                 }
-                // Thay đổi: py-2.5 trên mobile
-                className="w-full h-full pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-white text-gray-900"
+                className="w-full h-12 pl-12 pr-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all duration-200 bg-white shadow-sm text-gray-900"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            
-            {/* Add Button - Hiển thị icon trên mobile, icon + text trên desktop */}
-            <button
+
+            {/* Add Button - Nút gradient đồng bộ */}
+            <motion.button
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setShowAddModal(true)}
-              // Thay đổi: p-2.5 trên mobile, px-6 py-3 trên desktop
-              className="flex items-center justify-center gap-2 p-2.5 sm:px-6 sm:py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all duration-200 font-medium flex-shrink-0 whitespace-nowrap"
+              className="flex items-center justify-center gap-2 h-12 p-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-2xl shadow-lg hover:shadow-blue-500/50 transition active:scale-95 font-semibold flex-shrink-0 whitespace-nowrap"
               title={t("ui.add_item")}
             >
               <Plus size={20} />
-              <span className="hidden sm:inline">{t("ui.add_item") || "Thêm mới"}</span>
-            </button>
+              <span className="hidden sm:inline">
+                {t("ui.add_item") || "Thêm mới"}
+              </span>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
-        {loading && totalCount === 0 ? (
-          renderSkeleton()
-        ) : items.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-8 sm:p-12 text-center hover:shadow-md transition-all duration-200">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
-              <Package size={32} />
+        {/* ===== MAIN LIST CONTAINER & STATES ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          // Card Container mới đồng bộ
+          className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 relative overflow-hidden"
+        >
+          {loading && totalCount === 0 ? (
+            <div className="p-6">{renderSkeleton()}</div>
+          ) : items.length === 0 ? (
+            // Empty State
+            <div className="p-8 sm:p-12 text-center">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-md">
+                <Package size={32} className="text-blue-600" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
+                {t("ui.no_items_found")}
+              </h3>
+              <p className="text-sm text-gray-600 mb-4 sm:mb-6">
+                {t("ui.add_first_item_hint")}
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowAddModal(true)}
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all"
+              >
+                {t("ui.add_item")}
+              </motion.button>
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
-              {t("ui.no_items_found")}
-            </h3>
-            <p className="text-sm text-gray-600 mb-4 sm:mb-6">
-              {t("ui.add_first_item_hint")}
-            </p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm"
-            >
-              {t("ui.add_item")}
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="space-y-4">
+          ) : (
+            // Item List
+            <div className="divide-y divide-gray-100">
               {items.map((item, index) => (
-                // Item Card - Responsive Layout
-                <div
+                <motion.div
                   key={item.id}
-                  // Thay đổi: p-4 trên mobile, flex-col trên mobile
-                  className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 hover:shadow-md transition-all duration-200"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  // Card style
+                  className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6
+                  transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-white hover:shadow-lg/50"
                 >
                   {/* Icon */}
                   <div
-                    // Thay đổi: kích thước icon nhỏ hơn trên mobile
-                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center border flex-shrink-0 ${getItemColor(
+                    className={`w-14 h-14 rounded-xl flex items-center justify-center border flex-shrink-0 shadow-md ${getItemColor(
                       index
                     )}`}
                   >
@@ -383,12 +482,11 @@ export default function HomeItemsInterface() {
                   </div>
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    {/* Thay đổi: text-base trên mobile */}
-                    <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-1 truncate">
+                    <h3 className="font-bold text-gray-900 text-base sm:text-xl mb-1 truncate">
                       {item.name}
                     </h3>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm mb-0">
-                      <span className="inline-flex items-center gap-1.5 text-gray-700 bg-gray-100 px-3 py-1 rounded-lg font-medium">
+                      <span className="inline-flex items-center gap-1.5 text-blue-700 bg-blue-100 px-3 py-1 rounded-full font-medium">
                         <Tag size={14} />
                         {t(
                           `item.type.${item.type?.toLowerCase()}`,
@@ -396,51 +494,68 @@ export default function HomeItemsInterface() {
                         ) || t("ui.uncategorized")}
                       </span>
                       {item.brand && (
-                        <span className="text-gray-600 font-medium">
+                        <span className="text-gray-600 font-medium bg-gray-100 px-3 py-1 rounded-full">
                           {item.brand}
                         </span>
                       )}
                       {item.modelNumber && (
-                        <span className="inline-flex items-center gap-1.5 text-gray-600">
+                        <span className="inline-flex items-center gap-1.5 text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
                           <Hash size={14} />
                           {item.modelNumber}
                         </span>
                       )}
                     </div>
                   </div>
-                  {/* Actions - Căn chỉnh sang phải trên mobile */}
-                  <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 justify-end">
-                    <button
+                  {/* Actions */}
+                  <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 justify-end flex-shrink-0">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => handleViewItem(item.id)}
-                      className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 shadow-sm"
                       title={t("ui.view")}
                     >
-                      <Eye size={18} />
-                    </button>
-                    <button
+                      <Eye size={20} />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => handleEditItem(item.id)}
-                      className="p-2.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-all duration-200"
+                      className="p-2.5 text-amber-600 hover:bg-amber-50 rounded-xl transition-all duration-200 shadow-sm"
                       title={t("ui.edit")}
                     >
-                      <Pencil size={18} />
-                    </button>
-                    <button
+                      <Pencil size={20} />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => setItemToDelete(item)}
-                      className="p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                      className="p-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 shadow-sm"
                       title={t("ui.delete")}
                     >
-                      <Trash2 size={18} />
-                    </button>
+                      <Trash2 size={20} />
+                    </motion.button>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
-            {totalPages > 1 && renderPaginationButtons()}
-          </>
+          )}
+        </motion.div>
+
+        {/* ===== PAGINATION ===== */}
+        {totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="mt-10 flex justify-center gap-2"
+          >
+            {renderPaginationButtons()}
+          </motion.div>
         )}
       </div>
 
-      {/* Modals - Giữ nguyên, giả định các Modals con đã responsive hoặc dùng thư viện */}
+      {/* Modals (GIỮ NGUYÊN LOGIC) */}
       {showAddModal && (
         <AddHomeItemModal
           homeId={homeId}
@@ -461,13 +576,15 @@ export default function HomeItemsInterface() {
           onClose={() => setItemToViewId(null)}
         />
       )}
-      
-      {/* Delete Confirmation Modal - Responsive changes */}
+
+      {/* Delete Confirmation Modal (Thêm motion) */}
       {itemToDelete && (
-        // Thay đổi: items-end trên mobile để modal trượt lên từ dưới
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <div 
-            // Thay đổi: rounded-t-2xl trên mobile, w-full, không dùng max-w-md trên mobile
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: "0%" }}
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+            exit={{ y: "100%" }}
             className="bg-white p-6 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-none sm:max-w-md"
           >
             <div className="flex items-center gap-3 mb-4">
@@ -482,14 +599,18 @@ export default function HomeItemsInterface() {
               {t("ui.delete_confirm_message", { item_name: itemToDelete.name })}
             </p>
             <div className="flex justify-end gap-3">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setItemToDelete(null)}
                 className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium"
                 disabled={loading}
               >
                 {t("ui.cancel")}
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={handleDeleteItem}
                 className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400 shadow-sm transition-all duration-200 font-medium"
                 disabled={loading}
@@ -505,9 +626,9 @@ export default function HomeItemsInterface() {
                     {t("ui.delete")}
                   </>
                 )}
-              </button>
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
     </div>
