@@ -31,7 +31,7 @@ import {
   Bar,
 } from "recharts";
 import { bookingApi } from "../../services/bookingApi";
-import { paymentApi } from "../../services/paymentApi";
+import { paymentApi, PaymentStatus } from "../../services/paymentApi";
 import { adminApi } from "../../services/adminApi";
 import { getFileMetadata } from "../../services/fileApi";
 import { FeedbackSource } from "../../constants/enums";
@@ -123,12 +123,12 @@ export default function AdminDashboard() {
         if (paymentsResponse.success) {
           const payments = paymentsResponse.data.items || [];
           const totalRevenue = payments
-            .filter(p => p.status === 'Completed')
+            .filter(p => p.status === PaymentStatus.Completed)
             .reduce((sum, p) => sum + p.amount, 0);
 
           payments.forEach(payment => {
             const date = dayjs(payment.dateCreated).format('YYYY-MM-DD');
-            if (chartDataMap[date] && payment.status === 'Completed') {
+            if (chartDataMap[date] && payment.status === PaymentStatus.Completed) {
               chartDataMap[date].revenue += payment.amount;
             }
           });
@@ -216,7 +216,7 @@ export default function AdminDashboard() {
                 
                 const bookingPayments = payments.filter(p => 
                   p.bookingId === booking.id && 
-                  (p.status === 'Completed' || p.status === 2)
+                  p.status === PaymentStatus.Completed
                 );
                 tech.totalRevenue += bookingPayments.reduce((sum, p) => sum + p.amount, 0);
               }
