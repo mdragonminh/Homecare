@@ -2,23 +2,28 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import equipmentRequestApi, { BookingEquipmentStatus, getEquipmentRequestStatusText, getEquipmentRequestStatusColor } from "../../services/equipmentRequestApi";
-import { 
-  AlertCircle, 
-  Eye, 
-  CheckCircle, 
-  ChevronLeft, 
-  ChevronRight, 
-  X, 
-  Calendar, 
-  User, 
-  Phone, 
-  MapPin, 
-  Package, 
-  Wrench, 
-  CreditCard, 
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import {
+  AlertCircle,
+  Eye,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Calendar,
+  User,
+  Phone,
+  MapPin,
+  Package,
+  Wrench,
+  CreditCard,
   Send
 } from "lucide-react";
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
 const EquipmentRequestManagementPage = () => {
   const { t } = useTranslation();
   const [requests, setRequests] = useState([]);
@@ -109,14 +114,7 @@ const EquipmentRequestManagementPage = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     try {
-      const date = new Date(dateString);
-      return date.toLocaleString("vi-VN", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      return dayjs.utc(dateString).tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY HH:mm");
     } catch {
       return dateString;
     }
@@ -387,13 +385,13 @@ const EquipmentRequestManagementPage = () => {
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Trạng thái</p>
                       <p className="text-sm text-gray-900">{selectedRequestDetails.bookingDetail.status}</p>
                     </div>
-                    <div className="md:col-span-2">
+                    {/* <div className="md:col-span-2">
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1 flex items-center">
                         <MapPin className="w-4 h-4 mr-1" />
                         Vị trí
                       </p>
                       <p className="text-sm text-gray-900">Lat: {selectedRequestDetails.bookingDetail.latitude?.toFixed(6)}, Long: {selectedRequestDetails.bookingDetail.longitude?.toFixed(6)}</p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               )}
@@ -493,14 +491,14 @@ const EquipmentRequestManagementPage = () => {
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Phương thức</p>
                       <p className="text-sm text-gray-900">{getPaymentMethodText(selectedRequestDetails.paymentDetail.paymentMethod)}</p>
                     </div>
-                    <div>
+                    {/* <div>
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Trạng thái</p>
                       <p className="text-sm text-gray-900">{getPaymentStatusText(selectedRequestDetails.paymentDetail.status)}</p>
-                    </div>
-                    <div>
+                    </div> */}
+                    {/* <div>
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Ngày thanh toán</p>
                       <p className="text-sm text-gray-900">{selectedRequestDetails.paymentDetail.paidAt ? formatDate(selectedRequestDetails.paymentDetail.paidAt) : "Chưa thanh toán"}</p>
-                    </div>
+                    </div> */}
                     {selectedRequestDetails.paymentDetail.transactionId && (
                       <div className="md:col-span-2">
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Mã giao dịch</p>
