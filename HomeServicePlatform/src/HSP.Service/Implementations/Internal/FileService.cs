@@ -117,7 +117,8 @@ namespace HSP.Service.Implementations.Internal
                         FileName = fr.File.FileName,
                         FilePath = fr.File.FilePath,
                         FileType = fr.File.FileType,
-                        FileSize = fr.File.FileSize
+                        FileSize = fr.File.FileSize,
+                        DateCreated = fr.DateCreated
                     })
                     .ToListAsync();
             return result;
