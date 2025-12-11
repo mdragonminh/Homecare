@@ -25,11 +25,11 @@ import { serviceApi } from "../../services/serviceApi"; // Import serviceApi
 
 // Danh sách ảnh Hero - rõ nét, đẹp
 const heroImages = [
-  "https://luxurydecor.vn/wp-content/uploads/2019/12/thiet-ke-noi-that-chung-cu-2-phong-ngu-6.jpg",
-  "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg",
-  "https://images.pexels.com/photos/2635038/pexels-photo-2635038.jpeg",
-  "https://images.pexels.com/photos/1438832/pexels-photo-1438832.jpeg",
-  "https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+  "https://images.pexels.com/photos/3990359/pexels-photo-3990359.jpeg",
+  "https://images.pexels.com/photos/257736/pexels-photo-257736.jpeg",
+  "https://images.pexels.com/photos/442160/pexels-photo-442160.jpeg",
+  "https://images.pexels.com/photos/8853536/pexels-photo-8853536.jpeg",
+  "https://images.pexels.com/photos/1249611/pexels-photo-1249611.jpeg",
 ];
 
 const features = [
