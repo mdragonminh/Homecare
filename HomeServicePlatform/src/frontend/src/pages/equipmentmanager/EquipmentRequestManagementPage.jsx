@@ -471,7 +471,7 @@ const EquipmentRequestManagementPage = () => {
               )}
 
               {/* Payment Information */}
-              {selectedRequestDetails.paymentDetail && (
+              {/* {selectedRequestDetails.paymentDetail && (
                 <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg p-6 border border-emerald-200">
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <CreditCard className="w-5 h-5 mr-2 text-emerald-600" />
@@ -491,14 +491,14 @@ const EquipmentRequestManagementPage = () => {
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Phương thức</p>
                       <p className="text-sm text-gray-900">{getPaymentMethodText(selectedRequestDetails.paymentDetail.paymentMethod)}</p>
                     </div>
-                    {/* <div>
+                    <div>
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Trạng thái</p>
                       <p className="text-sm text-gray-900">{getPaymentStatusText(selectedRequestDetails.paymentDetail.status)}</p>
-                    </div> */}
-                    {/* <div>
+                    </div>
+                    <div>
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Ngày thanh toán</p>
                       <p className="text-sm text-gray-900">{selectedRequestDetails.paymentDetail.paidAt ? formatDate(selectedRequestDetails.paymentDetail.paidAt) : "Chưa thanh toán"}</p>
-                    </div> */}
+                    </div>
                     {selectedRequestDetails.paymentDetail.transactionId && (
                       <div className="md:col-span-2">
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Mã giao dịch</p>
@@ -507,7 +507,7 @@ const EquipmentRequestManagementPage = () => {
                     )}
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
 
             <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-b-lg flex gap-3">

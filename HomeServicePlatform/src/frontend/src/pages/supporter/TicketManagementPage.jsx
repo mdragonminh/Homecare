@@ -678,7 +678,7 @@ const TicketManagementPage = () => {
               )}
 
               {/* Payment Information */}
-              {selectedTicketDetails.paymentDetail && (
+              {/* {selectedTicketDetails.paymentDetail && (
                 <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg p-6 border border-emerald-200">
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <CreditCard className="w-5 h-5 mr-2 text-emerald-600" />
@@ -715,7 +715,7 @@ const TicketManagementPage = () => {
                     )}
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
 
             <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-b-lg">
