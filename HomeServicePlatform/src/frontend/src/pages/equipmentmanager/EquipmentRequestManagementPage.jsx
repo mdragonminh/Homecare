@@ -40,6 +40,7 @@ const EquipmentRequestManagementPage = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedRequestDetails, setSelectedRequestDetails] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmingRequest, setConfirmingRequest] = useState(null);
 
   useEffect(() => {
     fetchRequests();
@@ -91,19 +92,27 @@ const EquipmentRequestManagementPage = () => {
     setSelectedRequestDetails(null);
   };
 
-  const handleApproveRequest = async (request) => {
-    if (!confirm(`Xác nhận duyệt yêu cầu ${request.equipmentName} (x${request.quantity}) cho booking ${request.bookingCode}?`)) {
-      return;
-    }
+  const openConfirmModal = (request) => {
+    setConfirmingRequest(request);
+  };
+
+  const closeConfirmModal = () => {
+    if (isSubmitting) return;
+    setConfirmingRequest(null);
+  };
+
+  const handleApproveRequest = async () => {
+    if (!confirmingRequest) return;
 
     try {
       setIsSubmitting(true);
-      await equipmentRequestApi.approveRequest(request.bookingId, [request.id]);
+      await equipmentRequestApi.approveRequest(confirmingRequest.bookingId, [confirmingRequest.id]);
       toast.success("Đã duyệt yêu cầu thành công!");
       fetchRequests();
       if (isDetailsModalOpen) {
         closeDetailsModal();
       }
+      closeConfirmModal();
     } catch (err) {
       toast.error(err.response?.data?.message || "Không thể duyệt yêu cầu");
     } finally {
@@ -270,7 +279,7 @@ const EquipmentRequestManagementPage = () => {
                     </button>
                     {request.status === BookingEquipmentStatus.Paid && (
                       <button
-                        onClick={() => handleApproveRequest(request)}
+                        onClick={() => openConfirmModal(request)}
                         disabled={isSubmitting}
                         className="inline-flex items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 transition-colors disabled:opacity-50"
                       >
@@ -513,7 +522,7 @@ const EquipmentRequestManagementPage = () => {
             <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-b-lg flex gap-3">
               {selectedRequestDetails.status === BookingEquipmentStatus.Paid && (
                 <button
-                  onClick={() => handleApproveRequest(selectedRequestDetails)}
+                  onClick={() => openConfirmModal(selectedRequestDetails)}
                   disabled={isSubmitting}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors disabled:opacity-50"
                 >
@@ -527,6 +536,66 @@ const EquipmentRequestManagementPage = () => {
                 className="flex-1 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM APPROVE MODAL */}
+      {confirmingRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={closeConfirmModal}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-50 rounded-full">
+                  <Send className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Xác nhận gửi thiết bị</p>
+                  <h3 className="text-xl font-semibold text-gray-900">Bạn có chắc chắn muốn gửi thiết bị?</h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Thiết bị</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {confirmingRequest.equipmentName} (x{confirmingRequest.quantity})
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Booking</span>
+                <span className="text-sm font-mono text-gray-900">{confirmingRequest.bookingCode}</span>
+              </div>
+              {typeof confirmingRequest.totalPrice !== "undefined" && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Tổng tiền</span>
+                  <span className="text-sm font-semibold text-gray-900">{formatCurrency(confirmingRequest.totalPrice)} VNĐ</span>
+                </div>
+              )}
+              <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-md p-3">
+                Sau khi xác nhận, yêu cầu sẽ được đánh dấu đã gửi thiết bị. Hành động này không thể hoàn tác.
+              </p>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeConfirmModal}
+                disabled={isSubmitting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleApproveRequest}
+                disabled={isSubmitting}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                {isSubmitting ? "Đang gửi..." : "Xác nhận"}
               </button>
             </div>
           </div>

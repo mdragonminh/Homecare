@@ -23,6 +23,11 @@ import { toast } from "sonner";
 import { auditLogApi, getActionText, getActionColor } from "../../services/auditLogApi";
 import { useTranslation } from "react-i18next";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const { RangePicker } = DatePicker;
 
@@ -140,7 +145,7 @@ export default function ActivityLogsPage() {
       dataIndex: "dateCreated",
       key: "dateCreated",
       width: 180,
-      render: (date) => dayjs(date).format("DD/MM/YYYY HH:mm:ss"),
+      render: (date) => dayjs.utc(date).tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY HH:mm:ss"),
     },
     {
       title: t("common.actions", "Actions"),
@@ -307,7 +312,7 @@ export default function ActivityLogsPage() {
               </Col>
               <Col span={12}>
                 <strong>{t("auditLog.dateCreated", "Date")}:</strong>{" "}
-                {dayjs(selectedLog.dateCreated).format("DD/MM/YYYY HH:mm:ss")}
+                {dayjs.utc(selectedLog.dateCreated).tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY HH:mm:ss")}
               </Col>
               <Col span={24}>
                 <strong>{t("auditLog.description", "Description")}:</strong>

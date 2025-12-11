@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { bookingApi } from "../../services/bookingApi";
 import { toast } from "sonner";
 import { getFileMetadata } from "../../services/fileApi";
-import { EyeIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -253,6 +253,9 @@ export default function CustomerBookingDetail() {
 
   const canRateBooking =
     booking.status === BookingStatus.Completed && !booking.feedbackId;
+  const canOpenChat =
+    booking.status >= BookingStatus.Confirmed &&
+    booking.status !== BookingStatus.Cancelled;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -351,15 +354,28 @@ export default function CustomerBookingDetail() {
 
         {/* Status Card */}
         <div className="bg-white border rounded-xl p-6 shadow-sm mb-4">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">
-            Trạng thái Booking
-          </h3>
-          <div
-            className={`inline-flex px-4 py-2 rounded-lg border font-semibold text-sm ${getStatusBadge(
-              booking.status
-            )}`}
-          >
-            {BookingStatusLabels[booking.status]}
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">
+                Trạng thái Booking
+              </h3>
+              <div
+                className={`inline-flex px-4 py-2 rounded-lg border font-semibold text-sm ${getStatusBadge(
+                  booking.status
+                )}`}
+              >
+                {BookingStatusLabels[booking.status]}
+              </div>
+            </div>
+            {canOpenChat && (
+              <button
+                onClick={() => navigate("/chat")}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <ChatBubbleLeftRightIcon className="h-4 w-4" />
+                Chat với KTV
+              </button>
+            )}
           </div>
         </div>
 
