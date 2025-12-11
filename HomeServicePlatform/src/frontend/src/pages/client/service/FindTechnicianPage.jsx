@@ -243,22 +243,7 @@ export function FindTechnicianPage({ loggedInUser }) {
       {/* CONTAINER NỘI DUNG (Đã xóa class background và thêm z-10) */}
       <div className="p-4 md:p-8 max-w-screen-2xl mx-auto pt-10 relative z-10">
 
-        {/* Modals */}
-        {loggedInUser && isAddHomeModalOpen && (
-          <AddHomeModal
-            onClose={() => setIsAddHomeModalOpen(false)}
-            onSuccess={handleHomeAddedSuccess}
-          />
-        )}
-
-        {loggedInUser && isEditHomeModalOpen && currentHomeData && (
-          <EditHomeModal
-            homeData={currentHomeData}
-            onClose={() => setIsEditHomeModalOpen(false)}
-            onSuccess={reloadHomeData}
-          />
-        )}
-
+       
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 flex items-center gap-3">
@@ -693,12 +678,25 @@ export function FindTechnicianPage({ loggedInUser }) {
 
         {/* END: CONTAINER NỘI DUNG */}
       </div>
+       {/* Modals */}
+        {loggedInUser && isAddHomeModalOpen && (
+          <AddHomeModal
+            onClose={() => setIsAddHomeModalOpen(false)}
+            onSuccess={handleHomeAddedSuccess}
+          />
+        )}
 
-      {/* IS MATCHING MODAL (Cần nằm ngoài container nội dung để phủ toàn màn hình) */}
+        {loggedInUser && isEditHomeModalOpen && currentHomeData && (
+          <EditHomeModal
+            homeData={currentHomeData}
+            onClose={() => setIsEditHomeModalOpen(false)}
+            onSuccess={reloadHomeData}
+          />
+        )}
+
+     
       {isMatching && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          
-          {/* Nền mờ sáng */}
           <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" />
 
           {/* POPUP ĐẸP */}
