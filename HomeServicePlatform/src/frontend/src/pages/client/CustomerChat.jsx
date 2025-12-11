@@ -36,11 +36,13 @@ export default function CustomerChat() {
     try {
       const res = await chatApi.getUserConversations();
       // Đảm bảo TechnicianName và LastMessage có sẵn để tìm kiếm
-      setConversations(res.data.map(c => ({
-        ...c,
-        technicianName: c.technicianName || "Kỹ thuật viên",
-        lastMessageContent: c.lastMessage?.content || ""
-      })));
+      setConversations(
+        res.data.map((c) => ({
+          ...c,
+          technicianName: c.technicianName || "Kỹ thuật viên",
+          lastMessageContent: c.lastMessage?.content || "",
+        }))
+      );
     } catch {
       toast.error("Không tải được danh sách hội thoại");
     }
@@ -81,13 +83,13 @@ export default function CustomerChat() {
   };
 
   const scrollToBottom = () => {
-  setTimeout(() => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop =
-        messagesContainerRef.current.scrollHeight;
-    }
-  }, 50);
-};
+    setTimeout(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop =
+          messagesContainerRef.current.scrollHeight;
+      }
+    }, 50);
+  };
 
   const formatMessageTime = (dateString) => {
     const date = new Date(dateString);
@@ -133,19 +135,22 @@ export default function CustomerChat() {
       // Tìm kiếm theo nội dung tin nhắn cuối cùng (lastMessage)
       const lastMessage = c.lastMessageContent.toLowerCase();
 
-      return chatName.includes(lowerCaseSearchTerm) || lastMessage.includes(lowerCaseSearchTerm);
+      return (
+        chatName.includes(lowerCaseSearchTerm) ||
+        lastMessage.includes(lowerCaseSearchTerm)
+      );
     });
   }, [conversations, searchTerm, currentUserId]);
   // END: LOGIC TÌM KIẾM MỚI
 
   return (
-    // SỬA ĐỔI QUAN TRỌNG: Thay h-screen bằng h-[calc(100vh-70px)] 
+    // SỬA ĐỔI QUAN TRỌNG: Thay h-screen bằng h-[calc(100vh-70px)]
     // để trừ đi chiều cao của Navbar bên ngoài trang web.
     <div className="flex h-[calc(100vh-70px)] bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
       {/* SIDEBAR */}
-      <div 
+      <div
         className={`
-          ${selectedConversation ? 'hidden sm:flex' : 'flex'} 
+          ${selectedConversation ? "hidden sm:flex" : "flex"} 
           w-full sm:w-96 bg-white/80 backdrop-blur-lg border-r border-gray-200 flex-col
         `}
       >
@@ -213,10 +218,10 @@ export default function CustomerChat() {
       </div>
 
       {/* MAIN CHAT */}
-      <div 
+      <div
         className={`
           flex-1 flex flex-col min-h-0
-          ${selectedConversation ? 'flex' : 'hidden sm:flex'} 
+          ${selectedConversation ? "flex" : "hidden sm:flex"} 
         `}
       >
         {selectedConversation ? (
@@ -226,8 +231,8 @@ export default function CustomerChat() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   {/* Nút quay lại chỉ hiện trên mobile */}
-                  <button 
-                    onClick={() => setSelectedConversation(null)} 
+                  <button
+                    onClick={() => setSelectedConversation(null)}
                     className="sm:hidden p-2 -ml-2 mr-2 hover:bg-gray-100 rounded-full transition"
                   >
                     <ArrowLeft className="h-6 w-6 text-gray-600" />
@@ -247,14 +252,41 @@ export default function CustomerChat() {
                     </p>
                   </div>
                 </div>
-                <button className="p-2 hover:bg-gray-100 rounded-full transition">
-                  <MoreVertical className="h-6 w-6 text-gray-600" />
+                <button
+                  onClick={() =>
+                    window.open(
+                      `/my-bookings/` + selectedConversation.bookingId
+                    )
+                  }
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 
+             text-white font-medium rounded-lg shadow-md hover:shadow-lg 
+             transition active:scale-95"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 3h6v6M10 14l11-11"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 11v10H5V5h10"
+                    />
+                  </svg>
+                 Chi tiết đặt lịch
                 </button>
               </div>
             </div>
 
             {/* Messages - Vẫn giữ flex-1 để nó chiếm hết chiều cao còn lại bên trong component */}
-           <div
+            <div
               ref={messagesContainerRef}
               className="flex-1 overflow-y-auto px-6 py-8 bg-gradient-to-b from-gray-50/50 to-white"
             >

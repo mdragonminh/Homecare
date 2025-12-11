@@ -36,11 +36,13 @@ export default function TechnicianChat() {
     try {
       const res = await chatApi.getUserConversations();
       // Đảm bảo CustomerName và LastMessage có sẵn để tìm kiếm
-      setConversations(res.data.map(c => ({
-        ...c,
-        customerName: c.customerName || "Khách hàng",
-        lastMessageContent: c.lastMessage?.content || ""
-      })));
+      setConversations(
+        res.data.map((c) => ({
+          ...c,
+          customerName: c.customerName || "Khách hàng",
+          lastMessageContent: c.lastMessage?.content || "",
+        }))
+      );
     } catch {
       toast.error("Không tải được danh sách hội thoại");
     }
@@ -129,18 +131,20 @@ export default function TechnicianChat() {
       // Tìm kiếm theo nội dung tin nhắn cuối cùng
       const lastMessage = c.lastMessageContent.toLowerCase();
 
-      return chatName.includes(lowerCaseSearchTerm) || lastMessage.includes(lowerCaseSearchTerm);
+      return (
+        chatName.includes(lowerCaseSearchTerm) ||
+        lastMessage.includes(lowerCaseSearchTerm)
+      );
     });
   }, [conversations, searchTerm, currentUserId]);
   // END: LOGIC TÌM KIẾM MỚI
 
-
   return (
     <div className="flex h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       {/* SIDEBAR */}
-      <div 
+      <div
         className={`
-          ${selectedConversation ? 'hidden sm:flex' : 'flex'} 
+          ${selectedConversation ? "hidden sm:flex" : "flex"} 
           w-full sm:w-80 bg-white/95 backdrop-blur-xl border-r border-gray-200 flex-col
         `}
       >
@@ -208,10 +212,10 @@ export default function TechnicianChat() {
       </div>
 
       {/* MAIN CHAT - Phần này không thay đổi */}
-      <div 
+      <div
         className={`
           flex-1 flex flex-col
-          ${selectedConversation ? 'flex' : 'hidden sm:flex'} 
+          ${selectedConversation ? "flex" : "hidden sm:flex"} 
         `}
       >
         {selectedConversation ? (
@@ -221,8 +225,8 @@ export default function TechnicianChat() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {/* Nút quay lại chỉ hiện trên mobile */}
-                  <button 
-                    onClick={() => setSelectedConversation(null)} 
+                  <button
+                    onClick={() => setSelectedConversation(null)}
                     className="sm:hidden p-2 -ml-2 mr-1 hover:bg-gray-100 rounded-full transition"
                   >
                     <ArrowLeft className="h-5 w-5 text-gray-600" />
@@ -242,8 +246,35 @@ export default function TechnicianChat() {
                     </p>
                   </div>
                 </div>
-                <button className="p-2 hover:bg-gray-100 rounded-full transition">
-                  <MoreVertical className="h-5 w-5 text-gray-600" />
+                <button
+                  onClick={() =>
+                    window.open(
+                      `/technician/bookings/` + selectedConversation.bookingId
+                    )
+                  }
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 
+             text-white font-medium rounded-lg shadow-md hover:shadow-lg 
+             transition active:scale-95"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 3h6v6M10 14l11-11"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 11v10H5V5h10"
+                    />
+                  </svg>
+                  Chi tiết đặt lịch
                 </button>
               </div>
             </div>

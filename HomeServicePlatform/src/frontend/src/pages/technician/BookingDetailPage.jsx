@@ -276,14 +276,16 @@ const BookingDetailPage = () => {
 
   const handleUploadProof = useCallback(async (file, type) => {
     const relationType = type === 'CheckIn' ? 'CheckInProof' : 'CheckOutProof';
-    await uploadFile({ objectId: id, objectTypeName: 'booking', relationType }, file);
+    
     if (type === 'CheckIn') {
       await bookingApi.updateBookingStatus(id, BookingStatus.InProgress, "Kỹ thuật viên đã Check-in.");
+      await uploadFile({ objectId: id, objectTypeName: 'booking', relationType }, file);
       setCheckStatus(id, 'CheckIn', 'true');
       setIsCheckedIn(true);
       toast.success("Check-in thành công!");
     } else if (type === 'CheckOut') {
       await bookingApi.completeBooking(id);
+      await uploadFile({ objectId: id, objectTypeName: 'booking', relationType }, file);
       setCheckStatus(id, 'CheckOut', 'true');
       setIsCheckedOut(true);
       localStorage.removeItem(`booking_${id}_CheckIn`);

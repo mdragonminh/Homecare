@@ -54,9 +54,10 @@ export function Header({
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
               <Home className="w-6 h-6 text-white" />
             </div>
-            <span className="font-extrabold text-2xl text-gray-900 group-hover:text-blue-500 transition-colors duration-300 tracking-tight">
-              {t("app.name")}
-            </span>
+            <span className="font-extrabold text-2xl text-blue-600 group-hover:text-blue-500 transition-colors duration-300 tracking-tight">
+  {t("app.name")}
+</span>
+
           </div>
 
           {/* Desktop Navigation - Modernized with glassmorphism buttons */}
@@ -110,10 +111,10 @@ export function Header({
 
           {/* Right Section: Language + Auth + Mobile Menu */}
           <div className="flex items-center space-x-4">
-            {/* Language Switcher - Enhanced styling */}
+            {/* Language Switcher - Enhanced styling
             <div className="hidden sm:block">
               <LanguageSwitcher />
-            </div>
+            </div> */}
 
             {/* Auth Buttons - Desktop only */}
             <div className="hidden md:block">

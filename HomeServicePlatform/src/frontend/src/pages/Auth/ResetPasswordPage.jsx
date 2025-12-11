@@ -174,9 +174,9 @@ export default function ResetPasswordPage() {
         />
       </div>
 
-      <div className="absolute top-4 right-4 z-20">
+      {/* <div className="absolute top-4 right-4 z-20">
         <LanguageSwitcher />
-      </div>
+      </div> */}
 
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <motion.div

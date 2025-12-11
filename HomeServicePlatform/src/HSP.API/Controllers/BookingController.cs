@@ -212,6 +212,10 @@ namespace HSP.API.Controllers
 
 				return BadRequest(new { message = "Unable to update booking status. Please check if the booking is assigned to you." });
 			}
+			catch (InvalidOperationException ex)
+			{
+				return Conflict(new { message = ex.Message });
+			}
 			catch (Exception ex)
 			{
 				return BadRequest(new { message = ex.Message });
