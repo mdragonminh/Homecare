@@ -24,6 +24,7 @@ import {
   getEquipmentStatusColor,
   getEquipmentStatusText,
 } from "../../services/paymentApi";
+import { motion } from "framer-motion";
 
 const FILE_BASE_URL = import.meta.env.VITE_API_URL.replace(/\/api$/, "");
 const ImageViewerModal = ({ isOpen, onClose, imageUrl, title }) => {
@@ -259,7 +260,12 @@ export default function CustomerBookingDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+      <motion.div
+        className="max-w-3xl mx-auto"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+      >
         <div className="mb-8">
           <button
             onClick={() => navigate("/my-bookings")}
@@ -353,7 +359,7 @@ export default function CustomerBookingDetail() {
         )}
 
         {/* Status Card */}
-        <div className="bg-white border rounded-xl p-6 shadow-sm mb-4">
+        <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm mb-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-xs font-semibold text-gray-500 uppercase mb-3">
@@ -648,7 +654,7 @@ export default function CustomerBookingDetail() {
           imageUrl={currentImageUrl}
           title={currentImageTitle}
         />
-      </div>
+      </motion.div>
     </div>
   );
 }

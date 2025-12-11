@@ -20,6 +20,7 @@ import { bookingApi } from "../../services/bookingApi";
 import { paymentApi, getPaymentStatusText, PaymentStatus } from "../../services/paymentApi";
 import { createTicket } from "../../services/ticketApi";
 import { BookingStatus } from "../../constants/enums";
+import { motion } from "framer-motion";
 
 const CustomerBookingsPage = () => {
   const { t } = useTranslation();
@@ -272,9 +273,12 @@ const CustomerBookingsPage = () => {
               const canPay = canPayForBooking(booking, payment);
 
               return (
-                <div
+                <motion.div
                   key={booking.id}
                   className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div className="flex-1">
@@ -344,13 +348,14 @@ const CustomerBookingsPage = () => {
                         </button>
                       )}
 
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
                         onClick={() => handleViewDetails(booking.id)}
                         className="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         Xem chi tiết
-                      </button>
+                      </motion.button>
 
                       {/* {payment ? (
                         <button
@@ -371,7 +376,7 @@ const CustomerBookingsPage = () => {
                       ) : null} */}
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>

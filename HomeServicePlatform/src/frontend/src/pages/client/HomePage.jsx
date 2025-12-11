@@ -309,7 +309,7 @@ export function HomePage({ onShowRegister, loggedInUser }) {
                   whileInView={{ opacity: 1 }}
                   transition={{ delay: i * 0.08 }}
                   whileHover={{ y: -8 }}
-                  className="bg-white rounded-2xl p-6 text-center shadow hover:shadow-lg transition border"
+                  className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-xl transition-all border border-gray-100"
                 >
                   <img
                     src={getAvatarUrl(t.avatarUrl) || `https://i.pravatar.cc/150?u=${t.id}`}
