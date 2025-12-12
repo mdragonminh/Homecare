@@ -24,7 +24,7 @@
                 Keys.TechnicianResponseTimeoutSeconds,
                 new SystemSettingDefinition(
                     Keys.TechnicianResponseTimeoutSeconds,
-                    DefaultValue: "10",
+                    DefaultValue: "45",
                     Group: Groups.TechnicianMatching,
                     Description: "Thời gian (giây) cho kỹ thuật viên phản hồi yêu cầu"
                 )
@@ -33,7 +33,7 @@
                 Keys.TechnicianInvitationExpirationSeconds,
                 new SystemSettingDefinition(
                     Keys.TechnicianInvitationExpirationSeconds,
-                    DefaultValue: "15",
+                    DefaultValue: "50",
                     Group: Groups.TechnicianMatching,
                     Description: "Thời gian sống (TTL) của lời mời kỹ thuật viên"
                 )
@@ -42,7 +42,7 @@
                 Keys.TechnicianSearchRadiusKm,
                 new SystemSettingDefinition(
                     Keys.TechnicianSearchRadiusKm,
-                    DefaultValue: "10",  
+                    DefaultValue: "50",  
                     Group: Groups.TechnicianMatching,
                     Description: "Bán kính (km) để tìm kỹ thuật viên gần khách hàng"
                 )

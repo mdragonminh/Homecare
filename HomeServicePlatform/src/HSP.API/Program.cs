@@ -79,6 +79,19 @@ namespace HSP.API
             builder.Services.AddSignalR();
 
             var app = builder.Build();
+           
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+            await using (var scope = app.Services.CreateAsyncScope())
+            {
+                var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
+                await initializer.InitializeAsync();
+            }
             await using (var scope = app.Services.CreateAsyncScope())
             {
                 var settingService = scope.ServiceProvider.GetRequiredService<ISystemSettingService>();
@@ -92,19 +105,6 @@ namespace HSP.API
                     .Value;
 
                 options.TokenLifespan = TimeSpan.FromMinutes(minutes);
-            }
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-            await using (var scope = app.Services.CreateAsyncScope())
-            {
-                var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-                await initializer.InitializeAsync();
             }
 
             if (!app.Environment.IsDevelopment())

@@ -20,12 +20,12 @@ namespace HSP.Core.Entities
 		public double Latitude { get; set; }
 		[Range(-180, 180)]
 		public double Longitude { get; set; }
-
+		[Required]
 		[MaxLength(255)]
-		public string? Address { get; set; }
-		
-		[Range(0, 50)]
-		public int ExperienceYears { get; set; }
+		public string Address { get; set; } = null!;
+        [Required]
+        [Range(0, 50)]
+		public int ExperienceYears { get; set; } 
 
         [MaxLength(500)]
         public string? RejectionReason { get; set; }
@@ -35,9 +35,6 @@ namespace HSP.Core.Entities
 		public DateTime? ApprovedAt { get; set; }
 		public string? ApprovedBy { get; set; }
 		
-		/// <summary>
-		/// Trạng thái hoạt động của technician. Nếu false, customer không thể tìm và yêu cầu ghép nối.
-		/// </summary>
 		public bool IsActive { get; set; } = true;
 		
 		public DateTime DateCreated { get; set; }

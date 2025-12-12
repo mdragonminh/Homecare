@@ -1,4 +1,5 @@
 ﻿using HSP.Core.Constans;
+using HSP.Core.Constants.SystemSettings;
 using HSP.Core.Entities;
 using HSP.DAL.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -86,6 +87,20 @@ namespace HSP.DAL.Data
 				await _context.ObjectTypes.AddRangeAsync(objectTypes);
 				await _context.SaveChangesAsync();
 			}
+			if(!await _context.SystemSettings.AnyAsync())
+			{
+                var systemSettings = SystemSettingRegistry.All.Values.Select(s => new SystemSetting
+                {
+                    Id = Guid.NewGuid(),
+                    Key = s.Key,
+                    Value = s.DefaultValue,
+                    Group = s.Group,
+                    Description = s.Description
+                }).ToList();
+
+                await _context.SystemSettings.AddRangeAsync(systemSettings);
+                await _context.SaveChangesAsync();
+            }
 		}
 	}
 }
