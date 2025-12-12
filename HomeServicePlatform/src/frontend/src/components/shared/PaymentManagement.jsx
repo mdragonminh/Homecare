@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import { paymentApi, PaymentStatus, PaymentMethod, getPaymentStatusText, getPaymentMethodText, getPaymentStatusColor } from "../../services/paymentApi";
 import { toast } from "sonner";
 import {
@@ -12,6 +15,9 @@ import {
   ClockIcon,
   EyeIcon,
 } from "@heroicons/react/24/outline";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const PaymentManagement = () => {
   const { t } = useTranslation();
@@ -126,7 +132,12 @@ const PaymentManagement = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString("vi-VN");
+    if (!dateString) return "-";
+    try {
+      return dayjs.utc(dateString).tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY HH:mm");
+    } catch {
+      return dateString;
+    }
   };
 
   const getStatusBadgeClass = (status) => {

@@ -30,7 +30,14 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { bookingApi } from "../../services/bookingApi";
-import { paymentApi, getPaymentStatusText, getPaymentMethodText, getPaymentStatusColor } from "../../services/paymentApi";
+import { 
+  paymentApi, 
+  getPaymentStatusText, 
+  getPaymentMethodText, 
+  getPaymentStatusColor,
+  BookingEquipmentStatus,
+  getEquipmentStatusText
+} from "../../services/paymentApi";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -87,7 +94,7 @@ export default function OperatorBookingDetailPage() {
   
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(null);
-  const [payment, setPayment] = useState(null);
+  const [payments, setPayments] = useState([]);
   const [loadingPayment, setLoadingPayment] = useState(false);
 
   useEffect(() => {
@@ -120,8 +127,8 @@ export default function OperatorBookingDetailPage() {
       setLoadingPayment(true);
       const result = await paymentApi.getPaymentsByBookingId(booking.id);
       
-      if (result.success && result.data && result.data.length > 0) {
-        setPayment(result.data[0]); // Get first payment
+      if (result.success && result.data) {
+        setPayments(result.data); // Get all payments
       }
     } catch (error) {
       console.error("Load payment info error:", error);
@@ -321,6 +328,53 @@ export default function OperatorBookingDetailPage() {
               )}
             </div>
 
+            {/* Equipment List */}
+            {booking.equipments && booking.equipments.length > 0 && (
+              <>
+                <Divider />
+                <div style={{ marginTop: 16 }}>
+                  <Text strong style={{ display: "block", marginBottom: 8 }}>
+                    Thiết bị sử dụng:
+                  </Text>
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    {booking.equipments.map((equipment, index) => (
+                      <Card key={equipment.id || index} size="small" style={{ backgroundColor: "#f0f5ff" }}>
+                        <Space direction="vertical" style={{ width: "100%" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <Text strong>{equipment.equipmentName || `Thiết bị ${index + 1}`}</Text>
+                            <Tag color={
+                              equipment.status === BookingEquipmentStatus.Draft ? "default" :
+                              equipment.status === BookingEquipmentStatus.Submitted ? "gold" :
+                              equipment.status === BookingEquipmentStatus.Paid ? "green" :
+                              equipment.status === BookingEquipmentStatus.AwaitingDelivery ? "blue" :
+                              equipment.status === BookingEquipmentStatus.Delivered ? "success" : "default"
+                            }>
+                              {getEquipmentStatusText(equipment.status)}
+                            </Tag>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <Text type="secondary">
+                              Số lượng: {equipment.quantity} x{" "}
+                              {new Intl.NumberFormat("vi-VN", {
+                                style: "currency",
+                                currency: "VND",
+                              }).format(equipment.unitPrice || 0)}
+                            </Text>
+                            <Text strong style={{ color: "#1890ff" }}>
+                              {new Intl.NumberFormat("vi-VN", {
+                                style: "currency",
+                                currency: "VND",
+                              }).format(equipment.totalPrice || 0)}
+                            </Text>
+                          </div>
+                        </Space>
+                      </Card>
+                    ))}
+                  </Space>
+                </div>
+              </>
+            )}
+
             <Divider />
 
             <div style={{ textAlign: "right" }}>
@@ -352,36 +406,66 @@ export default function OperatorBookingDetailPage() {
             style={{ marginBottom: 16 }}
             loading={loadingPayment}
           >
-            {payment ? (
-              <Descriptions column={1} size="small" bordered>
-                <Descriptions.Item label="Mã thanh toán">
-                  <Text code>{payment.sePayOrderId || payment.id}</Text>
-                </Descriptions.Item>
-                <Descriptions.Item label="Số tiền">
-                  <Text strong style={{ fontSize: 16, color: "#1890ff" }}>
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(payment.amount)}
-                  </Text>
-                </Descriptions.Item>
-                <Descriptions.Item label="Phương thức">
-                  {getPaymentMethodText(payment.paymentMethod)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Trạng thái">
-                  <Tag color={getPaymentStatusColor(payment.status)}>
-                    {getPaymentStatusText(payment.status)}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Ngày tạo">
-                  {dayjs(payment.dateCreated).format("DD/MM/YYYY HH:mm")}
-                </Descriptions.Item>
-                {payment.paidAt && (
-                  <Descriptions.Item label="Ngày thanh toán">
-                    {dayjs(payment.paidAt).format("DD/MM/YYYY HH:mm")}
-                  </Descriptions.Item>
-                )}
-              </Descriptions>
+            {payments && payments.length > 0 ? (
+              <Space direction="vertical" style={{ width: "100%" }} size="middle">
+                {payments.map((payment, index) => {
+                  const isServicePayment = payment.type === 0;
+                  const isEquipmentPayment = payment.type === 1;
+                  
+                  return (
+                    <Card 
+                      key={payment.id} 
+                      size="small" 
+                      style={{ backgroundColor: isServicePayment ? "#f0f5ff" : "#fff7e6" }}
+                      title={
+                        <Space>
+                          <Text strong>
+                            {isServicePayment ? "Thanh toán Dịch vụ" : "Thanh toán Thiết bị"}
+                          </Text>
+                          <Tag color={getPaymentStatusColor(payment.status)}>
+                            {getPaymentStatusText(payment.status)}
+                          </Tag>
+                        </Space>
+                      }
+                    >
+                      <Descriptions column={1} size="small">
+                        <Descriptions.Item label="Mã thanh toán">
+                          <Text code style={{ fontSize: 11 }}>{payment.sePayOrderId || payment.id}</Text>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Số tiền">
+                          <Text strong style={{ fontSize: 15, color: "#1890ff" }}>
+                            {new Intl.NumberFormat("vi-VN", {
+                              style: "currency",
+                              currency: "VND",
+                            }).format(payment.amount)}
+                          </Text>
+                        </Descriptions.Item>
+                        {isEquipmentPayment && payment.shippingFee > 0 && (
+                          <Descriptions.Item label="Phí vận chuyển">
+                            <Text>
+                              {new Intl.NumberFormat("vi-VN", {
+                                style: "currency",
+                                currency: "VND",
+                              }).format(payment.shippingFee)}
+                            </Text>
+                          </Descriptions.Item>
+                        )}
+                        <Descriptions.Item label="Phương thức">
+                          {getPaymentMethodText(payment.paymentMethod)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Ngày tạo">
+                          {dayjs(payment.dateCreated).format("DD/MM/YYYY HH:mm")}
+                        </Descriptions.Item>
+                        {payment.paidAt && (
+                          <Descriptions.Item label="Ngày thanh toán">
+                            {dayjs(payment.paidAt).format("DD/MM/YYYY HH:mm")}
+                          </Descriptions.Item>
+                        )}
+                      </Descriptions>
+                    </Card>
+                  );
+                })}
+              </Space>
             ) : (
               <Empty description="Chưa có thông tin thanh toán" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             )}

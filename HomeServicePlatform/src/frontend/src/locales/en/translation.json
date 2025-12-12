@@ -284,7 +284,8 @@
       "username": "Username",
       "new_password": "New Password",
       "confirm_new_password": "Confirm New Password",
-      "email_or_phone": "Email or Phone Number"
+      "email_or_phone": "Email or Phone Number",
+      "phone_number": "Phone Number"
     },
     "placeholder": {
       "fullname": "Enter your full name",
@@ -302,7 +303,8 @@
       "new_password": "Enter new password",
       "search_radius": "Search radius (Km)",
       "address": " Enter address to search on map",
-      "email_or_phone": "Enter your email or phone number"
+      "email_or_phone": "Enter your email or phone number",
+      "phone_number": "Enter phone number"
     },
     "usertype": {
       "customer": "Customer",
@@ -346,7 +348,9 @@
     "missing_booking_info_datetime": "Please enter address, select service, radius, date and time.",
     "password_format": "Password must be at least 8 characters, including uppercase, lowercase, number, and special character",
     "phone_too_long": "Phone number must be at most 10 digits",
-    "phone_too_short": "Phone number must be at least 10 digits"
+    "phone_too_short": "Phone number must be at least 10 digits",
+    "phone_number":"Please enter phone number",
+    "phone_number_format": "The phone number must be exactly 10 digits."
   },
   "success": {
     "registration": "You have registered successfully. Please check your email to verify and log in.",

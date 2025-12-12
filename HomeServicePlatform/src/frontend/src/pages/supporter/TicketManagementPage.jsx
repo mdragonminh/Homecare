@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,7 +11,7 @@ import {
   Clock,
   Zap,
   XCircle,
-  X, 
+  X,
   Send,
   Eye,
   MapPin,
@@ -20,14 +23,17 @@ import {
   Wrench,
   Star
 } from "lucide-react";
-import { 
-  getMyTickets, 
-  assignTechnician, 
+dayjs.extend(utc);
+dayjs.extend(timezone);
+import {
+  getMyTickets,
+  assignTechnician,
   updateTicketStatus
 } from "../../services/ticketApi";
 import { technicianApi } from "../../services/technicianApi";
 import { getPaymentStatusText, getPaymentMethodText } from "../../services/paymentApi";
 import { toast } from "sonner";
+
 
 const statusMap = {
   "NotAccepted": 0,
@@ -56,12 +62,12 @@ const TicketManagementPage = () => {
     totalCount: 0,
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false); 
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Status Modal State
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const [newStatus, setNewStatus] = useState(0); 
+  const [newStatus, setNewStatus] = useState(0);
 
   // Assign Modal State
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -71,7 +77,7 @@ const TicketManagementPage = () => {
   // Details Modal State
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedTicketDetails, setSelectedTicketDetails] = useState(null);
-  
+
   const fetchTickets = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -101,7 +107,7 @@ const TicketManagementPage = () => {
 
   useEffect(() => {
     fetchTickets();
-  }, [fetchTickets]); 
+  }, [fetchTickets]);
 
   const handleNextPage = () => {
     if (pagination.pageNumber < pagination.totalPages) {
@@ -135,13 +141,13 @@ const TicketManagementPage = () => {
     setIsSubmitting(true);
     const response = await updateTicketStatus({
       ticketId: selectedTicket.id,
-      newStatus: parseInt(newStatus) 
+      newStatus: parseInt(newStatus)
     });
 
     if (response.success) {
       toast.success("Cập nhật trạng thái thành công!");
       closeStatusModal();
-      await fetchTickets(); 
+      await fetchTickets();
     } else {
       toast.error(response.message || "Cập nhật thất bại.");
     }
@@ -152,12 +158,12 @@ const TicketManagementPage = () => {
   const openAssignModal = async (ticket) => {
     setSelectedTicket(ticket);
     setIsAssignModalOpen(true);
-    setSelectedTechnicianId(ticket.technicianId || ""); 
+    setSelectedTechnicianId(ticket.technicianId || "");
 
     const res = await technicianApi.getTechnicians({ ApprovalStatus: 1, PageSize: 500, PageNumber: 1 });
-    
+
     if (res.success) {
-      setTechnicianList(res.data.items); 
+      setTechnicianList(res.data.items);
     } else {
       toast.error(res.message);
     }
@@ -173,22 +179,22 @@ const TicketManagementPage = () => {
   const handleAssignSubmit = async (e) => {
     e.preventDefault();
     if (!selectedTicket || !selectedTechnicianId || isSubmitting) {
-        toast.warning("Vui lòng chọn một kỹ thuật viên.");
-        return;
+      toast.warning("Vui lòng chọn một kỹ thuật viên.");
+      return;
     }
 
     setIsSubmitting(true);
     const response = await assignTechnician({
-        ticketId: selectedTicket.id,
-        technicianId: selectedTechnicianId 
+      ticketId: selectedTicket.id,
+      technicianId: selectedTechnicianId
     });
 
     if (response.success) {
-        toast.success("Gán kỹ thuật viên thành công!");
-        closeAssignModal();
-        await fetchTickets(); 
+      toast.success("Gán kỹ thuật viên thành công!");
+      closeAssignModal();
+      await fetchTickets();
     } else {
-        toast.error(response.message || "Gán thất bại.");
+      toast.error(response.message || "Gán thất bại.");
     }
     setIsSubmitting(false);
   };
@@ -250,13 +256,7 @@ const TicketManagementPage = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString("vi-VN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return dayjs.utc(dateString).tz("Asia/Ho_Chi_Minh").format("DD/MM/YYYY HH:mm");
   };
 
   // --- Render Loading/Error ---
@@ -323,24 +323,24 @@ const TicketManagementPage = () => {
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex flex-col items-start gap-2 mb-2">
-                          {getStatusBadge(ticket.status)}
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {ticket.issueDescription || "(Chưa có mô tả)"}
-                          </h3>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm text-gray-500">
-                            ID: {ticket.id}
-                          </p>
-                          {ticket.isRefundRequested && (
-                            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold text-red-700 bg-red-100 rounded-full">
-                              Yêu cầu hoàn tiền
-                            </span>
-                          )}
-                        </div>
+                    <div className="flex-1">
+                      <div className="flex flex-col items-start gap-2 mb-2">
+                        {getStatusBadge(ticket.status)}
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {ticket.issueDescription || "(Chưa có mô tả)"}
+                        </h3>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-500">
+                          ID: {ticket.id}
+                        </p>
+                        {ticket.isRefundRequested && (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold text-red-700 bg-red-100 rounded-full">
+                            Yêu cầu hoàn tiền
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 py-4 border-t border-b border-gray-200">
@@ -369,11 +369,11 @@ const TicketManagementPage = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   {ticket.bookingId && (
                     <div className="mb-6">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Liên kết Booking</p>
-                        <p className="text-sm text-blue-600 font-mono">{ticket.bookingId}</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Liên kết Booking</p>
+                      <p className="text-sm text-blue-600 font-mono">{ticket.bookingId}</p>
                     </div>
                   )}
 
@@ -502,7 +502,7 @@ const TicketManagementPage = () => {
           </div>
         </div>
       )}
-      
+
       {/* DETAILS MODAL */}
       {isDetailsModalOpen && selectedTicketDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={closeDetailsModal}>
@@ -518,7 +518,7 @@ const TicketManagementPage = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* Booking Information */}
               {selectedTicketDetails.bookingDetail && (
@@ -545,13 +545,13 @@ const TicketManagementPage = () => {
                       <p className="text-sm text-gray-900">{formatDate(selectedTicketDetails.bookingDetail.dateModified)}</p>
                     </div>
 
-                    <div className="md:col-span-2">
+                    {/* <div className="md:col-span-2">
                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1 flex items-center">
                         <MapPin className="w-4 h-4 mr-1" />
                         Vị trí
                       </p>
                       <p className="text-sm text-gray-900">Lat: {selectedTicketDetails.bookingDetail.latitude.toFixed(6)}, Long: {selectedTicketDetails.bookingDetail.longitude.toFixed(6)}</p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               )}
@@ -678,7 +678,7 @@ const TicketManagementPage = () => {
               )}
 
               {/* Payment Information */}
-              {selectedTicketDetails.paymentDetail && (
+              {/* {selectedTicketDetails.paymentDetail && (
                 <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg p-6 border border-emerald-200">
                   <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <CreditCard className="w-5 h-5 mr-2 text-emerald-600" />
@@ -715,7 +715,7 @@ const TicketManagementPage = () => {
                     )}
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
 
             <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-b-lg">

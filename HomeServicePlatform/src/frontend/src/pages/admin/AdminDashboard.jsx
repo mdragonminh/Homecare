@@ -31,8 +31,9 @@ import {
   Bar,
 } from "recharts";
 import { bookingApi } from "../../services/bookingApi";
-import { paymentApi } from "../../services/paymentApi";
+import { paymentApi, PaymentStatus } from "../../services/paymentApi";
 import { adminApi } from "../../services/adminApi";
+import { getFileMetadata } from "../../services/fileApi";
 import { FeedbackSource } from "../../constants/enums";
 import { toast } from "sonner";
 import dayjs from "dayjs";
@@ -62,6 +63,7 @@ export default function AdminDashboard() {
   const [topServices, setTopServices] = useState([]);
   const [customerSatisfaction, setCustomerSatisfaction] = useState(0);
   const [completionRate, setCompletionRate] = useState(0);
+  const [technicianPerformance, setTechnicianPerformance] = useState([]);
 
   const { RangePicker } = DatePicker;
 
@@ -73,8 +75,8 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       
-      const fromDate = dateRange[0].format('YYYY-MM-DD');
-      const toDate = dateRange[1].format('YYYY-MM-DD');
+      const fromDate = dateRange[0].startOf('day').format('YYYY-MM-DD');
+      const toDate = dateRange[1].endOf('day').format('YYYY-MM-DD HH:mm:ss');
 
       const bookingsResponse = await bookingApi.getAllBookingsForAdmin(
         1, 
@@ -121,12 +123,12 @@ export default function AdminDashboard() {
         if (paymentsResponse.success) {
           const payments = paymentsResponse.data.items || [];
           const totalRevenue = payments
-            .filter(p => p.status === 'Completed')
+            .filter(p => p.status === PaymentStatus.Completed)
             .reduce((sum, p) => sum + p.amount, 0);
 
           payments.forEach(payment => {
             const date = dayjs(payment.dateCreated).format('YYYY-MM-DD');
-            if (chartDataMap[date] && payment.status === 'Completed') {
+            if (chartDataMap[date] && payment.status === PaymentStatus.Completed) {
               chartDataMap[date].revenue += payment.amount;
             }
           });
@@ -185,6 +187,84 @@ export default function AdminDashboard() {
           totalTechnicians: technicians.length,
           activeTechnicians
         }));
+
+        if (bookingsResponse.success) {
+          const bookings = bookingsResponse.data.items || [];
+          const payments = paymentsResponse.success ? (paymentsResponse.data.items || []) : [];
+          
+          const techPerformanceMap = {};
+          
+          technicians.forEach(tech => {
+            techPerformanceMap[tech.id] = {
+              id: tech.id,
+              name: tech.fullName || tech.userName || 'Unknown',
+              email: tech.email || 'Unknown',
+              totalBookings: 0,
+              completedBookings: 0,
+              totalRevenue: 0,
+              totalServiceTime: 0,
+            };
+          });
+
+          bookings.forEach(booking => {
+            if (booking.technicianId && techPerformanceMap[booking.technicianId]) {
+              const tech = techPerformanceMap[booking.technicianId];
+              tech.totalBookings++;
+              
+              if (booking.status === 4 || booking.status === 'Completed') {
+                tech.completedBookings++;
+                
+                const bookingPayments = payments.filter(p => 
+                  p.bookingId === booking.id && 
+                  p.status === PaymentStatus.Completed
+                );
+                tech.totalRevenue += bookingPayments.reduce((sum, p) => sum + p.amount, 0);
+              }
+            }
+          });
+
+          // Fetch file relations to calculate actual service times from CheckIn/CheckOut proofs
+          const fetchServiceTimes = async () => {
+            for (const booking of bookings) {
+              if (booking.technicianId && techPerformanceMap[booking.technicianId] && 
+                  (booking.status === 4 || booking.status === 'Completed')) {
+                try {
+                  const checkInFiles = await getFileMetadata({
+                    objectTypeName: 'booking',
+                    objectId: booking.id,
+                    relationType: 'CheckInProof'
+                  });
+
+                  const checkOutFiles = await getFileMetadata({
+                    objectTypeName: 'booking',
+                    objectId: booking.id,
+                    relationType: 'CheckOutProof'
+                  });
+
+                  if (checkInFiles && checkInFiles.length > 0 && checkOutFiles && checkOutFiles.length > 0) {
+                    const checkInTime = dayjs(checkInFiles[0].dateCreated);
+                    const checkOutTime = dayjs(checkOutFiles[0].dateCreated);
+                    const serviceTimeMinutes = checkOutTime.diff(checkInTime, 'minute');
+                    
+                    if (serviceTimeMinutes > 0) {
+                      techPerformanceMap[booking.technicianId].totalServiceTime += serviceTimeMinutes;
+                    }
+                  }
+                } catch (error) {
+                  console.error(`Error fetching file relations for booking ${booking.id}:`, error);
+                }
+              }
+            }
+
+            const techPerformanceArray = Object.values(techPerformanceMap)
+              .filter(tech => tech.totalBookings > 0)
+              .sort((a, b) => b.totalRevenue - a.totalRevenue);
+            
+            setTechnicianPerformance(techPerformanceArray);
+          };
+
+          fetchServiceTimes();
+        }
       }
 
     } catch (error) {
@@ -389,6 +469,93 @@ export default function AdminDashboard() {
                 />
               </BarChart>
             </ResponsiveContainer>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]}>
+        <Col xs={24}>
+          <Card 
+            title="Hiệu suất & Doanh thu Kỹ thuật viên" 
+            loading={loading}
+            extra={
+              <Tag color="blue">
+                {technicianPerformance.length} kỹ thuật viên
+              </Tag>
+            }
+          >
+            <Table
+              dataSource={technicianPerformance}
+              rowKey="id"
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showTotal: (total) => `Tổng ${total} kỹ thuật viên`
+              }}
+              scroll={{ x: 1000 }}
+              columns={[
+                {
+                  title: 'Kỹ thuật viên',
+                  dataIndex: 'name',
+                  key: 'name',
+                  width: 200,
+                  render: (text, record) => (
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{text}</div>
+                      <div style={{ fontSize: 12, color: '#8c8c8c' }}>{record.email}</div>
+                    </div>
+                  ),
+                },
+                {
+                  title: 'Doanh thu (VNĐ)',
+                  dataIndex: 'totalRevenue',
+                  key: 'totalRevenue',
+                  width: 180,
+                  align: 'right',
+                  sorter: (a, b) => a.totalRevenue - b.totalRevenue,
+                  render: (value) => (
+                    <span style={{ fontWeight: 600, color: '#eb2f96' }}>
+                      {new Intl.NumberFormat('vi-VN').format(value)}
+                    </span>
+                  ),
+                },
+                {
+                  title: 'Hiệu suất (Tổng thời gian)',
+                  dataIndex: 'totalServiceTime',
+                  key: 'totalServiceTime',
+                  width: 180,
+                  align: 'center',
+                  sorter: (a, b) => a.totalServiceTime - b.totalServiceTime,
+                  render: (value) => {
+                    if (value === 0) return <span style={{ color: '#8c8c8c' }}>N/A</span>;
+                    
+                    const hours = Math.floor(value / 60);
+                    const minutes = value % 60;
+                    const days = Math.floor(hours / 24);
+                    const remainingHours = hours % 24;
+                    
+                    let displayText = '';
+                    if (days > 0) {
+                      displayText = `${days}d ${remainingHours}h ${minutes}m`;
+                    } else if (hours > 0) {
+                      displayText = `${hours}h ${minutes}m`;
+                    } else {
+                      displayText = `${minutes}m`;
+                    }
+                    
+                    let color = '#52c41a';
+                    if (value > 1440) color = '#ff4d4f'; 
+                    else if (value > 480) color = '#faad14'; 
+                    
+                    return (
+                      <Tag color={color}>
+                        {displayText}
+                      </Tag>
+                    );
+                  },
+                },
+              ]}
+            />
           </Card>
         </Col>
       </Row>

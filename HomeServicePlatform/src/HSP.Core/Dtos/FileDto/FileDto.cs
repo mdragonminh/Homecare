@@ -27,6 +27,7 @@ namespace HSP.Core.Dtos.FileDto
 		public string FilePath { get; set; }
 		public string FileType { get; set; }
 		public long FileSize { get; set; }
+		public DateTime DateCreated { get; set; }
 	}
 	public class GetFilesRequestDto
 	{

@@ -11,11 +11,14 @@ import {
   Shield,
   CheckCircle,
   Phone,
+  Sparkles, // Thêm Sparkles cho hiệu ứng loading
 } from "lucide-react";
 import { authApi } from "../../services/authApi.jsx";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
+//eslint-disable-next-line
+import { motion } from "framer-motion"; // Import motion
 
 export default function RegisterPage({
   onSwitchToLogin,
@@ -31,7 +34,7 @@ export default function RegisterPage({
     phoneNumber: "",
     password: "",
     confirmPassword: "",
-    userType: "",
+    userType: "", // Giữ nguyên trường này dù không dùng trong form
     agreeToTerms: false,
   });
   const [loading, setLoading] = useState(false);
@@ -254,38 +257,99 @@ export default function RegisterPage({
 
   if (loggedInUser) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
-        <p className="text-xl text-blue-600 font-semibold">
-          {t("ui.redirecting_home")}
-        </p>
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full flex items-center justify-center">
+            <Sparkles className="w-8 h-8 text-white animate-pulse" />
+          </div>
+          <p className="text-xl text-gray-700 font-semibold">
+            {t("ui.redirecting_home")}
+          </p>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 relative">
-      <div className="absolute top-4 right-4 z-20">
-        <LanguageSwitcher />
-      </div>
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-blue-600 rounded-full blur-3xl"></div>
-        <div className="absolute top-40 right-32 w-24 h-24 bg-orange-500 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-32 left-1/3 w-40 h-40 bg-green-500 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 relative overflow-hidden">
+      {/* Animated Background Circles (Tương tự LoginPage) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.2, 0.3],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-cyan-400 to-blue-400 rounded-full blur-3xl"
+        />
       </div>
 
+      {/* <div className="absolute top-4 right-4 z-20">
+        <LanguageSwitcher />
+      </div> */}
+
       <div className="relative z-10 min-h-screen flex">
-        {/* Left Panel (Giữ nguyên) */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-black/10"></div>
+        {/* Left Panel (Tương tự LoginPage) */}
+        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-600 text-white relative overflow-hidden">
+          {/* Animated Pattern Overlay */}
+          <div className="absolute inset-0">
+            <motion.div
+              animate={{
+                backgroundPosition: ["0% 0%", "100% 100%"],
+              }}
+              transition={{
+                duration: 20,
+                repeat: Infinity,
+                repeatType: "reverse",
+              }}
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: `radial-gradient(circle at 20% 50%, white 1px, transparent 1px),
+                                 radial-gradient(circle at 80% 80%, white 1px, transparent 1px)`,
+                backgroundSize: "50px 50px",
+              }}
+            />
+          </div>
+
           <div className="relative z-10 flex flex-col justify-center px-12 py-16">
-            <div className="mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-12"
+            >
               <div className="flex items-center mb-6">
-                <div className="w-14 h-14 bg-white/20 backdrop-blur-lg rounded-2xl flex items-center justify-center mr-4">
+                <motion.div
+                  whileHover={{ rotate: 360, scale: 1.1 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mr-4 shadow-lg"
+                >
                   <Wrench className="w-8 h-8 text-white" />
-                </div>
+                </motion.div>
                 <div>
-                  <h1 className="text-3xl font-bold">{t("app.name")}</h1>
-                  <p className="text-blue-100 text-sm">
+                  <h1 className="text-3xl font-bold">HomeServicePlatform</h1>
+                  <p className="text-cyan-100 text-sm">
                     {t("ui.service_tagline")}
                   </p>
                 </div>
@@ -293,92 +357,112 @@ export default function RegisterPage({
               <p className="text-blue-100 text-lg leading-relaxed">
                 {t("ui.service_description_long")}
               </p>
-            </div>
+            </motion.div>
 
             <div className="space-y-6">
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {t("feature.professional_worker.title")}
-                  </h3>
-                  <p className="text-blue-100 text-sm">
-                    {t("feature.professional_worker.subtitle")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {t("feature.quality_warranty.title")}
-                  </h3>
-                  <p className="text-blue-100 text-sm">
-                    {t("feature.quality_warranty.subtitle")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Home className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {t("feature.home_service.title")}
-                  </h3>
-                  <p className="text-blue-100 text-sm">
-                    {t("feature.home_service.subtitle")}
-                  </p>
-                </div>
-              </div>
+              {[
+                { icon: CheckCircle, titleKey: "professional_worker" },
+                { icon: Shield, titleKey: "quality_warranty" },
+                { icon: Home, titleKey: "home_service" },
+              ].map((feature, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + idx * 0.1 }}
+                  whileHover={{ x: 10 }}
+                  className="flex items-start space-x-4 group"
+                >
+                  <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center group-hover:bg-white/30 transition-all duration-300">
+                    <feature.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      {t(`feature.${feature.titleKey}.title`)}
+                    </h3>
+                    <p className="text-cyan-100 text-sm">
+                      {t(`feature.${feature.titleKey}.subtitle`)}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
-          <div className="w-full max-w-md">
-            <button
-              className="mb-8 flex items-center text-gray-600 hover:text-blue-600 transition-colors group"
+        {/* Right Panel - Register Form (Đã đồng bộ) */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-md"
+          >
+            <motion.button
+              whileHover={{ x: -5 }}
+              className="mb-8 flex items-center text-gray-600 hover:text-blue-600 transition-colors"
               onClick={onBackToHome}
             >
-              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              <ArrowLeft className="w-4 h-4 mr-2" />
               {t("ui.back_to_home")}
-            </button>
+            </motion.button>
 
-            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
-              <div className="px-8 pt-8 pb-6 text-center">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg mb-6">
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+              {/* Header Section */}
+              <div className="px-8 pt-8 pb-6 text-center bg-gradient-to-br from-blue-50 to-cyan-50">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", duration: 0.6 }}
+                  className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg mb-6"
+                >
                   <Home className="w-8 h-8 text-white" />
-                </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                </motion.div>
+                <motion.h2
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2"
+                >
                   {t("ui.register_account")}
-                </h2>
-                <p className="text-gray-500">{t("ui.register_tagline")}</p>
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-gray-600"
+                >
+                  {t("ui.register_tagline")}
+                </motion.p>
               </div>
 
-              <div className="px-8 pb-6 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100">
+              {/* Form Section */}
+              <div className="px-8 pb-8 pt-6 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-100">
                 {successMessage && (
-                  <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl"
+                  >
                       <p className="text-green-700 text-sm font-medium">{successMessage}</p>
-                  </div>
+                  </motion.div>
                 )}
-                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                   {/* FullName */}
-                  <div className="space-y-1">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="space-y-2"
+                  >
                     <label
                       htmlFor="fullName"
                       className="block text-sm font-semibold text-gray-700"
                     >
                       {t("form.label.fullname")}
                     </label>
-                    <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <div className="relative group">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                       <input
                         id="fullName"
                         name="fullName"
@@ -386,28 +470,38 @@ export default function RegisterPage({
                         placeholder={t("form.placeholder.fullname")}
                         value={formData.fullName}
                         onChange={handleInputChange}
-                        className={`w-full pl-12 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
-                            validationErrors.fullName ? 'border-red-500 ring-red-200' : 'border-gray-200'
+                        className={`w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all ${
+                            validationErrors.fullName ? 'border-red-400 ring-2 ring-red-200' : 'border-gray-200'
                         }`}
                       />
                     </div>
                     {validationErrors.fullName && (
-                        <p className="text-sm text-red-600 mt-1">
+                        <motion.p 
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-sm text-red-600 flex items-center gap-1 mt-1"
+                        >
+                            <span className="w-1 h-1 bg-red-600 rounded-full"></span>
                             {validationErrors.fullName}
-                        </p>
+                        </motion.p>
                     )}
-                  </div>
+                  </motion.div>
 
                   {/* Email */}
-                  <div className="space-y-1">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="space-y-2"
+                  >
                     <label
                       htmlFor="email"
                       className="block text-sm font-semibold text-gray-700"
                     >
                       {t("form.label.email")}
                     </label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                       <input
                         id="email"
                         name="email"
@@ -415,28 +509,38 @@ export default function RegisterPage({
                         placeholder={t("form.placeholder.email")}
                         value={formData.email}
                         onChange={handleInputChange}
-                        className={`w-full pl-12 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
-                            validationErrors.email ? 'border-red-500 ring-red-200' : 'border-gray-200'
+                        className={`w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all ${
+                            validationErrors.email ? 'border-red-400 ring-2 ring-red-200' : 'border-gray-200'
                         }`}
                       />
                     </div>
                     {validationErrors.email && (
-                        <p className="text-sm text-red-600 mt-1">
+                        <motion.p 
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-sm text-red-600 flex items-center gap-1 mt-1"
+                        >
+                            <span className="w-1 h-1 bg-red-600 rounded-full"></span>
                             {validationErrors.email}
-                        </p>
+                        </motion.p>
                     )}
-                  </div>
+                  </motion.div>
 
                   {/* Phone Number */}
-                  <div className="space-y-1">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="space-y-2"
+                  >
                     <label
                       htmlFor="phoneNumber"
                       className="block text-sm font-semibold text-gray-700"
                     >
                       {t("form.label.phone")}
                     </label>
-                    <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <div className="relative group">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                       <input
                         id="phoneNumber"
                         name="phoneNumber"
@@ -444,28 +548,38 @@ export default function RegisterPage({
                         placeholder={t("form.placeholder.phone")}
                         value={formData.phoneNumber}
                         onChange={handleInputChange}
-                        className={`w-full pl-12 pr-4 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
-                            validationErrors.phoneNumber ? 'border-red-500 ring-red-200' : 'border-gray-200'
+                        className={`w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all ${
+                            validationErrors.phoneNumber ? 'border-red-400 ring-2 ring-red-200' : 'border-gray-200'
                         }`}
                       />
                     </div>
                     {validationErrors.phoneNumber && (
-                        <p className="text-sm text-red-600 mt-1">
+                        <motion.p 
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-sm text-red-600 flex items-center gap-1 mt-1"
+                        >
+                            <span className="w-1 h-1 bg-red-600 rounded-full"></span>
                             {validationErrors.phoneNumber}
-                        </p>
+                        </motion.p>
                     )}
-                  </div>
+                  </motion.div>
 
                   {/* Password */}
-                  <div className="space-y-1">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className="space-y-2"
+                  >
                     <label
                       htmlFor="password"
                       className="block text-sm font-semibold text-gray-700"
                     >
                       {t("form.label.password")}
                     </label>
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                       <input
                         id="password"
                         name="password"
@@ -473,13 +587,15 @@ export default function RegisterPage({
                         placeholder={t("form.placeholder.password")}
                         value={formData.password}
                         onChange={handleInputChange}
-                        className={`w-full pl-12 pr-12 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
-                            validationErrors.password ? 'border-red-500 ring-red-200' : 'border-gray-200'
+                        className={`w-full pl-12 pr-12 py-3.5 bg-gray-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all ${
+                            validationErrors.password ? 'border-red-400 ring-2 ring-red-200' : 'border-gray-200'
                         }`}
                       />
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
                         type="button"
-                        className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
@@ -487,29 +603,39 @@ export default function RegisterPage({
                         ) : (
                           <Eye className="w-5 h-5" />
                         )}
-                      </button>
+                      </motion.button>
                     </div>
                     {validationErrors.password ? (
-                        <p className="text-sm text-red-600 mt-1">
+                        <motion.p 
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-sm text-red-600 flex items-center gap-1 mt-1"
+                        >
+                            <span className="w-1 h-1 bg-red-600 rounded-full"></span>
                             {validationErrors.password}
-                        </p>
+                        </motion.p>
                     ) : (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 mt-1">
                             {t("error.password_strength_hint")}
                         </p>
                     )}
-                  </div>
+                  </motion.div>
 
                   {/* Confirm Password */}
-                  <div className="space-y-1">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 }}
+                    className="space-y-2"
+                  >
                     <label
                       htmlFor="confirmPassword"
                       className="block text-sm font-semibold text-gray-700"
                     >
                       {t("form.label.confirm_password")}
                     </label>
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                       <input
                         id="confirmPassword"
                         name="confirmPassword"
@@ -517,13 +643,15 @@ export default function RegisterPage({
                         placeholder={t("form.placeholder.confirm_password")}
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className={`w-full pl-12 pr-12 py-3 bg-gray-50 border rounded-xl focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
-                            validationErrors.confirmPassword ? 'border-red-500 ring-red-200' : 'border-gray-200'
+                        className={`w-full pl-12 pr-12 py-3.5 bg-gray-50 border-2 rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all ${
+                            validationErrors.confirmPassword ? 'border-red-400 ring-2 ring-red-200' : 'border-gray-200'
                         }`}
                       />
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
                         type="button"
-                        className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
                         onClick={() =>
                           setShowConfirmPassword(!showConfirmPassword)
                         }
@@ -533,17 +661,27 @@ export default function RegisterPage({
                         ) : (
                           <Eye className="w-5 h-5" />
                         )}
-                      </button>
+                      </motion.button>
                     </div>
                     {validationErrors.confirmPassword && (
-                        <p className="text-sm text-red-600 mt-1">
+                        <motion.p 
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-sm text-red-600 flex items-center gap-1 mt-1"
+                        >
+                            <span className="w-1 h-1 bg-red-600 rounded-full"></span>
                             {validationErrors.confirmPassword}
-                        </p>
+                        </motion.p>
                     )}
-                  </div>
+                  </motion.div>
 
                   {/* Terms and Conditions */}
-                  <div className="space-y-1">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.9 }}
+                    className="space-y-2"
+                  >
                       <div className="flex items-start space-x-3">
                         <input
                           id="agreeToTerms"
@@ -551,71 +689,77 @@ export default function RegisterPage({
                           type="checkbox"
                           checked={formData.agreeToTerms}
                           onChange={handleInputChange}
-                          className={`w-5 h-5 text-blue-600 border-2 rounded focus:ring-2 focus:ring-blue-500 ${
+                          className={`mt-1.5 w-5 h-5 text-blue-600 border-2 rounded focus:ring-2 focus:ring-blue-500 ${
                               validationErrors.agreeToTerms ? 'border-red-500' : 'border-gray-300'
                           }`}
                         />
                         <label
                           htmlFor="agreeToTerms"
-                          className="text-sm font-medium text-gray-600 cursor-pointer"
+                          className="text-sm font-medium text-gray-700 cursor-pointer"
                         >
                           {t("ui.i_agree_to")}{" "}
-                          <a href="#" className="text-blue-600 hover:underline">
+                          <a href="#" className="text-blue-600 hover:text-cyan-600 transition-colors hover:underline">
                             {t("ui.terms_of_service")}
                           </a>{" "}
                           {t("ui.and")}{" "}
-                          <a href="#" className="text-blue-600 hover:underline">
+                          <a href="#" className="text-blue-600 hover:text-cyan-600 transition-colors hover:underline">
                             {t("ui.privacy_policy")}
                           </a>
                         </label>
                       </div>
                       {validationErrors.agreeToTerms && (
-                          <p className="text-sm text-red-600 mt-1 pl-8">
+                          <motion.p 
+                              initial={{ opacity: 0, y: -5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="text-sm text-red-600 flex items-center gap-1 pl-8"
+                          >
+                            <span className="w-1 h-1 bg-red-600 rounded-full"></span>
                               {validationErrors.agreeToTerms}
-                          </p>
+                          </motion.p>
                       )}
-                  </div>
+                  </motion.div>
 
-                  <button
+                  {/* Register button */}
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.0 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     type="submit"
                     disabled={loading}
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-3 focus:ring-blue-500/20 transform hover:scale-[1.02] transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        <span>{t("ui.registering")}</span>
-                      </div>
+                      <span className="flex items-center justify-center gap-2">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                        />
+                        {t("ui.registering")}
+                      </span>
                     ) : (
                       t("ui.register_button")
                     )}
-                  </button>
+                  </motion.button>
                 </form>
 
                 <div className="mt-6 text-center">
                   <span className="text-gray-600">
                     {t("ui.already_have_account")}
                   </span>{" "}
-                  <button
-                    className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                  <motion.button
+                    whileHover={{ x: 3 }}
+                    className="text-blue-600 font-semibold hover:text-cyan-600 transition-colors"
                     onClick={onSwitchToLogin}
                   >
                     {t("ui.login_now")}
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             </div>
-
-            <div className="lg:hidden mt-8 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Wrench className="w-6 h-6 text-blue-600 mr-2" />
-                <span className="text-xl font-bold text-gray-900">
-                  {t("app.name")}
-                </span>
-              </div>
-              <p className="text-sm text-gray-500">{t("ui.service_tagline")}</p>
-            </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

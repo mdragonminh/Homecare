@@ -1,4 +1,5 @@
-﻿using HSP.Core.Dtos.BookingDto;
+﻿using HSP.Core.Constans;
+using HSP.Core.Dtos.BookingDto;
 using HSP.Core.Dtos.EquipmentDto;
 using HSP.Core.Dtos.PaymentDto;
 using HSP.Core.Dtos.Shared;
@@ -303,7 +304,10 @@ namespace HSP.Service.Implementations.Internal
         }
         public async Task<bool> UpdateBookingStatusAsync(UpdateBookingStatusDto input, string technicianUserId)
         {
-            var booking = await _bookingRepository.GetByIdAsync(input.BookingId);
+            var booking = await _bookingRepository.GetAll()
+                .Include(x => x.Technician)
+                .Include(x => x.Customer)
+                .FirstOrDefaultAsync(x => x.Id.Equals(input.BookingId));
 
             if (booking == null)
                 return false;
@@ -314,7 +318,13 @@ namespace HSP.Service.Implementations.Internal
 
             if (technicianProfile == null || booking.TechnicianId != technicianProfile.Id)
                 return false;
-
+            double distance = CalculateDistance(
+                booking.Latitude,
+                booking.Longitude,
+                booking.Technician.Latitude,
+                booking.Technician.Longitude
+            );
+            
             if (input.Status == BookingStatus.Completed && CheckAndUpdateBookingCompletionAsync(input.BookingId).Result)
             {
                 booking.Status = input.Status;
@@ -324,6 +334,10 @@ namespace HSP.Service.Implementations.Internal
             }
             else if (input.Status != BookingStatus.Completed)
             {
+                if (distance > 0.5 && input.Status == BookingStatus.InProgress)
+                {
+                    throw new InvalidOperationException("KTV không ở tại vị trí làm việc!");
+                }
                 booking.Status = input.Status;
                 booking.DateModified = DateTime.UtcNow;
                 _bookingRepository.Update(booking);
@@ -332,7 +346,18 @@ namespace HSP.Service.Implementations.Internal
 
             return true;
         }
+        private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        {
+            var dLat = (lat2 - lat1) * GeoConstants.DegreeToRadian;
+            var dLon = (lon2 - lon1) * GeoConstants.DegreeToRadian;
 
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                            Math.Cos(lat1 * GeoConstants.DegreeToRadian) * Math.Cos(lat2 * GeoConstants.DegreeToRadian) *
+                            Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return GeoConstants.EarthRadiusKm * c;
+        }
         public async Task<bool> CancelBookingAsync(CancelBookingDto input, string userId)
         {
             var booking = await _bookingRepository.GetAll(b => b.Customer, b => b.Items)
