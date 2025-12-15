@@ -335,7 +335,7 @@ const BookingDetailPage = () => {
               {BookingStatusLabels[booking.status]}
             </span>
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Mã đơn: {booking.id}</p>
+          {/* <p className="text-gray-500 text-sm mt-1">Mã đơn: {booking.id}</p> */}
         </div>
       </div>
 
@@ -494,7 +494,7 @@ const BookingDetailPage = () => {
               </div>
             </div>
             <div className="mt-6 pt-4 border-t bg-gray-50 -mx-6 -mb-6 p-4 rounded-b-lg">
-              <p className="text-gray-600 text-sm"><strong>Mô tả vấn đề:</strong> {booking.problemDescription || "Không có mô tả"}</p>
+              {/* <p className="text-gray-600 text-sm"><strong>Mô tả vấn đề:</strong> {booking.problemDescription || "Không có mô tả"}</p> */}
               <p className="text-gray-600 text-sm mt-1"><strong>Thời gian hẹn:</strong> {formatDate(booking.desiredDate)}</p>
             </div>
           </div>

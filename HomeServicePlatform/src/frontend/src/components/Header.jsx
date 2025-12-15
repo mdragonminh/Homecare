@@ -102,13 +102,19 @@ export function Header({
               </>
             )}
 
-            <a href="/about" className={buttonClass}>
+            <button
+              onClick={() => navigate("/about")}
+              className={buttonClass}
+            >
               {t("nav.about_us")}
-            </a>
+            </button>
 
-            <a href="/contact" className={buttonClass}>
+            <button
+              onClick={() => navigate("/contact")}
+              className={buttonClass}
+            >
               {t("nav.contact")}
-            </a>
+            </button>
           </nav>
 
           {/* RIGHT SECTION */}
