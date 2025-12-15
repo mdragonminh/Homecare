@@ -276,34 +276,92 @@ export default function AccountsPage() {
   const handleToggleStatus = async (record) => {
     try {
       let result;
-      const accountId = activeTab === "technician" 
-        ? (record.userId || record.user?.id) 
-        : (record.id || record.userId);
-      
-      if (record.isActive || record.user?.isActive) {
-        result = await adminApi.suspendAccount(
-          accountId,
-          "Vô hiệu hóa bởi admin"
+      const isTechnicianTab = activeTab === "technician";
+      const accountId = isTechnicianTab
+        ? record.userId || record.user?.id
+        : record.id || record.userId;
+
+      // Optimistic update for immediate UI feedback
+      let revertState;
+
+      // Với kỹ thuật viên: dùng isSuspended để khóa/mở tài khoản, tránh nhầm với trạng thái nhận việc
+      if (isTechnicianTab) {
+        const isSuspended =
+          record.user?.isSuspended ?? record.isSuspended ?? false;
+        const nextSuspended = !isSuspended;
+
+        // Lưu state để có thể revert nếu lỗi
+        revertState = technicians;
+
+        // Optimistic update danh sách kỹ thuật viên
+        setTechnicians((prev) =>
+          prev.map((t) =>
+            t.id === record.id
+              ? {
+                  ...t,
+                  isSuspended: nextSuspended,
+                  // Khi admin disable: ngừng nhận việc ngay (isActive false)
+                  isActive: nextSuspended ? false : t.isActive,
+                  user: {
+                    ...(t.user || {}),
+                    isSuspended: nextSuspended,
+                    isActive: nextSuspended ? false : t.user?.isActive,
+                  },
+                }
+              : t
+          )
         );
+
+        if (nextSuspended) {
+          result = await adminApi.suspendAccount(
+            accountId,
+            "Vô hiệu hóa bởi admin"
+          );
+        } else {
+          result = await adminApi.unsuspendAccount(accountId);
+        }
       } else {
-        result = await adminApi.unsuspendAccount(accountId);
+        const isActive = record.isActive || record.user?.isActive;
+
+        if (record.isActive || record.user?.isActive) {
+          result = await adminApi.suspendAccount(
+            accountId,
+            "Vô hiệu hóa bởi admin"
+          );
+        } else {
+          result = await adminApi.unsuspendAccount(accountId);
+        }
       }
 
       if (result.success) {
         message.success(
           `${
-            record.isActive || record.user?.isActive
+            isTechnicianTab
+              ? (record.user?.isSuspended ?? record.isSuspended ?? false
+                  ? "Kích hoạt"
+                  : "Vô hiệu hóa")
+              : record.isActive || record.user?.isActive
               ? "Vô hiệu hóa"
               : "Kích hoạt"
           } tài khoản thành công!`
         );
-        loadTabData();
+        if (!isTechnicianTab) {
+          loadTabData();
+        }
         loadStatistics();
       } else {
         message.error(result.message);
+        // Revert nếu thất bại
+        if (isTechnicianTab && revertState) {
+          setTechnicians(revertState);
+        }
       }
     } catch (error) {
       message.error("Lỗi khi thay đổi trạng thái tài khoản");
+      // Revert nếu lỗi
+      if (isTechnicianTab && revertState) {
+        setTechnicians(revertState);
+      }
     }
   };
 

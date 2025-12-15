@@ -183,10 +183,33 @@ export const getTechnicianColumns = (
     dataIndex: "isActive",
     key: "isActive",
     render: (isActive, record) => {
-      const active = isActive ?? record.user?.isActive ?? true;
+      // Trạng thái tài khoản chỉ phụ thuộc vào khóa/mở (admin), không phụ thuộc KTV tự tắt nhận việc
+      const suspended = record.user?.isSuspended ?? record.isSuspended;
+      const active = suspended !== undefined ? !suspended : true;
       return (
         <Tag color={active ? "success" : "error"}>
           {active ? "Hoạt động" : "Vô hiệu hóa"}
+        </Tag>
+      );
+    },
+  },
+  {
+    title: "Trạng thái nhận việc",
+    dataIndex: "isWorking",
+    key: "isWorking",
+    render: (isWorking, record) => {
+      // Nếu bị khóa bởi admin -> ngừng nhận việc; ngược lại dùng trạng thái KTV tự bật/tắt
+      const suspended = record.user?.isSuspended ?? record.isSuspended ?? false;
+      const working = suspended
+        ? false
+        : record.isActive ??
+          record.user?.isActive ??
+          record.isWorking ??
+          isWorking ??
+          false;
+      return (
+        <Tag color={working ? "processing" : "default"}>
+          {working ? "Đang nhận việc" : "Ngừng nhận việc"}
         </Tag>
       );
     },
@@ -235,23 +258,33 @@ export const getTechnicianColumns = (
         {(record.approvalStatus === "Approved" || record.approvalStatus === 1) && (
           <Popconfirm
             title={`${
-              (record.isActive ?? record.user?.isActive ?? true) ? "Vô hiệu hóa" : "Kích hoạt"
+              (record.user?.isSuspended ?? record.isSuspended ?? false)
+                ? "Kích hoạt"
+                : "Vô hiệu hóa"
             } tài khoản này?`}
             onConfirm={() => handleToggleStatus(record)}
             okText="Xác nhận"
             cancelText="Hủy"
           >
-            <Tooltip title={(record.isActive ?? record.user?.isActive ?? true) ? "Vô hiệu hóa" : "Kích hoạt"}>
+            <Tooltip
+              title={
+                (record.user?.isSuspended ?? record.isSuspended ?? false)
+                  ? "Kích hoạt"
+                  : "Vô hiệu hóa"
+              }
+            >
               <Button
                 type="text"
                 icon={
-                  (record.isActive ?? record.user?.isActive ?? true) ? (
-                    <StopOutlined />
-                  ) : (
+                  (record.user?.isSuspended ?? record.isSuspended ?? false) ? (
                     <CheckCircleOutlined />
+                  ) : (
+                    <StopOutlined />
                   )
                 }
-                danger={record.user?.isActive}
+                danger={
+                  !(record.user?.isSuspended ?? record.isSuspended ?? false)
+                }
               />
             </Tooltip>
           </Popconfirm>
