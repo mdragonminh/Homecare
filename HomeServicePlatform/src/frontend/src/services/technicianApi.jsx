@@ -3,6 +3,53 @@ import axiosClient from "../config/axiosClient";
 const ENABLE_DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
 
 export const technicianApi = {
+  // Upload avatar cho kỹ thuật viên
+  uploadAvatar: async (avatarFile, objectTypeName = "technician") => {
+    try {
+      const jwtToken = localStorage.getItem("jwtToken");
+      const userId = localStorage.getItem("userId");
+
+      if (!jwtToken || !userId) {
+        throw new Error(
+          "Không tìm thấy token hoặc userId. Vui lòng đăng nhập lại."
+        );
+      }
+
+      const formData = new FormData();
+      formData.append("File", avatarFile);
+      formData.append("ObjectTypeName", objectTypeName);
+      formData.append("RelationType", "avatar");
+
+      const response = await axiosClient.post(`/File/upload`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
+
+      if (ENABLE_DEBUG)
+        console.log("Upload technician avatar success:", response.data);
+
+      return {
+        success: true,
+        data: response.data,
+        message: "Tải lên avatar thành công",
+      };
+    } catch (error) {
+      if (ENABLE_DEBUG)
+        console.error("Upload technician avatar error:", error);
+
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          error.message ||
+          "Lỗi khi tải lên avatar",
+      };
+    }
+  },
+
   updateLocation: async (latitude, longitude) => {
     try {
       const jwtToken = localStorage.getItem("jwtToken");
