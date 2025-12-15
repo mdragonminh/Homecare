@@ -28,7 +28,7 @@ namespace HSP.Service.Implementations.Internal
             IRepository<Payment, Guid> paymentRepository,
             IRepository<Booking, Guid> bookingRepository,
             ISePayService sePayService,
-            IRepository<ChatConversation,Guid> chatConversation,
+            IRepository<ChatConversation, Guid> chatConversation,
             IOptions<SePayConfigurationDto> sePayConfig,
             IUnitOfWork unitOfWork,
             IStringLocalizer<SharedResource> localizer,
@@ -142,7 +142,10 @@ namespace HSP.Service.Implementations.Internal
 
                     _paymentRepository.Update(payment);
                     await _unitOfWork.SaveChangesAsync();
-                    var isClosed = await _chatConversation.GetAll().FirstOrDefaultAsync(x => x.BookingId == booking.Id);
+                    var isClosed = await _chatConversation.GetAll()
+                        .Include(c => c.Technician)
+                        .Include(c => c.Customer)
+                        .FirstOrDefaultAsync(c => c.TechnicianId == booking.TechnicianId && c.CustomerId == booking.CustomerId);
                     if (isClosed != null)
                     {
                         isClosed.IsClosed = true;
@@ -204,7 +207,7 @@ namespace HSP.Service.Implementations.Internal
 
             // Tính tổng tiền thiết bị
             decimal equipmentTotal = itemsToPay.Sum(x => x.Quantity * x.UnitPrice);
-            
+
             // Phí vận chuyển cố định 50,000 VND cho mỗi lần gửi thiết bị
             decimal shippingFee = 50000m;
             decimal totalAmount = equipmentTotal + shippingFee;

@@ -67,6 +67,11 @@ export default function CustomerChat() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation) return;
 
+    if (selectedConversation.isClosed) {
+      toast.error("Cuộc trò chuyện đã kết thúc, bạn không thể gửi thêm tin nhắn.");
+      return;
+    }
+
     const text = newMessage.trim();
     setNewMessage("");
 
@@ -243,8 +248,12 @@ export default function CustomerChat() {
                     <h2 className="font-bold text-lg">
                       {getChatName(selectedConversation)}
                     </h2>
-                    <p className="text-sm text-green-600 font-medium">
-                      Đang hoạt động
+                    <p
+                      className={`text-sm font-medium ${
+                        selectedConversation.isClosed ? "text-red-500" : "text-green-600"
+                      }`}
+                    >
+                      {selectedConversation.isClosed ? "Đã kết thúc" : "Đang hoạt động"}
                     </p>
                   </div>
                 </div>
@@ -343,14 +352,20 @@ export default function CustomerChat() {
               >
                 <input
                   type="text"
-                  placeholder="Nhập tin nhắn..."
+                  placeholder={
+                    selectedConversation.isClosed
+                      ? "Cuộc trò chuyện đã kết thúc, không thể gửi thêm tin nhắn."
+                      : "Nhập tin nhắn..."
+                  }
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  className="flex-1 px-6 py-4 bg-gray-100 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-300 transition text-base"
+                  className="flex-1 px-6 py-4 bg-gray-100 rounded-full focus:outline-none focus:ring-4 focus:ring-blue-300 transition text-base disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={selectedConversation.isClosed}
                 />
                 <button
                   type="submit"
-                  className="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full hover:from-blue-700 hover:to-indigo-700 shadow-lg transform hover:scale-105 transition-all duration-200"
+                  className="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full hover:from-blue-700 hover:to-indigo-700 shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={!newMessage.trim() || selectedConversation.isClosed}
                 >
                   <Send className="h-6 w-6" />
                 </button>

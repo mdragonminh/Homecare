@@ -69,6 +69,11 @@ export default function TechnicianChat() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation) return;
 
+    if (selectedConversation.isClosed) {
+      toast.error("Cuộc trò chuyện đã kết thúc, bạn không thể gửi thêm tin nhắn.");
+      return;
+    }
+
     const text = newMessage.trim();
     setNewMessage("");
 
@@ -241,8 +246,12 @@ export default function TechnicianChat() {
                     <h2 className="font-bold text-base text-gray-900">
                       {getOtherUserName(selectedConversation)}
                     </h2>
-                    <p className="text-xs font-medium text-emerald-600">
-                      Đang hoạt động
+                    <p
+                      className={`text-xs font-medium ${
+                        selectedConversation.isClosed ? "text-red-500" : "text-emerald-600"
+                      }`}
+                    >
+                      {selectedConversation.isClosed ? "Đã kết thúc" : "Đang hoạt động"}
                     </p>
                   </div>
                 </div>
@@ -336,14 +345,20 @@ export default function TechnicianChat() {
               >
                 <input
                   type="text"
-                  placeholder="Nhập tin nhắn hỗ trợ..."
+                  placeholder={
+                    selectedConversation.isClosed
+                      ? "Cuộc trò chuyện đã kết thúc, không thể gửi thêm tin nhắn."
+                      : "Nhập tin nhắn hỗ trợ..."
+                  }
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  className="flex-1 px-5 py-3 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 transition"
+                  className="flex-1 px-5 py-3 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={selectedConversation.isClosed}
                 />
                 <button
                   type="submit"
-                  className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full hover:from-purple-700 hover:to-pink-700 shadow-md transition"
+                  className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full hover:from-purple-700 hover:to-pink-700 shadow-md transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={!newMessage.trim() || selectedConversation.isClosed}
                 >
                   <Send className="h-5 w-5" />
                 </button>

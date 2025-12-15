@@ -520,7 +520,11 @@ namespace HSP.Service.Implementations.Internal
             if (allowedTech == Guid.Empty || allowedTech != technician.Id)
                 return new BookingAcceptResultDto { IsSuccess = false, Message = "Bạn không phải kỹ thuật viên được mời." };
 
-            var booking = await _bookingRepository.GetByIdAsync(input.BookingId);
+            var booking = await _bookingRepository.GetAll()
+                .Include(b => b.Technician)
+                .Include(b => b.Customer)
+                .FirstOrDefaultAsync(b => b.Id == input.BookingId)
+                ;
             if (booking == null)
                 return new BookingAcceptResultDto { IsSuccess = false, Message = "Booking không tồn tại." };
 
@@ -528,7 +532,9 @@ namespace HSP.Service.Implementations.Internal
                 return new BookingAcceptResultDto { IsSuccess = false, Message = "Booking đã được xử lý." };
             var conversation = await _conversationRepository
                 .GetAll()
-                .FirstOrDefaultAsync(c => c.BookingId == booking.Id);
+                .Include(c => c.Technician)
+                .Include(c => c.Customer)
+                .FirstOrDefaultAsync(c => c.TechnicianId == technician.Id && c.CustomerId == booking.CustomerId);
             using (var transaction = await _unitOfWork.BeginTransactionAsync())
             {
                 booking.TechnicianId = technician.Id;
