@@ -3,7 +3,7 @@ import { Home, Menu, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AuthButtons } from "./AuthButtons";
 import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "./LanguageSwitcher";
+// LanguageSwitcher đã được loại bỏ như yêu cầu trước đó
 
 export function Header({
   onShowLogin,
@@ -34,10 +34,9 @@ export function Header({
   }, []);
 
   const buttonClass =
-  "px-4 py-2 font-semibold text-gray-800 relative " +
-  "transition-all duration-300 rounded-xl " +
-  "hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:shadow-md";
-
+    "px-4 py-2 font-semibold text-gray-800 relative " +
+    "transition-all duration-300 rounded-xl " +
+    "hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:shadow-md";
 
   return (
     <header
@@ -51,23 +50,23 @@ export function Header({
       }}
     >
       <div className="container mx-auto px-4 lg:px-6">
-        {/* ===== HEADER LAYOUT ===== */}
-        <div className="relative flex items-center h-20">
+        {/* ===== HEADER LAYOUT (DESKTOP) ===== */}
+        <div className="flex items-center h-20 justify-between">
           {/* LOGO */}
           <div
-            className="flex items-center space-x-3 cursor-pointer group"
+            className="flex items-center space-x-3 cursor-pointer group shrink-0"
             onClick={() => navigate("/")}
           >
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
               <Home className="w-6 h-6 text-white" />
             </div>
-            <span className="font-extrabold text-2xl text-blue-600 group-hover:text-blue-500 transition-colors duration-300 tracking-tight">
+            <span className="hidden lg:block font-extrabold text-2xl text-blue-600 group-hover:text-blue-500 transition-colors duration-300 tracking-tight">
               {t("app.name")}
             </span>
           </div>
 
-          {/* NAV – CENTER ABSOLUTE */}
-          <nav className="hidden md:flex items-center space-x-2 absolute left-1/2 -translate-x-1/2">
+          {/* NAV */}
+          <nav className="hidden md:flex items-center space-x-2 mx-auto px-4">
             <button onClick={() => navigate("/")} className={buttonClass}>
               {t("nav.home")}
             </button>
@@ -117,9 +116,8 @@ export function Header({
             </button>
           </nav>
 
-          {/* RIGHT SECTION */}
-          <div className="ml-auto flex items-center space-x-4">
-            {/* AUTH DESKTOP */}
+          {/* RIGHT */}
+          <div className="flex items-center space-x-4 shrink-0">
             <div className="hidden md:block">
               <AuthButtons
                 loggedInUser={loggedInUser}
@@ -130,7 +128,6 @@ export function Header({
               />
             </div>
 
-            {/* MOBILE MENU BUTTON */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-gray-800 bg-white/60 backdrop-blur-md relative overflow-hidden hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 shadow-sm"
@@ -143,7 +140,38 @@ export function Header({
 
         {/* ===== MOBILE MENU ===== */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-white/20 animate-slideIn rounded-b-2xl shadow-lg overflow-y-auto max-h-[80vh]">
+          <div
+            className="
+              md:hidden absolute top-20 left-0 right-0
+              bg-white/95 backdrop-blur-xl
+              animate-slideIn
+              shadow-xl
+              overflow-y-auto
+              max-h-[80vh]
+              rounded-b-xl
+            "
+          >
+            {/* AUTH */}
+            <div className="px-4 pt-6 pb-4 border-b border-gray-200">
+              <AuthButtons
+                loggedInUser={loggedInUser}
+                onShowLogin={() => {
+                  onShowLogin();
+                  setMobileMenuOpen(false);
+                }}
+                onShowRegister={() => {
+                  onShowRegister();
+                  setMobileMenuOpen(false);
+                }}
+                onLogout={() => {
+                  onLogout();
+                  setMobileMenuOpen(false);
+                }}
+                navigate={navigate}
+              />
+            </div>
+
+            {/* NAV */}
             <nav className="flex flex-col space-y-3 px-4 py-6">
               <button
                 onClick={() => {
@@ -191,17 +219,27 @@ export function Header({
                   </button>
                 </>
               )}
-            </nav>
 
-            <div className="px-4 pb-6 border-t border-white/30 pt-4">
-              <AuthButtons
-                loggedInUser={loggedInUser}
-                onShowLogin={onShowLogin}
-                onShowRegister={onShowRegister}
-                onLogout={onLogout}
-                navigate={navigate}
-              />
-            </div>
+              <button
+                onClick={() => {
+                  navigate("/about");
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold"
+              >
+                {t("nav.about_us")}
+              </button>
+
+              <button
+                onClick={() => {
+                  navigate("/contact");
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold"
+              >
+                {t("nav.contact")}
+              </button>
+            </nav>
           </div>
         )}
       </div>
