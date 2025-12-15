@@ -153,7 +153,7 @@ export default function AdminLayout({ loggedInUser }) {
             🏠 {t("admin.platform_title")}
           </Title>
           <Space>
-            <LanguageSwitcher />
+            {/* <LanguageSwitcher /> */}
             <Button
               type="default"
               icon={<HomeOutlined />}

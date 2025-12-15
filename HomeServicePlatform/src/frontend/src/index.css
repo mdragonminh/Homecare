@@ -152,3 +152,6 @@
   box-shadow: 0 0 10px #93c5fd;
   animation: road-glow 2.5s linear infinite;
 }
+.header-glass-fix {
+  isolation: isolate;
+}

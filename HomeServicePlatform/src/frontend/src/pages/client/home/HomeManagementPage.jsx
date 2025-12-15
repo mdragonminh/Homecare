@@ -244,7 +244,7 @@ export default function HomeManagementPage() {
   // Error Panel (Styling mới)
   if (error && !homeToDelete) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex justify-center items-center">
+      <div className="min-h-screen bg-white flex justify-center items-center">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -281,8 +281,8 @@ export default function HomeManagementPage() {
 
   return (
     // Nền mới đồng bộ với LoginPage
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 relative overflow-hidden">
-      {/* Animated Background Circles (Đồng bộ với LoginPage) */}
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      {/* Animated Background Circles (Đã đổi màu) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{
@@ -294,7 +294,8 @@ export default function HomeManagementPage() {
             repeat: Infinity,
             ease: "easeInOut",
           }}
-          className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full blur-3xl"
+          // ĐÃ SỬA: Đổi gradient sang trắng/xám nhạt
+          className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-white to-gray-100 rounded-full blur-3xl"
         />
         <motion.div
           animate={{
@@ -307,7 +308,8 @@ export default function HomeManagementPage() {
             ease: "easeInOut",
             delay: 1,
           }}
-          className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-cyan-400 to-blue-400 rounded-full blur-3xl"
+          // ĐÃ SỬA: Đổi gradient sang trắng/xám nhạt
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-gray-100 to-white rounded-full blur-3xl"
         />
       </div>
 

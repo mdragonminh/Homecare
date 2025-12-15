@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react"; // Đã thêm useMemo
+import { useState, useEffect, useRef, useMemo } from "react"; 
 import { chatApi } from "../../services/chatApi";
 import useChatSignalR from "../../hooks/useChatSignalR";
 import { Send, Search, MoreVertical, ArrowLeft } from "lucide-react";
@@ -10,9 +10,7 @@ export default function CustomerChat() {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  // START: LOGIC TÌM KIẾM MỚI
   const [searchTerm, setSearchTerm] = useState("");
-  // END: LOGIC TÌM KIẾM MỚI
   const messagesContainerRef = useRef(null);
   const currentUserId = localStorage.getItem("userId")?.toLowerCase();
   const token = localStorage.getItem("jwtToken");
@@ -141,11 +139,9 @@ export default function CustomerChat() {
       );
     });
   }, [conversations, searchTerm, currentUserId]);
-  // END: LOGIC TÌM KIẾM MỚI
+
 
   return (
-    // SỬA ĐỔI QUAN TRỌNG: Thay h-screen bằng h-[calc(100vh-70px)]
-    // để trừ đi chiều cao của Navbar bên ngoài trang web.
     <div className="flex h-[calc(100vh-70px)] bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
       {/* SIDEBAR */}
       <div

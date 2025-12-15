@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback,useRef } from "react";
 import { toast } from "sonner";
 import { profileApi, technicianApi as profileTechnicianApi, resendTechnicianApplication } from "../services/profileApi";
-import { technicianApi as technicianApiService } from "../services/profileApi";
+import { technicianApi as technicianApiService } from "../services/technicianApi";
 import { jwtDecode } from "jwt-decode";
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";

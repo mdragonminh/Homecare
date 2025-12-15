@@ -16,7 +16,7 @@ export function Header({
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const headerRef = React.useRef(null);
 
-  // Mouse move effect for dynamic background
+  /* Mouse move effect for dynamic background */
   React.useEffect(() => {
     const header = headerRef.current;
     if (!header) return;
@@ -33,20 +33,27 @@ export function Header({
     return () => header.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
+  const buttonClass =
+  "px-4 py-2 font-semibold text-gray-800 relative " +
+  "transition-all duration-300 rounded-xl " +
+  "hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:shadow-md";
+
+
   return (
     <header
       ref={headerRef}
-      className="animate-gradient-header bg-[length:200%_200%] sticky top-0 z-50 shadow-lg border-b border-white/10 text-white"
+      className="header-glass-fix animate-gradient-header bg-[length:200%_200%] sticky top-0 z-50 shadow-lg border-b border-white/10 text-white"
       style={{
         backgroundImage: `
-      radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.15), transparent 40%),
-      linear-gradient(to right, #bfdbfe, #93c5fd, #3b82f6)
-    `,
+          radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.15), transparent 40%),
+          linear-gradient(to right, #bfdbfe, #93c5fd, #3b82f6)
+        `,
       }}
     >
       <div className="container mx-auto px-4 lg:px-6">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo + Brand - Enhanced with vibrant gradient */}
+        {/* ===== HEADER LAYOUT ===== */}
+        <div className="relative flex items-center h-20">
+          {/* LOGO */}
           <div
             className="flex items-center space-x-3 cursor-pointer group"
             onClick={() => navigate("/")}
@@ -55,68 +62,58 @@ export function Header({
               <Home className="w-6 h-6 text-white" />
             </div>
             <span className="font-extrabold text-2xl text-blue-600 group-hover:text-blue-500 transition-colors duration-300 tracking-tight">
-  {t("app.name")}
-</span>
-
+              {t("app.name")}
+            </span>
           </div>
 
-          {/* Desktop Navigation - Modernized with glassmorphism buttons */}
-          <nav className="hidden md:flex items-center space-x-2">
-            <button
-              onClick={() => navigate("/")}
-              className="px-5 py-2.5 text-gray-800 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 font-semibold bg-white/50 backdrop-blur-md shadow-sm hover:shadow-md"
-            >
+          {/* NAV – CENTER ABSOLUTE */}
+          <nav className="hidden md:flex items-center space-x-2 absolute left-1/2 -translate-x-1/2">
+            <button onClick={() => navigate("/")} className={buttonClass}>
               {t("nav.home")}
             </button>
+
             {loggedInUser?.role !== "technician" &&
               loggedInUser?.role !== "supporter" &&
               loggedInUser?.role !== "equipmentmanager" && (
                 <button
                   onClick={() => navigate("/services")}
-                  className="px-5 py-2.5 text-gray-800 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 font-semibold bg-white/50 backdrop-blur-md shadow-sm hover:shadow-md"
+                  className={buttonClass}
                 >
                   {t("nav.services")}
                 </button>
               )}
-            {loggedInUser && loggedInUser.role === "customer" && (
+
+            {loggedInUser?.role === "customer" && (
               <>
                 <button
                   onClick={() => navigate("/my-bookings")}
-                  className="px-5 py-2.5 text-gray-800 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 font-semibold bg-white/50 backdrop-blur-md shadow-sm hover:shadow-md flex items-center space-x-2"
+                  className={`${buttonClass} flex items-center space-x-2`}
                 >
                   <ClipboardList className="w-4 h-4" />
                   <span>Booking của tôi</span>
                 </button>
+
                 <button
                   onClick={() => navigate("/chat")}
-                  className="px-5 py-2.5 text-gray-800 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 font-semibold bg-white/50 backdrop-blur-md shadow-sm hover:shadow-md"
+                  className={buttonClass}
                 >
                   Chat
                 </button>
               </>
             )}
-            <a
-              href="/about"
-              className="px-5 py-2.5 text-gray-800 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 font-semibold bg-white/50 backdrop-blur-md shadow-sm hover:shadow-md"
-            >
+
+            <a href="/about" className={buttonClass}>
               {t("nav.about_us")}
             </a>
-            <a
-              href="/contact"
-              className="px-5 py-2.5 text-gray-800 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 font-semibold bg-white/50 backdrop-blur-md shadow-sm hover:shadow-md"
-            >
+
+            <a href="/contact" className={buttonClass}>
               {t("nav.contact")}
             </a>
           </nav>
 
-          {/* Right Section: Language + Auth + Mobile Menu */}
-          <div className="flex items-center space-x-4">
-            {/* Language Switcher - Enhanced styling
-            <div className="hidden sm:block">
-              <LanguageSwitcher />
-            </div> */}
-
-            {/* Auth Buttons - Desktop only */}
+          {/* RIGHT SECTION */}
+          <div className="ml-auto flex items-center space-x-4">
+            {/* AUTH DESKTOP */}
             <div className="hidden md:block">
               <AuthButtons
                 loggedInUser={loggedInUser}
@@ -127,10 +124,10 @@ export function Header({
               />
             </div>
 
-            {/* Mobile Menu Button - Modernized */}
+            {/* MOBILE MENU BUTTON */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-800 hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 bg-white/50 backdrop-blur-md shadow-sm"
+              className="md:hidden p-2 text-gray-800 bg-white/60 backdrop-blur-md relative overflow-hidden hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 shadow-sm"
               aria-label="Toggle menu"
             >
               <Menu className="w-7 h-7" />
@@ -138,7 +135,7 @@ export function Header({
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown - Optimized for spacing */}
+        {/* ===== MOBILE MENU ===== */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-white/20 animate-slideIn rounded-b-2xl shadow-lg overflow-y-auto max-h-[80vh]">
             <nav className="flex flex-col space-y-3 px-4 py-6">
@@ -147,29 +144,31 @@ export function Header({
                   navigate("/");
                   setMobileMenuOpen(false);
                 }}
-                className="w-full px-5 py-3 text-left !text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:!text-white transition-all duration-300 font-semibold"
+                className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold"
               >
                 {t("nav.home")}
               </button>
 
               {loggedInUser?.role !== "technician" && (
-                <a
-                  href="/services"
-                  className="w-full px-5 py-3 text-left !text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:!text-white transition-all duration-300 font-semibold"
-                  onClick={() => setMobileMenuOpen(false)}
+                <button
+                  onClick={() => {
+                    navigate("/services");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold"
                 >
                   {t("nav.services")}
-                </a>
+                </button>
               )}
 
-              {loggedInUser && loggedInUser.role === "customer" && (
+              {loggedInUser?.role === "customer" && (
                 <>
                   <button
                     onClick={() => {
                       navigate("/my-bookings");
                       setMobileMenuOpen(false);
                     }}
-                    className="w-full px-5 py-3 text-left !text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:!text-white transition-all duration-300 font-semibold flex items-center space-x-2"
+                    className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold flex items-center space-x-2"
                   >
                     <ClipboardList className="w-4 h-4" />
                     <span>Booking của tôi</span>
@@ -180,36 +179,14 @@ export function Header({
                       navigate("/chat");
                       setMobileMenuOpen(false);
                     }}
-                    className="w-full px-5 py-3 text-left !text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:!text-white transition-all duration-300 font-semibold"
+                    className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold"
                   >
                     Chat
                   </button>
                 </>
               )}
-
-              <a
-                href="/about"
-                className="w-full px-5 py-3 text-left !text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:!text-white transition-all duration-300 font-semibold"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t("nav.about_us")}
-              </a>
-
-              <a
-                href="/contact"
-                className="w-full px-5 py-3 text-left !text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:!text-white transition-all duration-300 font-semibold"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t("nav.contact")}
-              </a>
             </nav>
 
-            {/* Language Switcher Mobile */}
-            <div className="px-4 pb-4">
-              <LanguageSwitcher />
-            </div>
-
-            {/* Auth Buttons Mobile */}
             <div className="px-4 pb-6 border-t border-white/30 pt-4">
               <AuthButtons
                 loggedInUser={loggedInUser}

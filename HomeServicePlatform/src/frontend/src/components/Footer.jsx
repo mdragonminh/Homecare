@@ -1,6 +1,32 @@
 import { Home, Mail, Phone, MapPin, Facebook, Twitter, Linkedin } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { serviceApi } from "../services/serviceApi"; 
 
 export function Footer() {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // LOGIC: Lấy danh sách dịch vụ từ API
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await serviceApi.getServices();
+        if (response.success) {
+          // **Đã thay đổi:** Chỉ lấy 4 dịch vụ đầu tiên
+          setServices(response.data.slice(0, 4) || []); 
+        } else {
+          console.error("Failed to fetch services for footer:", response.message);
+        }
+      } catch (error) {
+        console.error("Error calling serviceApi.getServices:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
   return (
     <footer className="bg-gray-900 text-gray-100">
       <div className="container mx-auto px-4 py-12">
@@ -28,24 +54,47 @@ export function Footer() {
           <div className="space-y-4">
             <h4 className="font-semibold">Liên kết nhanh</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Trang chủ</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Dịch vụ</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Về chúng tôi</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Hỗ trợ</a></li>
+              <li><a href="/" className="text-gray-400 hover:text-white transition-colors">Trang chủ</a></li>
+              <li><a href="/services" className="text-gray-400 hover:text-white transition-colors">Dịch vụ</a></li>
+              <li><a href="/about" className="text-gray-400 hover:text-white transition-colors">Về chúng tôi</a></li>
+              <li><a href="/contact" className="text-gray-400 hover:text-white transition-colors">Liên hệ/Hỗ trợ</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Điều khoản</a></li>
             </ul>
           </div>
 
-          {/* Services */}
+          {/* Services (Hiển thị 4 dịch vụ đầu tiên) */}
           <div className="space-y-4">
             <h4 className="font-semibold">Dịch vụ</h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Sửa chữa điện</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Sửa chữa nước</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Làm sạch</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Bảo trì máy lạnh</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Xem tất cả</a></li>
-            </ul>
+            {loading ? (
+              // Hiển thị loading state
+              <div className="space-y-2 text-sm">
+                <div className="h-4 bg-gray-700 rounded w-3/4 animate-pulse"></div>
+                <div className="h-4 bg-gray-700 rounded w-2/3 animate-pulse"></div>
+                <div className="h-4 bg-gray-700 rounded w-4/5 animate-pulse"></div>
+              </div>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {/* Dùng services.map để hiển thị 4 dịch vụ đã được giới hạn */}
+                {services.map((service) => (
+                  <li key={service.id}>
+                    <a 
+                      // **Liên kết trực tiếp đến trang chi tiết dịch vụ**
+                      href={`/services`} 
+                      className="text-gray-400 hover:text-white transition-colors"
+                      title={service.description}
+                    >
+                      {service.name}
+                    </a>
+                  </li>
+                ))}
+                <li>
+                  {/* **Đã đổi nội dung:** Nút xem thêm */}
+                  <a href="/services" className="text-gray-400 hover:text-white transition-colors font-semibold">
+                    Xem thêm
+                  </a>
+                </li>
+              </ul>
+            )}
           </div>
 
           {/* Contact Info */}
@@ -66,13 +115,6 @@ export function Footer() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="border-t border-gray-700 mt-12 pt-8 text-center">
-          <p className="text-gray-500 text-sm">
-            © 2024 HomeCare Manager. All rights reserved.
-          </p>
         </div>
       </div>
     </footer>
