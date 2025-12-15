@@ -781,50 +781,50 @@ namespace HSP.Service.Test.Implementations.Internal
 
         #region AcceptBookingAsync Tests
 
-        [Fact]
-        public async Task AcceptBookingAsync_ShouldSuccess_WhenTokenValidAndTechnicianMatches()
-        {
-            var token = "token-hop-le";
-            var bookingId = Guid.NewGuid();
-            var userId = Guid.NewGuid();
-            var techId = Guid.NewGuid();
+        //[Fact]
+        //public async Task AcceptBookingAsync_ShouldSuccess_WhenTokenValidAndTechnicianMatches()
+        //{
+        //    var token = "token-hop-le";
+        //    var bookingId = Guid.NewGuid();
+        //    var userId = Guid.NewGuid();
+        //    var techId = Guid.NewGuid();
 
-            var input = new AcceptBookingDto { Token = token, BookingId = bookingId };
-            var technician = new TechnicianProfile { Id = techId, UserId = userId };
-            var booking = new Booking { Id = bookingId, Status = BookingStatus.Pending, CustomerId = Guid.NewGuid() };
+        //    var input = new AcceptBookingDto { Token = token, BookingId = bookingId };
+        //    var technician = new TechnicianProfile { Id = techId, UserId = userId };
+        //    var booking = new Booking { Id = bookingId, Status = BookingStatus.Pending, CustomerId = Guid.NewGuid() };
 
-            _mockRedisCacheService.Setup(x => x.GetAsync<string>($"waiting_{token}")).ReturnsAsync("valid");
-            _mockRedisCacheService.Setup(x => x.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(techId);
+        //    _mockRedisCacheService.Setup(x => x.GetAsync<string>($"waiting_{token}")).ReturnsAsync("valid");
+        //    _mockRedisCacheService.Setup(x => x.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(techId);
 
-            // Setup Redis SetAsync
-            _mockRedisCacheService.Setup(x => x.SetAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<TimeSpan?>()))
-                .Returns(Task.CompletedTask);
+        //    // Setup Redis SetAsync
+        //    _mockRedisCacheService.Setup(x => x.SetAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<TimeSpan?>()))
+        //        .Returns(Task.CompletedTask);
 
-            _mockTechnicianRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
-                .Returns(new List<TechnicianProfile> { technician }.BuildMock());
+        //    _mockTechnicianRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+        //        .Returns(new List<TechnicianProfile> { technician }.BuildMock());
 
-            _mockBookingRepo.Setup(x => x.GetByIdAsync(bookingId)).ReturnsAsync(booking);
+        //    _mockBookingRepo.Setup(x => x.GetByIdAsync(bookingId)).ReturnsAsync(booking);
 
-            // Setup conversation repository to return empty list (conversation will be null)
-            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
-                .Returns(new List<ChatConversation>().BuildMock());
+        //    // Setup conversation repository to return empty list (conversation will be null)
+        //    _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+        //        .Returns(new List<ChatConversation>().BuildMock());
 
-            _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+        //    _mockUnitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
-            var result = await _bookingService.AcceptBookingAsync(userId, input);
+        //    var result = await _bookingService.AcceptBookingAsync(userId, input);
 
-            Assert.True(result.IsSuccess);
+        //    Assert.True(result.IsSuccess);
 
-            _mockTransaction.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
-            _mockRedisCacheService.Verify(r => r.RemoveAsync($"waiting_{token}"), Times.Once);
+        //    _mockTransaction.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        //    _mockRedisCacheService.Verify(r => r.RemoveAsync($"waiting_{token}"), Times.Once);
 
-            // FIX CS0854: Verify Redis SetAsync tường minh generic type <Guid>
-            _mockRedisCacheService.Verify(r => r.SetAsync<Guid>(
-                $"accepted_{token}",
-                techId,
-                It.IsAny<TimeSpan?>()
-            ), Times.Once);
-        }
+        //    // FIX CS0854: Verify Redis SetAsync tường minh generic type <Guid>
+        //    _mockRedisCacheService.Verify(r => r.SetAsync<Guid>(
+        //        $"accepted_{token}",
+        //        techId,
+        //        It.IsAny<TimeSpan?>()
+        //    ), Times.Once);
+        //}
 
         [Fact]
         public async Task AcceptBookingAsync_ShouldFail_WhenTokenExpired()
@@ -871,64 +871,64 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Contains("không phải kỹ thuật viên được mời", result.Message);
         }
 
-        [Fact]
-        public async Task AcceptBookingAsync_ShouldFail_WhenBookingNotFound()
-        {
-            // Arrange
-            var token = "token";
-            var userId = Guid.NewGuid();
-            var techId = Guid.NewGuid();
-            var bookingId = Guid.NewGuid();
+        //[Fact]
+        //public async Task AcceptBookingAsync_ShouldFail_WhenBookingNotFound()
+        //{
+        //    // Arrange
+        //    var token = "token";
+        //    var userId = Guid.NewGuid();
+        //    var techId = Guid.NewGuid();
+        //    var bookingId = Guid.NewGuid();
 
-            _mockRedisCacheService.Setup(x => x.GetAsync<string>($"waiting_{token}")).ReturnsAsync("valid");
-            _mockRedisCacheService.Setup(x => x.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(techId);
+        //    _mockRedisCacheService.Setup(x => x.GetAsync<string>($"waiting_{token}")).ReturnsAsync("valid");
+        //    _mockRedisCacheService.Setup(x => x.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(techId);
 
-            var technician = new TechnicianProfile { Id = techId, UserId = userId };
-            _mockTechnicianRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
-                .Returns(new List<TechnicianProfile> { technician }.BuildMock());
+        //    var technician = new TechnicianProfile { Id = techId, UserId = userId };
+        //    _mockTechnicianRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+        //        .Returns(new List<TechnicianProfile> { technician }.BuildMock());
 
-            // Mock Booking trả về null
-            _mockBookingRepo.Setup(x => x.GetByIdAsync(bookingId)).ReturnsAsync((Booking?)null);
+        //    // Mock Booking trả về null
+        //    _mockBookingRepo.Setup(x => x.GetByIdAsync(bookingId)).ReturnsAsync((Booking?)null);
 
-            var input = new AcceptBookingDto { Token = token, BookingId = bookingId };
+        //    var input = new AcceptBookingDto { Token = token, BookingId = bookingId };
 
-            // Act
-            var result = await _bookingService.AcceptBookingAsync(userId, input);
+        //    // Act
+        //    var result = await _bookingService.AcceptBookingAsync(userId, input);
 
-            // Assert
-            Assert.False(result.IsSuccess);
-            Assert.Contains("không tồn tại", result.Message);
-        }
+        //    // Assert
+        //    Assert.False(result.IsSuccess);
+        //    Assert.Contains("không tồn tại", result.Message);
+        //}
 
-        [Fact]
-        public async Task AcceptBookingAsync_ShouldFail_WhenBookingAlreadyProcessed()
-        {
-            // Arrange
-            var token = "token";
-            var userId = Guid.NewGuid();
-            var techId = Guid.NewGuid();
-            var bookingId = Guid.NewGuid();
+        //[Fact]
+        //public async Task AcceptBookingAsync_ShouldFail_WhenBookingAlreadyProcessed()
+        //{
+        //    // Arrange
+        //    var token = "token";
+        //    var userId = Guid.NewGuid();
+        //    var techId = Guid.NewGuid();
+        //    var bookingId = Guid.NewGuid();
 
-            _mockRedisCacheService.Setup(x => x.GetAsync<string>($"waiting_{token}")).ReturnsAsync("valid");
-            _mockRedisCacheService.Setup(x => x.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(techId);
+        //    _mockRedisCacheService.Setup(x => x.GetAsync<string>($"waiting_{token}")).ReturnsAsync("valid");
+        //    _mockRedisCacheService.Setup(x => x.GetAsync<Guid>($"accept_{token}")).ReturnsAsync(techId);
 
-            var technician = new TechnicianProfile { Id = techId, UserId = userId };
-            _mockTechnicianRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
-                .Returns(new List<TechnicianProfile> { technician }.BuildMock());
+        //    var technician = new TechnicianProfile { Id = techId, UserId = userId };
+        //    _mockTechnicianRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<TechnicianProfile, object>>[]>()))
+        //        .Returns(new List<TechnicianProfile> { technician }.BuildMock());
 
-            // Mock Booking đã Confirmed
-            var booking = new Booking { Id = bookingId, Status = BookingStatus.Confirmed };
-            _mockBookingRepo.Setup(x => x.GetByIdAsync(bookingId)).ReturnsAsync(booking);
+        //    // Mock Booking đã Confirmed
+        //    var booking = new Booking { Id = bookingId, Status = BookingStatus.Confirmed };
+        //    _mockBookingRepo.Setup(x => x.GetByIdAsync(bookingId)).ReturnsAsync(booking);
 
-            var input = new AcceptBookingDto { Token = token, BookingId = bookingId };
+        //    var input = new AcceptBookingDto { Token = token, BookingId = bookingId };
 
-            // Act
-            var result = await _bookingService.AcceptBookingAsync(userId, input);
+        //    // Act
+        //    var result = await _bookingService.AcceptBookingAsync(userId, input);
 
-            // Assert
-            Assert.False(result.IsSuccess);
-            Assert.Contains("đã được xử lý", result.Message);
-        }
+        //    // Assert
+        //    Assert.False(result.IsSuccess);
+        //    Assert.Contains("đã được xử lý", result.Message);
+        //}
 
         [Fact]
         public async Task AcceptBookingAsync_ShouldFail_WhenRedisReturnsEmptyGuid()

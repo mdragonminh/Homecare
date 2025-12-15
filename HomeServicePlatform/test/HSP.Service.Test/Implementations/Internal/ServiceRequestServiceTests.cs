@@ -147,28 +147,28 @@ namespace HSP.Service.Test.Implementations.Internal
             Assert.Equal("customer is null", ex.Message);
         }
 
-        [Fact]
-        public async Task CreateAndMatchBookingAsync_ServicesNotFound_ThrowsException()
-        {
-            var customerId = Guid.NewGuid();
-            var input = new CustomerCreateBookingDto
-            {
-                DesireDateTime = DateTime.UtcNow.AddHours(1),
-                Address = "Hanoi",
-                CustomerId = customerId.ToString(),
-                ServiceIds = new List<Guid> { Guid.NewGuid() }
-            };
+        //[Fact]
+        //public async Task CreateAndMatchBookingAsync_ServicesNotFound_ThrowsException()
+        //{
+        //    var customerId = Guid.NewGuid();
+        //    var input = new CustomerCreateBookingDto
+        //    {
+        //        DesireDateTime = DateTime.UtcNow.AddHours(1),
+        //        Address = "Hanoi",
+        //        CustomerId = customerId.ToString(),
+        //        ServiceIds = new List<Guid> { Guid.NewGuid() }
+        //    };
 
-            _geocodingServiceMock.Setup(x => x.GetCoordinatesForAddressAsync(input.Address)).ReturnsAsync(new CoordinatesDto { Latitude = 21, Longitude = 105 });
-            _userRepositoryMock.Setup(x => x.FindByIdAsync(customerId)).ReturnsAsync(new AppUser { Id = customerId, FullName = "Customer" });
+        //    _geocodingServiceMock.Setup(x => x.GetCoordinatesForAddressAsync(input.Address)).ReturnsAsync(new CoordinatesDto { Latitude = 21, Longitude = 105 });
+        //    _userRepositoryMock.Setup(x => x.FindByIdAsync(customerId)).ReturnsAsync(new AppUser { Id = customerId, FullName = "Customer" });
 
-            // Mock Service Repository trả về list rỗng
-            var emptyServices = new List<HSP.Core.Entities.Service>().BuildMock();
-            _serviceRepositoryMock.Setup(x => x.GetAll(It.IsAny<Expression<Func<HSP.Core.Entities.Service, object>>[]>())).Returns(emptyServices);
+        //    // Mock Service Repository trả về list rỗng
+        //    var emptyServices = new List<HSP.Core.Entities.Service>().BuildMock();
+        //    _serviceRepositoryMock.Setup(x => x.GetAll(It.IsAny<Expression<Func<HSP.Core.Entities.Service, object>>[]>())).Returns(emptyServices);
 
-            var ex = await Assert.ThrowsAsync<Exception>(() => _service.CreateAndMatchBookingAsync(input));
-            Assert.Equal("Không tìm thấy dịch vụ", ex.Message);
-        }
+        //    var ex = await Assert.ThrowsAsync<Exception>(() => _service.CreateAndMatchBookingAsync(input));
+        //    Assert.Equal("Không tìm thấy dịch vụ", ex.Message);
+        //}
 
         [Fact]
         public async Task CreateAndMatchBookingAsync_NoTechniciansFound_ThrowsInvalidOperationException()

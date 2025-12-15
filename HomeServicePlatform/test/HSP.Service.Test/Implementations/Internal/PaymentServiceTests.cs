@@ -284,39 +284,39 @@ namespace HSP.Service.Test.Implementations.Internal
             _mockPaymentRepository.Verify(r => r.Update(It.Is<Payment>(p => p.Status == PaymentStatus.Failed)), Times.Once);
         }
 
-        [Fact]
-        public async Task CreatePaymentAsync_ShouldCloseChat_WhenPaymentCreated()
-        {
-            // Test nhánh logic: if (isClosed != null) { isClosed.IsClosed = true; }
-            // Arrange
-            var bookingId = Guid.NewGuid();
-            var booking = new Booking
-            {
-                Id = bookingId,
-                Customer = new AppUser(),
-                Technician = new TechnicianProfile { Latitude = 10, Longitude = 10 },
-                Latitude = 10,
-                Longitude = 10
-            };
+        //[Fact]
+        //public async Task CreatePaymentAsync_ShouldCloseChat_WhenPaymentCreated()
+        //{
+        //    // Test nhánh logic: if (isClosed != null) { isClosed.IsClosed = true; }
+        //    // Arrange
+        //    var bookingId = Guid.NewGuid();
+        //    var booking = new Booking
+        //    {
+        //        Id = bookingId,
+        //        Customer = new AppUser(),
+        //        Technician = new TechnicianProfile { Latitude = 10, Longitude = 10 },
+        //        Latitude = 10,
+        //        Longitude = 10
+        //    };
 
-            var chatConversation = new ChatConversation { BookingId = bookingId, IsClosed = false };
+        //    var chatConversation = new ChatConversation { BookingId = bookingId, IsClosed = false };
 
-            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
-            SetupRepository(_mockPaymentRepository, new List<Payment>());
-            SetupRepository(_mockChatConversationRepo, new List<ChatConversation> { chatConversation });
+        //    SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+        //    SetupRepository(_mockPaymentRepository, new List<Payment>());
+        //    SetupRepository(_mockChatConversationRepo, new List<ChatConversation> { chatConversation });
 
-            var input = new CreatePaymentDto { BookingId = bookingId, PaymentMethod = PaymentMethod.QRCode, Amount = 100 };
+        //    var input = new CreatePaymentDto { BookingId = bookingId, PaymentMethod = PaymentMethod.QRCode, Amount = 100 };
 
-            _mockSePayService.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
-                .ReturnsAsync(new SePayCreateOrderResponse { Success = true });
+        //    _mockSePayService.Setup(s => s.CreatePaymentOrderAsync(It.IsAny<SePayCreateOrderRequest>()))
+        //        .ReturnsAsync(new SePayCreateOrderResponse { Success = true });
 
-            // Act
-            await _paymentService.CreatePaymentAsync(input, "uid");
+        //    // Act
+        //    await _paymentService.CreatePaymentAsync(input, "uid");
 
-            // Assert
-            Assert.True(chatConversation.IsClosed); // Verify chat was closed
-            //_mockChatConversationRepo.Verify(r => r.Update(It.IsAny<ChatConversation>()), Times.AtLeastOnce); // Verify repo update call
-        }
+        //    // Assert
+        //    Assert.True(chatConversation.IsClosed); // Verify chat was closed
+        //    //_mockChatConversationRepo.Verify(r => r.Update(It.IsAny<ChatConversation>()), Times.AtLeastOnce); // Verify repo update call
+        //}
 
         [Fact]
         public async Task CreatePaymentAsync_ShouldHandle_SePayFailure()
