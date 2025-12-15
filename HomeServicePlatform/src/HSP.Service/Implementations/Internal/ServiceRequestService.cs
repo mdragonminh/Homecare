@@ -75,6 +75,11 @@ namespace HSP.Service.Implementations.Internal
             {
                 throw new InvalidOperationException("customer is null");
             }
+
+
+            var technicians = await GetSortedTechniciansAsync(input.ServiceIds, coordinates);
+            if (!technicians.Any())
+                throw new InvalidOperationException(_localizer["NoAvailableTechniciansFound"]);
             Booking booking;
             using (var transaction = await _unitOfWork.BeginTransactionAsync())
             {
@@ -108,10 +113,6 @@ namespace HSP.Service.Implementations.Internal
                 await _unitOfWork.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
-
-            var technicians = await GetSortedTechniciansAsync(input.ServiceIds, coordinates);
-            if (!technicians.Any())
-                throw new InvalidOperationException(_localizer["NoAvailableTechniciansFound"]);
             var result = await NotifyTechniciansAndAwaitResponseAsync(booking, technicians, customer.FullName);
             return result;
         }

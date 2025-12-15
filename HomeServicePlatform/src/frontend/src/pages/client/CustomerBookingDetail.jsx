@@ -388,7 +388,7 @@ export default function CustomerBookingDetail() {
         {/* Ảnh bằng chứng */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           {checkInProof && (
-            <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center justify-between">
+            <div className="bg-white rounded-xl p-4 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-blue-100 p-2 rounded-full text-blue-600">
                   <CameraIcon className="h-5 w-5" />
@@ -409,7 +409,7 @@ export default function CustomerBookingDetail() {
             </div>
           )}
           {checkOutProof && (
-            <div className="bg-white border rounded-xl p-4 shadow-sm flex items-center justify-between">
+            <div className="bg-white rounded-xl p-4 shadow-sm flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-green-100 p-2 rounded-full text-green-600">
                   <CheckCircleIcon className="h-5 w-5" />
