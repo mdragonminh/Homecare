@@ -125,6 +125,7 @@ export function Header({
                 onShowRegister={onShowRegister}
                 onLogout={onLogout}
                 navigate={navigate}
+                isMobile={false} // <-- TRUE/FALSE cho Desktop
               />
             </div>
 
@@ -168,6 +169,7 @@ export function Header({
                   setMobileMenuOpen(false);
                 }}
                 navigate={navigate}
+                isMobile={true} // <-- TRUE/FALSE cho Mobile
               />
             </div>
 
