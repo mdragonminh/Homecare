@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { bookingApi } from "../../services/bookingApi";
 import { toast } from "sonner";
 import { getFileMetadata } from "../../services/fileApi";
-import { EyeIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, ChatBubbleLeftRightIcon, PhoneIcon, UserIcon } from "@heroicons/react/24/outline";
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -12,6 +12,7 @@ import {
   StarIcon as StarSolid,
 } from "@heroicons/react/24/solid";
 import { FeedbackModal } from "../../components/feedback/FeedbackModal";
+import TechnicianDetailModal from "../../components/client/TechnicianDetailModal";
 import {
   BookingStatus,
   BookingStatusLabels,
@@ -78,6 +79,7 @@ export default function CustomerBookingDetail() {
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isTechnicianModalOpen, setIsTechnicianModalOpen] = useState(false);
 
   const [checkInProof, setCheckInProof] = useState(null);
   const [checkOutProof, setCheckOutProof] = useState(null);
@@ -429,6 +431,46 @@ export default function CustomerBookingDetail() {
           </div>
         </div>
 
+        {/* Technician Information Card */}
+        {booking.technicianId && (
+          <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Thông tin kỹ thuật viên
+              </h3>
+              <button
+                onClick={() => setIsTechnicianModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+              >
+                <EyeIcon className="h-4 w-4" />
+                <span>Xem chi tiết</span>
+              </button>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 border-2 border-blue-200 shadow-sm">
+                {booking.technicianName ? (
+                  <span className="text-blue-700 font-bold text-2xl">
+                    {booking.technicianName.charAt(0).toUpperCase()}
+                  </span>
+                ) : (
+                  <UserIcon className="h-8 w-8 text-blue-600" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-gray-900 text-lg mb-1.5 truncate">
+                  {booking.technicianName || "N/A"}
+                </h4>
+                {booking.technicianPhone && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <PhoneIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <span className="truncate">{booking.technicianPhone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Ảnh bằng chứng */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           {checkInProof && (
@@ -698,6 +740,13 @@ export default function CustomerBookingDetail() {
           imageUrl={currentImageUrl}
           title={currentImageTitle}
         />
+        {booking?.technicianId && (
+          <TechnicianDetailModal
+            visible={isTechnicianModalOpen}
+            onClose={() => setIsTechnicianModalOpen(false)}
+            technicianId={booking.technicianId}
+          />
+        )}
       </motion.div>
     </div>
   );
