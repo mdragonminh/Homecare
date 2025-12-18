@@ -11,6 +11,7 @@ using HSP.Core.Resources;
 using HSP.DAL.Extensions;
 using HSP.Service.Dtos.EmailDto;
 using HSP.Service.Interfaces;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.VisualBasic;
@@ -557,8 +558,10 @@ namespace HSP.Service.Implementations.Internal
                 {
                     if(conversation.IsClosed == true)
                     {
+                        conversation.BookingId = booking.Id;
                         conversation.IsClosed = false;
                         conversation.TechnicianId = technician.Id;
+                        conversation.CreatedAt = DateTime.UtcNow;
                     }
                 }
                 await _unitOfWork.SaveChangesAsync();

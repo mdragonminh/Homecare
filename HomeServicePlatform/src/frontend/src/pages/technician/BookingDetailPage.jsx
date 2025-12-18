@@ -284,8 +284,8 @@ const BookingDetailPage = () => {
       setIsCheckedIn(true);
       toast.success("Check-in thành công!");
     } else if (type === 'CheckOut') {
-      await bookingApi.completeBooking(id);
       await uploadFile({ objectId: id, objectTypeName: 'booking', relationType }, file);
+      await bookingApi.completeBooking(id);
       setCheckStatus(id, 'CheckOut', 'true');
       setIsCheckedOut(true);
       localStorage.removeItem(`booking_${id}_CheckIn`);
