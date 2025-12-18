@@ -252,8 +252,11 @@ export default function CustomerBookingDetail() {
   const showServicePaymentButton = showCompletionBanner && !paymentInfo.isPaid;
   const formattedTotalPrice = formatCurrency(booking.totalPrice);
 
+  const customerFeedback = booking.feedbacks?.find(
+    (f) => f.source === FeedbackSource.Customer
+  );
   const canRateBooking =
-    booking.status === BookingStatus.Completed && !booking.feedbackId;
+    booking.status === BookingStatus.Completed && !customerFeedback;
   const canOpenChat =
     booking.status >= BookingStatus.Confirmed &&
     booking.status !== BookingStatus.Cancelled;
@@ -302,6 +305,47 @@ export default function CustomerBookingDetail() {
             >
               Đánh giá ngay
             </button>
+          </div>
+        )}
+        {customerFeedback && booking.status === BookingStatus.Completed && (
+          <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-12 w-12 bg-green-500 rounded-full flex items-center justify-center">
+                <StarSolid className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">
+                  Đánh giá của bạn
+                </p>
+                <p className="text-sm text-gray-600">
+                  Cảm ơn bạn đã chia sẻ trải nghiệm
+                </p>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-green-200">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <StarSolid
+                      key={i}
+                      className={`h-5 w-5 ${
+                        i < customerFeedback.rating
+                          ? "text-yellow-400 fill-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="ml-2 text-sm font-semibold text-gray-700">
+                  {customerFeedback.rating}/5
+                </span>
+              </div>
+              {customerFeedback.comment && (
+                <p className="text-gray-700 text-sm italic bg-gray-50 p-3 rounded border border-gray-200">
+                  "{customerFeedback.comment}"
+                </p>
+              )}
+            </div>
           </div>
         )}
 
