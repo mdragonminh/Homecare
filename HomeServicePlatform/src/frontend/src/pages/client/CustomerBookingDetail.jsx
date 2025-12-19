@@ -686,10 +686,10 @@ export default function CustomerBookingDetail() {
                     VNĐ
                   </p>
                 </div>
-                {equipmentsByPayment.reduce(
+                {(equipmentsByPayment.reduce(
                   (sum, ep) => sum + ep.shippingFee,
                   0
-                ) > 0 && (
+                ) > 0 || shippingFee > 0) && (
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-gray-700">Phí vận chuyển</p>
                     <p className="text-sm font-semibold text-gray-900">
@@ -697,7 +697,7 @@ export default function CustomerBookingDetail() {
                         equipmentsByPayment.reduce(
                           (sum, ep) => sum + ep.shippingFee,
                           0
-                        )
+                        ) + shippingFee
                       )}{" "}
                       VNĐ
                     </p>
@@ -719,7 +719,8 @@ export default function CustomerBookingDetail() {
                     equipmentsByPayment.reduce(
                       (sum, ep) => sum + ep.shippingFee,
                       0
-                    )
+                    ) +
+                    shippingFee
                 )}
                 <span className="text-base font-normal text-gray-600 ml-2">
                   VNĐ

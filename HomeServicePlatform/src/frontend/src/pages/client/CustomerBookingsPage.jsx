@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { bookingApi } from "../../services/bookingApi";
-import { paymentApi, getPaymentStatusText, PaymentStatus } from "../../services/paymentApi";
+import { paymentApi, getPaymentStatusText, PaymentStatus, BookingEquipmentStatus } from "../../services/paymentApi";
 import { createTicket } from "../../services/ticketApi";
 import { BookingStatus } from "../../constants/enums";
 import { motion } from "framer-motion";
@@ -84,18 +84,21 @@ const CustomerBookingsPage = () => {
       try {
         const result = await paymentApi.getPaymentsByBookingId(booking.id);
         if (result.success && result.data && result.data.length > 0) {
-          return { bookingId: booking.id, payment: result.data[0] };
+          // Get service payment (type === 0) for payment status display
+          const servicePayment = result.data.find(p => p.type === 0) || result.data[0];
+          // Store all payments for shipping fee calculation
+          return { bookingId: booking.id, payment: servicePayment, allPayments: result.data };
         }
       } catch (error) {
         console.error(`Error loading payment for booking ${booking.id}:`, error);
       }
-      return { bookingId: booking.id, payment: null };
+      return { bookingId: booking.id, payment: null, allPayments: [] };
     });
 
     const results = await Promise.all(paymentPromises);
     const paymentsMap = {};
-    results.forEach(({ bookingId, payment }) => {
-      paymentsMap[bookingId] = payment;
+    results.forEach(({ bookingId, payment, allPayments }) => {
+      paymentsMap[bookingId] = { servicePayment: payment, allPayments: allPayments || [] };
     });
     setBookingPayments(paymentsMap);
   };
@@ -205,6 +208,66 @@ const CustomerBookingsPage = () => {
     return isCompleted && hasNoCompletedPayment;
   };
 
+  const calculateTotalPrice = (booking, paymentData) => {
+    // Calculate service price
+    const servicePrice = (booking.items || []).reduce((sum, item) => sum + item.price, 0);
+    
+    // Calculate equipment price
+    const equipmentPrice = (booking.equipments || []).reduce((sum, eq) => sum + eq.totalPrice, 0);
+    
+    // Calculate shipping fees from equipment payments (type === 1)
+    // Merge payments from both sources to ensure we don't miss any
+    let allPayments = [];
+    
+    // Add payments from booking object (if API returns it)
+    if (booking.payments && Array.isArray(booking.payments)) {
+      allPayments = [...booking.payments];
+    }
+    
+    // Add payments from paymentData (merge to avoid duplicates)
+    if (paymentData && paymentData.allPayments && Array.isArray(paymentData.allPayments)) {
+      paymentData.allPayments.forEach(payment => {
+        // Only add if not already in allPayments (check by id)
+        if (!allPayments.find(p => p.id === payment.id)) {
+          allPayments.push(payment);
+        }
+      });
+    }
+    
+    // Calculate shipping fee from equipment payments
+    // Method 1: Sum shipping fees from all equipment payments (type === 1)
+    const equipmentPayments = allPayments.filter(p => p.type === 1);
+    let shippingFee = equipmentPayments.reduce((sum, p) => sum + (p.shippingFee || 0), 0);
+    
+    // Method 2: Also check equipment paymentIds to ensure we don't miss any
+    // This handles cases where payment might not be in allPayments but equipment has paymentId
+    const paidEquipments = (booking.equipments || []).filter(
+      (e) => e.paymentId && e.status !== BookingEquipmentStatus.Submitted
+    );
+    const equipmentPaymentIds = [...new Set(paidEquipments.map(e => e.paymentId))];
+    equipmentPaymentIds.forEach(paymentId => {
+      // Find payment by id (could be type 1 or other type)
+      const payment = allPayments.find(p => p.id === paymentId);
+      if (payment && payment.type === 1 && payment.shippingFee) {
+        // Check if already included
+        const alreadyIncluded = equipmentPayments.some(p => p.id === paymentId);
+        if (!alreadyIncluded) {
+          shippingFee += payment.shippingFee;
+        }
+      }
+    });
+    
+    // Add shipping fee for unpaid equipment (if any)
+    const unpaidEquipments = (booking.equipments || []).filter(
+      (e) => e.status === BookingEquipmentStatus.Submitted
+    );
+    if (unpaidEquipments.length > 0) {
+      shippingFee += 50000; // Shipping fee for unpaid equipment order
+    }
+    
+    return servicePrice + equipmentPrice + shippingFee;
+  };
+
   const getStatusThemeColor = (status) => {
     const colors = {
       0: "border-l-amber-400",
@@ -273,8 +336,10 @@ const CustomerBookingsPage = () => {
         ) : (
           <div className="space-y-6">
             {bookings.map((booking) => {
-              const payment = bookingPayments[booking.id];
+              const paymentData = bookingPayments[booking.id];
+              const payment = paymentData?.servicePayment;
               const themeColorClass = getStatusThemeColor(booking.status);
+              const totalPrice = calculateTotalPrice(booking, paymentData);
 
               return (
                 <motion.div
@@ -309,10 +374,7 @@ const CustomerBookingsPage = () => {
                             <span className="text-[10px] font-bold uppercase tracking-tighter">Tổng chi phí</span>
                           </div>
                           <p className="text-xl font-black text-blue-900">
-                            {formatAmount(
-                              (booking.items || []).reduce((sum, item) => sum + item.price, 0) +
-                              (booking.equipments || []).reduce((sum, eq) => sum + eq.totalPrice, 0)
-                            )} <small className="text-sm font-normal">VNĐ</small>
+                            {formatAmount(totalPrice)} <small className="text-sm font-normal">VNĐ</small>
                           </p>
                         </div>
 
@@ -458,7 +520,7 @@ const CustomerBookingsPage = () => {
                   />
                 </div>
 
-                {bookingPayments[selectedBookingForTicket.id]?.status === PaymentStatus.Completed && (
+                {bookingPayments[selectedBookingForTicket.id]?.servicePayment?.status === PaymentStatus.Completed && (
                   <div className="mb-2">
                     <label className="flex items-center p-3 rounded-xl bg-blue-50/50 border border-blue-100 cursor-pointer group transition-colors hover:bg-blue-50">
                       <input
