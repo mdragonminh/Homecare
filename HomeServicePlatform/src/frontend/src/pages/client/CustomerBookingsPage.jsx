@@ -22,6 +22,7 @@ import { createTicket } from "../../services/ticketApi";
 import { BookingStatus } from "../../constants/enums";
 import { motion } from "framer-motion";
 import StatusFilter from "../../components/StatusFilter";
+
 const CustomerBookingsPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -155,20 +156,20 @@ const CustomerBookingsPage = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      0: { text: "Chờ xử lý", color: "bg-yellow-100 text-yellow-800", icon: Clock },
-      1: { text: "Đã xác nhận", color: "bg-blue-100 text-blue-800", icon: CheckCircle },
-      2: { text: "Đang đến", color: "bg-indigo-100 text-indigo-800", icon: AlertCircle },
-      3: { text: "Đang thực hiện", color: "bg-purple-100 text-purple-800", icon: AlertCircle },
-      4: { text: "Hoàn thành", color: "bg-green-100 text-green-800", icon: CheckCircle },
-      5: { text: "Đã hủy", color: "bg-red-100 text-red-800", icon: XCircle },
+      0: { text: "Chờ xử lý", color: "bg-amber-50 text-amber-700 border-amber-200", icon: Clock },
+      1: { text: "Đã xác nhận", color: "bg-sky-50 text-sky-700 border-sky-200", icon: CheckCircle },
+      2: { text: "Đang đến", color: "bg-indigo-50 text-indigo-700 border-indigo-200", icon: AlertCircle },
+      3: { text: "Đang thực hiện", color: "bg-violet-50 text-violet-700 border-violet-200", icon: AlertCircle },
+      4: { text: "Hoàn thành", color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle },
+      5: { text: "Đã hủy", color: "bg-rose-50 text-rose-700 border-rose-200", icon: XCircle },
     };
 
     const config = statusConfig[status] || statusConfig[0];
     const Icon = config.icon;
 
     return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${config.color}`}>
-        <Icon className="h-4 w-4 mr-1" />
+      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${config.color}`}>
+        <Icon className="h-3.5 w-3.5 mr-1.5" />
         {config.text}
       </span>
     );
@@ -176,15 +177,11 @@ const CustomerBookingsPage = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
-    // Parse the date string - if it doesn't have timezone info, treat it as UTC
     let date;
     const dateStr = String(dateString);
-    // Check if date string has timezone indicator
     if (dateStr.includes('Z') || dateStr.includes('+') || dateStr.match(/-\d{2}:\d{2}$/)) {
-      // Has timezone info, parse normally
       date = new Date(dateStr);
     } else {
-      // No timezone info, assume UTC and append 'Z'
       date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
     }
     return date.toLocaleString("vi-VN", {
@@ -208,151 +205,160 @@ const CustomerBookingsPage = () => {
     return isCompleted && hasNoCompletedPayment;
   };
 
+  const getStatusThemeColor = (status) => {
+    const colors = {
+      0: "border-l-amber-400",
+      1: "border-l-sky-500",
+      2: "border-l-indigo-500",
+      3: "border-l-violet-500",
+      4: "border-l-emerald-500",
+      5: "border-l-rose-500",
+    };
+    return colors[status] || "border-l-gray-300";
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <ClipboardList className="h-8 w-8 mr-3 text-blue-600" />
-            Booking của tôi
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Quản lý các booking và thanh toán của bạn
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="absolute top-[-5%] left-[-5%] w-[40%] h-[40%] rounded-full bg-blue-100/30 blur-3xl z-0" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[35%] h-[35%] rounded-full bg-indigo-100/20 blur-3xl z-0" />
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <div className="mb-10 p-8 rounded-3xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 shadow-xl shadow-blue-200/50 text-white">
+          <div className="flex items-center gap-5">
+            <div className="p-3 bg-white/20 backdrop-blur-md rounded-2xl shadow-inner">
+              <ClipboardList className="h-9 w-9 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight tracking-wide">
+                Booking của tôi
+              </h1>
+              <p className="text-blue-100 mt-1 font-medium opacity-90">
+                Quản lý các lịch trình và theo dõi tiến độ dịch vụ của bạn
+              </p>
+            </div>
+          </div>
         </div>
 
-       <div className="mb-8 relative z-30"> {/* Thêm z-30 ở đây */}
-  <StatusFilter 
-    selectedStatus={selectedStatus} 
-    setSelectedStatus={setSelectedStatus} 
-    loadBookings={loadBookings} 
-    loading={loading} 
-  />
-</div>
+        <div className="mb-8 relative z-30">
+          <StatusFilter 
+            selectedStatus={selectedStatus} 
+            setSelectedStatus={setSelectedStatus} 
+            loadBookings={loadBookings} 
+            loading={loading} 
+          />
+        </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
+            <p className="text-blue-600 font-semibold animate-pulse">Đang tải dữ liệu...</p>
           </div>
         ) : bookings.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <ClipboardList className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 text-lg">Bạn chưa có booking nào</p>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl shadow-sm border border-gray-100 p-16 text-center"
+          >
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <ClipboardList className="h-10 w-10 text-gray-300" />
+            </div>
+            <p className="text-gray-500 text-xl font-medium">Bạn chưa có booking nào</p>
             <button
               onClick={() => navigate("/services")}
-              className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="mt-6 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all hover:-translate-y-1"
             >
               Tìm dịch vụ ngay
             </button>
-          </div>
+          </motion.div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {bookings.map((booking) => {
               const payment = bookingPayments[booking.id];
-              const canPay = canPayForBooking(booking, payment);
+              const themeColorClass = getStatusThemeColor(booking.status);
 
               return (
                 <motion.div
                   key={booking.id}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-                  initial={{ opacity: 0, y: 12 }}
+                  className={`bg-white rounded-2xl shadow-sm border border-gray-100 border-l-[6px] ${themeColorClass} p-6 hover:shadow-md transition-all group`}
+                  whileHover={{ x: 5 }}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="text-sm text-gray-500">Mã booking</p>
-                          <p className="font-mono text-sm font-semibold text-gray-900">
-                            {booking.id.substring(0, 8)}...
-                          </p>
-                        </div>
-                        {getStatusBadge(booking.status)}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-                        <div className="flex items-center text-gray-600">
-                          <Calendar className="h-4 w-4 mr-2" />
-                          <span className="text-sm">
-                            {formatDate(booking.desiredDate)}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-start gap-4">
+                          <div className="flex flex-col gap-2">
+                            {getStatusBadge(booking.status)}
+                            <div className="flex items-center text-gray-500 text-xs ml-1">
+                              <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                              <span className="font-medium">{formatDate(booking.desiredDate)}</span>
+                            </div>
+                          </div>
+                          <span className="px-2.5 py-1 bg-gray-50 text-gray-400 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-gray-200">
+                            #{booking.id.substring(0, 8)}
                           </span>
                         </div>
-                        <div className="flex items-center text-gray-600">
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          <span className="text-sm font-semibold">
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                          <div className="flex items-center text-blue-700 mb-1">
+                            <CreditCard className="h-3.5 w-3.5 mr-2" />
+                            <span className="text-[10px] font-bold uppercase tracking-tighter">Tổng chi phí</span>
+                          </div>
+                          <p className="text-xl font-black text-blue-900">
                             {formatAmount(
                               (booking.items || []).reduce((sum, item) => sum + item.price, 0) +
                               (booking.equipments || []).reduce((sum, eq) => sum + eq.totalPrice, 0)
-                            )} VNĐ
-                          </span>
-                        </div>
-                      </div>
-
-                      {payment && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                          <p className="text-sm text-gray-600">
-                            Trạng thái thanh toán:{" "}
-                            <span
-                              className={`font-semibold ${
-                                payment.status === PaymentStatus.Completed
-                                  ? "text-green-600"
-                                  : payment.status === PaymentStatus.Failed
-                                  ? "text-red-600"
-                                  : "text-yellow-600"
-                              }`}
-                            >
-                              {getPaymentStatusText(payment.status)}
-                            </span>
+                            )} <small className="text-sm font-normal">VNĐ</small>
                           </p>
-                          {payment.paidAt && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Thanh toán lúc: {formatDate(payment.paidAt)}
-                            </p>
-                          )}
                         </div>
-                      )}
+
+                        {payment && (
+                          <div className={`p-4 rounded-2xl border ${
+                            payment.status === PaymentStatus.Completed 
+                            ? "bg-emerald-50/50 border-emerald-100/50" 
+                            : "bg-amber-50/50 border-amber-100/50"
+                          }`}>
+                            <p className="text-[10px] font-bold uppercase text-gray-400 mb-1 tracking-tighter">Trạng thái thanh toán</p>
+                            <div className="flex items-center gap-2">
+                               <div className={`w-1.5 h-1.5 rounded-full ${payment.status === PaymentStatus.Completed ? "bg-emerald-500" : "bg-amber-500"}`} />
+                               <span className={`font-bold text-sm ${payment.status === PaymentStatus.Completed ? "text-emerald-700" : "text-amber-700"}`}>
+                                 {getPaymentStatusText(payment.status)}
+                               </span>
+                            </div>
+                            {payment.paidAt && (
+                              <p className="text-[10px] text-gray-400 mt-1 italic leading-none">
+                                Lúc: {formatDate(payment.paidAt)}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Actions Column */}
-                    <div className="flex flex-col gap-2 lg:w-48">
-                      {/* Show report button only for Confirmed (1) or Completed (4) status */}
-                      {(booking.status === BookingStatus.Confirmed || booking.status === BookingStatus.Completed || booking.status === BookingStatus.InProgress) && (
-                        <button
-                          onClick={() => openTicketModal(booking)}
-                          className="flex items-center justify-center px-4 py-2 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors"
-                        >
-                          <AlertTriangle className="h-4 w-4 mr-1.5 flex-shrink-0" />
-                          <span className="leading-tight">Báo cáo sự cố / Hoàn tiền</span>
-                        </button>
-                      )}
-
-                      <motion.button
-                        whileTap={{ scale: 0.97 }}
+                    <div className="flex flex-row lg:flex-col gap-3 shrink-0">
+                      <button
                         onClick={() => handleViewDetails(booking.id)}
-                        className="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="flex-1 lg:w-44 flex items-center justify-center px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:border-blue-500 hover:text-blue-600 hover:shadow-sm transition-all"
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         Xem chi tiết
-                      </motion.button>
+                      </button>
 
-                      {/* {payment ? (
+                      {(booking.status === BookingStatus.Confirmed || 
+                        booking.status === BookingStatus.Completed || 
+                        booking.status === BookingStatus.InProgress) && (
                         <button
-                          onClick={() => handleViewPayment(payment.id)}
-                          className="flex items-center justify-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                          onClick={() => openTicketModal(booking)}
+                          className="flex-1 lg:w-44 flex items-center justify-center px-4 py-2.5 bg-orange-50 text-orange-700 border border-orange-100 rounded-xl font-bold hover:bg-orange-100 transition-all shadow-sm shadow-orange-100/50"
                         >
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Xem thanh toán
+                          <AlertTriangle className="h-4 w-4 mr-2" />
+                          Hỗ trợ / Báo lỗi
                         </button>
-                      ) : canPay ? (
-                        <button
-                          onClick={() => handlePayNow(booking.id)}
-                          className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                        >
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Thanh toán ngay
-                        </button>
-                      ) : null} */}
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -362,8 +368,8 @@ const CustomerBookingsPage = () => {
         )}
 
         {!loading && bookings.length > 0 && pagination.totalPages > 1 && (
-          <div className="mt-6 flex justify-center">
-            <nav className="flex items-center gap-2">
+          <div className="mt-10 flex justify-center">
+            <nav className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
               <button
                 onClick={() =>
                   setPagination((prev) => ({
@@ -372,13 +378,16 @@ const CustomerBookingsPage = () => {
                   }))
                 }
                 disabled={pagination.currentPage === 1}
-                className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 Trước
               </button>
-              <span className="px-4 py-2 text-gray-700">
-                Trang {pagination.currentPage} / {pagination.totalPages}
-              </span>
+              <div className="flex items-center px-4">
+                <span className="text-sm font-bold text-gray-400 mr-1">Trang</span>
+                <span className="text-sm font-black text-blue-600">{pagination.currentPage}</span>
+                <span className="text-sm font-bold text-gray-400 mx-1">/</span>
+                <span className="text-sm font-bold text-gray-600">{pagination.totalPages}</span>
+              </div>
               <button
                 onClick={() =>
                   setPagination((prev) => ({
@@ -387,7 +396,7 @@ const CustomerBookingsPage = () => {
                   }))
                 }
                 disabled={pagination.currentPage === pagination.totalPages}
-                className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 Sau
               </button>
@@ -396,39 +405,46 @@ const CustomerBookingsPage = () => {
         )}
       </div>
 
-      {/* MODAL TICKET */}
       {isTicketModalOpen && selectedBookingForTicket && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
           onClick={closeTicketModal}
         >
-          <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-md"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <form onSubmit={handleSubmitTicket}>
               <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-500" />
-                    Báo cáo sự cố / Khiếu nại / Hoàn tiền
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
+                    <AlertTriangle className="h-6 w-6 text-orange-500" />
+                    Báo cáo sự cố
                   </h3>
                   <button
                     type="button"
                     onClick={closeTicketModal}
-                    className="p-1 rounded-full text-gray-400 hover:bg-gray-100"
+                    className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                   <p><strong>Mã Booking:</strong> {selectedBookingForTicket.id}</p>
-                   <p><strong>Ngày đặt:</strong> {formatDate(selectedBookingForTicket.desiredDate)}</p>
+                <div className="mb-6 text-sm text-gray-600 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                   <p className="flex justify-between mb-1">
+                     <span className="font-medium text-gray-400 uppercase text-[10px]">Mã Booking:</span> 
+                     <span className="font-mono font-bold text-blue-600">{selectedBookingForTicket.id.substring(0, 12)}...</span>
+                   </p>
+                   <p className="flex justify-between">
+                     <span className="font-medium text-gray-400 uppercase text-[10px]">Ngày đặt:</span> 
+                     <span className="font-bold">{formatDate(selectedBookingForTicket.desiredDate)}</span>
+                   </p>
                 </div>
 
-                <div className="mb-4">
-                  <label htmlFor="issue" className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="mb-5">
+                  <label htmlFor="issue" className="block text-sm font-bold text-gray-700 mb-2 ml-1">
                     Mô tả vấn đề <span className="text-red-500">*</span>
                   </label>
                   <textarea
@@ -436,23 +452,22 @@ const CustomerBookingsPage = () => {
                     rows={4}
                     value={issueDescription}
                     onChange={(e) => setIssueDescription(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Vui lòng mô tả chi tiết vấn đề bạn gặp phải với booking này..."
+                    className="w-full px-4 py-3 border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none"
+                    placeholder="Vui lòng mô tả chi tiết vấn đề..."
                     required
                   />
                 </div>
 
-                {/* Show refund checkbox only if payment is completed */}
                 {bookingPayments[selectedBookingForTicket.id]?.status === PaymentStatus.Completed && (
-                  <div className="mb-4">
-                    <label className="flex items-center space-x-2 cursor-pointer">
+                  <div className="mb-2">
+                    <label className="flex items-center p-3 rounded-xl bg-blue-50/50 border border-blue-100 cursor-pointer group transition-colors hover:bg-blue-50">
                       <input
                         type="checkbox"
                         checked={isRefundRequested}
                         onChange={(e) => setIsRefundRequested(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-5 h-5 text-blue-600 border-gray-300 rounded-lg focus:ring-blue-500"
                       />
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="ml-3 text-sm font-bold text-blue-800">
                         Yêu cầu hoàn tiền
                       </span>
                     </label>
@@ -460,25 +475,29 @@ const CustomerBookingsPage = () => {
                 )}
               </div>
 
-              <div className="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end gap-3">
+              <div className="bg-gray-50 px-6 py-5 flex gap-3">
                 <button
                   type="button"
                   onClick={closeTicketModal}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-3 border border-gray-200 text-sm font-bold rounded-xl text-gray-600 bg-white hover:bg-gray-100 transition-all"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingTicket}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="flex-1 inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
                 >
-                  <Send className="w-4 h-4 mr-2" />
+                  {isSubmittingTicket ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
                   {isSubmittingTicket ? "Đang gửi..." : "Gửi yêu cầu"}
                 </button>
               </div>
             </form>
-          </div>
+          </motion.div>
         </div>
       )}
     </div>

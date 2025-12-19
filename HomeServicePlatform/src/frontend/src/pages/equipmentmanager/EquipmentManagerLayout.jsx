@@ -128,7 +128,7 @@ export default function EquipmentManagerLayout({ loggedInUser }) {
             🔧 {t("equipment.platform_title", "Equipment Management")}
           </Title>
           <Space>
-            <LanguageSwitcher />
+            {/* <LanguageSwitcher /> */}
             <Button
               type="default"
               icon={<HomeIcon style={{ width: 16, height: 16 }} />}
