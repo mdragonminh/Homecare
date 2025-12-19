@@ -21,7 +21,7 @@ import { paymentApi, getPaymentStatusText, PaymentStatus } from "../../services/
 import { createTicket } from "../../services/ticketApi";
 import { BookingStatus } from "../../constants/enums";
 import { motion } from "framer-motion";
-
+import StatusFilter from "../../components/StatusFilter";
 const CustomerBookingsPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -221,35 +221,14 @@ const CustomerBookingsPage = () => {
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Trạng thái
-              </label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Tất cả</option>
-                <option value="0">Chờ xử lý</option>
-                <option value="1">Đã xác nhận</option>
-                <option value="2">Đang đến</option>
-                <option value="3">Đang thực hiện</option>
-                <option value="4">Hoàn thành</option>
-                <option value="5">Đã hủy</option>
-              </select>
-            </div>
-            <button
-              onClick={loadBookings}
-              disabled={loading}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? "Đang tải..." : "Làm mới"}
-            </button>
-          </div>
-        </div>
+       <div className="mb-8 relative z-30"> {/* Thêm z-30 ở đây */}
+  <StatusFilter 
+    selectedStatus={selectedStatus} 
+    setSelectedStatus={setSelectedStatus} 
+    loadBookings={loadBookings} 
+    loading={loading} 
+  />
+</div>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">

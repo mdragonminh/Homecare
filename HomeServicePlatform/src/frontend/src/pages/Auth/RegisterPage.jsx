@@ -281,10 +281,10 @@ export default function RegisterPage({
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
-            opacity: [0.3, 0.2, 0.3],
+            opacity: [0.4, 0.2, 0.4], 
           }}
           transition={{
-            duration: 8,
+            duration: 5, // Chạy nhanh hơn (từ 8s xuống 5s)
             repeat: Infinity,
             ease: "easeInOut",
           }}
@@ -293,10 +293,10 @@ export default function RegisterPage({
         <motion.div
           animate={{
             scale: [1, 1.3, 1],
-            opacity: [0.2, 0.3, 0.2],
+            opacity: [0.3, 0.1, 0.3],
           }}
           transition={{
-            duration: 10,
+            duration: 6, // Chạy nhanh hơn (từ 10s xuống 6s)
             repeat: Infinity,
             ease: "easeInOut",
             delay: 1,
@@ -313,20 +313,20 @@ export default function RegisterPage({
         {/* Left Panel (Tương tự LoginPage) */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-600 text-white relative overflow-hidden">
           {/* Animated Pattern Overlay */}
-          <div className="absolute inset-0">
+         <div className="absolute inset-0">
             <motion.div
               animate={{
                 backgroundPosition: ["0% 0%", "100% 100%"],
               }}
               transition={{
-                duration: 20,
+                duration: 10, // Tốc độ trượt nhanh hơn gấp đôi (từ 20s xuống 10s)
                 repeat: Infinity,
                 repeatType: "reverse",
               }}
-              className="absolute inset-0 opacity-10"
+              className="absolute inset-0 opacity-20" // Độ mờ vừa phải
               style={{
-                backgroundImage: `radial-gradient(circle at 20% 50%, white 1px, transparent 1px),
-                                 radial-gradient(circle at 80% 80%, white 1px, transparent 1px)`,
+                backgroundImage: `radial-gradient(circle at 20% 50%, white 1.5px, transparent 1.5px),
+                                 radial-gradient(circle at 80% 80%, white 1.5px, transparent 1.5px)`,
                 backgroundSize: "50px 50px",
               }}
             />
