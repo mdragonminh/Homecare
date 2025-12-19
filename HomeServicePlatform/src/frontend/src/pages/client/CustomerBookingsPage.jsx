@@ -32,7 +32,7 @@ const CustomerBookingsPage = () => {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [pagination, setPagination] = useState({
     currentPage: 1,
-    pageSize: 10,
+    pageSize: 5,
     totalPages: 0,
     totalCount: 0,
   });
@@ -209,14 +209,13 @@ const CustomerBookingsPage = () => {
   };
 
   const calculateTotalPrice = (booking, paymentData) => {
-    // Calculate service price
+    // Calculate service price - same as detail page
     const servicePrice = (booking.items || []).reduce((sum, item) => sum + item.price, 0);
     
-    // Calculate equipment price
+    // Calculate equipment price - same as detail page
     const equipmentPrice = (booking.equipments || []).reduce((sum, eq) => sum + eq.totalPrice, 0);
     
-    // Calculate shipping fees from equipment payments (type === 1)
-    // Merge payments from both sources to ensure we don't miss any
+    // Get all payments - merge from booking.payments and paymentData
     let allPayments = [];
     
     // Add payments from booking object (if API returns it)
@@ -234,38 +233,118 @@ const CustomerBookingsPage = () => {
       });
     }
     
-    // Calculate shipping fee from equipment payments
-    // Method 1: Sum shipping fees from all equipment payments (type === 1)
-    const equipmentPayments = allPayments.filter(p => p.type === 1);
-    let shippingFee = equipmentPayments.reduce((sum, p) => sum + (p.shippingFee || 0), 0);
-    
-    // Method 2: Also check equipment paymentIds to ensure we don't miss any
-    // This handles cases where payment might not be in allPayments but equipment has paymentId
-    const paidEquipments = (booking.equipments || []).filter(
-      (e) => e.paymentId && e.status !== BookingEquipmentStatus.Submitted
-    );
-    const equipmentPaymentIds = [...new Set(paidEquipments.map(e => e.paymentId))];
-    equipmentPaymentIds.forEach(paymentId => {
-      // Find payment by id (could be type 1 or other type)
-      const payment = allPayments.find(p => p.id === paymentId);
-      if (payment && payment.type === 1 && payment.shippingFee) {
-        // Check if already included
-        const alreadyIncluded = equipmentPayments.some(p => p.id === paymentId);
-        if (!alreadyIncluded) {
-          shippingFee += payment.shippingFee;
-        }
-      }
+    // Group equipment by payment to calculate shipping fees - same logic as detail page
+    const equipmentPayments = allPayments.filter((p) => p.type === 1);
+    const equipments = booking.equipments || [];
+    const equipmentsByPayment = equipmentPayments.map((payment) => {
+      const paymentEquipments = equipments.filter(
+        (eq) => eq.paymentId === payment.id
+      );
+      return {
+        payment,
+        equipments: paymentEquipments,
+        shippingFee: payment.shippingFee || 0,
+      };
     });
     
-    // Add shipping fee for unpaid equipment (if any)
-    const unpaidEquipments = (booking.equipments || []).filter(
+    // Calculate shipping fee from equipment payments - same as detail page
+    const paidShippingFee = equipmentsByPayment.reduce(
+      (sum, ep) => sum + ep.shippingFee,
+      0
+    );
+    
+    // Add shipping fee for unpaid equipment (if any) - same as detail page
+    const unpaidEquipments = equipments.filter(
       (e) => e.status === BookingEquipmentStatus.Submitted
     );
-    if (unpaidEquipments.length > 0) {
-      shippingFee += 50000; // Shipping fee for unpaid equipment order
-    }
+    const unpaidShippingFee = unpaidEquipments.length > 0 ? 50000 : 0;
     
-    return servicePrice + equipmentPrice + shippingFee;
+    // Total calculation - exactly matching detail page formula
+    return servicePrice + equipmentPrice + paidShippingFee + unpaidShippingFee;
+  };
+
+  const getBookingPaymentStatus = (booking, paymentData) => {
+    // Nếu booking bị hủy thì trả về "Đã hủy"
+    if (booking.status === BookingStatus.Cancelled) {
+      return {
+        text: "Đã hủy",
+        color: "bg-rose-50/50 border-rose-100/50 text-rose-700",
+        dotColor: "bg-rose-500"
+      };
+    }
+
+    // Lấy tất cả payments
+    let allPayments = [];
+    if (booking.payments && Array.isArray(booking.payments)) {
+      allPayments = [...booking.payments];
+    }
+    if (paymentData && paymentData.allPayments && Array.isArray(paymentData.allPayments)) {
+      paymentData.allPayments.forEach(payment => {
+        if (!allPayments.find(p => p.id === payment.id)) {
+          allPayments.push(payment);
+        }
+      });
+    }
+
+    // Kiểm tra service payment (type === 0)
+    const servicePayment = allPayments.find(p => p.type === 0);
+    const isServicePaid = servicePayment && servicePayment.status === PaymentStatus.Completed;
+
+    // Kiểm tra equipment payment (type === 1)
+    const equipmentPayments = allPayments.filter(p => p.type === 1);
+    const hasEquipments = (booking.equipments || []).length > 0;
+    
+    let isEquipmentPaid = true;
+    if (hasEquipments) {
+      // Nếu có equipment, kiểm tra xem tất cả đã được thanh toán chưa
+      // Equipment có status Submitted (1) là chưa thanh toán
+      const unpaidEquipments = (booking.equipments || []).filter(
+        (e) => e.status === BookingEquipmentStatus.Submitted
+      );
+      
+      // Nếu có equipment chưa thanh toán (status === Submitted) → chưa hoàn thành
+      if (unpaidEquipments.length > 0) {
+        isEquipmentPaid = false;
+      } else {
+        // Tất cả equipment đều không phải Submitted
+        // Kiểm tra xem có equipment payments và tất cả đã completed chưa
+        if (equipmentPayments.length > 0) {
+          // Nếu có equipment payments, tất cả phải completed
+          isEquipmentPaid = equipmentPayments.every(p => p.status === PaymentStatus.Completed);
+        } else {
+          // Không có equipment payments
+          // Kiểm tra xem tất cả equipment có paymentId (đã được thanh toán) hoặc status là Paid/AwaitingDelivery/Delivered
+          const allEquipments = booking.equipments || [];
+          const paidEquipments = allEquipments.filter(
+            (e) => e.paymentId || 
+                   e.status === BookingEquipmentStatus.Paid || 
+                   e.status === BookingEquipmentStatus.AwaitingDelivery || 
+                   e.status === BookingEquipmentStatus.Delivered
+          );
+          // Chỉ coi là đã thanh toán nếu TẤT CẢ equipment đều đã được thanh toán
+          isEquipmentPaid = paidEquipments.length === allEquipments.length && allEquipments.length > 0;
+        }
+      }
+    } else {
+      // Không có equipment thì coi như đã "thanh toán" equipment
+      isEquipmentPaid = true;
+    }
+
+    // Nếu cả 2 đều đã thanh toán thì "Đã hoàn thành"
+    if (isServicePaid && isEquipmentPaid) {
+      return {
+        text: "Đã hoàn thành",
+        color: "bg-emerald-50/50 border-emerald-100/50 text-emerald-700",
+        dotColor: "bg-emerald-500"
+      };
+    }
+
+    // Các trường hợp còn lại: "Chưa hoàn thành"
+    return {
+      text: "Chưa hoàn thành",
+      color: "bg-amber-50/50 border-amber-100/50 text-amber-700",
+      dotColor: "bg-amber-500"
+    };
   };
 
   const getStatusThemeColor = (status) => {
@@ -340,6 +419,7 @@ const CustomerBookingsPage = () => {
               const payment = paymentData?.servicePayment;
               const themeColorClass = getStatusThemeColor(booking.status);
               const totalPrice = calculateTotalPrice(booking, paymentData);
+              const paymentStatus = getBookingPaymentStatus(booking, paymentData);
 
               return (
                 <motion.div
@@ -378,26 +458,15 @@ const CustomerBookingsPage = () => {
                           </p>
                         </div>
 
-                        {payment && (
-                          <div className={`p-4 rounded-2xl border ${
-                            payment.status === PaymentStatus.Completed 
-                            ? "bg-emerald-50/50 border-emerald-100/50" 
-                            : "bg-amber-50/50 border-amber-100/50"
-                          }`}>
-                            <p className="text-[10px] font-bold uppercase text-gray-400 mb-1 tracking-tighter">Trạng thái thanh toán</p>
-                            <div className="flex items-center gap-2">
-                               <div className={`w-1.5 h-1.5 rounded-full ${payment.status === PaymentStatus.Completed ? "bg-emerald-500" : "bg-amber-500"}`} />
-                               <span className={`font-bold text-sm ${payment.status === PaymentStatus.Completed ? "text-emerald-700" : "text-amber-700"}`}>
-                                 {getPaymentStatusText(payment.status)}
-                               </span>
-                            </div>
-                            {payment.paidAt && (
-                              <p className="text-[10px] text-gray-400 mt-1 italic leading-none">
-                                Lúc: {formatDate(payment.paidAt)}
-                              </p>
-                            )}
+                        <div className={`p-4 rounded-2xl border ${paymentStatus.color}`}>
+                          <p className="text-[10px] font-bold uppercase text-gray-400 mb-1 tracking-tighter">Trạng thái thanh toán</p>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-1.5 h-1.5 rounded-full ${paymentStatus.dotColor}`} />
+                            <span className={`font-bold text-sm ${paymentStatus.color.includes('emerald') ? 'text-emerald-700' : paymentStatus.color.includes('rose') ? 'text-rose-700' : 'text-amber-700'}`}>
+                              {paymentStatus.text}
+                            </span>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
 
