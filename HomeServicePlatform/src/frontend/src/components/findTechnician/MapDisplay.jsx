@@ -1,16 +1,51 @@
 import React, { useEffect, useRef, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+const createTechnicianIcon = (color = "#EF4444") => {
+  // Mặc định là màu đỏ (Red 500)
+  const svg = `
+    <svg width="50" height="60" viewBox="0 0 50 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="25" cy="54" rx="10" ry="4" fill="black" fill-opacity="0.2"/>
+      <path d="M25 56C25 56 45 37.67 45 25C45 13.9543 36.0457 5 25 5C13.9543 5 5 13.9543 5 25C5 37.67 25 56 25 56Z" fill="${color}"/>
+      <circle cx="25" cy="25" r="14" fill="white"/>
+      <path d="M25 21C26.6569 21 28 19.6569 28 18C28 16.3431 26.6569 15 25 15C23.3431 15 22 16.3431 22 18C22 19.6569 23.3431 21 25 21Z" fill="${color}"/>
+      <path d="M25 23C21.6863 23 19 25.6863 19 29V31H31V29C31 25.6863 28.3137 23 25 23Z" fill="${color}"/>
+      <path d="M25 56C25 56 45 37.67 45 25C45 13.9543 36.0457 5 25 5C13.9543 5 5 13.9543 5 25C5 37.67 25 56 25 56Z" stroke="white" stroke-width="2"/>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+const createTechTooltip = (name) => `
+  <style>
+    .gm-ui-hover-effect {
+      display: none !important;
+    }
+  </style>
+  <div style="
+    padding: 4px 8px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    font-size: 12px;
+    font-weight: 500;
+    color: #111827;
+    white-space: nowrap;
+    line-height: 1.2;
+  ">
+    👨‍🔧 ${name}
+  </div>
+`;
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) *
-      Math.cos(lat2 * Math.PI / 180) *
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
 
@@ -216,12 +251,28 @@ export default function MapDisplay({
             const marker = new window.google.maps.Marker({
               position: techPos,
               map: mapInstance.current,
-              title: tech.name || `Kỹ thuật viên ${id}`,
+              
               icon: {
-                url: technicianIconUrl,
-                scaledSize: { width: 32, height: 32 },
+                url: createTechnicianIcon("#EF4444"), // Màu đỏ rực rỡ
+                scaledSize: new window.google.maps.Size(40, 48),
+                anchor: new window.google.maps.Point(20, 48), // Gắn mũi nhọn vào đúng vị trí tọa độ
               },
             });
+            const hoverInfoWindow = new window.google.maps.InfoWindow({
+  content: createTechTooltip(tech.name || `Kỹ thuật viên ${id}`),
+  disableAutoPan: true,
+});
+
+marker.addListener("mouseover", () => {
+  hoverInfoWindow.open({
+    anchor: marker,
+    map: mapInstance.current,
+  });
+});
+
+marker.addListener("mouseout", () => {
+  hoverInfoWindow.close();
+});
 
             const techPopup = popupContent?.find((p) => p.id === id);
             if (techPopup?.content) {
