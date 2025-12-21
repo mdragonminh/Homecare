@@ -145,7 +145,7 @@ axiosClient.interceptors.response.use(
         }
 
         const response = await refreshTokenPromise;
-        const { jwtToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
 
         if (!newAccessToken || !newRefreshToken) {
           throw new Error("Invalid token response format");

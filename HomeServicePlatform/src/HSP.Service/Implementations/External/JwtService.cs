@@ -74,7 +74,7 @@ namespace HSP.Service.Implementations.External
 
             var refreshExpires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationInDays);
 
-            await _userRepository.RemoveAllTokensForUserAsync(user.Id);
+            //await _userRepository.RemoveAllTokensForUserAsync(user.Id);
 
             await _userRepository.AddRefreshTokenAsync(user.Id, refreshToken, refreshExpires);
 
