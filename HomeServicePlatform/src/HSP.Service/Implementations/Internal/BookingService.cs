@@ -512,77 +512,103 @@ namespace HSP.Service.Implementations.Internal
         {
             var waiting = await _redisCacheService.GetAsync<string>($"waiting_{input.Token}");
             if (string.IsNullOrEmpty(waiting))
-                return new BookingAcceptResultDto { IsSuccess = false, Message = "Link đã hết hạn hoặc đã sử dụng." };
-
+                return new BookingAcceptResultDto
+                {
+                    IsSuccess = false,
+                    Message = "Link đã hết hạn hoặc đã sử dụng."
+                };
             var allowedTech = await _redisCacheService.GetAsync<Guid>($"accept_{input.Token}");
+
             var technician = await _technicianRepository.GetAll()
-                     .FirstOrDefaultAsync(t => t.UserId == userId);
+                .FirstOrDefaultAsync(t => t.UserId == userId);
+
+            if (technician == null)
+                return new BookingAcceptResultDto
+                {
+                    IsSuccess = false,
+                    Message = "Không tìm thấy kỹ thuật viên."
+                };
+
             if (allowedTech == Guid.Empty || allowedTech != technician.Id)
-                return new BookingAcceptResultDto { IsSuccess = false, Message = "Bạn không phải kỹ thuật viên được mời." };
+                return new BookingAcceptResultDto
+                {
+                    IsSuccess = false,
+                    Message = "Bạn không phải kỹ thuật viên được mời."
+                };
 
             var booking = await _bookingRepository.GetAll()
-                .Include(b => b.Technician)
                 .Include(b => b.Customer)
-                .FirstOrDefaultAsync(b => b.Id == input.BookingId)
-                ;
-            if (booking == null)
-                return new BookingAcceptResultDto { IsSuccess = false, Message = "Booking không tồn tại." };
+                .FirstOrDefaultAsync(b => b.Id == input.BookingId);
 
-            if (booking.Status != BookingStatus.Pending)
-                return new BookingAcceptResultDto { IsSuccess = false, Message = "Booking đã được xử lý." };
-            var conversation = await _conversationRepository
-                .GetAll()
-                .Include(c => c.Technician)
-                .Include(c => c.Customer)
-                .FirstOrDefaultAsync(c => c.TechnicianId == technician.Id && c.CustomerId == booking.CustomerId);
+            if (booking == null)
+                return new BookingAcceptResultDto
+                {
+                    IsSuccess = false,
+                    Message = "Booking không tồn tại."
+                };
+
             using (var transaction = await _unitOfWork.BeginTransactionAsync())
             {
+                if (booking.Status != BookingStatus.Pending)
+                {
+                    await transaction.RollbackAsync();
+                    return new BookingAcceptResultDto
+                    {
+                        IsSuccess = false,
+                        Message = "Booking đã được xử lý."
+                    };
+                }
+
                 var hasActiveBooking = await _bookingRepository.GetAll()
-                   .AnyAsync(b =>
-                       b.TechnicianId == technician.Id &&
-                       (b.Status == BookingStatus.Confirmed ||
-                        b.Status == BookingStatus.InProgress)
-                   );
+                    .AnyAsync(b =>
+                        b.TechnicianId == technician.Id &&
+                        (b.Status == BookingStatus.Confirmed ||
+                         b.Status == BookingStatus.InProgress));
 
                 if (hasActiveBooking)
                 {
+                    await transaction.RollbackAsync();
                     return new BookingAcceptResultDto
                     {
                         IsSuccess = false,
                         Message = "Bạn đang có booking khác, không thể nhận thêm."
                     };
                 }
+
                 booking.TechnicianId = technician.Id;
                 booking.Status = BookingStatus.Confirmed;
                 booking.DateModified = DateTime.UtcNow;
+
                 await _unitOfWork.SaveChangesAsync();
+
+                var conversation = await _conversationRepository.GetAll()
+                    .FirstOrDefaultAsync(c =>
+                        c.TechnicianId == technician.Id &&
+                        c.CustomerId == booking.CustomerId);
+
                 if (conversation == null)
                 {
-                    conversation = new ChatConversation
+                    await _conversationRepository.AddAsync(new ChatConversation
                     {
                         BookingId = booking.Id,
                         CustomerId = booking.CustomerId,
                         TechnicianId = technician.Id,
                         IsClosed = false,
                         CreatedAt = DateTime.UtcNow
-                    };
-                    await _conversationRepository.AddAsync(conversation);
+                    });
                 }
-                else
+                else if (conversation.IsClosed)
                 {
-                    if (conversation.IsClosed == true)
-                    {
-                        conversation.BookingId = booking.Id;
-                        conversation.IsClosed = false;
-                        conversation.TechnicianId = technician.Id;
-                        conversation.CreatedAt = DateTime.UtcNow;
-                    }
+                    conversation.BookingId = booking.Id;
+                    conversation.IsClosed = false;
+                    conversation.TechnicianId = technician.Id;
+                    conversation.CreatedAt = DateTime.UtcNow;
                 }
+
                 await _unitOfWork.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
             await _redisCacheService.SetAsync($"accepted_{input.Token}", technician.Id, TimeSpan.FromSeconds(60));
-
             await _redisCacheService.RemoveAsync($"waiting_{input.Token}");
             await _redisCacheService.RemoveAsync($"accept_{input.Token}");
 
@@ -592,7 +618,6 @@ namespace HSP.Service.Implementations.Internal
                 Message = "Bạn đã nhận booking thành công."
             };
         }
-
         public async Task<bool> TechnicianRejectAsync(Guid bookingId, Guid technicianUserId)
         {
             var technician = await _technicianRepository.GetAll()
