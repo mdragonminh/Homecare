@@ -204,7 +204,7 @@ namespace HSP.Service.Implementations.Internal
                .Include(b => b.Equipments).ThenInclude(e => e.Equipment)
                .Include(b => b.Payments)
                .Include(b => b.Feedbacks)
-               
+
                .FirstOrDefaultAsync(b => b.Id == bookingId);
 
             if (booking == null)
@@ -325,7 +325,7 @@ namespace HSP.Service.Implementations.Internal
                 booking.Technician.Latitude,
                 booking.Technician.Longitude
             );
-            
+
             if (input.Status == BookingStatus.Completed && CheckAndUpdateBookingCompletionAsync(input.BookingId).Result)
             {
                 booking.Status = input.Status;
@@ -511,7 +511,6 @@ namespace HSP.Service.Implementations.Internal
         public async Task<BookingAcceptResultDto> AcceptBookingAsync(Guid userId, AcceptBookingDto input)
         {
             var waiting = await _redisCacheService.GetAsync<string>($"waiting_{input.Token}");
-            Console.WriteLine($"Redis waiting_{input.Token}: {waiting}");
             if (string.IsNullOrEmpty(waiting))
                 return new BookingAcceptResultDto { IsSuccess = false, Message = "Link đã hết hạn hoặc đã sử dụng." };
 
@@ -538,6 +537,21 @@ namespace HSP.Service.Implementations.Internal
                 .FirstOrDefaultAsync(c => c.TechnicianId == technician.Id && c.CustomerId == booking.CustomerId);
             using (var transaction = await _unitOfWork.BeginTransactionAsync())
             {
+                var hasActiveBooking = await _bookingRepository.GetAll()
+                   .AnyAsync(b =>
+                       b.TechnicianId == technician.Id &&
+                       (b.Status == BookingStatus.Confirmed ||
+                        b.Status == BookingStatus.InProgress)
+                   );
+
+                if (hasActiveBooking)
+                {
+                    return new BookingAcceptResultDto
+                    {
+                        IsSuccess = false,
+                        Message = "Bạn đang có booking khác, không thể nhận thêm."
+                    };
+                }
                 booking.TechnicianId = technician.Id;
                 booking.Status = BookingStatus.Confirmed;
                 booking.DateModified = DateTime.UtcNow;
@@ -556,7 +570,7 @@ namespace HSP.Service.Implementations.Internal
                 }
                 else
                 {
-                    if(conversation.IsClosed == true)
+                    if (conversation.IsClosed == true)
                     {
                         conversation.BookingId = booking.Id;
                         conversation.IsClosed = false;
