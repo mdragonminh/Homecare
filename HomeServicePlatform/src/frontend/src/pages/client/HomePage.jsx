@@ -314,6 +314,14 @@ export function HomePage({ onShowRegister, loggedInUser }) {
                   <AnimatePresence mode="popLayout" initial={false}>
                     {visibleServices.map((s, idx) => {
                       const Icon = mapServiceTitleToIcon(s.name);
+                      const price = s.price ?? s.Price ?? 0;
+                      const formattedPrice = price > 0
+                        ? new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                            minimumFractionDigits: 0,
+                          }).format(price)
+                        : "Liên hệ";
                       return (
                         <motion.div
                           key={`${s.id}-${serviceStartIndex}-${idx}`}
@@ -324,7 +332,10 @@ export function HomePage({ onShowRegister, loggedInUser }) {
                           className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col items-center h-full hover:shadow-md transition-shadow"
                         >
                           <div className="w-14 h-14 mb-4 bg-blue-50 rounded-xl flex items-center justify-center"><Icon className="w-8 h-8 text-blue-600" /></div>
-                          <h3 className="text-center text-sm font-semibold text-gray-800 line-clamp-1">{s.name}</h3>
+                          <h3 className="text-center text-sm font-semibold text-gray-800 line-clamp-1 mb-2">{s.name}</h3>
+                          <p className="text-center text-xs font-bold text-blue-600 mt-auto">
+                            {formattedPrice}
+                          </p>
                         </motion.div>
                       );
                     })}

@@ -158,6 +158,7 @@ namespace HSP.Service.Implementations.Internal
 				{
 					Id = s.Id,
 					Name = s.Name,
+					Price = s.Price,
 				}).ToListAsync();
 			return services;
 		}
