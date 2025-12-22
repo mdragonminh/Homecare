@@ -12,11 +12,16 @@ import {
   Star,
   Loader2,
   ChevronRight,
+  Calendar,
+  Users,
+  CheckCircle,
+  Heart,
 } from "lucide-react";
 /* eslint-disable no-unused-vars */
 import { motion, AnimatePresence } from "framer-motion";
 import { technicianApi } from "../../services/technicianApi";
 import { serviceApi } from "../../services/serviceApi";
+import { statisticsApi } from "../../services/statisticsApi";
 
 const heroImages = [
   "https://images.pexels.com/photos/3990359/pexels-photo-3990359.jpeg",
@@ -43,6 +48,14 @@ export function HomePage({ onShowRegister, loggedInUser }) {
   const [loadingTechnicians, setLoadingTechnicians] = useState(true);
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
+  const [statistics, setStatistics] = useState({
+    totalBookings: 0,
+    totalTechnicians: 0,
+    activeTechnicians: 0,
+    completionRate: 0,
+    customerSatisfaction: 0,
+  });
+  const [loadingStatistics, setLoadingStatistics] = useState(true);
 
   // Logic xoay vòng Dịch vụ (6 cái)
   const [serviceStartIndex, setServiceStartIndex] = useState(0);
@@ -103,18 +116,37 @@ export function HomePage({ onShowRegister, loggedInUser }) {
     const loadData = async () => {
       setLoadingTechnicians(true);
       setLoadingServices(true);
+      setLoadingStatistics(true);
       try {
-        const [techRes, servRes] = await Promise.all([
+        const [techRes, servRes, statsRes] = await Promise.all([
           technicianApi.getFeaturedTechnicians(12), // Lấy nhiều hơn để xoay vòng
-          serviceApi.getServices()
+          serviceApi.getServices(),
+          statisticsApi.getPublicStatistics()
         ]);
         if (techRes.success) setFeaturedTechnicians(techRes.data || []);
         if (servRes.success) setServices(servRes.data || []);
+        
+        // Xử lý statistics với logging chi tiết
+        console.log("Statistics API Response:", statsRes);
+        if (statsRes.success && statsRes.data) {
+          console.log("Statistics Data:", statsRes.data);
+          setStatistics({
+            totalBookings: statsRes.data.totalBookings || 0,
+            totalTechnicians: statsRes.data.totalTechnicians || 0,
+            activeTechnicians: statsRes.data.activeTechnicians || 0,
+            completionRate: statsRes.data.completionRate || 0,
+            customerSatisfaction: statsRes.data.customerSatisfaction || 0,
+          });
+        } else {
+          console.warn("Statistics API failed or returned no data:", statsRes.message);
+          // Giữ giá trị mặc định (0) nếu API fail
+        }
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu:", err);
       } finally {
         setLoadingTechnicians(false);
         setLoadingServices(false);
+        setLoadingStatistics(false);
       }
     };
     loadData();
@@ -155,6 +187,117 @@ export function HomePage({ onShowRegister, loggedInUser }) {
               </div>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* STATISTICS SECTION */}
+      <section className="py-16 bg-gradient-to-b from-white to-gray-50">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="mb-12 text-center"
+          >
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">
+              Thống kê nền tảng
+            </h2>
+            <p className="text-gray-600 text-sm md:text-base">
+              Những con số minh chứng cho chất lượng dịch vụ của chúng tôi
+            </p>
+          </motion.div>
+
+          {loadingStatistics ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-40 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Total Bookings */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+                <h3 className="text-3xl font-bold text-gray-800 mb-1">
+                  {statistics.totalBookings.toLocaleString("vi-VN")}
+                </h3>
+                <p className="text-sm text-gray-600">Tổng đơn đặt</p>
+              </motion.div>
+
+              {/* Total Technicians */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 transition-colors">
+                    <Users className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+                <h3 className="text-3xl font-bold text-gray-800 mb-1">
+                  {statistics.totalTechnicians.toLocaleString("vi-VN")}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Kỹ thuật viên 
+                </p>
+              </motion.div>
+
+              {/* Completion Rate */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                    <CheckCircle className="w-6 h-6 text-purple-600" />
+                  </div>
+                </div>
+                <h3 className="text-3xl font-bold text-gray-800 mb-1">
+                  {statistics.completionRate.toFixed(1)}%
+                </h3>
+                <p className="text-sm text-gray-600">Tỷ lệ hoàn thành dịch vụ</p>
+              </motion.div>
+
+              {/* Customer Satisfaction */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-pink-50 rounded-xl flex items-center justify-center group-hover:bg-pink-100 transition-colors">
+                    <Heart className="w-6 h-6 text-pink-600" />
+                  </div>
+                </div>
+                <h3 className="text-3xl font-bold text-gray-800 mb-1">
+                  {statistics.customerSatisfaction.toFixed(1)}%
+                </h3>
+                <p className="text-sm text-gray-600">Độ hài lòng khách hàng</p>
+              </motion.div>
+            </div>
+          )}
         </div>
       </section>
 
