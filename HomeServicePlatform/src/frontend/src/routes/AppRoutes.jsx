@@ -216,7 +216,8 @@ export default function AppRoutes({
             loggedInUser={loggedInUser}
             allowedRoles={["admin"]}
           >
-            <AdminLayout loggedInUser={loggedInUser} />
+            <AdminLayout loggedInUser={loggedInUser}
+            onLogout={handleLogoutAndNavigate} />
           </ProtectedRoleLayout>
         }
       >
@@ -239,7 +240,7 @@ export default function AppRoutes({
             loggedInUser={loggedInUser}
             allowedRoles={["operator", "supporter"]}
           >
-            <OperatorLayout loggedInUser={loggedInUser} />
+            <OperatorLayout loggedInUser={loggedInUser} onLogout={handleLogoutAndNavigate} />
           </ProtectedRoleLayout>
         }
       >
@@ -270,7 +271,8 @@ export default function AppRoutes({
             loggedInUser={loggedInUser}
             allowedRoles={["equipmentmanager"]}
           >
-            <EquipmentManagerLayout loggedInUser={loggedInUser} />
+            <EquipmentManagerLayout loggedInUser={loggedInUser}
+             onLogout={handleLogoutAndNavigate} />
           </ProtectedRoleLayout>
         }
       >

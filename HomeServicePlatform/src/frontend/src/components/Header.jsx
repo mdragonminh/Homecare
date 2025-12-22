@@ -1,9 +1,8 @@
 import React from "react";
-import { Home, Menu, ClipboardList } from "lucide-react";
+import { Home, Menu, ClipboardList, MessageCircle, Briefcase, LayoutGrid } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AuthButtons } from "./AuthButtons";
 import { useTranslation } from "react-i18next";
-// LanguageSwitcher đã được loại bỏ như yêu cầu trước đó
 
 export function Header({
   onShowLogin,
@@ -16,7 +15,7 @@ export function Header({
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const headerRef = React.useRef(null);
 
-  /* Mouse move effect for dynamic background */
+  /* Hiệu ứng di chuyển chuột cho background động */
   React.useEffect(() => {
     const header = headerRef.current;
     if (!header) return;
@@ -33,10 +32,12 @@ export function Header({
     return () => header.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  const buttonClass =
-    "px-4 py-2 font-semibold text-gray-800 relative " +
+  // Style cho từng mục trong Floating Dock
+  const dockItemClass =
+    "flex items-center gap-2 px-4 py-2 font-bold text-gray-800 " +
     "transition-all duration-300 rounded-xl " +
-    "hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:shadow-md";
+    "hover:text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 " +
+    "hover:scale-110 hover:-translate-y-0.5 active:scale-95";
 
   return (
     <header
@@ -50,74 +51,59 @@ export function Header({
       }}
     >
       <div className="container mx-auto px-4 lg:px-6">
-        {/* ===== HEADER LAYOUT (DESKTOP) ===== */}
         <div className="flex items-center h-20 justify-between">
-          {/* LOGO */}
+          
+          {/* LOGO - Cố định bên trái */}
           <div
-            className="flex items-center space-x-3 cursor-pointer group shrink-0"
+            className="flex items-center space-x-3 cursor-pointer group shrink-0 w-1/4"
             onClick={() => navigate("/")}
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
-              <Home className="w-6 h-6 text-white" />
+            <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-blue-400/50 group-hover:rotate-3 transition-all duration-300">
+              <Home className="w-5 h-5 text-white" />
             </div>
-            <span className="hidden lg:block font-extrabold text-2xl text-blue-600 group-hover:text-blue-500 transition-colors duration-300 tracking-tight">
+            <span className="hidden lg:block font-extrabold text-2xl text-blue-700 group-hover:text-blue-600 transition-colors duration-300 tracking-tight">
               {t("app.name")}
             </span>
           </div>
 
-          {/* NAV */}
-          <nav className="hidden md:flex items-center space-x-2 mx-auto px-4">
-            <button onClick={() => navigate("/")} className={buttonClass}>
-              {t("nav.home")}
-            </button>
+          {/* FLOATING DOCK - Căn giữa tuyệt đối */}
+          <nav className="hidden md:flex items-center justify-center flex-1">
+            <div className="flex items-center space-x-1 bg-white/30 backdrop-blur-md p-1.5 rounded-2xl border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+              {/* Nút Trang chủ */}
+              <button onClick={() => navigate("/")} className={dockItemClass}>
+                <LayoutGrid className="w-4 h-4" />
+                <span className="text-sm">{t("nav.home")}</span>
+              </button>
 
-            {loggedInUser?.role !== "technician" &&
-              loggedInUser?.role !== "supporter" &&
-              loggedInUser?.role !== "equipmentmanager" && (
-                <button
-                  onClick={() => navigate("/services")}
-                  className={buttonClass}
-                >
-                  {t("nav.services")}
-                </button>
+              {/* Nút Dịch vụ */}
+              {loggedInUser?.role !== "technician" &&
+                loggedInUser?.role !== "supporter" &&
+                loggedInUser?.role !== "equipmentmanager" && (
+                  <button onClick={() => navigate("/services")} className={dockItemClass}>
+                    <Briefcase className="w-4 h-4" />
+                    <span className="text-sm">{t("nav.services")}</span>
+                  </button>
+                )}
+
+              {/* Nút dành cho Customer */}
+              {loggedInUser?.role === "customer" && (
+                <>
+                  <button onClick={() => navigate("/my-bookings")} className={dockItemClass}>
+                    <ClipboardList className="w-4 h-4" />
+                    <span className="text-sm">Booking của tôi</span>
+                  </button>
+
+                  <button onClick={() => navigate("/chat")} className={dockItemClass}>
+                    <MessageCircle className="w-4 h-4" />
+                    <span className="text-sm">Chat</span>
+                  </button>
+                </>
               )}
-
-            {loggedInUser?.role === "customer" && (
-              <>
-                <button
-                  onClick={() => navigate("/my-bookings")}
-                  className={`${buttonClass} flex items-center space-x-2`}
-                >
-                  <ClipboardList className="w-4 h-4" />
-                  <span>Booking của tôi</span>
-                </button>
-
-                <button
-                  onClick={() => navigate("/chat")}
-                  className={buttonClass}
-                >
-                  Chat
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={() => navigate("/about")}
-              className={buttonClass}
-            >
-              {t("nav.about_us")}
-            </button>
-
-            <button
-              onClick={() => navigate("/contact")}
-              className={buttonClass}
-            >
-              {t("nav.contact")}
-            </button>
+            </div>
           </nav>
 
-          {/* RIGHT */}
-          <div className="flex items-center space-x-4 shrink-0">
+          {/* RIGHT ACTIONS - Cố định bên phải */}
+          <div className="flex items-center justify-end space-x-4 shrink-0 w-1/4">
             <div className="hidden md:block">
               <AuthButtons
                 loggedInUser={loggedInUser}
@@ -125,13 +111,14 @@ export function Header({
                 onShowRegister={onShowRegister}
                 onLogout={onLogout}
                 navigate={navigate}
-                isMobile={false} // <-- TRUE/FALSE cho Desktop
+                isMobile={false}
               />
             </div>
 
+            {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-800 bg-white/60 backdrop-blur-md relative overflow-hidden hover:text-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 rounded-xl transition-all duration-300 shadow-sm"
+              className="md:hidden p-2 text-gray-800 bg-white/60 backdrop-blur-md hover:bg-white transition-all rounded-xl shadow-sm"
               aria-label="Toggle menu"
             >
               <Menu className="w-7 h-7" />
@@ -139,108 +126,57 @@ export function Header({
           </div>
         </div>
 
-        {/* ===== MOBILE MENU ===== */}
+        {/* MOBILE MENU */}
         {mobileMenuOpen && (
-          <div
-            className="
-              md:hidden absolute top-20 left-0 right-0
-              bg-white/95 backdrop-blur-xl
-              animate-slideIn
-              shadow-xl
-              overflow-y-auto
-              max-h-[80vh]
-              rounded-b-xl
-            "
-          >
-            {/* AUTH */}
-            <div className="px-4 pt-6 pb-4 border-b border-gray-200">
+          <div className="md:hidden absolute top-20 left-4 right-4 bg-white/95 backdrop-blur-2xl animate-slideIn shadow-2xl overflow-hidden rounded-2xl border border-gray-100">
+            <div className="px-4 pt-6 pb-4 border-b border-gray-100">
               <AuthButtons
                 loggedInUser={loggedInUser}
-                onShowLogin={() => {
-                  onShowLogin();
-                  setMobileMenuOpen(false);
-                }}
-                onShowRegister={() => {
-                  onShowRegister();
-                  setMobileMenuOpen(false);
-                }}
-                onLogout={() => {
-                  onLogout();
-                  setMobileMenuOpen(false);
-                }}
+                onShowLogin={() => { onShowLogin(); setMobileMenuOpen(false); }}
+                onShowRegister={() => { onShowRegister(); setMobileMenuOpen(false); }}
+                onLogout={() => { onLogout(); setMobileMenuOpen(false); }}
                 navigate={navigate}
-                isMobile={true} // <-- TRUE/FALSE cho Mobile
+                isMobile={true}
               />
             </div>
 
-            {/* NAV */}
-            <nav className="flex flex-col space-y-3 px-4 py-6">
+            <nav className="flex flex-col space-y-2 px-4 py-6">
               <button
-                onClick={() => {
-                  navigate("/");
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold"
+                onClick={() => { navigate("/"); setMobileMenuOpen(false); }}
+                className="flex items-center space-x-3 w-full px-5 py-3 text-gray-900 bg-gray-50 rounded-xl font-semibold active:scale-95 transition-all"
               >
-                {t("nav.home")}
+                <Home className="w-5 h-5" />
+                <span>{t("nav.home")}</span>
               </button>
 
               {loggedInUser?.role !== "technician" && (
                 <button
-                  onClick={() => {
-                    navigate("/services");
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold"
+                  onClick={() => { navigate("/services"); setMobileMenuOpen(false); }}
+                  className="flex items-center space-x-3 w-full px-5 py-3 text-gray-900 bg-gray-50 rounded-xl font-semibold active:scale-95 transition-all"
                 >
-                  {t("nav.services")}
+                  <Briefcase className="w-5 h-5" />
+                  <span>{t("nav.services")}</span>
                 </button>
               )}
 
               {loggedInUser?.role === "customer" && (
                 <>
                   <button
-                    onClick={() => {
-                      navigate("/my-bookings");
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold flex items-center space-x-2"
+                    onClick={() => { navigate("/my-bookings"); setMobileMenuOpen(false); }}
+                    className="flex items-center space-x-3 w-full px-5 py-3 text-gray-900 bg-gray-50 rounded-xl font-semibold active:scale-95 transition-all"
                   >
-                    <ClipboardList className="w-4 h-4" />
+                    <ClipboardList className="w-5 h-5" />
                     <span>Booking của tôi</span>
                   </button>
-
                   <button
-                    onClick={() => {
-                      navigate("/chat");
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold"
+                    onClick={() => { navigate("/chat"); setMobileMenuOpen(false); }}
+                    className="flex items-center space-x-3 w-full px-5 py-3 text-gray-900 bg-gray-50 rounded-xl font-semibold active:scale-95 transition-all"
                   >
-                    Chat
+                    <MessageCircle className="w-5 h-5" />
+                    <span>Chat</span>
                   </button>
                 </>
               )}
-
-              <button
-                onClick={() => {
-                  navigate("/about");
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold"
-              >
-                {t("nav.about_us")}
-              </button>
-
-              <button
-                onClick={() => {
-                  navigate("/contact");
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full px-5 py-3 text-left text-gray-900 bg-white/80 rounded-xl shadow-sm hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 font-semibold"
-              >
-                {t("nav.contact")}
-              </button>
             </nav>
           </div>
         )}

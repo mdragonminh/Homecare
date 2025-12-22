@@ -6,6 +6,7 @@ import {
   CubeIcon,
   ClipboardDocumentListIcon,
   HomeIcon,
+  ArrowLeftStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
@@ -13,7 +14,7 @@ import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
 const { Sider, Content, Header } = Layout;
 const { Title } = Typography;
 
-export default function EquipmentManagerLayout({ loggedInUser }) {
+export default function EquipmentManagerLayout({ loggedInUser, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -130,19 +131,22 @@ export default function EquipmentManagerLayout({ loggedInUser }) {
           <Space>
             {/* <LanguageSwitcher /> */}
             <Button
-              type="default"
-              icon={<HomeIcon style={{ width: 16, height: 16 }} />}
-              onClick={() => navigate("/")}
-              style={{
-                borderRadius: 8,
-                height: 36,
-                fontWeight: 500,
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              {t("ui.back_to_home")}
-            </Button>
+  type="primary"
+  danger
+  icon={<ArrowLeftStartOnRectangleIcon style={{ width: 16, height: 16 }} />}
+  onClick={() => {
+    if (onLogout) onLogout();
+  }}
+  style={{
+    borderRadius: 8,
+    height: 36,
+    fontWeight: 500,
+    display: "flex",
+    alignItems: "center",
+  }}
+>
+  {t("ui.logout", "Đăng xuất")}
+</Button>
           </Space>
         </Header>
 

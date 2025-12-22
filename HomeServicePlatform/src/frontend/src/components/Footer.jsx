@@ -39,15 +39,7 @@ export function Footer() {
               </div>
               <span className="font-semibold text-lg">HomeServicePlatform</span>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Nền tảng quản lý dịch vụ nhà thông minh, kết nối mọi người trong cộng đồng
-              để tạo ra trải nghiệm sống tốt nhất.
-            </p>
-            <div className="flex space-x-3">
-              <Facebook className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
-              <Twitter className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
-              <Linkedin className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
-            </div>
+
           </div>
 
           {/* Quick Links */}
@@ -56,9 +48,6 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li><a href="/" className="text-gray-400 hover:text-white transition-colors">Trang chủ</a></li>
               <li><a href="/services" className="text-gray-400 hover:text-white transition-colors">Dịch vụ</a></li>
-              <li><a href="/about" className="text-gray-400 hover:text-white transition-colors">Về chúng tôi</a></li>
-              <li><a href="/contact" className="text-gray-400 hover:text-white transition-colors">Liên hệ/Hỗ trợ</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Điều khoản</a></li>
             </ul>
           </div>
 

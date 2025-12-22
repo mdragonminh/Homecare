@@ -6,6 +6,7 @@ import {
   CreditCardOutlined,
   CustomerServiceOutlined,
   UserOutlined,
+  LogoutOutlined,
   HistoryOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, Space, Typography } from "antd";
@@ -17,7 +18,7 @@ import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
 const { Sider, Content, Header } = Layout;
 const { Title } = Typography;
 
-export default function AdminLayout({ loggedInUser }) {
+export default function AdminLayout({ loggedInUser, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -155,17 +156,21 @@ export default function AdminLayout({ loggedInUser }) {
           <Space>
             {/* <LanguageSwitcher /> */}
             <Button
-              type="default"
-              icon={<HomeOutlined />}
-              onClick={() => navigate("/")}
-              style={{
-                borderRadius: 8,
-                height: 36,
-                fontWeight: 500,
-              }}
-            >
-              {t("ui.back_to_home")}
-            </Button>
+      type="primary"
+      danger // Nút màu đỏ để cảnh báo
+      icon={<LogoutOutlined />}
+      onClick={() => {
+        onLogout();      // Gọi hàm xóa session từ App.jsx
+        navigate("/");   // Đưa người dùng về trang chủ hoặc trang login
+      }}
+      style={{
+        borderRadius: 8,
+        height: 36,
+        fontWeight: 500,
+      }}
+    >
+      {t("ui.logout", "Đăng xuất")}
+    </Button>
           </Space>
         </Header>
 

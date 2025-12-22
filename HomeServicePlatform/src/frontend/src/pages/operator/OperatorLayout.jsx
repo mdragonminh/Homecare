@@ -8,6 +8,7 @@ import {
   ToolOutlined,
   CalendarOutlined,
   CreditCardOutlined,
+  LogoutOutlined
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
@@ -15,7 +16,7 @@ import LanguageSwitcher from "../../components/LanguageSwitcher.jsx";
 const { Sider, Content, Header } = Layout;
 const { Title } = Typography;
 
-export default function OperatorLayout({ loggedInUser }) {
+export default function OperatorLayout({ loggedInUser, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -151,18 +152,21 @@ export default function OperatorLayout({ loggedInUser }) {
             🏠 {t("operator.platform_title", "Operator Dashboard")}
           </Title>
           <Space>
-            <LanguageSwitcher />
-            <Button
-              type="default"
-              icon={<HomeOutlined />}
-              onClick={() => navigate("/")}
+            {/* <LanguageSwitcher /> */}
+           <Button
+              type="primary"
+              danger // Màu đỏ cảnh báo
+              icon={<LogoutOutlined />}
+              onClick={() => {
+                if (onLogout) onLogout();
+              }}
               style={{
                 borderRadius: 8,
                 height: 36,
                 fontWeight: 500,
               }}
             >
-              {t("ui.back_to_home")}
+              {t("ui.logout", "Đăng xuất")}
             </Button>
           </Space>
         </Header>
