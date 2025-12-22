@@ -12,12 +12,14 @@ namespace HSP.DAL.Extensions
 						PaginationParams paginationParams) where T : class
 		{
 			var query = source.AsNoTracking();
-			var count = await source.CountAsync();
 
-			if (!string.IsNullOrWhiteSpace(paginationParams.OrderBy))
-			{
-				query = query.OrderBy(paginationParams.OrderBy);
-			}
+            if (!string.IsNullOrWhiteSpace(paginationParams.OrderBy))
+            {
+                query = query.OrderBy(paginationParams.OrderBy);
+            }
+
+            var count = await query.CountAsync();
+
 			var items = await query
 					.Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
 					.Take(paginationParams.PageSize)
