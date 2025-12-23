@@ -57,11 +57,8 @@ export function HomePage({ onShowRegister, loggedInUser }) {
   });
   const [loadingStatistics, setLoadingStatistics] = useState(true);
 
-  // Logic xoay vòng Dịch vụ (6 cái)
+  // Logic xoay vòng Dịch vụ
   const [serviceStartIndex, setServiceStartIndex] = useState(0);
-  
-  // Logic xoay vòng Kỹ thuật viên (4 cái) - MỚI
-  const [techStartIndex, setTechStartIndex] = useState(0);
 
   // Hero slider
   useEffect(() => {
@@ -81,16 +78,7 @@ export function HomePage({ onShowRegister, loggedInUser }) {
     }
   }, [services.length]);
 
-  // Tự động nhảy Kỹ thuật viên - MỚI
-  useEffect(() => {
-    if (featuredTechnicians.length > 4) {
-      const interval = setInterval(() => {
-        setTechStartIndex((prev) => (prev + 1) % featuredTechnicians.length);
-      }, 6000); // Tech nhảy chậm hơn dịch vụ 1 chút để đỡ rối mắt
-      return () => clearInterval(interval);
-    }
-  }, [featuredTechnicians.length]);
-
+  // Tính toán 6 dịch vụ hiển thị
   const visibleServices = useMemo(() => {
     if (services.length === 0) return [];
     let items = [];
@@ -100,16 +88,13 @@ export function HomePage({ onShowRegister, loggedInUser }) {
     return items;
   }, [services, serviceStartIndex]);
 
-  // Tính toán 4 Tech hiển thị - MỚI
-  const visibleTechs = useMemo(() => {
-    if (featuredTechnicians.length === 0) return [];
-    let items = [];
-    const countToShow = Math.min(4, featuredTechnicians.length);
-    for (let i = 0; i < countToShow; i++) {
-      items.push(featuredTechnicians[(techStartIndex + i) % featuredTechnicians.length]);
-    }
-    return items;
-  }, [featuredTechnicians, techStartIndex]);
+  // Sắp xếp và lấy Top 4 kỹ thuật viên có Rating cao nhất
+  const topRatedTechs = useMemo(() => {
+    if (!featuredTechnicians || featuredTechnicians.length === 0) return [];
+    return [...featuredTechnicians]
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 4);
+  }, [featuredTechnicians]);
 
   // Load data
   useEffect(() => {
@@ -119,17 +104,14 @@ export function HomePage({ onShowRegister, loggedInUser }) {
       setLoadingStatistics(true);
       try {
         const [techRes, servRes, statsRes] = await Promise.all([
-          technicianApi.getFeaturedTechnicians(12), // Lấy nhiều hơn để xoay vòng
+          technicianApi.getFeaturedTechnicians(20), // Lấy đủ dữ liệu để lọc top
           serviceApi.getServices(),
           statisticsApi.getPublicStatistics()
         ]);
         if (techRes.success) setFeaturedTechnicians(techRes.data || []);
         if (servRes.success) setServices(servRes.data || []);
         
-        // Xử lý statistics với logging chi tiết
-        console.log("Statistics API Response:", statsRes);
         if (statsRes.success && statsRes.data) {
-          console.log("Statistics Data:", statsRes.data);
           setStatistics({
             totalBookings: statsRes.data.totalBookings || 0,
             totalTechnicians: statsRes.data.totalTechnicians || 0,
@@ -137,9 +119,6 @@ export function HomePage({ onShowRegister, loggedInUser }) {
             completionRate: statsRes.data.completionRate || 0,
             customerSatisfaction: statsRes.data.customerSatisfaction || 0,
           });
-        } else {
-          console.warn("Statistics API failed or returned no data:", statsRes.message);
-          // Giữ giá trị mặc định (0) nếu API fail
         }
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu:", err);
@@ -162,7 +141,7 @@ export function HomePage({ onShowRegister, loggedInUser }) {
 
   return (
     <div className="bg-white min-h-screen">
-      {/* HERO SECTION - Giữ nguyên */}
+      {/* HERO SECTION */}
       <section className="relative h-[420px] md:h-[520px] overflow-hidden">
         {heroImages.map((img, i) => (
           <motion.div
@@ -193,221 +172,138 @@ export function HomePage({ onShowRegister, loggedInUser }) {
       {/* STATISTICS SECTION */}
       <section className="py-16 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="mb-12 text-center"
-          >
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">
-              Thống kê nền tảng
-            </h2>
-            <p className="text-gray-600 text-sm md:text-base">
-              Những con số minh chứng cho chất lượng dịch vụ của chúng tôi
-            </p>
-          </motion.div>
-
-          {loadingStatistics ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-40 animate-pulse"
-                />
-              ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Items render dựa trên state statistics... (Giống code cũ của bạn) */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-100"><Calendar className="w-6 h-6 text-blue-600" /></div>
+              <h3 className="text-3xl font-bold text-gray-800 mb-1">{statistics.totalBookings.toLocaleString("vi-VN")}</h3>
+              <p className="text-sm text-gray-600">Tổng đơn đặt</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Total Bookings */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                    <Calendar className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
-                <h3 className="text-3xl font-bold text-gray-800 mb-1">
-                  {statistics.totalBookings.toLocaleString("vi-VN")}
-                </h3>
-                <p className="text-sm text-gray-600">Tổng đơn đặt</p>
-              </motion.div>
-
-              {/* Total Technicians */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 transition-colors">
-                    <Users className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-                <h3 className="text-3xl font-bold text-gray-800 mb-1">
-                  {statistics.totalTechnicians.toLocaleString("vi-VN")}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Kỹ thuật viên 
-                </p>
-              </motion.div>
-
-              {/* Completion Rate */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 transition-colors">
-                    <CheckCircle className="w-6 h-6 text-purple-600" />
-                  </div>
-                </div>
-                <h3 className="text-3xl font-bold text-gray-800 mb-1">
-                  {statistics.completionRate.toFixed(1)}%
-                </h3>
-                <p className="text-sm text-gray-600">Tỷ lệ hoàn thành dịch vụ</p>
-              </motion.div>
-
-              {/* Customer Satisfaction */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-pink-50 rounded-xl flex items-center justify-center group-hover:bg-pink-100 transition-colors">
-                    <Heart className="w-6 h-6 text-pink-600" />
-                  </div>
-                </div>
-                <h3 className="text-3xl font-bold text-gray-800 mb-1">
-                  {statistics.customerSatisfaction.toFixed(1)}%
-                </h3>
-                <p className="text-sm text-gray-600">Độ hài lòng khách hàng</p>
-              </motion.div>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-green-100"><Users className="w-6 h-6 text-green-600" /></div>
+              <h3 className="text-3xl font-bold text-gray-800 mb-1">{statistics.totalTechnicians.toLocaleString("vi-VN")}</h3>
+              <p className="text-sm text-gray-600">Kỹ thuật viên</p>
             </div>
-          )}
-        </div>
-      </section>
-
-      {/* POPULAR SERVICES - CAROUSEL (Giữ nguyên logic của bạn) */}
-      <section className="py-20">
-        <div className="container mx-auto px-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12 text-gray-800">Dịch vụ phổ biến</h2>
-          <div className="relative group">
-            {loadingServices ? (
-              <div className="flex justify-center items-center h-48 w-full"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 pr-4 md:pr-12">
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    {visibleServices.map((s, idx) => {
-                      const Icon = mapServiceTitleToIcon(s.name);
-                      const price = s.price ?? s.Price ?? 0;
-                      const formattedPrice = price > 0
-                        ? new Intl.NumberFormat("vi-VN", {
-                            style: "currency",
-                            currency: "VND",
-                            minimumFractionDigits: 0,
-                          }).format(price)
-                        : "Liên hệ";
-                      return (
-                        <motion.div
-                          key={`${s.id}-${serviceStartIndex}-${idx}`}
-                          initial={{ opacity: 0, x: 50 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -50 }}
-                          transition={{ duration: 0.5 }}
-                          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col items-center h-full hover:shadow-md transition-shadow"
-                        >
-                          <div className="w-14 h-14 mb-4 bg-blue-50 rounded-xl flex items-center justify-center"><Icon className="w-8 h-8 text-blue-600" /></div>
-                          <h3 className="text-center text-sm font-semibold text-gray-800 line-clamp-1 mb-2">{s.name}</h3>
-                          <p className="text-center text-xs font-bold text-blue-600 mt-auto">
-                            {formattedPrice}
-                          </p>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </div>
-                <button onClick={() => setServiceStartIndex(prev => (prev + 1) % services.length)} className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 z-20 p-2 text-blue-600 hover:scale-110 transition-all"><ChevronRight className="w-10 h-10 md:w-12 md:h-12" /></button>
-              </>
-            )}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-100"><CheckCircle className="w-6 h-6 text-purple-600" /></div>
+              <h3 className="text-3xl font-bold text-gray-800 mb-1">{statistics.completionRate.toFixed(1)}%</h3>
+              <p className="text-sm text-gray-600">Tỷ lệ hoàn thành</p>
+            </div>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 bg-pink-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-pink-100"><Heart className="w-6 h-6 text-pink-600" /></div>
+              <h3 className="text-3xl font-bold text-gray-800 mb-1">{statistics.customerSatisfaction.toFixed(1)}%</h3>
+              <p className="text-sm text-gray-600">Hài lòng khách hàng</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* TECHNICIANS - CAROUSEL (Đã cập nhật giống Dịch vụ) */}
+      {/* POPULAR SERVICES - CAROUSEL ĐÃ TỐI ƯU MOBILE */}
+      {/* POPULAR SERVICES - ĐÃ LOẠI BỎ BORDER VÀ SỬA LỖI ĐÈ TRÊN MOBILE */}
+<section className="py-20">
+  <div className="container mx-auto px-6">
+    <h2 className="text-2xl md:text-3xl font-bold text-center mb-12 text-gray-800">Dịch vụ phổ biến</h2>
+    
+    {/* Sử dụng flex để nút nằm ngoài danh sách card */}
+    <div className="flex items-center gap-2 md:gap-4">
+      
+      {/* Container chứa Grid Dịch vụ */}
+      <div className="flex-1 overflow-hidden">
+        {loadingServices ? (
+          <div className="flex justify-center items-center h-48 w-full">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-6">
+            <AnimatePresence mode="popLayout" initial={false}>
+              {visibleServices.map((s, idx) => {
+                const Icon = mapServiceTitleToIcon(s.name);
+                const price = s.price ?? s.Price ?? 0;
+                const formattedPrice = price > 0
+                  ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", minimumFractionDigits: 0 }).format(price)
+                  : "Liên hệ";
+                return (
+                  <motion.div
+                    key={`${s.id}-${serviceStartIndex}-${idx}`}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.4 }}
+                    className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 flex flex-col items-center h-full"
+                  >
+                    <div className="w-10 h-10 md:w-14 md:h-14 mb-3 bg-blue-50 rounded-xl flex items-center justify-center">
+                      <Icon className="w-5 h-5 md:w-8 md:h-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-center text-[12px] md:text-sm font-semibold text-gray-800 line-clamp-1 mb-1">{s.name}</h3>
+                    <p className="text-center text-[10px] md:text-xs font-bold text-blue-600 mt-auto">{formattedPrice}</p>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+
+      {/* NÚT MŨI TÊN - CHỈ GIỮ ICON, KHÔNG BORDER, KHÔNG BACKGROUND */}
+      {!loadingServices && (
+        <button 
+          onClick={() => setServiceStartIndex(prev => (prev + 1) % services.length)} 
+          className="flex-shrink-0 text-blue-600 hover:scale-125 active:scale-90 transition-all"
+        >
+          <ChevronRight className="w-8 h-8 md:w-12 md:h-12" />
+        </button>
+      )}
+      
+    </div>
+  </div>
+</section>
+
+      {/* TECHNICIANS - TOP 4 RATING (KHÔNG MŨI TÊN) */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12 text-gray-800">Thợ được đánh giá cao</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12 text-gray-800">Thợ được đánh giá cao nhất</h2>
           
-          <div className="relative group">
+          <div>
             {loadingTechnicians ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="bg-gray-200 rounded-2xl h-64 animate-pulse shadow" />
+                  <div key={i} className="bg-white rounded-2xl h-64 animate-pulse shadow-sm" />
                 ))}
               </div>
             ) : (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pr-4 md:pr-12">
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    {visibleTechs.map((t, idx) => (
-                      <motion.div
-                        key={`${t.id}-${techStartIndex}-${idx}`}
-                        initial={{ opacity: 0, x: 50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -50 }}
-                        transition={{ duration: 0.6 }}
-                        className="bg-white rounded-2xl p-6 text-center shadow-sm border border-gray-100 flex flex-col items-center"
-                      >
-                        <img
-                          src={getAvatarUrl(t.avatarUrl) || `https://i.pravatar.cc/150?u=${t.id}`}
-                          alt={t.fullName}
-                          className="w-24 h-24 mx-auto rounded-full object-cover border-4 border-gray-100"
-                          onError={(e) => (e.target.src = `https://i.pravatar.cc/150?u=${t.id}`)}
-                        />
-                        <h3 className="mt-4 text-sm font-semibold text-gray-800 line-clamp-1">{t.fullName}</h3>
-                        <div className="flex items-center justify-center mt-3 text-yellow-500">
-                          <Star className="w-5 h-5 fill-current" />
-                          <span className="ml-1 text-sm font-bold">{t.rating?.toFixed(1) || "5.0"}</span>
-                          <span className="ml-1 text-xs text-gray-500">({t.ratingCount || 0})</span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-
-                {/* Nút mũi tên cho Tech */}
-                <button
-                  onClick={() => setTechStartIndex(prev => (prev + 1) % featuredTechnicians.length)}
-                  className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 z-20 p-2 text-blue-600 hover:scale-110 transition-all"
-                >
-                  <ChevronRight className="w-10 h-10 md:w-12 md:h-12" />
-                </button>
-              </>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+                {topRatedTechs.map((t) => (
+                  <motion.div
+                    key={t.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="bg-white rounded-2xl p-5 md:p-6 text-center shadow-sm border border-gray-100 flex flex-col items-center hover:shadow-md transition-all"
+                  >
+                    <div className="relative">
+                      <img
+                        src={getAvatarUrl(t.avatarUrl) || `https://i.pravatar.cc/150?u=${t.id}`}
+                        alt={t.fullName}
+                        className="w-20 h-20 md:w-24 md:h-24 mx-auto rounded-full object-cover border-4 border-white shadow-sm"
+                        onError={(e) => (e.target.src = `https://i.pravatar.cc/150?u=${t.id}`)}
+                      />
+                      <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-1 border-2 border-white">
+                        <Star className="w-3 h-3 text-white fill-current" />
+                      </div>
+                    </div>
+                    <h3 className="mt-4 text-sm font-semibold text-gray-800 line-clamp-1">{t.fullName}</h3>
+                    <div className="flex items-center justify-center mt-3 text-yellow-500">
+                      <Star className="w-4 h-4 fill-current" />
+                      <span className="ml-1 text-sm font-bold text-gray-700">{t.rating?.toFixed(1) || "5.0"}</span>
+                      <span className="ml-1 text-[10px] text-gray-400">({t.ratingCount || 0})</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             )}
           </div>
         </div>
       </section>
-
-      {loggedInUser?.role === "admin" && (
-        <div className="text-center py-12">
-          <a href="/admin/accounts" className="inline-block px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-lg">Vào Trang Quản Trị</a>
-        </div>
-      )}
     </div>
   );
 }
