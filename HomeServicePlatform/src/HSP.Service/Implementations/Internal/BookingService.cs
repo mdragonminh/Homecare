@@ -195,7 +195,7 @@ namespace HSP.Service.Implementations.Internal
             return pagedResult;
         }
 
-        public async Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId)
+        public async Task<BookingDetailDto?> GetBookingDetailAsync(Guid bookingId, Guid userId)
         {
             var booking = await _bookingRepository.GetAll()
                .Include(b => b.Customer)
@@ -204,7 +204,7 @@ namespace HSP.Service.Implementations.Internal
                .Include(b => b.Equipments).ThenInclude(e => e.Equipment)
                .Include(b => b.Payments)
                .Include(b => b.Feedbacks)
-
+               .Where(x=> (x.Technician != null && x.TechnicianId == userId) || (x.Customer != null && x.CustomerId == userId))
                .FirstOrDefaultAsync(b => b.Id == bookingId);
 
             if (booking == null)

@@ -115,7 +115,8 @@ namespace HSP.API.Controllers
 		{
 			try
 			{
-				var result = await _bookingService.GetBookingDetailAsync(id);
+				var userId = User.GetUserId();
+                var result = await _bookingService.GetBookingDetailAsync(id, userId);
 				if (result == null)
 					return NotFound(new { message = "Booking not found" });
 				return Ok(result);
