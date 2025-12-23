@@ -204,7 +204,7 @@ namespace HSP.Service.Implementations.Internal
                .Include(b => b.Equipments).ThenInclude(e => e.Equipment)
                .Include(b => b.Payments)
                .Include(b => b.Feedbacks)
-               .Where(x=> (x.Technician != null && x.TechnicianId == userId) || (x.Customer != null && x.CustomerId == userId))
+               .Where(x=> (x.Technician != null && x.Technician.UserId == userId) || (x.Customer != null && x.CustomerId == userId))
                .FirstOrDefaultAsync(b => b.Id == bookingId);
 
             if (booking == null)
