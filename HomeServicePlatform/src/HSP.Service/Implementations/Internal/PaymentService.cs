@@ -656,12 +656,12 @@ namespace HSP.Service.Implementations.Internal
             return true;
         }
 
-        public async Task<PaymentDetailDto?> QueryPaymentStatusAsync(Guid paymentId)
+        public async Task<PaymentDetailDto?> QueryPaymentStatusAsync(Guid paymentId, Guid userId)
         {
             var payment = await _paymentRepository.GetByIdAsync(paymentId);
             if (payment == null || string.IsNullOrEmpty(payment.SePayOrderId))
             {
-                return await GetPaymentByIdAsync(paymentId);
+                return await GetPaymentByIdAsync(paymentId, userId);
             }
 
             // Query status from SePay
@@ -693,7 +693,7 @@ namespace HSP.Service.Implementations.Internal
                 }
             }
 
-            return await GetPaymentByIdAsync(paymentId);
+            return await GetPaymentByIdAsync(paymentId, userId);
         }
 
         private static PaymentDto MapToDto(Payment payment)

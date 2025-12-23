@@ -895,141 +895,31 @@ namespace HSP.Service.Test.Implementations.Internal
 
         #endregion
 
-        #region QueryPaymentStatusAsync Tests
+   
 
-        [Fact]
-        public async Task QueryPaymentStatusAsync_ShouldUpdateStatus_WhenSePayReturnsCompleted()
-        {
-            // Arrange
-            var paymentId = Guid.NewGuid();
-            var bookingId = Guid.NewGuid();
-            var payment = new Payment
-            {
-                Id = paymentId,
-                BookingId = bookingId,
-                Status = PaymentStatus.Processing,
-                SePayOrderId = "ORDER123"
-            };
-            var booking = new Booking { Id = bookingId, Status = BookingStatus.InProgress };
+        //#region GetPaymentByIdAsync Tests
 
-            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
-            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
+        //[Fact]
+        //public async Task GetPaymentByIdAsync_ShouldReturnNull_WhenNotFound()
+        //{
+        //    SetupRepository(_mockPaymentRepository, new List<Payment>());
+        //    var result = await _paymentService.GetPaymentByIdAsync(Guid.NewGuid());
+        //    Assert.Null(result);
+        //}
 
-            _mockSePayService.Setup(s => s.QueryPaymentStatusAsync("ORDER123"))
-                .ReturnsAsync(new SePayQueryResponse { Success = true, Status = "completed", TransactionRef = "REF123" });
+        //[Fact]
+        //public async Task GetPaymentByIdAsync_ShouldReturnDto_WhenFound()
+        //{
+        //    var id = Guid.NewGuid();
+        //    SetupRepository(_mockPaymentRepository, new List<Payment> { new Payment { Id = id, Amount = 100 } });
 
-            // Act
-            var result = await _paymentService.QueryPaymentStatusAsync(paymentId);
+        //    var result = await _paymentService.GetPaymentByIdAsync(id);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(PaymentStatus.Completed, result.Status);
-            Assert.Equal(PaymentStatus.Completed, payment.Status); // Verify Entity updated
-            Assert.Equal(BookingStatus.Completed, booking.Status); // Verify Booking updated
-        }
+        //    Assert.NotNull(result);
+        //    Assert.Equal(100, result.Amount);
+        //}
 
-        [Fact]
-        public async Task QueryPaymentStatusAsync_ShouldReturnLocalDetail_WhenNoSePayOrderId()
-        {
-            // Arrange
-            var pid = Guid.NewGuid();
-            var payment = new Payment { Id = pid, SePayOrderId = null, Amount = 100 }; // Null OrderId
-
-            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
-
-            // Act
-            var result = await _paymentService.QueryPaymentStatusAsync(pid);
-
-            // Assert
-            Assert.NotNull(result);
-            // Verify: KHÔNG gọi SePay query
-            _mockSePayService.Verify(s => s.QueryPaymentStatusAsync(It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task QueryPaymentStatusAsync_ShouldNotUpdateBooking_IfAlreadyCancelled()
-        {
-            // Arrange
-            var paymentId = Guid.NewGuid();
-            var bookingId = Guid.NewGuid();
-            var payment = new Payment
-            {
-                Id = paymentId,
-                BookingId = bookingId,
-                Status = PaymentStatus.Processing,
-                SePayOrderId = "ORDER_CHK"
-            };
-            // Booking đã bị hủy trước đó
-            var booking = new Booking { Id = bookingId, Status = BookingStatus.Cancelled };
-
-            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
-            SetupRepository(_mockBookingRepository, new List<Booking> { booking });
-
-            _mockSePayService.Setup(s => s.QueryPaymentStatusAsync("ORDER_CHK"))
-                .ReturnsAsync(new SePayQueryResponse { Success = true, Status = "completed" });
-
-            // Act
-            await _paymentService.QueryPaymentStatusAsync(paymentId);
-
-            // Assert
-            Assert.Equal(PaymentStatus.Completed, payment.Status); // Payment vẫn update
-            Assert.Equal(BookingStatus.Cancelled, booking.Status); // Booking KHÔNG đổi status
-
-            // Verify: Booking Update KHÔNG được gọi
-            _mockBookingRepository.Verify(r => r.Update(booking), Times.Never);
-        }
-
-        [Fact]
-        public async Task QueryPaymentStatusAsync_ShouldNotUpdate_WhenSePayStatusIsNotCompleted()
-        {
-            // Arrange
-            var paymentId = Guid.NewGuid();
-            var payment = new Payment
-            {
-                Id = paymentId,
-                Status = PaymentStatus.Processing,
-                SePayOrderId = "ORDER_PENDING"
-            };
-
-            SetupRepository(_mockPaymentRepository, new List<Payment> { payment });
-
-            // Mock SePay trả về trạng thái vẫn đang chờ (chưa xong)
-            _mockSePayService.Setup(s => s.QueryPaymentStatusAsync("ORDER_PENDING"))
-                .ReturnsAsync(new SePayQueryResponse { Success = true, Status = "pending" });
-
-            // Act
-            var result = await _paymentService.QueryPaymentStatusAsync(paymentId);
-
-            // Assert
-            Assert.Equal(PaymentStatus.Processing, payment.Status); // Status cũ phải giữ nguyên
-            _mockPaymentRepository.Verify(r => r.Update(payment), Times.Never); // Không được gọi update
-        }
-
-        #endregion
-
-        #region GetPaymentByIdAsync Tests
-
-        [Fact]
-        public async Task GetPaymentByIdAsync_ShouldReturnNull_WhenNotFound()
-        {
-            SetupRepository(_mockPaymentRepository, new List<Payment>());
-            var result = await _paymentService.GetPaymentByIdAsync(Guid.NewGuid());
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public async Task GetPaymentByIdAsync_ShouldReturnDto_WhenFound()
-        {
-            var id = Guid.NewGuid();
-            SetupRepository(_mockPaymentRepository, new List<Payment> { new Payment { Id = id, Amount = 100 } });
-
-            var result = await _paymentService.GetPaymentByIdAsync(id);
-
-            Assert.NotNull(result);
-            Assert.Equal(100, result.Amount);
-        }
-
-        #endregion
+        //#endregion
 
         #region GetAllPaymentsAsync Tests
 

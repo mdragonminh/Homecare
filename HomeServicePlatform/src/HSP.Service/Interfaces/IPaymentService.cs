@@ -50,6 +50,6 @@ namespace HSP.Service.Interfaces
 		/// <summary>
 		/// Query payment status from SePay
 		/// </summary>
-		Task<PaymentDetailDto?> QueryPaymentStatusAsync(Guid paymentId);
+		Task<PaymentDetailDto?> QueryPaymentStatusAsync(Guid paymentId, Guid userId);
 	}
 }

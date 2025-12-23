@@ -203,7 +203,8 @@ namespace HSP.API.Controllers
 		{
 			try
 			{
-				var payment = await _paymentService.QueryPaymentStatusAsync(id);
+				var userId = User.GetUserId();
+                var payment = await _paymentService.QueryPaymentStatusAsync(id, userId);
 				if (payment == null)
 					return NotFound(new { message = "Payment not found" });
 
