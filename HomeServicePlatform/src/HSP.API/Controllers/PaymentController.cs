@@ -1,3 +1,4 @@
+using HSP.API.Extensions;
 using HSP.Core.Dtos.PaymentDto;
 using HSP.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -56,7 +57,8 @@ namespace HSP.API.Controllers
 		{
 			try
 			{
-				var payment = await _paymentService.GetPaymentByIdAsync(id);
+				var userId = User.GetUserId();
+                var payment = await _paymentService.GetPaymentByIdAsync(id, userId);
 				if (payment == null)
 					return NotFound(new { message = "Payment not found" });
 

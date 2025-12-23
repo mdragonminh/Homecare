@@ -299,9 +299,13 @@ namespace HSP.Service.Implementations.Internal
             };
         }
 
-        public async Task<PaymentDetailDto?> GetPaymentByIdAsync(Guid paymentId)
+        public async Task<PaymentDetailDto?> GetPaymentByIdAsync(Guid paymentId, Guid userId)
         {
-            var payment = await _paymentRepository.GetAll(p => p.Booking)
+            var payment = await _paymentRepository.GetAll()
+                .Include(p => p.Booking)
+                .ThenInclude(b => b.Technician)
+                .Where(x=>x.Booking.CustomerId == userId || 
+                (x.Booking.Technician != null && x.Booking.Technician.UserId == userId))
                 .FirstOrDefaultAsync(p => p.Id == paymentId && !p.IsDeleted);
 
             if (payment == null)
