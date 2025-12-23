@@ -15,7 +15,7 @@ namespace HSP.Service.Interfaces
         /// <summary>
         /// Get payment details by ID
         /// </summary>
-        Task<PaymentDetailDto?> GetPaymentByIdAsync(Guid paymentId);
+        Task<PaymentDetailDto?> GetPaymentByIdAsync(Guid paymentId, Guid userId);
 
 		/// <summary>
 		/// Get all payments with filtering
