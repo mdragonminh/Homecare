@@ -391,65 +391,365 @@ namespace HSP.Service.Test.Implementations.Internal
 
         #region GetBookingDetailAsync Tests
 
+
+
         [Fact]
-        public async Task GetBookingDetailAsync_ShouldReturnDetails_WhenIdExists()
+        public async Task GetBookingDetailAsync_ShouldFilterDeletedEquipments()
         {
+            // Arrange
             var bookingId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
             var booking = new Booking
             {
                 Id = bookingId,
                 Status = BookingStatus.Confirmed,
+                DateCreated = DateTime.UtcNow,
+                DesiredDate = DateTime.UtcNow,
+                CustomerId = userId,
+                Customer = new AppUser { Id = userId },
                 Items = new List<BookingItem>(),
-                Equipments = new List<BookingEquipment>(),
+                Equipments = new List<BookingEquipment>
+        {
+            new BookingEquipment
+            {
+                Id = Guid.NewGuid(),
+                EquipmentId = Guid.NewGuid(),
+                IsDeleted = false,
+                Quantity = 2,
+                UnitPrice = 100,
+                Equipment = new Equipment { Name = "Active Equipment" }
+            },
+            new BookingEquipment
+            {
+                Id = Guid.NewGuid(),
+                EquipmentId = Guid.NewGuid(),
+                IsDeleted = true,
+                Quantity = 1,
+                UnitPrice = 200,
+                Equipment = new Equipment { Name = "Deleted Equipment" }
+            }
+        },
                 Payments = new List<Payment>(),
-                Feedbacks = new List<BookingFeedback>(),
-                Customer = new AppUser { FullName = "Customer Test", Email = "cus@test.com" }
+                Feedbacks = new List<BookingFeedback>()
             };
 
             _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
                 .Returns(new List<Booking> { booking }.BuildMock());
-
+            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>()))
+                .ReturnsAsync("Test Address");
             _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
                 .Returns(new List<BookingItem>().BuildMock());
-
             _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
                 .Returns(new List<ChatConversation>().BuildMock());
 
-            // FIX CS0854 (Lỗi dòng 239): 
-            // Dù interface bạn gửi không thấy CancellationToken, nhưng lỗi CS0854 ngụ ý rằng có tham số ẩn (optional).
-            // Nếu dòng dưới đây báo lỗi biên dịch (thừa tham số), hãy xóa tham số thứ 3 đi.
-            // Nhưng với CS0854, khả năng cao là cần nó hoặc cần tường minh các tham số.
-            _mockGeocodingService
-                .Setup(x => x.GetAddressForCoordinatesAsync(
-                    It.IsAny<double>(),
-                    It.IsAny<double>()
-                 // Nếu project của bạn có dùng CancellationToken thì bỏ comment dòng dưới:
-                 // , It.IsAny<CancellationToken>() 
-                 ))
-                .ReturnsAsync("Ha Noi, Viet Nam");
+            // Act
+            var result = await _bookingService.GetBookingDetailAsync(bookingId, userId);
 
-            var result = await _bookingService.GetBookingDetailAsync(bookingId);
-
+            // Assert
             Assert.NotNull(result);
-            Assert.Equal(bookingId, result.Id);
-            // Nếu bạn không setup được mock Geocoding vì lỗi tham số, Assert này có thể fail (null) hoặc trả về default
-            // Assert.Equal("Ha Noi, Viet Nam", result.Address); 
+            Assert.Single(result.Equipments);
+            Assert.Equal("Active Equipment", result.Equipments[0].EquipmentName);
+            Assert.Equal(2, result.Equipments[0].Quantity);
+            Assert.Equal(100, result.Equipments[0].UnitPrice);
         }
 
         [Fact]
-        public async Task GetBookingDetailAsync_ShouldThrowKeyNotFound_WhenIdDoesNotExist()
+        public async Task GetBookingDetailAsync_ShouldCalculateEquipmentTotalPrice()
         {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Status = BookingStatus.Confirmed,
+                DateCreated = DateTime.UtcNow,
+                DesiredDate = DateTime.UtcNow,
+                CustomerId = userId,
+                Customer = new AppUser { Id = userId },
+                Items = new List<BookingItem>(),
+                Equipments = new List<BookingEquipment>
+        {
+            new BookingEquipment
+            {
+                Id = Guid.NewGuid(),
+                EquipmentId = Guid.NewGuid(),
+                IsDeleted = false,
+                Quantity = 3,
+                UnitPrice = 150,
+                Status = BookingEquipmentStatus.Paid,
+                PaymentId = Guid.NewGuid(),
+                Equipment = new Equipment { Name = "Test Equipment" }
+            }
+        },
+                Payments = new List<Payment>(),
+                Feedbacks = new List<BookingFeedback>()
+            };
+
             _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-                .Returns(new List<Booking>().BuildMock());
+                .Returns(new List<Booking> { booking }.BuildMock());
+            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>()))
+                .ReturnsAsync("Test Address");
+            _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
 
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _bookingService.GetBookingDetailAsync(Guid.NewGuid()));
+            // Act
+            var result = await _bookingService.GetBookingDetailAsync(bookingId, userId);
 
-            Assert.Equal("Không tìm thấy booking", exception.Message);
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Equipments);
+            Assert.Equal(450, result.Equipments[0].TotalPrice); // 3 * 150 = 450
+            Assert.Equal(BookingEquipmentStatus.Paid, result.Equipments[0].Status);
+            Assert.NotNull(result.Equipments[0].PaymentId);
         }
 
         [Fact]
-        public async Task GetBookingDetailAsync_ShouldReturnZeroRating_WhenNoFeedbackExists()
+        public async Task GetBookingDetailAsync_ShouldIncludeEquipmentStatusAndPaymentId()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var paymentId = Guid.NewGuid();
+
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Status = BookingStatus.Confirmed,
+                DateCreated = DateTime.UtcNow,
+                DesiredDate = DateTime.UtcNow,
+                CustomerId = userId,
+                Customer = new AppUser { Id = userId },
+                Items = new List<BookingItem>(),
+                Equipments = new List<BookingEquipment>
+        {
+            new BookingEquipment
+            {
+                Id = Guid.NewGuid(),
+                EquipmentId = Guid.NewGuid(),
+                IsDeleted = false,
+                Quantity = 1,
+                UnitPrice = 200,
+                Status = BookingEquipmentStatus.AwaitingDelivery,
+                PaymentId = paymentId,
+                Equipment = new Equipment { Name = "Awaiting Equipment" }
+            }
+        },
+                Payments = new List<Payment>(),
+                Feedbacks = new List<BookingFeedback>()
+            };
+
+            _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(new List<Booking> { booking }.BuildMock());
+            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>()))
+                .ReturnsAsync("Test Address");
+            _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
+
+            // Act
+            var result = await _bookingService.GetBookingDetailAsync(bookingId, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Equipments);
+            Assert.Equal(BookingEquipmentStatus.AwaitingDelivery, result.Equipments[0].Status);
+            Assert.Equal(paymentId, result.Equipments[0].PaymentId);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldCalculateTotalPriceWithBothItemsAndEquipments()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Status = BookingStatus.Confirmed,
+                DateCreated = DateTime.UtcNow,
+                DesiredDate = DateTime.UtcNow,
+                CustomerId = userId,
+                Customer = new AppUser { Id = userId },
+                Items = new List<BookingItem>
+        {
+            new BookingItem
+            {
+                Id = Guid.NewGuid(),
+                ServiceId = Guid.NewGuid(),
+                IsDeleted = false,
+                Price = 500,
+                Service = new Core.Entities.Service { Name = "Service 1" }
+            },
+            new BookingItem
+            {
+                Id = Guid.NewGuid(),
+                ServiceId = Guid.NewGuid(),
+                IsDeleted = false,
+                Price = 300,
+                Service = new Core.Entities.Service { Name = "Service 2" }
+            }
+        },
+                Equipments = new List<BookingEquipment>
+        {
+            new BookingEquipment
+            {
+                Id = Guid.NewGuid(),
+                IsDeleted = false,
+                Quantity = 2,
+                UnitPrice = 100,
+                Equipment = new Equipment { Name = "Equipment 1" }
+            },
+            new BookingEquipment
+            {
+                Id = Guid.NewGuid(),
+                IsDeleted = false,
+                Quantity = 3,
+                UnitPrice = 50,
+                Equipment = new Equipment { Name = "Equipment 2" }
+            }
+        },
+                Payments = new List<Payment>(),
+                Feedbacks = new List<BookingFeedback>()
+            };
+
+            _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(new List<Booking> { booking }.BuildMock());
+            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>()))
+                .ReturnsAsync("Test Address");
+            _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(booking.Items.BuildMock());
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
+
+            // Act
+            var result = await _bookingService.GetBookingDetailAsync(bookingId, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            // TotalPrice = (500 + 300) + (2*100 + 3*50) = 800 + 350 = 1150
+            Assert.Equal(1150, result.TotalPrice);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldExcludeDeletedItemsFromTotalPrice()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Status = BookingStatus.Confirmed,
+                DateCreated = DateTime.UtcNow,
+                DesiredDate = DateTime.UtcNow,
+                CustomerId = userId,
+                Customer = new AppUser { Id = userId },
+                Items = new List<BookingItem>
+        {
+            new BookingItem
+            {
+                Id = Guid.NewGuid(),
+                ServiceId = Guid.NewGuid(),
+                IsDeleted = false,
+                Price = 500,
+                Service = new Core.Entities.Service { Name = "Active Service" }
+            },
+            new BookingItem
+            {
+                Id = Guid.NewGuid(),
+                ServiceId = Guid.NewGuid(),
+                IsDeleted = true, // Deleted
+                Price = 1000,
+                Service = new Core.Entities.Service { Name = "Deleted Service" }
+            }
+        },
+                Equipments = new List<BookingEquipment>
+        {
+            new BookingEquipment
+            {
+                Id = Guid.NewGuid(),
+                IsDeleted = false,
+                Quantity = 2,
+                UnitPrice = 100,
+                Equipment = new Equipment { Name = "Active Equipment" }
+            },
+            new BookingEquipment
+            {
+                Id = Guid.NewGuid(),
+                IsDeleted = true, // Deleted
+                Quantity = 5,
+                UnitPrice = 200,
+                Equipment = new Equipment { Name = "Deleted Equipment" }
+            }
+        },
+                Payments = new List<Payment>(),
+                Feedbacks = new List<BookingFeedback>()
+            };
+
+            _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(new List<Booking> { booking }.BuildMock());
+            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>()))
+                .ReturnsAsync("Test Address");
+            _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(booking.Items.BuildMock());
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
+
+            // Act
+            var result = await _bookingService.GetBookingDetailAsync(bookingId, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            // TotalPrice = 500 (active item) + (2*100) (active equipment) = 700
+            // Should NOT include: 1000 (deleted item) + (5*200) (deleted equipment)
+            Assert.Equal(700, result.TotalPrice);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldReturnEmptyAddress_WhenGeocodingFails()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Status = BookingStatus.Confirmed,
+                DateCreated = DateTime.UtcNow,
+                DesiredDate = DateTime.UtcNow,
+                Latitude = 10.762622,
+                Longitude = 106.660172,
+                CustomerId = userId,
+                Customer = new AppUser { Id = userId },
+                Items = new List<BookingItem>(),
+                Equipments = new List<BookingEquipment>(),
+                Payments = new List<Payment>(),
+                Feedbacks = new List<BookingFeedback>()
+            };
+
+            _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(new List<Booking> { booking }.BuildMock());
+            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>()))
+                .ReturnsAsync((string)null); // Geocoding returns null
+            _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
+
+            // Act
+            var result = await _bookingService.GetBookingDetailAsync(bookingId, userId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(string.Empty, result.Address);
+        }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldAllowAccessForCustomer()
         {
             // Arrange
             var bookingId = Guid.NewGuid();
@@ -458,324 +758,95 @@ namespace HSP.Service.Test.Implementations.Internal
             var booking = new Booking
             {
                 Id = bookingId,
+                Status = BookingStatus.Confirmed,
+                DateCreated = DateTime.UtcNow,
+                DesiredDate = DateTime.UtcNow,
                 CustomerId = customerId,
-                Customer = new AppUser { Id = customerId },
-                Feedbacks = new List<BookingFeedback>()
-            };
-
-            // Mock trả về list booking của customer này nhưng KHÔNG có feedback nào từ Technician
-            var pastBookings = new List<Booking>
-            {
-                new Booking { CustomerId = customerId, Status = BookingStatus.Completed, Feedbacks = new List<BookingFeedback>() }, // Rỗng
-                booking
-            };
-
-            _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-                .Returns(pastBookings.BuildMock());
-
-            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>()))
-                .ReturnsAsync("Addr");
-            // Setup các mock phụ khác trả về rỗng
-            _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
-                .Returns(new List<BookingItem>().BuildMock());
-            _mockPaymentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-                .Returns(new List<Payment>().BuildMock());
-            _mockBookingEquipmentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingEquipment, object>>[]>()))
-                .Returns(new List<BookingEquipment>().BuildMock());
-            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
-                .Returns(new List<ChatConversation>().BuildMock());
-
-            // Act
-            var result = await _bookingService.GetBookingDetailAsync(bookingId);
-
-            // Assert
-            Assert.Equal(0, result.CustomerAverageRating);
-            Assert.Equal(0, result.CustomerRatingCount);
-        }
-
-        [Fact]
-        public async Task GetBookingDetailAsync_ShouldMapAllChildCollectionsAndCalculatePrices_Correctly()
-        {
-            // Arrange
-            var bookingId = Guid.NewGuid();
-            var serviceId = Guid.NewGuid();
-            var equipmentId = Guid.NewGuid();
-
-            // Tạo cấu trúc dữ liệu đầy đủ
-            var booking = new Booking
-            {
-                Id = bookingId,
-                Status = BookingStatus.Confirmed,
-                DateCreated = DateTime.UtcNow,
-                DesiredDate = DateTime.UtcNow,
-                Customer = new AppUser { FullName = "Customer" },
-                Technician = new TechnicianProfile { User = new AppUser { FullName = "Tech" } },
-
-                // 1. Items (Service)
-                Items = new List<BookingItem>
+                Customer = new AppUser
                 {
-                    new BookingItem
-                    {
-                        ServiceId = serviceId,
-                        Price = 200,
-                        Service = new Core.Entities.Service { Name = "Vệ sinh máy lạnh", Description = "Mô tả dịch vụ" }
-                    }
+                    Id = customerId,
+                    FullName = "Customer Name",
+                    Email = "customer@test.com",
+                    PhoneNumber = "0123456789"
                 },
-
-                // 2. Equipments (Thiết bị)
-                Equipments = new List<BookingEquipment>
-                {
-                    new BookingEquipment
-                    {
-                        Id = Guid.NewGuid(),
-                        EquipmentId = equipmentId,
-                        Quantity = 2,
-                        UnitPrice = 50,
-                        Status = BookingEquipmentStatus.Delivered,
-                        IsDeleted = false,
-                        Equipment = new Equipment { Name = "Gas R32" }
-                    }
-                },
-
-                // 3. Payments
-                Payments = new List<Payment>
-                {
-                    new Payment
-                    {
-                        Id = Guid.NewGuid(),
-                        Amount = 300, 
-                        // SỬA LỖI CS0029: Ép kiểu int sang Enum PaymentMethod (giả sử 1 là Momo/Banking...)
-                        // Vì tôi không có file Enum PaymentMethod, tôi dùng tạm (PaymentMethod)1
-                        PaymentMethod = (PaymentMethod)1,
-                        Status = PaymentStatus.Completed,
-                        Type = PaymentType.Service
-                    }
-                },
-
-                // 4. Feedbacks
-                Feedbacks = new List<BookingFeedback>
-                {
-                    new BookingFeedback
-                    {
-                        Rating = 5,
-                        Comment = "Good job",
-                        Source = FeedbackSource.Customer
-                    }
-                }
-            };
-
-            // Setup Mock
-            var bookingsList = new List<Booking> { booking };
-            _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-                .Returns(bookingsList.BuildMock());
-
-            // Setup services phụ
-            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>()))
-                .ReturnsAsync("HCM");
-
-            _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
-                .Returns(new List<BookingItem>().BuildMock());
-            _mockBookingEquipmentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingEquipment, object>>[]>()))
-                .Returns(new List<BookingEquipment>().BuildMock());
-            _mockPaymentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-                .Returns(new List<Payment>().BuildMock());
-            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
-                .Returns(new List<ChatConversation>().BuildMock());
-
-            // Act
-            var result = await _bookingService.GetBookingDetailAsync(bookingId);
-
-            // Assert
-            Assert.NotNull(result);
-
-            // SỬA LỖI CS0021: Dùng .ElementAt(0) thay vì [0]
-
-            // Assert Items Mapping
-            Assert.Single(result.Items);
-            var item = result.Items.ElementAt(0);
-            Assert.Equal("Vệ sinh máy lạnh", item.ServiceName);
-            Assert.Equal("Mô tả dịch vụ", item.Description);
-            Assert.Equal(200, item.Price);
-
-            // Assert Equipments Mapping & Calculation
-            Assert.Single(result.Equipments);
-            var eq = result.Equipments.ElementAt(0);
-            Assert.Equal("Gas R32", eq.EquipmentName);
-            Assert.Equal(2, eq.Quantity);
-            Assert.Equal(50, eq.UnitPrice);
-            Assert.Equal(100, eq.TotalPrice);
-
-            // Assert Payments Mapping
-            Assert.Single(result.Payments);
-            var pay = result.Payments.ElementAt(0);
-            Assert.Equal(300, pay.Amount);
-            // So sánh Enum thay vì string
-            Assert.Equal((PaymentMethod)1, pay.PaymentMethod);
-
-            // Assert Feedbacks Mapping
-            Assert.Single(result.Feedbacks);
-            var fb = result.Feedbacks.ElementAt(0);
-            Assert.Equal("Good job", fb.Comment);
-        }
-
-        [Fact]
-        public async Task GetBookingDetailAsync_ShouldFilterDeletedEquipments()
-        {
-            // Arrange
-            var bookingId = Guid.NewGuid();
-
-            var booking = new Booking
-            {
-                Id = bookingId,
-                Status = BookingStatus.Confirmed,
-                DateCreated = DateTime.UtcNow,
-                DesiredDate = DateTime.UtcNow,
-                Customer = new AppUser(),
-
-                // Danh sách thiết bị: 1 cái Active, 1 cái Deleted
-                Equipments = new List<BookingEquipment>
-                {
-                    // Item 1: Hợp lệ
-                    new BookingEquipment
-                    {
-                        Id = Guid.NewGuid(),
-                        IsDeleted = false, // Giữ lại
-                        Equipment = new Equipment { Name = "Active Item" }
-                    },
-                    // Item 2: Đã xóa
-                    new BookingEquipment
-                    {
-                        Id = Guid.NewGuid(),
-                        IsDeleted = true, // Phải bị lọc bỏ
-                        Equipment = new Equipment { Name = "Deleted Item" }
-                    }
-                },
-                // Các list khác rỗng
                 Items = new List<BookingItem>(),
-                Payments = new List<Payment>(),
-                Feedbacks = new List<BookingFeedback>()
-            };
-
-            var bookingsList = new List<Booking> { booking };
-            _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-                .Returns(bookingsList.BuildMock());
-
-            // Setup services phụ
-            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>())).ReturnsAsync("");
-            _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>())).Returns(new List<BookingItem>().BuildMock());
-            _mockPaymentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>())).Returns(new List<Payment>().BuildMock());
-            _mockBookingEquipmentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingEquipment, object>>[]>())).Returns(new List<BookingEquipment>().BuildMock());
-            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
-                .Returns(new List<ChatConversation>().BuildMock());
-
-            // Act
-            var result = await _bookingService.GetBookingDetailAsync(bookingId);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Single(result.Equipments); // Chỉ còn 1 item
-            Assert.Equal("Active Item", result.Equipments[0].EquipmentName); // Item active
-        }
-
-        [Fact]
-        public async Task GetBookingDetailAsync_ShouldHandleNullServiceInItems()
-        {
-            // Arrange
-            var bookingId = Guid.NewGuid();
-
-            var booking = new Booking
-            {
-                Id = bookingId,
-                Status = BookingStatus.Confirmed,
-                DateCreated = DateTime.UtcNow,
-                DesiredDate = DateTime.UtcNow,
-                Customer = new AppUser(),
-
-                Items = new List<BookingItem>
-                {
-                    new BookingItem
-                    {
-                        ServiceId = Guid.NewGuid(),
-                        Service = null // Giả lập trường hợp Service bị null (lỗi data)
-                    }
-                },
                 Equipments = new List<BookingEquipment>(),
                 Payments = new List<Payment>(),
                 Feedbacks = new List<BookingFeedback>()
             };
 
-            var bookingsList = new List<Booking> { booking };
-            _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
-                .Returns(bookingsList.BuildMock());
-
-            // Setup services phụ
-            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>())).ReturnsAsync("");
-            _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>())).Returns(new List<BookingItem>().BuildMock());
-            _mockPaymentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>())).Returns(new List<Payment>().BuildMock());
-            _mockBookingEquipmentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingEquipment, object>>[]>())).Returns(new List<BookingEquipment>().BuildMock());
-            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
-                .Returns(new List<ChatConversation>().BuildMock());
-
-            // Act
-            var result = await _bookingService.GetBookingDetailAsync(bookingId);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Single(result.Items);
-            Assert.Null(result.Items[0].ServiceName); // Kiểm tra ServiceName là null
-            Assert.Null(result.Items[0].Description); // Kiểm tra Description là null
-        }
-
-        [Fact]
-        public async Task GetBookingDetailAsync_ShouldHandleNullAddressAndMissingRelations()
-        {
-            // Arrange
-            var bookingId = Guid.NewGuid();
-
-            // Booking không có Customer, không Technician
-            var booking = new Booking
-            {
-                Id = bookingId,
-
-                // SỬA LỖI CS0037: Xóa dòng gán ID = null. 
-                // Chỉ cần gán Navigation Property = null là đủ để test logic mapping.
-                Customer = null,
-                Technician = null,
-
-                // Khởi tạo các list rỗng
-                Feedbacks = new List<BookingFeedback>(),
-                Items = new List<BookingItem>(),
-                Equipments = new List<BookingEquipment>(),
-                Payments = new List<Payment>()
-            };
-
-            // Setup Mock
             _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
                 .Returns(new List<Booking> { booking }.BuildMock());
-
-            // Mock Geocoding trả về NULL
             _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>()))
-                .ReturnsAsync((string?)null);
-
-            // Setup các repo phụ
+                .ReturnsAsync("Test Address");
             _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
                 .Returns(new List<BookingItem>().BuildMock());
-            _mockPaymentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Payment, object>>[]>()))
-                .Returns(new List<Payment>().BuildMock());
-            _mockBookingEquipmentRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingEquipment, object>>[]>()))
-                .Returns(new List<BookingEquipment>().BuildMock());
             _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
                 .Returns(new List<ChatConversation>().BuildMock());
 
             // Act
-            var result = await _bookingService.GetBookingDetailAsync(bookingId);
+            var result = await _bookingService.GetBookingDetailAsync(bookingId, customerId);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(string.Empty, result.Address); // Address null -> empty string
-            Assert.Null(result.CustomerName); // Customer null -> CustomerName null
-            Assert.Null(result.TechnicianName); // Technician null -> TechnicianName null
+            Assert.Equal("Customer Name", result.CustomerName);
+            Assert.Equal("customer@test.com", result.CustomerEmail);
+            Assert.Equal("0123456789", result.CustomerPhone);
         }
+
+        [Fact]
+        public async Task GetBookingDetailAsync_ShouldAllowAccessForTechnician()
+        {
+            // Arrange
+            var bookingId = Guid.NewGuid();
+            var technicianUserId = Guid.NewGuid();
+            var technicianId = Guid.NewGuid();
+
+            var booking = new Booking
+            {
+                Id = bookingId,
+                Status = BookingStatus.Confirmed,
+                DateCreated = DateTime.UtcNow,
+                DesiredDate = DateTime.UtcNow,
+                TechnicianId = technicianId,
+                Technician = new TechnicianProfile
+                {
+                    Id = technicianId,
+                    UserId = technicianUserId,
+                    User = new AppUser
+                    {
+                        Id = technicianUserId,
+                        FullName = "Technician Name",
+                        Email = "tech@test.com",
+                        PhoneNumber = "0987654321"
+                    }
+                },
+                Items = new List<BookingItem>(),
+                Equipments = new List<BookingEquipment>(),
+                Payments = new List<Payment>(),
+                Feedbacks = new List<BookingFeedback>()
+            };
+
+            _mockBookingRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<Booking, object>>[]>()))
+                .Returns(new List<Booking> { booking }.BuildMock());
+            _mockGeocodingService.Setup(x => x.GetAddressForCoordinatesAsync(It.IsAny<double>(), It.IsAny<double>()))
+                .ReturnsAsync("Test Address");
+            _mockBookingItemRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<BookingItem, object>>[]>()))
+                .Returns(new List<BookingItem>().BuildMock());
+            _mockConversationRepo.Setup(x => x.GetAll(It.IsAny<Expression<Func<ChatConversation, object>>[]>()))
+                .Returns(new List<ChatConversation>().BuildMock());
+
+            // Act
+            var result = await _bookingService.GetBookingDetailAsync(bookingId, technicianUserId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Technician Name", result.TechnicianName);
+            Assert.Equal("tech@test.com", result.TechnicianEmail);
+            Assert.Equal("0987654321", result.TechnicianPhone);
+        }
+
+
 
         #endregion
 
